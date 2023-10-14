@@ -382,10 +382,8 @@ module Selenium
           iframe = driver.find_element(tag_name: 'iframe')
           driver.switch_to.frame(iframe)
           checkbox = driver.find_element(name: 'scroll_checkbox')
-
-          expect {
-            wait.until { in_viewport?(checkbox) }
-          }.not_to raise_error
+          sleep 0.5
+          expect(in_viewport?(checkbox)).to be true
         end
 
         it 'raises MoveTargetOutOfBoundsError when origin offset is out of viewport',
