@@ -1,4 +1,3 @@
-using System;
 using System.Drawing;
 using NUnit.Framework;
 using OpenQA.Selenium.Environment;
@@ -137,7 +136,7 @@ namespace OpenQA.Selenium
 
             IWebElement r2 = driver.FindElement(By.Id("r2"));
             string left = r2.GetCssValue("left");
-            Assert.AreEqual(Math.Round(Convert.ToDecimal(left.Replace("px", "")), 1), 10.9);
+            Assert.That(left, Does.StartWith("10.9"));
             string top = r2.GetCssValue("top");
             Assert.That(top, Does.StartWith("10.1"));
             Assert.AreEqual(new Point(11, 10), r2.Location);
