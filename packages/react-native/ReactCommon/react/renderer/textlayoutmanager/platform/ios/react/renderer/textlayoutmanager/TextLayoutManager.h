@@ -24,7 +24,7 @@ class TextLayoutManager;
  */
 class TextLayoutManager {
  public:
-  TextLayoutManager(const ContextContainer::Shared& contextContainer);
+  TextLayoutManager(ContextContainer::Shared const &contextContainer);
 
   /*
    * Measures `attributedString` using native text rendering infrastructure.

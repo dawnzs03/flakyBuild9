@@ -15,7 +15,7 @@ namespace facebook::react {
 class ViewComponentDescriptor
     : public ConcreteComponentDescriptor<ViewShadowNode> {
  public:
-  ViewComponentDescriptor(const ComponentDescriptorParameters& parameters)
+  ViewComponentDescriptor(ComponentDescriptorParameters const &parameters)
       : ConcreteComponentDescriptor<ViewShadowNode>(parameters) {}
 };
 

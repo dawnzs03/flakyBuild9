@@ -32,13 +32,13 @@ struct LayoutContext;
 class LayoutableShadowNode : public ShadowNode {
  public:
   LayoutableShadowNode(
-      const ShadowNodeFragment& fragment,
-      const ShadowNodeFamily::Shared& family,
+      ShadowNodeFragment const &fragment,
+      ShadowNodeFamily::Shared const &family,
       ShadowNodeTraits traits);
 
   LayoutableShadowNode(
-      const ShadowNode& sourceShadowNode,
-      const ShadowNodeFragment& fragment);
+      ShadowNode const &sourceShadowNode,
+      ShadowNodeFragment const &fragment);
 
   static ShadowNodeTraits BaseTraits();
   static ShadowNodeTraits::Trait IdentifierTrait();
@@ -50,7 +50,7 @@ class LayoutableShadowNode : public ShadowNode {
   };
 
   using UnsharedList = butter::
-      small_vector<LayoutableShadowNode*, kShadowNodeChildrenSmallVectorSize>;
+      small_vector<LayoutableShadowNode *, kShadowNodeChildrenSmallVectorSize>;
 
   /*
    * Returns layout metrics of a node represented as `descendantNodeFamily`
@@ -59,15 +59,15 @@ class LayoutableShadowNode : public ShadowNode {
    * tree.
    */
   static LayoutMetrics computeRelativeLayoutMetrics(
-      const ShadowNodeFamily& descendantNodeFamily,
-      const LayoutableShadowNode& ancestorNode,
+      ShadowNodeFamily const &descendantNodeFamily,
+      LayoutableShadowNode const &ancestorNode,
       LayoutInspectingPolicy policy);
 
   /*
    * Computes the layout metrics of a node relative to its specified ancestors.
    */
   static LayoutMetrics computeRelativeLayoutMetrics(
-      const AncestorList& ancestors,
+      AncestorList const &ancestors,
       LayoutInspectingPolicy policy);
 
   /*
@@ -85,8 +85,8 @@ class LayoutableShadowNode : public ShadowNode {
    * Default implementation returns zero size.
    */
   virtual Size measureContent(
-      const LayoutContext& layoutContext,
-      const LayoutConstraints& layoutConstraints) const;
+      LayoutContext const &layoutContext,
+      LayoutConstraints const &layoutConstraints) const;
 
   /*
    * Measures the node with given `layoutContext` and `layoutConstraints`.
@@ -94,8 +94,8 @@ class LayoutableShadowNode : public ShadowNode {
    * should *not* be included. Default implementation returns zero size.
    */
   virtual Size measure(
-      const LayoutContext& layoutContext,
-      const LayoutConstraints& layoutConstraints) const;
+      LayoutContext const &layoutContext,
+      LayoutConstraints const &layoutConstraints) const;
 
   /*
    * Computes layout recursively.
@@ -140,7 +140,7 @@ class LayoutableShadowNode : public ShadowNode {
    * parameter.
    */
   static ShadowNode::Shared findNodeAtPoint(
-      const ShadowNode::Shared& node,
+      ShadowNode::Shared const &node,
       Point point);
 
   /*

@@ -34,13 +34,13 @@ namespace facebook::react {
  */
 class MountingCoordinator final {
  public:
-  using Shared = std::shared_ptr<const MountingCoordinator>;
+  using Shared = std::shared_ptr<MountingCoordinator const>;
 
   /*
    * The constructor is meant to be used only inside `ShadowTree`, and it's
    * `public` only to enable using with `std::make_shared<>`.
    */
-  MountingCoordinator(const ShadowTreeRevision& baseRevision);
+  MountingCoordinator(const ShadowTreeRevision &baseRevision);
 
   /*
    * Returns the id of the surface that the coordinator belongs to.
@@ -77,20 +77,20 @@ class MountingCoordinator final {
    */
   bool waitForTransaction(std::chrono::duration<double> timeout) const;
 
-  const TelemetryController& getTelemetryController() const;
+  TelemetryController const &getTelemetryController() const;
 
-  const ShadowTreeRevision& getBaseRevision() const;
+  ShadowTreeRevision const &getBaseRevision() const;
 
   /*
    * Methods from this section are meant to be used by
    * `MountingOverrideDelegate` only.
    */
  public:
-  void updateBaseRevision(const ShadowTreeRevision& baseRevision) const;
+  void updateBaseRevision(ShadowTreeRevision const &baseRevision) const;
   void resetLatestRevision() const;
 
   void setMountingOverrideDelegate(
-      std::weak_ptr<const MountingOverrideDelegate> delegate) const;
+      std::weak_ptr<MountingOverrideDelegate const> delegate) const;
 
   /*
    * Methods from this section are meant to be used by `ShadowTree` only.
@@ -110,14 +110,14 @@ class MountingCoordinator final {
   void revoke() const;
 
  private:
-  const SurfaceId surfaceId_;
+  SurfaceId const surfaceId_;
 
   mutable std::mutex mutex_;
   mutable ShadowTreeRevision baseRevision_;
   mutable std::optional<ShadowTreeRevision> lastRevision_{};
   mutable MountingTransaction::Number number_{0};
   mutable std::condition_variable signal_;
-  mutable std::weak_ptr<const MountingOverrideDelegate>
+  mutable std::weak_ptr<MountingOverrideDelegate const>
       mountingOverrideDelegate_;
 
   TelemetryController telemetryController_;

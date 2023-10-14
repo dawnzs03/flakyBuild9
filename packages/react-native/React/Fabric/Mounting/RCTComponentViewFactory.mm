@@ -46,7 +46,7 @@ using namespace facebook::react;
 // Allow JS runtime to register native components as needed. For static view configs.
 void RCTInstallNativeComponentRegistryBinding(facebook::jsi::Runtime &runtime)
 {
-  auto hasComponentProvider = [](const std::string &name) -> bool {
+  auto hasComponentProvider = [](std::string const &name) -> bool {
     return [[RCTComponentViewFactory currentComponentViewFactory]
         registerComponentIfPossible:componentNameByReactViewName(name)];
   };
@@ -99,7 +99,7 @@ static Class<RCTComponentViewProtocol> RCTComponentViewClassWithName(const char 
 #pragma clang diagnostic pop
 }
 
-- (BOOL)registerComponentIfPossible:(const std::string &)name
+- (BOOL)registerComponentIfPossible:(std::string const &)name
 {
   if (_registeredComponentsNames.find(name) != _registeredComponentsNames.end()) {
     // Component has already been registered.
@@ -186,7 +186,7 @@ static Class<RCTComponentViewProtocol> RCTComponentViewClassWithName(const char 
   }
 }
 
-- (void)_addDescriptorToProviderRegistry:(const ComponentDescriptorProvider &)provider
+- (void)_addDescriptorToProviderRegistry:(ComponentDescriptorProvider const &)provider
 {
   _registeredComponentsNames.insert(provider.name);
   _providerRegistry.add(provider);

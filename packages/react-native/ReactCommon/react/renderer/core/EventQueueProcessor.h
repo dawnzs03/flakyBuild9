@@ -24,13 +24,13 @@ class EventQueueProcessor {
       EventPipeConclusion eventPipeConclusion,
       StatePipe statePipe);
 
-  void flushEvents(jsi::Runtime& runtime, std::vector<RawEvent>&& events) const;
-  void flushStateUpdates(std::vector<StateUpdate>&& states) const;
+  void flushEvents(jsi::Runtime &runtime, std::vector<RawEvent> &&events) const;
+  void flushStateUpdates(std::vector<StateUpdate> &&states) const;
 
  private:
-  const EventPipe eventPipe_;
-  const EventPipeConclusion eventPipeConclusion_;
-  const StatePipe statePipe_;
+  EventPipe const eventPipe_;
+  EventPipeConclusion const eventPipeConclusion_;
+  StatePipe const statePipe_;
 
   mutable bool hasContinuousEventStarted_{false};
 };

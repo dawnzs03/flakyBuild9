@@ -22,11 +22,11 @@ namespace facebook::react {
  * don't have a state.
  */
 struct StateData final {
-  using Shared = std::shared_ptr<const void>;
+  using Shared = std::shared_ptr<void const>;
 
 #ifdef ANDROID
   StateData() = default;
-  StateData(const StateData& previousState, folly::dynamic data) {}
+  StateData(StateData const &previousState, folly::dynamic data) {}
   folly::dynamic getDynamic() const;
   MapBuffer getMapBuffer() const;
 #endif

@@ -35,9 +35,9 @@ class State;
  * retain ownership of them.
  */
 struct ShadowNodeFamilyFragment {
-  const Tag tag;
-  const SurfaceId surfaceId;
-  const InstanceHandle::Shared& instanceHandle;
+  Tag const tag;
+  SurfaceId const surfaceId;
+  InstanceHandle::Shared const &instanceHandle;
 };
 
 /*
@@ -46,26 +46,26 @@ struct ShadowNodeFamilyFragment {
  */
 class ShadowNodeFamily final {
  public:
-  using Shared = std::shared_ptr<const ShadowNodeFamily>;
-  using Weak = std::weak_ptr<const ShadowNodeFamily>;
+  using Shared = std::shared_ptr<ShadowNodeFamily const>;
+  using Weak = std::weak_ptr<ShadowNodeFamily const>;
 
   using AncestorList = butter::small_vector<
       std::pair<
-          std::reference_wrapper<const ShadowNode> /* parentNode */,
+          std::reference_wrapper<ShadowNode const> /* parentNode */,
           int /* childIndex */>,
       64>;
 
   ShadowNodeFamily(
-      const ShadowNodeFamilyFragment& fragment,
+      ShadowNodeFamilyFragment const &fragment,
       EventDispatcher::Weak eventDispatcher,
-      const ComponentDescriptor& componentDescriptor);
+      ComponentDescriptor const &componentDescriptor);
 
   /*
    * Sets the parent.
    * This is not technically thread-safe, but practically it mutates the object
    * only once (and the model enforces that this first call is not concurrent).
    */
-  void setParent(const ShadowNodeFamily::Shared& parent) const;
+  void setParent(ShadowNodeFamily::Shared const &parent) const;
 
   /*
    * Returns a handle (or name) associated with the component.
@@ -76,7 +76,7 @@ class ShadowNodeFamily final {
   /*
    * Returns a concrete `ComponentDescriptor` that manages nodes of this type.
    */
-  const ComponentDescriptor& getComponentDescriptor() const;
+  const ComponentDescriptor &getComponentDescriptor() const;
 
   /*
    * Returns a list of all ancestors of the node relative to the given ancestor.
@@ -87,7 +87,7 @@ class ShadowNodeFamily final {
    * Can be called from any thread.
    * The theoretical complexity of the algorithm is `O(ln(n))`. Use it wisely.
    */
-  AncestorList getAncestors(const ShadowNode& ancestorShadowNode) const;
+  AncestorList getAncestors(ShadowNode const &ancestorShadowNode) const;
 
   SurfaceId getSurfaceId() const;
 
@@ -96,13 +96,13 @@ class ShadowNodeFamily final {
   /*
    * Sets and gets the most recent state.
    */
-  std::shared_ptr<const State> getMostRecentState() const;
-  void setMostRecentState(const std::shared_ptr<State const>& state) const;
+  std::shared_ptr<State const> getMostRecentState() const;
+  void setMostRecentState(std::shared_ptr<State const> const &state) const;
 
   /*
    * Dispatches a state update with given priority.
    */
-  void dispatchRawState(StateUpdate&& stateUpdate, EventPriority priority)
+  void dispatchRawState(StateUpdate &&stateUpdate, EventPriority priority)
       const;
 
   /*
@@ -121,22 +121,22 @@ class ShadowNodeFamily final {
    * otherwise returns `nullptr`.
    * To be used by `State` only.
    */
-  std::shared_ptr<const State> getMostRecentStateIfObsolete(
-      const State& state) const;
+  std::shared_ptr<State const> getMostRecentStateIfObsolete(
+      State const &state) const;
 
   EventDispatcher::Weak eventDispatcher_;
-  mutable std::shared_ptr<const State> mostRecentState_;
+  mutable std::shared_ptr<State const> mostRecentState_;
   mutable std::shared_mutex mutex_;
 
   /*
    * Deprecated.
    */
-  const Tag tag_;
+  Tag const tag_;
 
   /*
    * Identifier of a running Surface instance.
    */
-  const SurfaceId surfaceId_;
+  SurfaceId const surfaceId_;
 
   /*
    * Weak reference to the React instance handle
@@ -146,13 +146,13 @@ class ShadowNodeFamily final {
   /*
    * `EventEmitter` associated with all nodes of the family.
    */
-  const SharedEventEmitter eventEmitter_;
+  SharedEventEmitter const eventEmitter_;
 
   /*
    * Reference to a concrete `ComponentDescriptor` that manages nodes of this
    * type.
    */
-  const ComponentDescriptor& componentDescriptor_;
+  ComponentDescriptor const &componentDescriptor_;
 
   /*
    * ComponentHandle and ComponentName must be stored (cached) inside the object

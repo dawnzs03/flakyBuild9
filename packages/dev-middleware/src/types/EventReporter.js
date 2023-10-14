@@ -37,7 +37,7 @@ export type ReportableEvent =
       ...
         | SuccessResult<{appId: string}>
         | ErrorResult<mixed>
-        | CodedErrorResult<'NO_APPS_FOUND'>,
+        | CodedErrorResult<'MISSING_APP_ID' | 'NO_APPS_FOUND'>,
     }
   | {
       type: 'connect_debugger_frontend',

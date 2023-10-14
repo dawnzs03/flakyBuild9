@@ -55,10 +55,10 @@ using namespace facebook::react;
   return concreteComponentDescriptorProvider<SwitchComponentDescriptor>();
 }
 
-- (void)updateProps:(const Props::Shared &)props oldProps:(const Props::Shared &)oldProps
+- (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &)oldProps
 {
-  const auto &oldSwitchProps = static_cast<const SwitchProps &>(*_props);
-  const auto &newSwitchProps = static_cast<const SwitchProps &>(*props);
+  const auto &oldSwitchProps = static_cast<SwitchProps const &>(*_props);
+  const auto &newSwitchProps = static_cast<SwitchProps const &>(*props);
 
   // `value`
   if (oldSwitchProps.value != newSwitchProps.value) {
@@ -92,7 +92,7 @@ using namespace facebook::react;
 
 - (void)onChange:(UISwitch *)sender
 {
-  const auto &props = static_cast<const SwitchProps &>(*_props);
+  const auto &props = static_cast<SwitchProps const &>(*_props);
   if (props.value == sender.on) {
     return;
   }

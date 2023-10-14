@@ -117,7 +117,9 @@ class CodegenUtils
           'compiler_flags'  => "#{folly_compiler_flags} #{boost_compiler_flags} -Wno-nullability-completeness -std=c++17",
           'source' => { :git => '' },
           'header_mappings_dir' => './',
-          'platforms' => min_supported_versions,
+          'platforms' => {
+            'ios' => min_ios_version_supported,
+          },
           'source_files' => "**/*.{h,mm,cpp}",
           'pod_target_xcconfig' => {
             "HEADER_SEARCH_PATHS" => header_search_paths.join(' '),

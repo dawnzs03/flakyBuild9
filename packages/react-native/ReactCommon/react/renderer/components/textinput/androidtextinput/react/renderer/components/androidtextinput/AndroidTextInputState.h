@@ -74,8 +74,8 @@ class AndroidTextInputState final {
 
   AndroidTextInputState() = default;
   AndroidTextInputState(
-      const AndroidTextInputState& previousState,
-      const folly::dynamic& data);
+      AndroidTextInputState const &previousState,
+      folly::dynamic const &data);
   folly::dynamic getDynamic() const;
   MapBuffer getMapBuffer() const;
 };

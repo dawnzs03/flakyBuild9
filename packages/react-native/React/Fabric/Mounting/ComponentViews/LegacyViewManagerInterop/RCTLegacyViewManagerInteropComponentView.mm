@@ -171,7 +171,7 @@ static NSString *const kRCTLegacyInteropChildIndexKey = @"index";
   return concreteComponentDescriptorProvider<LegacyViewManagerInteropComponentDescriptor>();
 }
 
-- (void)updateState:(const State::Shared &)state oldState:(const State::Shared &)oldState
+- (void)updateState:(State::Shared const &)state oldState:(State::Shared const &)oldState
 {
   _state = std::static_pointer_cast<LegacyViewManagerInteropShadowNode::ConcreteState const>(state);
 }
@@ -217,7 +217,7 @@ static NSString *const kRCTLegacyInteropChildIndexKey = @"index";
   [_adapter.paperView didUpdateReactSubviews];
 
   if (updateMask & RNComponentViewUpdateMaskProps) {
-    const auto &newProps = static_cast<const LegacyViewManagerInteropViewProps &>(*_props);
+    const auto &newProps = static_cast<LegacyViewManagerInteropViewProps const &>(*_props);
     [_adapter setProps:newProps.otherProps];
   }
 }

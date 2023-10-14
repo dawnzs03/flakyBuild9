@@ -19,11 +19,11 @@ end
 Pod::Spec.new do |s|
   s.name                   = "React-jsitracing"
   s.version                = version
-  s.summary                = "Internal library for JSI debugging."
+  s.summary                = "Bridgeless for React Native."
   s.homepage               = "https://reactnative.dev/"
   s.license                = package["license"]
   s.author                 = "Meta Platforms, Inc. and its affiliates"
-  s.platforms              = min_supported_versions
+  s.platforms              = { :ios => min_ios_version_supported }
   s.source                 = source
   s.source_files           = "JSITracing.{cpp,h}"
   s.header_dir             = "."

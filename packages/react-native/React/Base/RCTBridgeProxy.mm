@@ -173,7 +173,7 @@ using namespace facebook;
 
 - (NSDictionary *)launchOptions
 {
-  [self logError:@"This method is not supported. Returning nil." cmd:_cmd];
+  [self logError:@"Bridgeless mode doesn't support launchOptions. Returning nil." cmd:_cmd];
   return nil;
 }
 
@@ -191,7 +191,7 @@ using namespace facebook;
 
 - (RCTPerformanceLogger *)performanceLogger
 {
-  [self logWarning:@"This method is not supported. Returning nil." cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not support RCTPerformanceLogger. Returning nil." cmd:_cmd];
   return nil;
 }
 
@@ -217,7 +217,7 @@ using namespace facebook;
 
 - (BOOL)isBatchActive
 {
-  [self logWarning:@"This method is not supported. Returning NO." cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not support batching. Returning NO." cmd:_cmd];
   return NO;
 }
 
@@ -227,29 +227,29 @@ using namespace facebook;
 
 - (NSString *)bridgeDescription
 {
-  [self logWarning:@"This method is not supported. Returning \"BridgeProxy\"." cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not support bridgeDescription. Returning \"BridgeProxy\"." cmd:_cmd];
   return @"BridgeProxy";
 }
 
 - (void)enqueueCallback:(NSNumber *)cbID args:(NSArray *)args
 {
-  [self logError:@"This method is not supported. No-oping." cmd:_cmd];
+  [self logError:@"Bridgeless mode does not queuing callbacks by ids. No-oping." cmd:_cmd];
 }
 
 - (RCTBridge *)batchedBridge
 {
-  [self logWarning:@"This method is not supported. Returning bridge proxy." cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not support batchedBridge. Returning bridge proxy." cmd:_cmd];
   return (RCTBridge *)self;
 }
 
 - (void)setBatchedBridge
 {
-  [self logError:@"This method is not supported. No-oping." cmd:_cmd];
+  [self logError:@"Bridgeless mode does not support setBatchedBridge. No-oping." cmd:_cmd];
 }
 
 - (RCTBridgeModuleListProvider)moduleProvider
 {
-  [self logWarning:@"This method is not supported. Returning empty block" cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not support RCTBridgeModuleListProvider. Returning empty block" cmd:_cmd];
   return ^{
     return @[];
   };
@@ -266,13 +266,13 @@ using namespace facebook;
 
 - (RCTBridge *)parentBridge
 {
-  [self logWarning:@"This method is not supported. Returning bridge proxy." cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not support parentBridge. Returning bridge proxy." cmd:_cmd];
   return (RCTBridge *)self;
 }
 
 - (BOOL)moduleSetupComplete
 {
-  [self logWarning:@"This method is not supported. Returning YES." cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not implement moduleSetupComplete. Returning YES." cmd:_cmd];
   return YES;
 }
 
@@ -286,12 +286,13 @@ using namespace facebook;
 
 - (void)registerModuleForFrameUpdates:(id<RCTBridgeModule>)module withModuleData:(RCTModuleData *)moduleData
 {
-  [self logError:@"This method is not supported. Nooping" cmd:_cmd];
+  [self logError:@"Bridgeless mode does not allow custom modules to register themselves for frame updates. Nooping"
+             cmd:_cmd];
 }
 
 - (RCTModuleData *)moduleDataForName:(NSString *)moduleName
 {
-  [self logError:@"This method is not supported. Returning nil." cmd:_cmd];
+  [self logError:@"Bridgeless mode does not use RCTModuleData. Returning nil." cmd:_cmd];
   return nil;
 }
 
@@ -305,33 +306,33 @@ using namespace facebook;
 
 - (void)updateModuleWithInstance:(id<RCTBridgeModule>)instance
 {
-  [self logError:@"This method is not supported. Nooping." cmd:_cmd];
+  [self logError:@"Bridgeless mode does not support module replacement. Nooping." cmd:_cmd];
 }
 
 - (void)startProfiling
 {
-  [self logWarning:@"This method is not supported. Nooping." cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not support this method. Nooping." cmd:_cmd];
 }
 
 - (void)stopProfiling:(void (^)(NSData *))callback
 {
-  [self logWarning:@"This method is not supported. Nooping." cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not support this method. Nooping." cmd:_cmd];
 }
 
 - (id)callNativeModule:(NSUInteger)moduleID method:(NSUInteger)methodID params:(NSArray *)params
 {
-  [self logError:@"This method is not supported. Nooping and returning nil." cmd:_cmd];
+  [self logError:@"Bridgeless mode does not support this method. Nooping and returning nil." cmd:_cmd];
   return nil;
 }
 
 - (void)logMessage:(NSString *)message level:(NSString *)level
 {
-  [self logWarning:@"This method is not supported. Nooping." cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not support this method. Nooping." cmd:_cmd];
 }
 
 - (void)_immediatelyCallTimer:(NSNumber *)timer
 {
-  [self logWarning:@"This method is not supported. Nooping." cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not support this method. Nooping." cmd:_cmd];
 }
 
 /**
@@ -339,7 +340,7 @@ using namespace facebook;
  */
 - (BOOL)inspectable
 {
-  [self logWarning:@"This method is not supported. Returning NO." cmd:_cmd];
+  [self logWarning:@"Bridgeless mode does not support this method. Returning NO." cmd:_cmd];
   return NO;
 }
 

@@ -31,7 +31,7 @@ class SynchronousEventBeat final : public EventBeat,
 #pragma mark - RunLoopObserver::Delegate
 
   void activityDidChange(
-      const RunLoopObserver::Delegate* delegate,
+      RunLoopObserver::Delegate const *delegate,
       RunLoopObserver::Activity activity) const noexcept override;
 
  private:

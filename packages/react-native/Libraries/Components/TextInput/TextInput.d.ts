@@ -815,11 +815,6 @@ export interface TextInputProps
   placeholderTextColor?: ColorValue | undefined;
 
   /**
-   * If `true`, text is not editable. The default value is `false`.
-   */
-  readOnly?: boolean | undefined;
-
-  /**
    * enum('default', 'go', 'google', 'join', 'next', 'route', 'search', 'send', 'yahoo', 'done', 'emergency-call')
    * Determines how the return key should look.
    */
@@ -949,9 +944,4 @@ export class TextInput extends TextInputBase {
    * Removes all text from the input.
    */
   clear: () => void;
-
-  /**
-   * Sets the start and end positions of text selection.
-   */
-  setSelection: (start: number, end: number) => void;
 }

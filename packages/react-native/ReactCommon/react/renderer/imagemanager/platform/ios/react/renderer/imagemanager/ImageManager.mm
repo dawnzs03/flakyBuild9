@@ -16,7 +16,7 @@
 
 namespace facebook::react {
 
-ImageManager::ImageManager(const ContextContainer::Shared &contextContainer)
+ImageManager::ImageManager(ContextContainer::Shared const &contextContainer)
 {
   id<RCTImageLoaderWithAttributionProtocol> imageLoader =
       (id<RCTImageLoaderWithAttributionProtocol>)unwrapManagedObject(

@@ -29,7 +29,7 @@ Pod::Spec.new do |s|
   s.homepage               = "https://reactnative.dev/"
   s.license                = package["license"]
   s.author                 = "Meta Platforms, Inc. and its affiliates"
-  s.platforms              = min_supported_versions
+  s.platforms              = { :ios => min_ios_version_supported }
   s.source                 = source
   s.source_files           = "dummyFile.cpp"
   s.pod_target_xcconfig = { "USE_HEADERMAP" => "YES",
@@ -37,7 +37,7 @@ Pod::Spec.new do |s|
                             "DEFINES_MODULE" => "YES" }
 
   if ENV['USE_FRAMEWORKS']
-    s.header_mappings_dir     = './'
+    s.header_mappings_dir     = File.absolute_path('./')
     s.module_name             = 'React_Fabric'
   end
 

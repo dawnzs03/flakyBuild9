@@ -68,17 +68,8 @@ async function runServer(
     server: {port},
     watchFolders,
   } = metroConfig;
-  const scheme = args.https === true ? 'https' : 'http';
-  const devServerUrl = `${scheme}://${host}:${port}`;
 
-  logger.info(`Welcome to React Native v${ctx.reactNativeVersion}`);
-
-  const serverStatus = await isDevServerRunning(
-    scheme,
-    host,
-    port,
-    projectRoot,
-  );
+  const serverStatus = await isDevServerRunning(host, port, projectRoot);
 
   if (serverStatus === 'matched_server_running') {
     logger.info(
@@ -93,7 +84,7 @@ async function runServer(
     return;
   }
 
-  logger.info(`Starting dev server on port ${chalk.bold(String(port))}...`);
+  logger.info(`Starting dev server on port ${chalk.bold(String(port))}`);
 
   if (args.assetPlugins) {
     // $FlowIgnore[cannot-write] Assigning to readonly property
@@ -130,12 +121,7 @@ async function runServer(
         reportEvent(event);
       }
       if (args.interactive && event.type === 'dep_graph_loaded') {
-        logger.info('Dev server ready');
-        attachKeyHandlers({
-          cliConfig: ctx,
-          devServerUrl,
-          messageSocket: messageSocketEndpoint,
-        });
+        attachKeyHandlers(ctx, messageSocketEndpoint);
       }
     },
   };

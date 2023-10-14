@@ -51,14 +51,14 @@ export class HeaderWriter {
 
       #pragma once
 
-      #include <hermes/inspector-modern/chrome/MessageInterfaces.h>
+      #include <hermes/inspector/chrome/MessageInterfaces.h>
 
       #include <optional>
       #include <vector>
 
       namespace facebook {
       namespace hermes {
-      namespace inspector_modern {
+      namespace inspector {
       namespace chrome {
       namespace message {
 
@@ -160,7 +160,7 @@ void deleter(T* p);
     this.stream.write(`
         } // namespace message
         } // namespace chrome
-        } // namespace inspector_modern
+        } // namespace inspector
         } // namespace hermes
         } // namespace facebook
     `);

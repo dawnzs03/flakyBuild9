@@ -20,41 +20,41 @@ struct JMountItem : public jni::JavaClass<JMountItem> {
 struct CppMountItem final {
 #pragma mark - Designated Initializers
 
-  static CppMountItem CreateMountItem(const ShadowView& shadowView);
+  static CppMountItem CreateMountItem(ShadowView const &shadowView);
 
-  static CppMountItem DeleteMountItem(const ShadowView& shadowView);
+  static CppMountItem DeleteMountItem(ShadowView const &shadowView);
 
   static CppMountItem InsertMountItem(
-      const ShadowView& parentView,
-      const ShadowView& shadowView,
+      ShadowView const &parentView,
+      ShadowView const &shadowView,
       int index);
 
   static CppMountItem RemoveMountItem(
-      const ShadowView& parentView,
-      const ShadowView& shadowView,
+      ShadowView const &parentView,
+      ShadowView const &shadowView,
       int index);
 
   static CppMountItem RemoveDeleteTreeMountItem(
-      const ShadowView& parentView,
-      const ShadowView& shadowView,
+      ShadowView const &parentView,
+      ShadowView const &shadowView,
       int index);
 
   static CppMountItem UpdatePropsMountItem(
-      const ShadowView& oldShadowView,
-      const ShadowView& newShadowView);
+      ShadowView const &oldShadowView,
+      ShadowView const &newShadowView);
 
-  static CppMountItem UpdateStateMountItem(const ShadowView& shadowView);
+  static CppMountItem UpdateStateMountItem(ShadowView const &shadowView);
 
   static CppMountItem UpdateLayoutMountItem(
-      const ShadowView& shadowView,
-      const ShadowView& parentView);
+      ShadowView const &shadowView,
+      ShadowView const &parentView);
 
-  static CppMountItem UpdateEventEmitterMountItem(const ShadowView& shadowView);
+  static CppMountItem UpdateEventEmitterMountItem(ShadowView const &shadowView);
 
-  static CppMountItem UpdatePaddingMountItem(const ShadowView& shadowView);
+  static CppMountItem UpdatePaddingMountItem(ShadowView const &shadowView);
 
   static CppMountItem UpdateOverflowInsetMountItem(
-      const ShadowView& shadowView);
+      ShadowView const &shadowView);
 
 #pragma mark - Type
 

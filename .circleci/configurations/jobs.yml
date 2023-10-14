@@ -40,16 +40,17 @@ jobs:
           name: Set server.max_workers=1 in .flowconfig
           command: |
             sed -i '/\[options\]/a server.max_workers=1' .flowconfig
+            sed -i '/\[options\]/a server.max_workers=1' .flowconfig.android
           when: always
 
       - run:
           name: Check for errors in code using Flow (iOS)
-          command: yarn flow-check
+          command: yarn flow-check-ios
           when: always
 
       - run:
           name: Check for errors in code using Flow (Android)
-          command: yarn flow-check
+          command: yarn flow-check-android
           when: always
 
       - run:
@@ -106,6 +107,109 @@ jobs:
             - run: echo "Failing tests may be moved here temporarily."
       # -------------------------
 
+      - store_test_results:
+          path: ./reports/junit
+
+  # -------------------------
+  #     JOBS: iOS Unit Tests
+  # -------------------------
+  test_ios:
+    executor: reactnativeios
+    parameters:
+      run_unit_tests:
+        description: Specifies whether unit tests should run.
+        type: boolean
+        default: false
+      jsengine:
+        default: "Hermes"
+        description: Which JavaScript engine to use. Must be one of "Hermes", "JSC".
+        type: enum
+        enum: ["Hermes", "JSC"]
+      ruby_version:
+        default: "2.6.10"
+        description: The version of ruby that must be used
+        type: string
+    environment:
+      - REPORTS_DIR: "./reports/junit"
+    steps:
+      - checkout_code_with_cache
+      - setup_ruby:
+          ruby_version: << parameters.ruby_version >>
+      - brew_install:
+          package: xcbeautify
+      - run:
+          name: Run Ruby Tests
+          command: |
+            cd packages/react-native/scripts
+            sh run_ruby_tests.sh
+      - run_yarn
+      - *attach_hermes_workspace
+      - run: |
+          cd packages/rn-tester
+          bundle check || bundle install
+      - run:
+          name: Boot iPhone Simulator
+          command: source scripts/.tests.env && xcrun simctl boot "$IOS_DEVICE" || true
+
+      - run:
+          name: Configure Environment Variables
+          command: |
+            echo 'export PATH=/usr/local/opt/node@18/bin:$PATH' >> $BASH_ENV
+            source $BASH_ENV
+
+      - run:
+          name: "Brew: Tap wix/brew"
+          command: brew tap wix/brew
+      - brew_install:
+          package: applesimutils watchman
+
+      - run:
+          name: Configure Watchman
+          command: echo "{}" > .watchmanconfig
+
+      - run:
+          name: Setup the CocoaPods environment
+          command: |
+            bundle exec pod setup
+
+      - with_hermes_tarball_cache_span:
+          set_tarball_path: True
+          steps:
+            - with_rntester_pods_cache_span:
+                steps:
+                  - run:
+                      name: Generate RNTesterPods Workspace
+                      command: |
+                        if [[ << parameters.jsengine >> == "JSC" ]]; then
+                          export USE_HERMES=0
+                        fi
+
+                        cd packages/rn-tester
+                        bundle install
+                        bundle exec pod install --verbose
+
+      # -------------------------
+      # Runs iOS unit tests
+      - when:
+          condition: << parameters.run_unit_tests >>
+          steps:
+            - run:
+                name: "Run Tests: iOS Unit and Integration Tests"
+                command: node ./scripts/circleci/run_with_retry.js 3 yarn test-ios
+            - run:
+                name: Zip Derived data folder
+                when: always
+                command: |
+                  echo "zipping tests results"
+                  cd /Users/distiller/Library/Developer/Xcode
+                  XCRESULT_PATH=$(find . -name '*.xcresult')
+                  tar -zcvf xcresults.tar.gz $XCRESULT_PATH
+            - store_artifacts_if_needed:
+                path: /Users/distiller/Library/Developer/Xcode/xcresults.tar.gz
+      # -------------------------
+      # Collect Results
+      - report_bundle_size:
+          platform: ios
       - store_test_results:
           path: ./reports/junit
 
@@ -175,10 +279,9 @@ jobs:
                 command: scripts/circleci/check_appium_server_status.sh
             - run:
                 name: Run E2E tests
-                no_output_timeout: 30m
                 command: |
                   cd packages/rn-tester-e2e
-                  (yarn test-e2e ios 2>&1 | tee /tmp/test_log) || true
+                  yarn test-e2e ios 2>&1 | tee /tmp/test_log
             - store_artifacts:
                 path: /tmp/test_log
 
@@ -239,10 +342,9 @@ jobs:
             fi
       - run:
           name: Run E2E tests
-          no_output_timeout: 30m
           command: |
             cd packages/rn-tester-e2e
-            (yarn test-e2e android 2>&1 | tee /tmp/test_log) || true
+            yarn test-e2e android 2>&1 | tee /tmp/test_log
       - store_artifacts:
           path: /tmp/test_log
 
@@ -526,10 +628,6 @@ jobs:
         default: "2.6.10"
         description: The version of ruby that must be used
         type: string
-      run_unit_tests:
-        description: whether unit tests should run or not.
-        default: false
-        type: boolean
     steps:
       - checkout_code_with_cache
       - run_yarn
@@ -544,10 +642,6 @@ jobs:
           command: sudo rm -rf /Library/Developer/CoreSimulator/Profiles/Runtimes/
       - setup_ruby:
           ruby_version: << parameters.ruby_version >>
-      - when:
-          condition: << parameters.run_unit_tests >>
-          steps:
-            - prepare_ios_tests
       - with_hermes_tarball_cache_span:
           set_tarball_path: True
           steps:
@@ -573,24 +667,13 @@ jobs:
 
                         bundle install
                         bundle exec pod install
-                  - when:
-                      condition:
-                        # The run_ios_test will also build RNTester so we don't nee to build it
-                        # here if we run tests
-                        equal: [ false, << parameters.run_unit_tests >> ]
-
-                      steps:
-                          - run:
-                              name: Build RNTester
-                              command: |
-                                xcodebuild build \
-                                  -workspace packages/rn-tester/RNTesterPods.xcworkspace \
-                                  -scheme RNTester \
-                                  -sdk iphonesimulator
-                  - when:
-                      condition: << parameters.run_unit_tests >>
-                      steps:
-                          - run_ios_tests
+                  - run:
+                      name: Build RNTester
+                      command: |
+                        xcodebuild build \
+                          -workspace packages/rn-tester/RNTesterPods.xcworkspace \
+                          -scheme RNTester \
+                          -sdk iphonesimulator
 
   # -------------------------
   #    JOBS: Windows
@@ -661,8 +744,11 @@ jobs:
       # -------------------------
       # Run Tests
       - run:
-          name: "Flow Check"
-          command: yarn flow-check
+          name: "Flow: Check Android"
+          command: yarn flow-check-android
+      - run:
+          name: "Flow: Check iOS"
+          command: yarn flow-check-ios
       - run:
           name: "Run Tests: JavaScript Tests"
           command: yarn test
@@ -1042,27 +1128,12 @@ jobs:
                 paths: /tmp/hermes/dSYM/Release
       - store_hermes_apple_artifacts:
           flavor: << parameters.flavor >>
-      - when:
-          condition:
-            equal: [ << parameters.flavor >>, "Release" ]
-          steps:
-            - persist_to_workspace:
-                root: /tmp/hermes/
-                paths:
-                  - hermes-runtime-darwin/hermes-ios-release.tar.gz
-      - when:
-          condition:
-            equal: [ << parameters.flavor >>, "Debug" ]
-          steps:
-            - persist_to_workspace:
-                root: /tmp/hermes/
-                paths:
-                  - hermes-runtime-darwin/hermes-ios-debug.tar.gz
       - persist_to_workspace:
           root: /tmp/hermes/
           paths:
-            - osx-bin/<< parameters.flavor >>
-            - dSYM/<< parameters.flavor >>
+            - hermes-runtime-darwin
+            - osx-bin
+            - dSYM
 
   build_hermesc_windows:
     executor:

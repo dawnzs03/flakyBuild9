@@ -13,12 +13,12 @@
 
 namespace facebook::react {
 
-const char ViewComponentName[] = "View";
+char const ViewComponentName[] = "View";
 
 ViewShadowNodeProps::ViewShadowNodeProps(
-    const PropsParserContext& context,
-    const ViewShadowNodeProps& sourceProps,
-    const RawProps& rawProps)
+    PropsParserContext const &context,
+    ViewShadowNodeProps const &sourceProps,
+    RawProps const &rawProps)
     : ViewProps(
           context,
           sourceProps,
@@ -26,22 +26,22 @@ ViewShadowNodeProps::ViewShadowNodeProps(
           !CoreFeatures::enableMapBuffer){};
 
 ViewShadowNode::ViewShadowNode(
-    const ShadowNodeFragment& fragment,
-    const ShadowNodeFamily::Shared& family,
+    ShadowNodeFragment const &fragment,
+    ShadowNodeFamily::Shared const &family,
     ShadowNodeTraits traits)
     : ConcreteViewShadowNode(fragment, family, traits) {
   initialize();
 }
 
 ViewShadowNode::ViewShadowNode(
-    const ShadowNode& sourceShadowNode,
-    const ShadowNodeFragment& fragment)
+    ShadowNode const &sourceShadowNode,
+    ShadowNodeFragment const &fragment)
     : ConcreteViewShadowNode(sourceShadowNode, fragment) {
   initialize();
 }
 
 void ViewShadowNode::initialize() noexcept {
-  auto& viewProps = static_cast<const ViewProps&>(*props_);
+  auto &viewProps = static_cast<ViewProps const &>(*props_);
 
   bool formsStackingContext = !viewProps.collapsable ||
       viewProps.pointerEvents == PointerEventsMode::None ||
@@ -60,7 +60,7 @@ void ViewShadowNode::initialize() noexcept {
 
   bool formsView = formsStackingContext ||
       isColorMeaningful(viewProps.backgroundColor) ||
-      !(viewProps.yogaStyle.border() == yoga::Style::Edges{}) ||
+      !(viewProps.yogaStyle.border() == YGStyle::Edges{}) ||
       !viewProps.testId.empty() ||
       HostPlatformViewTraitsInitializer::formsView(viewProps);
 

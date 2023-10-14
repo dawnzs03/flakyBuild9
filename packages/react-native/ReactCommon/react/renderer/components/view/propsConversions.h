@@ -17,13 +17,13 @@ namespace facebook::react {
 
 // Nearly this entire file can be deleted when iterator-style Prop parsing
 // ships fully for View
-static inline yoga::Style::Dimensions convertRawProp(
-    const PropsParserContext& context,
-    const RawProps& rawProps,
-    const char* widthName,
-    const char* heightName,
-    const yoga::Style::Dimensions& sourceValue,
-    const yoga::Style::Dimensions& defaultValue) {
+static inline YGStyle::Dimensions convertRawProp(
+    const PropsParserContext &context,
+    RawProps const &rawProps,
+    char const *widthName,
+    char const *heightName,
+    YGStyle::Dimensions const &sourceValue,
+    YGStyle::Dimensions const &defaultValue) {
   auto dimensions = defaultValue;
   dimensions[YGDimensionWidth] = convertRawProp(
       context,
@@ -40,13 +40,13 @@ static inline yoga::Style::Dimensions convertRawProp(
   return dimensions;
 }
 
-static inline yoga::Style::Edges convertRawProp(
-    const PropsParserContext& context,
-    const RawProps& rawProps,
-    const char* prefix,
-    const char* suffix,
-    const yoga::Style::Edges& sourceValue,
-    const yoga::Style::Edges& defaultValue) {
+static inline YGStyle::Edges convertRawProp(
+    const PropsParserContext &context,
+    RawProps const &rawProps,
+    char const *prefix,
+    char const *suffix,
+    YGStyle::Edges const &sourceValue,
+    YGStyle::Edges const &defaultValue) {
   auto result = defaultValue;
   result[YGEdgeLeft] = convertRawProp(
       context,
@@ -123,11 +123,11 @@ static inline yoga::Style::Edges convertRawProp(
   return result;
 }
 
-static inline yoga::Style::Edges convertRawProp(
-    const PropsParserContext& context,
-    const RawProps& rawProps,
-    const yoga::Style::Edges& sourceValue,
-    const yoga::Style::Edges& defaultValue) {
+static inline YGStyle::Edges convertRawProp(
+    const PropsParserContext &context,
+    RawProps const &rawProps,
+    YGStyle::Edges const &sourceValue,
+    YGStyle::Edges const &defaultValue) {
   auto result = defaultValue;
   result[YGEdgeLeft] = convertRawProp(
       context,
@@ -168,11 +168,11 @@ static inline yoga::Style::Edges convertRawProp(
   return result;
 }
 
-static inline yoga::Style convertRawProp(
-    const PropsParserContext& context,
-    const RawProps& rawProps,
-    const yoga::Style& sourceValue) {
-  yoga::Style yogaStyle{};
+static inline YGStyle convertRawProp(
+    const PropsParserContext &context,
+    RawProps const &rawProps,
+    YGStyle const &sourceValue) {
+  auto yogaStyle = YGStyle{};
   yogaStyle.direction() = convertRawProp(
       context,
       rawProps,
@@ -327,12 +327,12 @@ static inline yoga::Style convertRawProp(
 // This can be deleted when non-iterator ViewProp parsing is deleted
 template <typename T>
 static inline CascadedRectangleCorners<T> convertRawProp(
-    const PropsParserContext& context,
-    const RawProps& rawProps,
-    const char* prefix,
-    const char* suffix,
-    const CascadedRectangleCorners<T>& sourceValue,
-    const CascadedRectangleCorners<T>& defaultValue) {
+    const PropsParserContext &context,
+    RawProps const &rawProps,
+    char const *prefix,
+    char const *suffix,
+    CascadedRectangleCorners<T> const &sourceValue,
+    CascadedRectangleCorners<T> const &defaultValue) {
   CascadedRectangleCorners<T> result;
 
   result.topLeft = convertRawProp(
@@ -441,12 +441,12 @@ static inline CascadedRectangleCorners<T> convertRawProp(
 
 template <typename T>
 static inline CascadedRectangleEdges<T> convertRawProp(
-    const PropsParserContext& context,
-    const RawProps& rawProps,
-    const char* prefix,
-    const char* suffix,
-    const CascadedRectangleEdges<T>& sourceValue,
-    const CascadedRectangleEdges<T>& defaultValue) {
+    const PropsParserContext &context,
+    RawProps const &rawProps,
+    char const *prefix,
+    char const *suffix,
+    CascadedRectangleEdges<T> const &sourceValue,
+    CascadedRectangleEdges<T> const &defaultValue) {
   CascadedRectangleEdges<T> result;
 
   result.left = convertRawProp(
@@ -547,10 +547,10 @@ static inline CascadedRectangleEdges<T> convertRawProp(
 
 // This can be deleted when non-iterator ViewProp parsing is deleted
 static inline ViewEvents convertRawProp(
-    const PropsParserContext& context,
-    const RawProps& rawProps,
-    const ViewEvents& sourceValue,
-    const ViewEvents& defaultValue) {
+    const PropsParserContext &context,
+    RawProps const &rawProps,
+    ViewEvents const &sourceValue,
+    ViewEvents const &defaultValue) {
   ViewEvents result{};
   using Offset = ViewEvents::Offset;
 

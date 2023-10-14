@@ -25,7 +25,7 @@ class UIManagerMountHook {
    * Called right after a `ShadowTree` is mounted in the host platform.
    */
   virtual void shadowTreeDidMount(
-      const RootShadowNode::Shared& rootShadowNode,
+      RootShadowNode::Shared const &rootShadowNode,
       double mountTime) noexcept = 0;
 
   virtual ~UIManagerMountHook() noexcept = default;

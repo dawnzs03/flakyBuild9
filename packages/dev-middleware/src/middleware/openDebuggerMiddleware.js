@@ -9,25 +9,22 @@
  * @oncall react_native
  */
 
+import type {LaunchedChrome} from 'chrome-launcher';
 import type {NextHandleFunction} from 'connect';
 import type {IncomingMessage, ServerResponse} from 'http';
-import type {BrowserLauncher, LaunchedBrowser} from '../types/BrowserLauncher';
 import type {EventReporter} from '../types/EventReporter';
-import type {Experiments} from '../types/Experiments';
 import type {Logger} from '../types/Logger';
 
 import url from 'url';
 import getDevServerUrl from '../utils/getDevServerUrl';
-import getDevToolsFrontendUrl from '../utils/getDevToolsFrontendUrl';
+import launchDebuggerAppWindow from '../utils/launchDebuggerAppWindow';
 import queryInspectorTargets from '../utils/queryInspectorTargets';
 
-const debuggerInstances = new Map<string, ?LaunchedBrowser>();
+const debuggerInstances = new Map<string, LaunchedChrome>();
 
 type Options = $ReadOnly<{
-  browserLauncher: BrowserLauncher,
   logger?: Logger,
   eventReporter?: EventReporter,
-  experiments: Experiments,
 }>;
 
 /**
@@ -39,9 +36,7 @@ type Options = $ReadOnly<{
  * @see https://chromedevtools.github.io/devtools-protocol/
  */
 export default function openDebuggerMiddleware({
-  browserLauncher,
   eventReporter,
-  experiments,
   logger,
 }: Options): NextHandleFunction {
   return async (
@@ -53,18 +48,19 @@ export default function openDebuggerMiddleware({
       const {query} = url.parse(req.url, true);
       const {appId} = query;
 
-      const targets = await queryInspectorTargets(
-        getDevServerUrl(req, 'local'),
-      );
-      let target;
-
-      if (typeof appId === 'string') {
-        logger?.info('Launching JS debugger...');
-        target = targets.find(_target => _target.description === appId);
-      } else {
-        logger?.info('Launching JS debugger for first available target...');
-        target = targets[0];
+      if (typeof appId !== 'string') {
+        res.writeHead(400);
+        res.end();
+        eventReporter?.logEvent({
+          type: 'launch_debugger_frontend',
+          status: 'coded_error',
+          errorCode: 'MISSING_APP_ID',
+        });
+        return;
       }
+
+      const targets = await queryInspectorTargets(getDevServerUrl(req));
+      const target = targets.find(_target => _target.description === appId);
 
       if (!target) {
         res.writeHead(404);
@@ -81,15 +77,13 @@ export default function openDebuggerMiddleware({
       }
 
       try {
-        await debuggerInstances.get(appId)?.kill();
+        logger?.info('Launching JS debugger...');
+        debuggerInstances.get(appId)?.kill();
         debuggerInstances.set(
           appId,
-          await browserLauncher.launchDebuggerAppWindow(
-            getDevToolsFrontendUrl(
-              target.webSocketDebuggerUrl,
-              getDevServerUrl(req, 'public'),
-              experiments,
-            ),
+          await launchDebuggerAppWindow(
+            target.devtoolsFrontendUrl,
+            'open-debugger',
           ),
         );
         res.end();

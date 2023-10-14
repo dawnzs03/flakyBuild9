@@ -3513,11 +3513,6 @@ acorn@^8.9.0:
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-8.10.0.tgz#8be5b3907a67221a81ab23c7889c4c5526b62ec5"
   integrity sha512-F0SAmZ8iUtS//m8DmCTA0jlh6TDKkHQyK6xc6V4KDTyZKA9dnvX9/3sRTVQrWm79glUAZbnmmNcdYwUIHWVybw==
 
-actual-request-url@^1.0.4:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/actual-request-url/-/actual-request-url-1.0.4.tgz#54454514e3715a4c60a1e26e9a49423e376a7563"
-  integrity sha512-9AOnrTOkog3eM7l4Y702+BKTYL1Tvxcl4EBbKrhDTB87npkss+I1dirUox2OyZVVz95BnavGgSZanWWas43j7A==
-
 adbkit-apkreader@^3.1.2:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/adbkit-apkreader/-/adbkit-apkreader-3.2.0.tgz#8d0bb1f733969e959992095ed7f2a8d658ec97a5"
@@ -3619,7 +3614,7 @@ ansi-styles@^3.2.0, ansi-styles@^3.2.1:
   dependencies:
     color-convert "^1.9.0"
 
-ansi-styles@^4.0.0, ansi-styles@^4.1.0, ansi-styles@^4.2.1:
+ansi-styles@^4.0.0, ansi-styles@^4.1.0:
   version "4.2.1"
   resolved "https://registry.yarnpkg.com/ansi-styles/-/ansi-styles-4.2.1.tgz#90ae75c424d008d2624c5bf29ead3177ebfcf359"
   integrity sha512-9VGjrMsG1vePxcSweQsN20KY/c4zN0h9fLjqAbwbPfahM3t+NL+M9HC8xeXG2I8pX5NoamTGNuomEUFI7fcUjA==
@@ -6210,10 +6205,10 @@ flow-api-translator@0.15.0:
     hermes-parser "0.15.0"
     hermes-transform "0.15.0"
 
-flow-bin@^0.216.1:
-  version "0.216.1"
-  resolved "https://registry.yarnpkg.com/flow-bin/-/flow-bin-0.216.1.tgz#c370af830e46645087a2aea4056507cc44acc031"
-  integrity sha512-mdhkQiSSZ/nyPq/pmk2tdbV3btYTlTYqBT/96nSSTGQmvTWQ0no9XMLZ/SygNafL4PPerfkpwQwprA1M35+9Bg==
+flow-bin@^0.215.1:
+  version "0.215.1"
+  resolved "https://registry.yarnpkg.com/flow-bin/-/flow-bin-0.215.1.tgz#1df7f284087a2edca89b6af5df8e7cc13f53f926"
+  integrity sha512-Q8Ed0w492tI9O/US11bC2Gtme0gkK/RNZBLTXBgSnRo3JaQor2cPRcKcwQX2mPBoV9/KrtAVVCnhzu4zTpkWTg==
 
 flow-enums-runtime@^0.0.6:
   version "0.0.6"

@@ -9,7 +9,6 @@
 
 #import <React/RCTAssert.h>
 #import <React/RCTBridge.h>
-#import <React/RCTConstants.h>
 #import <React/RCTLog.h>
 
 // Time to wait for an expected log statement to show before failing the test
@@ -33,9 +32,8 @@ const int64_t LOGGER_TIMEOUT = 10 * NSEC_PER_SEC;
   NSURL *scriptURL;
   if (getenv("CI_USE_PACKAGER")) {
     NSString *app = @"IntegrationTests/IntegrationTestsApp";
-    scriptURL = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:8081/%@.bundle?platform=%@&dev=true",
-                                                                app,
-                                                                RCTPlatformName]];
+    scriptURL =
+        [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:8081/%@.bundle?platform=ios&dev=true", app]];
   } else {
     scriptURL = [[NSBundle bundleForClass:[RCTBridge class]] URLForResource:@"main" withExtension:@"jsbundle"];
   }

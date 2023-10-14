@@ -12,12 +12,10 @@ import type {TurboModule} from '../TurboModule/RCTExport';
 
 import * as TurboModuleRegistry from '../TurboModule/TurboModuleRegistry';
 
-export type AppStateConstants = {|
-  initialAppState: string,
-|};
-
 export interface Spec extends TurboModule {
-  +getConstants: () => AppStateConstants;
+  +getConstants: () => {|
+    initialAppState: string,
+  |};
   +getCurrentAppState: (
     success: (appState: {|app_state: string|}) => void,
     error: (error: Object) => void,
