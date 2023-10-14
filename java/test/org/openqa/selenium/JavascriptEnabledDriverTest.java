@@ -63,6 +63,7 @@ class JavascriptEnabledDriverTest extends JupiterTestBase {
   }
 
   @Test
+  @NotWorkingInRemoteBazelBuilds(value = CHROME)
   void testShouldWaitForLoadsToCompleteAfterJavascriptCausesANewPageToLoad() {
     driver.get(pages.formPage);
 

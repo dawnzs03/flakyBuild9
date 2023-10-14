@@ -17,14 +17,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# TODO: Deprecated; Delete after 4.0 release
 module Selenium
   module WebDriver
-    module Chrome
-      class Service < WebDriver::Service
-        DEFAULT_PORT = 9515
-        EXECUTABLE = 'chromedriver'
-        SHUTDOWN_SUPPORTED = true
-      end # Service
-    end # Chrome
+    module DriverExtensions
+      module HasNetworkConnection
+        def network_connection_type
+          raise Error::UnsupportedOperationError,
+                'The W3C standard does not currently support getting network connection'
+        end
+
+        def network_connection_type=(*)
+          raise Error::UnsupportedOperationError,
+                'The W3C standard does not currently support setting network connection'
+        end
+      end # HasNetworkConnection
+    end # DriverExtensions
   end # WebDriver
 end # Selenium
