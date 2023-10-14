@@ -7,11 +7,11 @@
 
 package com.facebook.react.modules.debug;
 
-import android.view.Choreographer;
 import androidx.annotation.Nullable;
 import com.facebook.infer.annotation.Assertions;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.UiThreadUtil;
+import com.facebook.react.modules.core.ChoreographerCompat;
 import com.facebook.react.uimanager.UIManagerModule;
 import java.util.Map;
 import java.util.TreeMap;
@@ -26,7 +26,7 @@ import java.util.TreeMap;
  * idle and not trying to update the UI. This is different from the FPS above since JS rendering is
  * async.
  */
-public class FpsDebugFrameCallback implements Choreographer.FrameCallback {
+public class FpsDebugFrameCallback extends ChoreographerCompat.FrameCallback {
 
   public static class FpsInfo {
 
@@ -58,7 +58,7 @@ public class FpsDebugFrameCallback implements Choreographer.FrameCallback {
 
   private static final double EXPECTED_FRAME_TIME = 16.9;
 
-  private @Nullable Choreographer mChoreographer;
+  private @Nullable ChoreographerCompat mChoreographer;
   private final ReactContext mReactContext;
   private final UIManagerModule mUIManagerModule;
   private final DidJSUpdateUiDuringFrameDetector mDidJSUpdateUiDuringFrameDetector;
@@ -113,7 +113,6 @@ public class FpsDebugFrameCallback implements Choreographer.FrameCallback {
       mTimeToFps.put(System.currentTimeMillis(), info);
     }
     mExpectedNumFramesPrev = expectedNumFrames;
-
     if (mChoreographer != null) {
       mChoreographer.postFrameCallback(this);
     }
@@ -124,10 +123,14 @@ public class FpsDebugFrameCallback implements Choreographer.FrameCallback {
         .getCatalystInstance()
         .addBridgeIdleDebugListener(mDidJSUpdateUiDuringFrameDetector);
     mUIManagerModule.setViewHierarchyUpdateDebugListener(mDidJSUpdateUiDuringFrameDetector);
+    final FpsDebugFrameCallback fpsDebugFrameCallback = this;
     UiThreadUtil.runOnUiThread(
-        () -> {
-          mChoreographer = Choreographer.getInstance();
-          mChoreographer.postFrameCallback(this);
+        new Runnable() {
+          @Override
+          public void run() {
+            mChoreographer = ChoreographerCompat.getInstance();
+            mChoreographer.postFrameCallback(fpsDebugFrameCallback);
+          }
         });
   }
 
@@ -142,10 +145,14 @@ public class FpsDebugFrameCallback implements Choreographer.FrameCallback {
         .getCatalystInstance()
         .removeBridgeIdleDebugListener(mDidJSUpdateUiDuringFrameDetector);
     mUIManagerModule.setViewHierarchyUpdateDebugListener(null);
+    final FpsDebugFrameCallback fpsDebugFrameCallback = this;
     UiThreadUtil.runOnUiThread(
-        () -> {
-          mChoreographer = Choreographer.getInstance();
-          mChoreographer.removeFrameCallback(this);
+        new Runnable() {
+          @Override
+          public void run() {
+            mChoreographer = ChoreographerCompat.getInstance();
+            mChoreographer.removeFrameCallback(fpsDebugFrameCallback);
+          }
         });
   }
 

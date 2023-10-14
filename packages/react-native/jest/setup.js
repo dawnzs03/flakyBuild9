@@ -198,8 +198,6 @@ jest
     addEventListener: jest.fn(() => ({
       remove: jest.fn(),
     })),
-    removeEventListener: jest.fn(),
-    currentState: jest.fn(),
   }))
   .mock('../Libraries/Linking/Linking', () => ({
     openURL: jest.fn(),

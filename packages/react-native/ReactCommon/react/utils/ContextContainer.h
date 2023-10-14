@@ -12,7 +12,8 @@
 #include <optional>
 #include <shared_mutex>
 #include <string>
-#include <unordered_map>
+
+#include <butter/map.h>
 
 #include <react/debug/flags.h>
 #include <react/debug/react_native_assert.h>
@@ -104,7 +105,7 @@ class ContextContainer final {
  private:
   mutable std::shared_mutex mutex_;
   // Protected by mutex_`.
-  mutable std::unordered_map<std::string, std::shared_ptr<void>> instances_;
+  mutable butter::map<std::string, std::shared_ptr<void>> instances_;
 };
 
 } // namespace facebook::react

@@ -8,12 +8,10 @@
 #pragma once
 
 #include <bitset>
-#include <cstdint>
 #include <cstdio>
-#include <type_traits>
+#include <cstdint>
 
 #include <yoga/YGEnums.h>
-#include <yoga/enums/YogaEnums.h>
 
 namespace facebook::yoga::details {
 
@@ -30,11 +28,11 @@ constexpr uint32_t mask(uint8_t bitWidth, uint8_t index) {
 namespace facebook::yoga {
 
 // The number of bits necessary to represent enums defined with YG_ENUM_SEQ_DECL
-template <
-    typename Enum,
-    std::enable_if_t<(ordinalCount<Enum>() > 0), bool> = true>
+template <typename Enum>
 constexpr uint8_t minimumBitCount() {
-  return details::log2ceilFn(ordinalCount<Enum>() - 1);
+  static_assert(
+      enums::count<Enum>() > 0, "Enums must have at least one entries");
+  return details::log2ceilFn(enums::count<Enum>() - 1);
 }
 
 template <typename Enum>
@@ -43,13 +41,12 @@ constexpr Enum getEnumData(uint32_t flags, uint8_t index) {
       (flags & details::mask(minimumBitCount<Enum>(), index)) >> index);
 }
 
-template <typename Enum, typename Value>
-void setEnumData(uint32_t& flags, uint8_t index, Value newValue) {
+template <typename Enum>
+void setEnumData(uint32_t& flags, uint8_t index, uint32_t newValue) {
   flags =
       (flags &
        ~static_cast<uint32_t>(details::mask(minimumBitCount<Enum>(), index))) |
-      ((static_cast<uint32_t>(newValue) << index) &
-       (details::mask(minimumBitCount<Enum>(), index)));
+      ((newValue << index) & (details::mask(minimumBitCount<Enum>(), index)));
 }
 
 constexpr bool getBooleanData(uint32_t flags, uint8_t index) {

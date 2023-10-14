@@ -10,6 +10,8 @@
 #include <memory>
 #include <shared_mutex>
 
+#include <butter/small_vector.h>
+
 #include <react/renderer/core/EventEmitter.h>
 #include <react/renderer/core/InstanceHandle.h>
 #include <react/renderer/core/ReactPrimitives.h>
@@ -47,9 +49,11 @@ class ShadowNodeFamily final {
   using Shared = std::shared_ptr<const ShadowNodeFamily>;
   using Weak = std::weak_ptr<const ShadowNodeFamily>;
 
-  using AncestorList = std::vector<std::pair<
-      std::reference_wrapper<const ShadowNode> /* parentNode */,
-      int /* childIndex */>>;
+  using AncestorList = butter::small_vector<
+      std::pair<
+          std::reference_wrapper<const ShadowNode> /* parentNode */,
+          int /* childIndex */>,
+      64>;
 
   ShadowNodeFamily(
       const ShadowNodeFamilyFragment& fragment,

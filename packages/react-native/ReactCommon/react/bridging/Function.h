@@ -29,27 +29,19 @@ class AsyncCallback {
             std::move(function),
             std::move(jsInvoker))) {}
 
+  AsyncCallback(const AsyncCallback&) = default;
+  AsyncCallback& operator=(const AsyncCallback&) = default;
+
   void operator()(Args... args) const {
     call(std::forward<Args>(args)...);
   }
 
   void call(Args... args) const {
-    callWithArgs(std::nullopt, std::forward<Args>(args)...);
+    callInternal(std::nullopt, std::forward<Args>(args)...);
   }
 
   void callWithPriority(SchedulerPriority priority, Args... args) const {
-    callWithArgs(priority, std::forward<Args>(args)...);
-  }
-
-  void call(
-      std::function<void(jsi::Runtime&, jsi::Function&)>&& callImpl) const {
-    callWithFunction(std::nullopt, std::move(callImpl));
-  }
-
-  void callWithPriority(
-      SchedulerPriority priority,
-      std::function<void(jsi::Runtime&, jsi::Function&)>&& callImpl) const {
-    callWithFunction(priority, std::move(callImpl));
+    callInternal(priority, std::forward<Args>(args)...);
   }
 
  private:
@@ -57,41 +49,22 @@ class AsyncCallback {
 
   std::shared_ptr<SyncCallback<void(Args...)>> callback_;
 
-  void callWithArgs(std::optional<SchedulerPriority> priority, Args... args)
+  void callInternal(std::optional<SchedulerPriority> priority, Args... args)
       const {
     auto wrapper = callback_->wrapper_.lock();
-    if (wrapper) {
-      auto& jsInvoker = wrapper->jsInvoker();
-      auto fn = [callback = callback_,
-                 argsPtr = std::make_shared<std::tuple<Args...>>(
-                     std::make_tuple(std::forward<Args>(args)...))] {
-        callback->apply(std::move(*argsPtr));
-      };
-
-      if (priority) {
-        jsInvoker.invokeAsync(*priority, std::move(fn));
-      } else {
-        jsInvoker.invokeAsync(std::move(fn));
-      }
+    if (!wrapper) {
+      throw std::runtime_error("Failed to call invalidated async callback");
     }
-  }
+    auto fn = [callback = callback_,
+               argsPtr = std::make_shared<std::tuple<Args...>>(
+                   std::make_tuple(std::forward<Args>(args)...))] {
+      callback->apply(std::move(*argsPtr));
+    };
 
-  void callWithFunction(
-      std::optional<SchedulerPriority> priority,
-      std::function<void(jsi::Runtime&, jsi::Function&)>&& callImpl) const {
-    auto wrapper = callback_->wrapper_.lock();
-    if (wrapper) {
-      auto& jsInvoker = wrapper->jsInvoker();
-      auto fn = [wrapper = std::move(wrapper),
-                 callImpl = std::move(callImpl)]() {
-        callImpl(wrapper->runtime(), wrapper->callback());
-      };
-
-      if (priority) {
-        jsInvoker.invokeAsync(*priority, std::move(fn));
-      } else {
-        jsInvoker.invokeAsync(std::move(fn));
-      }
+    if (priority) {
+      wrapper->jsInvoker().invokeAsync(*priority, std::move(fn));
+    } else {
+      wrapper->jsInvoker().invokeAsync(std::move(fn));
     }
   }
 };
@@ -124,15 +97,8 @@ class SyncCallback<R(Args...)> {
 
   R call(Args... args) const {
     auto wrapper = wrapper_.lock();
-
-    // If the wrapper has been deallocated, we can no longer provide a return
-    // value consistently, so our only option is to throw
     if (!wrapper) {
-      if constexpr (std::is_void_v<R>) {
-        return;
-      } else {
-        throw std::runtime_error("Failed to call invalidated sync callback");
-      }
+      throw std::runtime_error("Failed to call invalidated sync callback");
     }
 
     auto& callback = wrapper->callback();

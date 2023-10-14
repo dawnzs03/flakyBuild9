@@ -9,11 +9,10 @@ package com.facebook.react.testing.idledetection;
 
 import android.app.Instrumentation;
 import android.os.SystemClock;
-import android.view.Choreographer;
 import androidx.test.InstrumentationRegistry;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.UiThreadUtil;
-import com.facebook.react.modules.core.ReactChoreographer;
+import com.facebook.react.modules.core.ChoreographerCompat;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -49,24 +48,26 @@ public class ReactIdleDetectionUtil {
     final int waitFrameCount = 2;
     final CountDownLatch latch = new CountDownLatch(1);
     UiThreadUtil.runOnUiThread(
-        () -> {
-          ReactChoreographer choreographer = ReactChoreographer.getInstance();
-          choreographer.postFrameCallback(
-              ReactChoreographer.CallbackType.IDLE_EVENT,
-              new Choreographer.FrameCallback() {
-                private int frameCount = 0;
+        new Runnable() {
+          @Override
+          public void run() {
+            final ChoreographerCompat choreographerCompat = ChoreographerCompat.getInstance();
+            choreographerCompat.postFrameCallback(
+                new ChoreographerCompat.FrameCallback() {
 
-                @Override
-                public void doFrame(long frameTimeNanos) {
-                  frameCount++;
-                  if (frameCount == waitFrameCount) {
-                    latch.countDown();
-                  } else {
-                    choreographer.postFrameCallback(
-                        ReactChoreographer.CallbackType.IDLE_EVENT, this);
+                  private int frameCount = 0;
+
+                  @Override
+                  public void doFrame(long frameTimeNanos) {
+                    frameCount++;
+                    if (frameCount == waitFrameCount) {
+                      latch.countDown();
+                    } else {
+                      choreographerCompat.postFrameCallback(this);
+                    }
                   }
-                }
-              });
+                });
+          }
         });
     try {
       if (!latch.await(timeToWait, TimeUnit.MILLISECONDS)) {

@@ -8,8 +8,6 @@
 #include "Registration.h"
 #include "ConnectionDemux.h"
 
-#ifdef HERMES_ENABLE_DEBUGGER
-
 namespace facebook {
 namespace hermes {
 namespace inspector_modern {
@@ -39,5 +37,3 @@ void disableDebugging(DebugSessionToken session) {
 } // namespace inspector_modern
 } // namespace hermes
 } // namespace facebook
-
-#endif // HERMES_ENABLE_DEBUGGER

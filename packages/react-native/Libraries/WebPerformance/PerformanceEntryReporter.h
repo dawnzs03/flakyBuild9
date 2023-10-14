@@ -13,7 +13,6 @@
 #include <functional>
 #include <mutex>
 #include <optional>
-#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include "BoundedConsumableBuffer.h"
@@ -126,11 +125,11 @@ class PerformanceEntryReporter : public EventLogger {
 
   void clearEntries(
       PerformanceEntryType entryType = PerformanceEntryType::UNDEFINED,
-      std::string_view entryName = {});
+      const char* entryName = nullptr);
 
   std::vector<RawPerformanceEntry> getEntries(
       PerformanceEntryType entryType = PerformanceEntryType::UNDEFINED,
-      std::string_view entryName = {}) const;
+      const char* entryName = nullptr) const;
 
   void event(
       std::string name,
@@ -140,7 +139,7 @@ class PerformanceEntryReporter : public EventLogger {
       double processingEnd,
       uint32_t interactionId);
 
-  EventTag onEventStart(std::string_view name) override;
+  EventTag onEventStart(const char* name) override;
   void onEventDispatch(EventTag tag) override;
   void onEventEnd(EventTag tag) override;
 
@@ -155,14 +154,16 @@ class PerformanceEntryReporter : public EventLogger {
  private:
   std::optional<AsyncCallback<>> callback_;
 
-  mutable std::mutex entriesMutex_;
+  std::mutex entriesMutex_;
   std::array<PerformanceEntryBuffer, NUM_PERFORMANCE_ENTRY_TYPES> buffers_;
   std::unordered_map<std::string, uint32_t> eventCounts_;
 
+  // Mark registry for "measure" lookup
+  PerformanceEntryRegistryType marksRegistry_;
   uint32_t droppedEntryCount_{0};
 
   struct EventEntry {
-    std::string_view name;
+    const char* name;
     double startTime{0.0};
     double dispatchTime{0.0};
   };
@@ -172,11 +173,9 @@ class PerformanceEntryReporter : public EventLogger {
   // but since we only report discrete events, the volume is normally low,
   // so a hash map should be just fine.
   std::unordered_map<EventTag, EventEntry> eventsInFlight_;
-  mutable std::mutex eventsInFlightMutex_;
+  std::mutex eventsInFlightMutex_;
 
   std::function<double()> timeStampProvider_ = nullptr;
-
-  mutable std::mutex nameLookupMutex_;
 
   static EventTag sCurrentEventTag_;
 
@@ -187,7 +186,7 @@ class PerformanceEntryReporter : public EventLogger {
 
   void getEntries(
       PerformanceEntryType entryType,
-      std::string_view entryName,
+      const char* entryName,
       std::vector<RawPerformanceEntry>& res) const;
 
   double getCurrentTimeStamp() const;

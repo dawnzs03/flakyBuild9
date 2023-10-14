@@ -35,7 +35,6 @@ type IOSPlatform = {
       prerelease: ?number,
     |},
     systemName: string,
-    isMacCatalyst?: boolean,
   |},
   // $FlowFixMe[unsafe-getters-setters]
   get isPad(): boolean,
@@ -45,8 +44,6 @@ type IOSPlatform = {
   get isTesting(): boolean,
   // $FlowFixMe[unsafe-getters-setters]
   get isDisableAnimations(): boolean,
-  // $FlowFixMe[unsafe-getters-setters]
-  get isMacCatalyst(): boolean,
   select: <T>(spec: PlatformSelectSpec<T>) => T,
 };
 

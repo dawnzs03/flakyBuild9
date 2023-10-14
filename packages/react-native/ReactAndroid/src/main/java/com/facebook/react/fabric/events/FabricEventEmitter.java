@@ -51,7 +51,8 @@ public class FabricEventEmitter implements RCTModernEventEmitter {
         Systrace.TRACE_TAG_REACT_JAVA_BRIDGE,
         "FabricEventEmitter.receiveEvent('" + eventName + "')");
     try {
-      mUIManager.receiveEvent(surfaceId, reactTag, eventName, canCoalesceEvent, params, category);
+      mUIManager.receiveEvent(
+          surfaceId, reactTag, eventName, canCoalesceEvent, customCoalesceKey, params, category);
     } finally {
       Systrace.endSection(Systrace.TRACE_TAG_REACT_JAVA_BRIDGE);
     }

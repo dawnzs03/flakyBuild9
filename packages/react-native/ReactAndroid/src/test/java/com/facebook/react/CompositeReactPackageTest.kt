@@ -37,7 +37,6 @@ class CompositeReactPackageTest {
   }
 
   @Test
-  @Suppress("DEPRECATION")
   fun testThatCreateNativeModulesIsCalledOnAllPackages() {
     // Given
     val composite = CompositeReactPackage(packageNo1, packageNo2, packageNo3)
@@ -52,7 +51,6 @@ class CompositeReactPackageTest {
   }
 
   @Test
-  @Suppress("DEPRECATION")
   fun testThatCreateViewManagersIsCalledOnAllPackages() {
     // Given
     val composite = CompositeReactPackage(packageNo1, packageNo2, packageNo3)
@@ -67,7 +65,6 @@ class CompositeReactPackageTest {
   }
 
   @Test
-  @Suppress("DEPRECATION")
   fun testThatCompositeReturnsASumOfNativeModules() {
     // Given
     val composite = CompositeReactPackage(packageNo1, packageNo2)
@@ -98,7 +95,6 @@ class CompositeReactPackageTest {
   }
 
   @Test
-  @Suppress("DEPRECATION")
   fun testThatCompositeReturnsASumOfViewManagers() {
     // Given
     val composite = CompositeReactPackage(packageNo1, packageNo2)

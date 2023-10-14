@@ -15,7 +15,6 @@ const {verifyPropNotAlreadyDefined} = require('../../parsers-commons');
 import type {TypeDeclarationMap, PropAST, ASTNode} from '../../utils';
 import type {BuildSchemaFN, Parser} from '../../parser';
 
-// $FlowFixMe[unsupported-variance-annotation]
 function getTypeAnnotationForArray<+T>(
   name: string,
   typeAnnotation: $FlowFixMe,
@@ -207,7 +206,6 @@ function flattenProperties(
     .filter(Boolean);
 }
 
-// $FlowFixMe[unsupported-variance-annotation]
 function getTypeAnnotation<+T>(
   name: string,
   annotation: $FlowFixMe | ASTNode,

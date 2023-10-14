@@ -73,10 +73,7 @@ function getNpmInfo(buildType) {
 }
 
 function getPackageVersionStrByTag(packageName, tag) {
-  const npmString = tag
-    ? `npm view ${packageName}@${tag} version`
-    : `npm view ${packageName} version`;
-  const result = exec(npmString, {silent: true});
+  const result = exec(`npm view ${packageName}@${tag} version`, {silent: true});
 
   if (result.code) {
     throw new Error(`Failed to get ${tag} version from npm\n${result.stderr}`);

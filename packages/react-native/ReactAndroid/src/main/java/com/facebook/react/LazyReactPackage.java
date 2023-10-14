@@ -95,8 +95,11 @@ public abstract class LazyReactPackage implements ReactPackage {
   protected abstract List<ModuleSpec> getNativeModules(ReactApplicationContext reactContext);
 
   /**
+   * This is only used when a LazyReactPackage is a part of {@link CompositeReactPackage} Once we
+   * deprecate {@link CompositeReactPackage}, this can be removed too
+   *
    * @param reactContext react application context that can be used to create modules
-   * @return {@link List<NativeModule>} to register
+   * @return
    */
   @Override
   public final List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {

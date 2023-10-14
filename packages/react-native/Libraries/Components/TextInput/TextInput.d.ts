@@ -84,9 +84,6 @@ type DataDetectorTypes =
   | 'link'
   | 'address'
   | 'calendarEvent'
-  | 'trackingNumber'
-  | 'flightNumber'
-  | 'lookupSuggestion'
   | 'none'
   | 'all';
 
@@ -740,11 +737,6 @@ export interface TextInputProps
   onEndEditing?:
     | ((e: NativeSyntheticEvent<TextInputEndEditingEventData>) => void)
     | undefined;
-
-  /**
-   * Called when a single tap gesture is detected.
-   */
-  onPress?: ((e: NativeSyntheticEvent<NativeTouchEvent>) => void) | undefined;
 
   /**
    * Callback that is called when a touch is engaged.

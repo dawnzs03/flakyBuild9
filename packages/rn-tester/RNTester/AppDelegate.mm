@@ -18,15 +18,7 @@
 
 #if RCT_NEW_ARCH_ENABLED
 #import <NativeCxxModuleExample/NativeCxxModuleExample.h>
-#ifndef RN_DISABLE_OSS_PLUGIN_HEADER
 #import <RNTMyNativeViewComponentView.h>
-#endif
-#endif
-
-#if BUNDLE_PATH
-NSString *kBundlePath = @"xplat/js/RKJSModules/EntryPoints/RNTesterTestBundle.js";
-#else
-NSString *kBundlePath = @"js/RNTesterApp.ios";
 #endif
 
 @implementation AppDelegate
@@ -55,7 +47,7 @@ NSString *kBundlePath = @"js/RNTesterApp.ios";
 
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
 {
-  return [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:kBundlePath];
+  return [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"js/RNTesterApp.ios"];
 }
 
 - (BOOL)application:(UIApplication *)app
@@ -127,16 +119,14 @@ NSString *kBundlePath = @"js/RNTesterApp.ios";
 #pragma mark - RCTComponentViewFactoryComponentProvider
 
 #if RCT_NEW_ARCH_ENABLED
-#ifndef RN_DISABLE_OSS_PLUGIN_HEADER
 - (nonnull NSDictionary<NSString *, Class<RCTComponentViewProtocol>> *)thirdPartyFabricComponents
 {
   return @{@"RNTMyNativeView" : RNTMyNativeViewComponentView.class};
 }
-#endif
 
 - (NSURL *)getBundleURL
 {
-  return [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:kBundlePath];
+  return [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"js/RNTesterApp.ios"];
 }
 #endif
 

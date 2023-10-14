@@ -92,6 +92,11 @@ RCT_EXPORT_MODULE()
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
+- (dispatch_queue_t)methodQueue
+{
+  return dispatch_get_main_queue();
+}
+
 - (void)emitEvent:(NSString *)eventName forNotification:(NSNotification *)notification
 {
   CGRect frame = [notification.userInfo[UIApplicationStatusBarFrameUserInfoKey] CGRectValue];
@@ -125,41 +130,35 @@ RCT_EXPORT_METHOD(getHeight : (RCTResponseSenderBlock)callback)
 
 RCT_EXPORT_METHOD(setStyle : (NSString *)style animated : (BOOL)animated)
 {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    UIStatusBarStyle statusBarStyle = [RCTConvert UIStatusBarStyle:style];
-    if (RCTViewControllerBasedStatusBarAppearance()) {
-      RCTLogError(@"RCTStatusBarManager module requires that the \
+  UIStatusBarStyle statusBarStyle = [RCTConvert UIStatusBarStyle:style];
+  if (RCTViewControllerBasedStatusBarAppearance()) {
+    RCTLogError(@"RCTStatusBarManager module requires that the \
                 UIViewControllerBasedStatusBarAppearance key in the Info.plist is set to NO");
-    } else {
+  } else {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-      [RCTSharedApplication() setStatusBarStyle:statusBarStyle animated:animated];
-    }
+    [RCTSharedApplication() setStatusBarStyle:statusBarStyle animated:animated];
+  }
 #pragma clang diagnostic pop
-  });
 }
 
 RCT_EXPORT_METHOD(setHidden : (BOOL)hidden withAnimation : (NSString *)withAnimation)
 {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    UIStatusBarAnimation animation = [RCTConvert UIStatusBarAnimation:withAnimation];
-    if (RCTViewControllerBasedStatusBarAppearance()) {
-      RCTLogError(@"RCTStatusBarManager module requires that the \
+  UIStatusBarAnimation animation = [RCTConvert UIStatusBarAnimation:withAnimation];
+  if (RCTViewControllerBasedStatusBarAppearance()) {
+    RCTLogError(@"RCTStatusBarManager module requires that the \
                 UIViewControllerBasedStatusBarAppearance key in the Info.plist is set to NO");
-    } else {
+  } else {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-      [RCTSharedApplication() setStatusBarHidden:hidden withAnimation:animation];
+    [RCTSharedApplication() setStatusBarHidden:hidden withAnimation:animation];
 #pragma clang diagnostic pop
-    }
-  });
+  }
 }
 
 RCT_EXPORT_METHOD(setNetworkActivityIndicatorVisible : (BOOL)visible)
 {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    RCTSharedApplication().networkActivityIndicatorVisible = visible;
-  });
+  RCTSharedApplication().networkActivityIndicatorVisible = visible;
 }
 
 - (facebook::react::ModuleConstants<JS::NativeStatusBarManagerIOS::Constants>)getConstants

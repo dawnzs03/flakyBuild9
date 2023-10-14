@@ -45,15 +45,28 @@ const yargs = require('yargs');
 
 if (require.main === module) {
   const argv = yargs
-    .option('t', {
-      alias: 'builtType',
-      describe: 'The type of build you want to perform.',
-      choices: ['dry-run', 'nightly', 'release', 'prealpha'],
-      default: 'dry-run',
+    .option('n', {
+      alias: 'nightly',
+      type: 'boolean',
+      default: false,
+    })
+    .option('d', {
+      alias: 'dry-run',
+      type: 'boolean',
+      default: false,
+    })
+    .option('r', {
+      alias: 'release',
+      type: 'boolean',
+      default: false,
     })
     .strict().argv;
 
-  const buildType = argv.builtType;
+  const buildType = argv.release
+    ? 'release'
+    : argv.nightly
+    ? 'nightly'
+    : 'dry-run';
 
   publishNpm(buildType);
 }
@@ -80,6 +93,10 @@ function publishNpm(buildType) {
   }
 
   generateAndroidArtifacts(version);
+
+  // Write version number to the build folder
+  const versionFile = path.join('build', '.version');
+  fs.writeFileSync(versionFile, version);
 
   if (buildType === 'dry-run') {
     echo('Skipping `npm publish` because --dry-run is set.');

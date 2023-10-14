@@ -195,7 +195,7 @@ public class UIManagerModule extends ReactContextBaseJavaModule
   }
 
   @Override
-  public void invalidate() {
+  public void onCatalystInstanceDestroy() {
     super.onCatalystInstanceDestroy();
     mEventDispatcher.onCatalystInstanceDestroyed();
     mUIImplementation.onCatalystInstanceDestroyed();

@@ -34,10 +34,4 @@ interface TurboModuleRegistry {
    * NativeModules.
    */
   val eagerInitModuleNames: List<String>
-
-  /**
-   * Called during the turn down process of ReactHost. This method is called before React Native is
-   * stopped.
-   */
-  fun invalidate()
 }

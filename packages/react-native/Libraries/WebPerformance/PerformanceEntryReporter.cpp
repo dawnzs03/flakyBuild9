@@ -111,7 +111,6 @@ void PerformanceEntryReporter::logEntry(const RawPerformanceEntry& entry) {
   if (buffer.hasNameLookup) {
     auto overwriteCandidate = buffer.entries.getNextOverwriteCandidate();
     if (overwriteCandidate != nullptr) {
-      std::scoped_lock lock2(nameLookupMutex_);
       auto it = buffer.nameLookup.find(overwriteCandidate);
       if (it != buffer.nameLookup.end() && *it == overwriteCandidate) {
         buffer.nameLookup.erase(it);
@@ -129,7 +128,6 @@ void PerformanceEntryReporter::logEntry(const RawPerformanceEntry& entry) {
   }
 
   if (buffer.hasNameLookup) {
-    std::scoped_lock lock2(nameLookupMutex_);
     buffer.nameLookup.insert(&buffer.entries.back());
   }
 
@@ -155,7 +153,7 @@ void PerformanceEntryReporter::mark(
 
 void PerformanceEntryReporter::clearEntries(
     PerformanceEntryType entryType,
-    std::string_view entryName) {
+    const char* entryName) {
   if (entryType == PerformanceEntryType::UNDEFINED) {
     // Clear all entry types
     for (int i = 1; i < NUM_PERFORMANCE_ENTRY_TYPES; i++) {
@@ -163,11 +161,10 @@ void PerformanceEntryReporter::clearEntries(
     }
   } else {
     auto& buffer = getBuffer(entryType);
-    if (!entryName.empty()) {
+    if (entryName != nullptr) {
       if (buffer.hasNameLookup) {
-        std::scoped_lock lock2(nameLookupMutex_);
         RawPerformanceEntry entry{
-            std::string(entryName),
+            entryName,
             static_cast<int>(entryType),
             0.0,
             0.0,
@@ -176,27 +173,19 @@ void PerformanceEntryReporter::clearEntries(
             std::nullopt};
         buffer.nameLookup.erase(&entry);
       }
-
-      std::scoped_lock lock(entriesMutex_);
       buffer.entries.clear([entryName](const RawPerformanceEntry& entry) {
-        return entry.name == entryName;
+        return std::strcmp(entry.name.c_str(), entryName) == 0;
       });
     } else {
-      {
-        std::scoped_lock lock(entriesMutex_);
-        buffer.entries.clear();
-      }
-      {
-        std::scoped_lock lock2(nameLookupMutex_);
-        buffer.nameLookup.clear();
-      }
+      buffer.entries.clear();
+      buffer.nameLookup.clear();
     }
   }
 }
 
 void PerformanceEntryReporter::getEntries(
     PerformanceEntryType entryType,
-    std::string_view entryName,
+    const char* entryName,
     std::vector<RawPerformanceEntry>& res) const {
   if (entryType == PerformanceEntryType::UNDEFINED) {
     // Collect all entry types
@@ -204,13 +193,12 @@ void PerformanceEntryReporter::getEntries(
       getEntries(static_cast<PerformanceEntryType>(i), entryName, res);
     }
   } else {
-    std::scoped_lock lock(entriesMutex_);
     const auto& entries = getBuffer(entryType).entries;
-    if (entryName.empty()) {
+    if (entryName == nullptr) {
       entries.getEntries(res);
     } else {
       entries.getEntries(res, [entryName](const RawPerformanceEntry& entry) {
-        return entry.name == entryName;
+        return std::strcmp(entry.name.c_str(), entryName) == 0;
       });
     }
   }
@@ -218,7 +206,7 @@ void PerformanceEntryReporter::getEntries(
 
 std::vector<RawPerformanceEntry> PerformanceEntryReporter::getEntries(
     PerformanceEntryType entryType,
-    std::string_view entryName) const {
+    const char* entryName) const {
   std::vector<RawPerformanceEntry> res;
   getEntries(entryType, entryName, res);
   return res;
@@ -263,7 +251,6 @@ double PerformanceEntryReporter::getMarkTime(
       std::nullopt,
       std::nullopt};
 
-  std::scoped_lock lock(nameLookupMutex_);
   const auto& marksBuffer = getBuffer(PerformanceEntryType::MARK);
   auto it = marksBuffer.nameLookup.find(&mark);
   if (it != marksBuffer.nameLookup.end()) {
@@ -298,8 +285,7 @@ void PerformanceEntryReporter::scheduleFlushBuffer() {
 
 struct StrKey {
   uint32_t key;
-  StrKey(std::string_view s)
-      : key(folly::hash::fnv32_buf(s.data(), s.length())) {}
+  StrKey(const char* s) : key(folly::hash::fnv32_buf(s, std::strlen(s))) {}
 
   bool operator==(const StrKey& rhs) const {
     return key == rhs.key;
@@ -317,51 +303,51 @@ struct StrKeyHash {
 // Not all of these are currently supported by RN, but we map them anyway for
 // future-proofing.
 using SupportedEventTypeRegistry =
-    std::unordered_map<StrKey, std::string_view, StrKeyHash>;
+    std::unordered_map<StrKey, const char*, StrKeyHash>;
 
 static const SupportedEventTypeRegistry& getSupportedEvents() {
   static SupportedEventTypeRegistry SUPPORTED_EVENTS = {
-      {StrKey("topAuxClick"), "auxclick"},
-      {StrKey("topClick"), "click"},
-      {StrKey("topContextMenu"), "contextmenu"},
-      {StrKey("topDblClick"), "dblclick"},
-      {StrKey("topMouseDown"), "mousedown"},
-      {StrKey("topMouseEnter"), "mouseenter"},
-      {StrKey("topMouseLeave"), "mouseleave"},
-      {StrKey("topMouseOut"), "mouseout"},
-      {StrKey("topMouseOver"), "mouseover"},
-      {StrKey("topMouseUp"), "mouseup"},
-      {StrKey("topPointerOver"), "pointerover"},
-      {StrKey("topPointerEnter"), "pointerenter"},
-      {StrKey("topPointerDown"), "pointerdown"},
-      {StrKey("topPointerUp"), "pointerup"},
-      {StrKey("topPointerCancel"), "pointercancel"},
-      {StrKey("topPointerOut"), "pointerout"},
-      {StrKey("topPointerLeave"), "pointerleave"},
-      {StrKey("topGotPointerCapture"), "gotpointercapture"},
-      {StrKey("topLostPointerCapture"), "lostpointercapture"},
-      {StrKey("topTouchStart"), "touchstart"},
-      {StrKey("topTouchEnd"), "touchend"},
-      {StrKey("topTouchCancel"), "touchcancel"},
-      {StrKey("topKeyDown"), "keydown"},
-      {StrKey("topKeyPress"), "keypress"},
-      {StrKey("topKeyUp"), "keyup"},
-      {StrKey("topBeforeInput"), "beforeinput"},
-      {StrKey("topInput"), "input"},
-      {StrKey("topCompositionStart"), "compositionstart"},
-      {StrKey("topCompositionUpdate"), "compositionupdate"},
-      {StrKey("topCompositionEnd"), "compositionend"},
-      {StrKey("topDragStart"), "dragstart"},
-      {StrKey("topDragEnd"), "dragend"},
-      {StrKey("topDragEnter"), "dragenter"},
-      {StrKey("topDragLeave"), "dragleave"},
-      {StrKey("topDragOver"), "dragover"},
-      {StrKey("topDrop"), "drop"},
+      {"topAuxClick", "auxclick"},
+      {"topClick", "click"},
+      {"topContextMenu", "contextmenu"},
+      {"topDblClick", "dblclick"},
+      {"topMouseDown", "mousedown"},
+      {"topMouseEnter", "mouseenter"},
+      {"topMouseLeave", "mouseleave"},
+      {"topMouseOut", "mouseout"},
+      {"topMouseOver", "mouseover"},
+      {"topMouseUp", "mouseup"},
+      {"topPointerOver", "pointerover"},
+      {"topPointerEnter", "pointerenter"},
+      {"topPointerDown", "pointerdown"},
+      {"topPointerUp", "pointerup"},
+      {"topPointerCancel", "pointercancel"},
+      {"topPointerOut", "pointerout"},
+      {"topPointerLeave", "pointerleave"},
+      {"topGotPointerCapture", "gotpointercapture"},
+      {"topLostPointerCapture", "lostpointercapture"},
+      {"topTouchStart", "touchstart"},
+      {"topTouchEnd", "touchend"},
+      {"topTouchCancel", "touchcancel"},
+      {"topKeyDown", "keydown"},
+      {"topKeyPress", "keypress"},
+      {"topKeyUp", "keyup"},
+      {"topBeforeInput", "beforeinput"},
+      {"topInput", "input"},
+      {"topCompositionStart", "compositionstart"},
+      {"topCompositionUpdate", "compositionupdate"},
+      {"topCompositionEnd", "compositionend"},
+      {"topDragStart", "dragstart"},
+      {"topDragEnd", "dragend"},
+      {"topDragEnter", "dragenter"},
+      {"topDragLeave", "dragleave"},
+      {"topDragOver", "dragover"},
+      {"topDrop", "drop"},
   };
   return SUPPORTED_EVENTS;
 }
 
-EventTag PerformanceEntryReporter::onEventStart(std::string_view name) {
+EventTag PerformanceEntryReporter::onEventStart(const char* name) {
   if (!isReporting(PerformanceEntryType::EVENT)) {
     return 0;
   }
@@ -371,7 +357,7 @@ EventTag PerformanceEntryReporter::onEventStart(std::string_view name) {
     return 0;
   }
 
-  auto reportedName = it->second;
+  const char* reportedName = it->second;
 
   sCurrentEventTag_++;
   if (sCurrentEventTag_ == 0) {
@@ -420,7 +406,7 @@ void PerformanceEntryReporter::onEventEnd(EventTag tag) {
     // (T141358175)
     const uint32_t interactionId = 0;
     event(
-        std::string(name),
+        name,
         entry.startTime,
         timeStamp - entry.startTime,
         entry.dispatchTime,

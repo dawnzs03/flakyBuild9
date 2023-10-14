@@ -42,8 +42,18 @@ public abstract class ReactPackageTurboModuleManagerDelegate extends TurboModule
       mShouldEnableLegacyModuleInterop
           && ReactFeatureFlags.unstable_useTurboModuleInteropForAllTurboModules;
 
-  protected ReactPackageTurboModuleManagerDelegate() {
-    super();
+  @Override
+  public boolean unstable_shouldEnableLegacyModuleInterop() {
+    return mShouldEnableLegacyModuleInterop;
+  }
+
+  @Override
+  public boolean unstable_shouldRouteTurboModulesThroughLegacyModuleInterop() {
+    return mShouldRouteTurboModulesThroughLegacyModuleInterop;
+  }
+
+  private boolean shouldSupportLegacyPackages() {
+    return unstable_shouldEnableLegacyModuleInterop();
   }
 
   protected ReactPackageTurboModuleManagerDelegate(
@@ -108,12 +118,14 @@ public abstract class ReactPackageTurboModuleManagerDelegate extends TurboModule
                       moduleClass.getName(),
                       reactModule.canOverrideExistingModule(),
                       true,
+                      reactModule.hasConstants(),
                       reactModule.isCxxModule(),
                       TurboModule.class.isAssignableFrom(moduleClass))
                   : new ReactModuleInfo(
                       moduleName,
                       moduleClass.getName(),
                       module.canOverrideExistingModule(),
+                      true,
                       true,
                       CxxModuleWrapper.class.isAssignableFrom(moduleClass),
                       TurboModule.class.isAssignableFrom(moduleClass));
@@ -128,16 +140,6 @@ public abstract class ReactPackageTurboModuleManagerDelegate extends TurboModule
         mPackageModuleInfos.put(moduleProvider, reactModuleInfoMap);
       }
     }
-  }
-
-  @Override
-  public boolean unstable_shouldEnableLegacyModuleInterop() {
-    return mShouldEnableLegacyModuleInterop;
-  }
-
-  @Override
-  public boolean unstable_shouldRouteTurboModulesThroughLegacyModuleInterop() {
-    return mShouldRouteTurboModulesThroughLegacyModuleInterop;
   }
 
   @Nullable
@@ -249,10 +251,6 @@ public abstract class ReactPackageTurboModuleManagerDelegate extends TurboModule
       }
     }
     return moduleNames;
-  }
-
-  private boolean shouldSupportLegacyPackages() {
-    return unstable_shouldEnableLegacyModuleInterop();
   }
 
   public abstract static class Builder {

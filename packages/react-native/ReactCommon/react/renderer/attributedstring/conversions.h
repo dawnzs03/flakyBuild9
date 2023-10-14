@@ -23,7 +23,6 @@
 #include <react/renderer/core/graphicsConversions.h>
 #include <react/renderer/core/propsConversions.h>
 #include <cmath>
-#include <unordered_map>
 
 #ifdef ANDROID
 #include <react/renderer/mapbuffer/MapBuffer.h>
@@ -748,7 +747,7 @@ inline void fromRawValue(
     const PropsParserContext& context,
     const RawValue& value,
     AttributedString::Range& result) {
-  auto map = (std::unordered_map<std::string, int>)value;
+  auto map = (butter::map<std::string, int>)value;
 
   auto start = map.find("start");
   if (start != map.end()) {

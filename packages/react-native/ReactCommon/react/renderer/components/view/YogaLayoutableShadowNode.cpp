@@ -26,8 +26,8 @@
 namespace facebook::react {
 
 static int FabricDefaultYogaLog(
-    const YGConfigConstRef /*unused*/,
-    const YGNodeConstRef /*unused*/,
+    const YGConfigRef /*unused*/,
+    const YGNodeRef /*unused*/,
     YGLogLevel level,
     const char* format,
     va_list args) {
@@ -123,9 +123,9 @@ YogaLayoutableShadowNode::YogaLayoutableShadowNode(
     }
   }
 
-  YGConfigConstRef previousConfig =
+  YGConfigRef previousConfig = YGNodeGetConfig(
       &static_cast<const YogaLayoutableShadowNode&>(sourceShadowNode)
-           .yogaConfig_;
+           .yogaNode_);
 
   yogaNode_.setContext(this);
   yogaNode_.setOwner(nullptr);
@@ -190,7 +190,9 @@ void YogaLayoutableShadowNode::appendYogaChild(
   ensureYogaChildrenLookFine();
 
   yogaLayoutableChildren_.push_back(childNode);
-  yogaNode_.insertChild(&childNode->yogaNode_, yogaNode_.getChildren().size());
+  yogaNode_.insertChild(
+      &childNode->yogaNode_,
+      static_cast<uint32_t>(yogaNode_.getChildren().size()));
 
   ensureYogaChildrenLookFine();
 }
@@ -217,7 +219,7 @@ void YogaLayoutableShadowNode::adoptYogaChild(size_t index) {
     auto clonedChildNode = childNode.clone({});
 
     // Replace the child node with a newly cloned one in the children list.
-    replaceChild(childNode, clonedChildNode, static_cast<int32_t>(index));
+    replaceChild(childNode, clonedChildNode, static_cast<int>(index));
   }
 
   ensureYogaChildrenLookFine();
@@ -511,7 +513,7 @@ YGErrata YogaLayoutableShadowNode::resolveErrata(YGErrata defaultErrata) const {
 }
 
 YogaLayoutableShadowNode& YogaLayoutableShadowNode::cloneChildInPlace(
-    size_t layoutableChildIndex) {
+    int32_t layoutableChildIndex) {
   ensureUnsealed();
 
   const auto& childNode = *yogaLayoutableChildren_[layoutableChildIndex];
@@ -523,8 +525,7 @@ YogaLayoutableShadowNode& YogaLayoutableShadowNode::cloneChildInPlace(
        ShadowNodeFragment::childrenPlaceholder(),
        childNode.getState()});
 
-  replaceChild(
-      childNode, clonedChildNode, static_cast<int32_t>(layoutableChildIndex));
+  replaceChild(childNode, clonedChildNode, layoutableChildIndex);
   return static_cast<YogaLayoutableShadowNode&>(*clonedChildNode);
 }
 
@@ -532,12 +533,8 @@ void YogaLayoutableShadowNode::setSize(Size size) const {
   ensureUnsealed();
 
   auto style = yogaNode_.getStyle();
-  style.setDimension(
-      yoga::Dimension::Width,
-      yoga::CompactValue::ofMaybe<YGUnitPoint>(size.width));
-  style.setDimension(
-      yoga::Dimension::Height,
-      yoga::CompactValue::ofMaybe<YGUnitPoint>(size.height));
+  style.dimensions()[YGDimensionWidth] = yogaStyleValueFromFloat(size.width);
+  style.dimensions()[YGDimensionHeight] = yogaStyleValueFromFloat(size.height);
   yogaNode_.setStyle(style);
   yogaNode_.setDirty(true);
 }
@@ -547,23 +544,19 @@ void YogaLayoutableShadowNode::setPadding(RectangleEdges<Float> padding) const {
 
   auto style = yogaNode_.getStyle();
 
-  auto leftPadding = yoga::CompactValue::ofMaybe<YGUnitPoint>(padding.left);
-  auto topPadding = yoga::CompactValue::ofMaybe<YGUnitPoint>(padding.top);
-  auto rightPadding = yoga::CompactValue::ofMaybe<YGUnitPoint>(padding.right);
-  auto bottomPadding = yoga::CompactValue::ofMaybe<YGUnitPoint>(padding.bottom);
+  auto leftPadding = yogaStyleValueFromFloat(padding.left);
+  auto topPadding = yogaStyleValueFromFloat(padding.top);
+  auto rightPadding = yogaStyleValueFromFloat(padding.right);
+  auto bottomPadding = yogaStyleValueFromFloat(padding.bottom);
 
   if (leftPadding != style.padding()[YGEdgeLeft] ||
       topPadding != style.padding()[YGEdgeTop] ||
       rightPadding != style.padding()[YGEdgeRight] ||
       bottomPadding != style.padding()[YGEdgeBottom]) {
-    style.padding()[YGEdgeTop] =
-        yoga::CompactValue::ofMaybe<YGUnitPoint>(padding.top);
-    style.padding()[YGEdgeLeft] =
-        yoga::CompactValue::ofMaybe<YGUnitPoint>(padding.left);
-    style.padding()[YGEdgeRight] =
-        yoga::CompactValue::ofMaybe<YGUnitPoint>(padding.right);
-    style.padding()[YGEdgeBottom] =
-        yoga::CompactValue::ofMaybe<YGUnitPoint>(padding.bottom);
+    style.padding()[YGEdgeTop] = yogaStyleValueFromFloat(padding.top);
+    style.padding()[YGEdgeLeft] = yogaStyleValueFromFloat(padding.left);
+    style.padding()[YGEdgeRight] = yogaStyleValueFromFloat(padding.right);
+    style.padding()[YGEdgeBottom] = yogaStyleValueFromFloat(padding.bottom);
     yogaNode_.setStyle(style);
     yogaNode_.setDirty(true);
   }
@@ -574,7 +567,7 @@ void YogaLayoutableShadowNode::setPositionType(
   ensureUnsealed();
 
   auto style = yogaNode_.getStyle();
-  style.positionType() = yoga::scopedEnum(positionType);
+  style.positionType() = positionType;
   yogaNode_.setStyle(style);
   yogaNode_.setDirty(true);
 }
@@ -632,21 +625,22 @@ void YogaLayoutableShadowNode::layoutTree(
   auto ownerWidth = yogaFloatFromFloat(maximumSize.width);
   auto ownerHeight = yogaFloatFromFloat(maximumSize.height);
 
-  yogaStyle.setMaxDimension(
-      yoga::Dimension::Width,
-      yoga::CompactValue::ofMaybe<YGUnitPoint>(maximumSize.width));
+  yogaStyle.maxDimensions()[YGDimensionWidth] = std::isfinite(maximumSize.width)
+      ? yogaStyleValueFromFloat(maximumSize.width)
+      : YGValueUndefined;
 
-  yogaStyle.setMaxDimension(
-      yoga::Dimension::Height,
-      yoga::CompactValue::ofMaybe<YGUnitPoint>(maximumSize.height));
+  yogaStyle.maxDimensions()[YGDimensionHeight] =
+      std::isfinite(maximumSize.height)
+      ? yogaStyleValueFromFloat(maximumSize.height)
+      : YGValueUndefined;
 
-  yogaStyle.setMinDimension(
-      yoga::Dimension::Width,
-      yoga::CompactValue::ofMaybe<YGUnitPoint>(minimumSize.width));
+  yogaStyle.minDimensions()[YGDimensionWidth] = minimumSize.width > 0
+      ? yogaStyleValueFromFloat(minimumSize.width)
+      : YGValueUndefined;
 
-  yogaStyle.setMinDimension(
-      yoga::Dimension::Height,
-      yoga::CompactValue::ofMaybe<YGUnitPoint>(minimumSize.height));
+  yogaStyle.minDimensions()[YGDimensionHeight] = minimumSize.height > 0
+      ? yogaStyleValueFromFloat(minimumSize.height)
+      : YGValueUndefined;
 
   auto direction =
       yogaDirectionFromLayoutDirection(layoutConstraints.layoutDirection);
@@ -732,7 +726,7 @@ void YogaLayoutableShadowNode::layout(LayoutContext layoutContext) {
     }
   }
 
-  if (yogaNode_.getStyle().overflow() == yoga::Overflow::Visible) {
+  if (yogaNode_.getStyle().overflow() == YGOverflowVisible) {
     // Note that the parent node's overflow layout is NOT affected by its
     // transform matrix. That transform matrix is applied on the parent node as
     // well as all of its child nodes, which won't cause changes on the
@@ -793,10 +787,10 @@ Rect YogaLayoutableShadowNode::getContentBounds() const {
 
 #pragma mark - Yoga Connectors
 
-YGNodeRef YogaLayoutableShadowNode::yogaNodeCloneCallbackConnector(
-    YGNodeConstRef /*oldYogaNode*/,
-    YGNodeConstRef parentYogaNode,
-    size_t childIndex) {
+YGNode* YogaLayoutableShadowNode::yogaNodeCloneCallbackConnector(
+    YGNode* /*oldYogaNode*/,
+    YGNode* parentYogaNode,
+    int childIndex) {
   SystraceSection s("YogaLayoutableShadowNode::yogaNodeCloneCallbackConnector");
 
   auto& parentNode = shadowNodeFromContext(parentYogaNode);
@@ -804,7 +798,7 @@ YGNodeRef YogaLayoutableShadowNode::yogaNodeCloneCallbackConnector(
 }
 
 YGSize YogaLayoutableShadowNode::yogaNodeMeasureCallbackConnector(
-    YGNodeConstRef yogaNode,
+    YGNode* yogaNode,
     float width,
     YGMeasureMode widthMode,
     float height,
@@ -851,14 +845,14 @@ YGSize YogaLayoutableShadowNode::yogaNodeMeasureCallbackConnector(
 }
 
 YogaLayoutableShadowNode& YogaLayoutableShadowNode::shadowNodeFromContext(
-    YGNodeConstRef yogaNode) {
+    YGNodeRef yogaNode) {
   return traitCast<YogaLayoutableShadowNode&>(
       *static_cast<ShadowNode*>(YGNodeGetContext(yogaNode)));
 }
 
 yoga::Config& YogaLayoutableShadowNode::initializeYogaConfig(
     yoga::Config& config,
-    YGConfigConstRef previousConfig) {
+    const YGConfigRef previousConfig) {
   YGConfigSetCloneNodeFunc(
       &config, YogaLayoutableShadowNode::yogaNodeCloneCallbackConnector);
   if (previousConfig != nullptr) {

@@ -12,6 +12,7 @@
 #include <memory>
 #include <vector>
 
+#include <butter/small_vector.h>
 #include <react/debug/react_native_assert.h>
 #include <react/renderer/core/LayoutMetrics.h>
 #include <react/renderer/core/ShadowNode.h>
@@ -48,7 +49,8 @@ class LayoutableShadowNode : public ShadowNode {
     bool enableOverflowClipping{false};
   };
 
-  using UnsharedList = std::vector<LayoutableShadowNode*>;
+  using UnsharedList = butter::
+      small_vector<LayoutableShadowNode*, kShadowNodeChildrenSmallVectorSize>;
 
   /*
    * Returns layout metrics of a node represented as `descendantNodeFamily`

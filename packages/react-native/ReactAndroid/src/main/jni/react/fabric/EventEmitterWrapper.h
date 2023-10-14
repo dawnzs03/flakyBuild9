@@ -28,7 +28,10 @@ class EventEmitterWrapper : public jni::HybridClass<EventEmitterWrapper> {
   SharedEventEmitter eventEmitter;
 
   void dispatchEvent(std::string eventName, NativeMap* params, int category);
-  void dispatchUniqueEvent(std::string eventName, NativeMap* params);
+  void dispatchUniqueEvent(
+      std::string eventName,
+      NativeMap* params,
+      int customCoalesceKey);
 };
 
 } // namespace facebook::react

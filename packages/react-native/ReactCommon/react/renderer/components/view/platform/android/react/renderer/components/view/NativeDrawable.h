@@ -10,7 +10,6 @@
 #include <react/debug/react_native_expect.h>
 #include <react/renderer/core/PropsParserContext.h>
 #include <react/renderer/graphics/Float.h>
-#include <unordered_map>
 
 namespace facebook::react {
 
@@ -59,7 +58,7 @@ static inline void fromRawValue(
     const PropsParserContext& /*context*/,
     const RawValue& rawValue,
     NativeDrawable& result) {
-  auto map = (std::unordered_map<std::string, RawValue>)rawValue;
+  auto map = (butter::map<std::string, RawValue>)rawValue;
 
   auto typeIterator = map.find("type");
   react_native_expect(

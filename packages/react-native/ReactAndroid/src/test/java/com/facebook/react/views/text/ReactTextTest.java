@@ -24,7 +24,6 @@ import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
 import android.text.style.StrikethroughSpan;
 import android.text.style.UnderlineSpan;
-import android.view.Choreographer;
 import android.widget.TextView;
 import com.facebook.react.ReactRootView;
 import com.facebook.react.bridge.Arguments;
@@ -32,6 +31,7 @@ import com.facebook.react.bridge.JavaOnlyArray;
 import com.facebook.react.bridge.JavaOnlyMap;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactTestHelper;
+import com.facebook.react.modules.core.ChoreographerCompat;
 import com.facebook.react.modules.core.ReactChoreographer;
 import com.facebook.react.uimanager.UIManagerModule;
 import com.facebook.react.uimanager.ViewManager;
@@ -57,7 +57,7 @@ public class ReactTextTest {
 
   private MockedStatic<Arguments> arguments;
   private MockedStatic<ReactChoreographer> reactCoreographer;
-  private ArrayList<Choreographer.FrameCallback> mPendingFrameCallbacks;
+  private ArrayList<ChoreographerCompat.FrameCallback> mPendingFrameCallbacks;
 
   @Before
   public void setUp() {
@@ -74,13 +74,14 @@ public class ReactTextTest {
               @Override
               public Object answer(InvocationOnMock invocation) throws Throwable {
                 mPendingFrameCallbacks.add(
-                    (Choreographer.FrameCallback) invocation.getArguments()[1]);
+                    (ChoreographerCompat.FrameCallback) invocation.getArguments()[1]);
                 return null;
               }
             })
         .when(uiDriverMock)
         .postFrameCallback(
-            any(ReactChoreographer.CallbackType.class), any(Choreographer.FrameCallback.class));
+            any(ReactChoreographer.CallbackType.class),
+            any(ChoreographerCompat.FrameCallback.class));
   }
 
   @Test
@@ -484,9 +485,10 @@ public class ReactTextTest {
   }
 
   private void executePendingFrameCallbacks() {
-    ArrayList<Choreographer.FrameCallback> callbacks = new ArrayList<>(mPendingFrameCallbacks);
+    ArrayList<ChoreographerCompat.FrameCallback> callbacks =
+        new ArrayList<>(mPendingFrameCallbacks);
     mPendingFrameCallbacks.clear();
-    for (Choreographer.FrameCallback frameCallback : callbacks) {
+    for (ChoreographerCompat.FrameCallback frameCallback : callbacks) {
       frameCallback.doFrame(0);
     }
   }

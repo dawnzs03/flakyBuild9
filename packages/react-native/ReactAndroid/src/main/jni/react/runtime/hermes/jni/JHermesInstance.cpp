@@ -22,10 +22,9 @@ void JHermesInstance::registerNatives() {
   });
 }
 
-std::unique_ptr<jsi::Runtime> JHermesInstance::createJSRuntime(
-    std::shared_ptr<MessageQueueThread> msgQueueThread) noexcept {
+std::unique_ptr<jsi::Runtime> JHermesInstance::createJSRuntime() noexcept {
   // TODO T105438175 Pass ReactNativeConfig to init Hermes with MobileConfig
-  return HermesInstance::createJSRuntime(nullptr, nullptr, msgQueueThread);
+  return HermesInstance::createJSRuntime();
 }
 
 } // namespace facebook::react

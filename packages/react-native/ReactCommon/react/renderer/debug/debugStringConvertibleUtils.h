@@ -27,8 +27,7 @@ debugStringConvertibleItem(std::string name, T value, T defaultValue = {}) {
     return nullptr;
   }
 
-  return std::make_shared<DebugStringConvertibleItem>(
-      name, facebook::react::toString(value));
+  return std::make_shared<DebugStringConvertibleItem>(name, toString(value));
 }
 
 template <typename T>

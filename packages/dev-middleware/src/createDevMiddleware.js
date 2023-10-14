@@ -25,39 +25,12 @@ import InspectorProxy from './inspector-proxy/InspectorProxy';
 import DefaultBrowserLauncher from './utils/DefaultBrowserLauncher';
 
 type Options = $ReadOnly<{
+  host: string,
+  port: number,
   projectRoot: string,
-
-  /**
-   * The base URL to the dev server, as addressible from the local developer
-   * machine. This is used in responses which return URLs to other endpoints,
-   * e.g. the debugger frontend and inspector proxy targets.
-   *
-   * Example: `'http://localhost:8081'`.
-   */
-  serverBaseUrl: string,
-
   logger?: Logger,
-
-  /**
-   * An interface for integrators to provide a custom implementation for
-   * opening URLs in a web browser.
-   *
-   * This is an unstable API with no semver guarantees.
-   */
   unstable_browserLauncher?: BrowserLauncher,
-
-  /**
-   * An interface for logging events.
-   *
-   * This is an unstable API with no semver guarantees.
-   */
   unstable_eventReporter?: EventReporter,
-
-  /**
-   * The set of experimental features to enable.
-   *
-   * This is an unstable API with no semver guarantees.
-   */
   unstable_experiments?: ExperimentsConfig,
 }>;
 
@@ -67,8 +40,9 @@ type DevMiddlewareAPI = $ReadOnly<{
 }>;
 
 export default function createDevMiddleware({
+  host,
+  port,
   projectRoot,
-  serverBaseUrl,
   logger,
   unstable_browserLauncher = DefaultBrowserLauncher,
   unstable_eventReporter,
@@ -78,7 +52,6 @@ export default function createDevMiddleware({
 
   const inspectorProxy = new InspectorProxy(
     projectRoot,
-    serverBaseUrl,
     unstable_eventReporter,
     experiments,
   );
@@ -87,12 +60,10 @@ export default function createDevMiddleware({
     .use(
       '/open-debugger',
       openDebuggerMiddleware({
-        serverBaseUrl,
-        inspectorProxy,
+        logger,
         browserLauncher: unstable_browserLauncher,
         eventReporter: unstable_eventReporter,
         experiments,
-        logger,
       }),
     )
     .use(
@@ -105,13 +76,14 @@ export default function createDevMiddleware({
 
   return {
     middleware,
-    websocketEndpoints: inspectorProxy.createWebSocketListeners(),
+    websocketEndpoints: inspectorProxy.createWebSocketListeners(
+      `${host}:${port}`,
+    ),
   };
 }
 
 function getExperiments(config: ExperimentsConfig): Experiments {
   return {
     enableCustomDebuggerFrontend: config.enableCustomDebuggerFrontend ?? false,
-    enableOpenDebuggerRedirect: config.enableOpenDebuggerRedirect ?? false,
   };
 }

@@ -61,7 +61,7 @@ JReactInstance::JReactInstance(
   jBindingsInstaller_ = jni::make_global(jBindingsInstaller);
 
   instance_ = std::make_unique<ReactInstance>(
-      jsEngineInstance->cthis()->createJSRuntime(sharedJSMessageQueueThread),
+      jsEngineInstance->cthis()->createJSRuntime(),
       sharedJSMessageQueueThread,
       timerManager,
       std::move(jsErrorHandlingFunc));

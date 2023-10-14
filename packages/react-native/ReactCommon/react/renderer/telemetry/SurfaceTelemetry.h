@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <butter/small_vector.h>
 #include <vector>
 
 #include <react/renderer/telemetry/TransactionTelemetry.h>
@@ -58,7 +59,9 @@ class SurfaceTelemetry final {
   int numberOfTextMeasurements_{};
   int lastRevisionNumber_{};
 
-  std::vector<TransactionTelemetry> recentTransactionTelemetries_{};
+  butter::
+      small_vector<TransactionTelemetry, kMaxNumberOfRecordedCommitTelemetries>
+          recentTransactionTelemetries_{};
 };
 
 } // namespace facebook::react

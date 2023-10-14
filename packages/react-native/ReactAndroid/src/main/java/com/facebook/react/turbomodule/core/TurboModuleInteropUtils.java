@@ -26,10 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-class TurboModuleInteropUtils {
-
-  static class MethodDescriptor {
-
+public class TurboModuleInteropUtils {
+  public static class MethodDescriptor {
     @DoNotStrip public final String methodName;
     @DoNotStrip public final String jniSignature;
     @DoNotStrip public final String jsiReturnKind;
@@ -43,9 +41,8 @@ class TurboModuleInteropUtils {
     }
   }
 
-  private static class ParsingException extends RuntimeException {
-
-    ParsingException(String moduleName, String message) {
+  public static class ParsingException extends RuntimeException {
+    public ParsingException(String moduleName, String message) {
       super(
           "Unable to parse @ReactMethod annotations from native module: "
               + moduleName
@@ -53,7 +50,7 @@ class TurboModuleInteropUtils {
               + message);
     }
 
-    ParsingException(String moduleName, String methodName, String message) {
+    public ParsingException(String moduleName, String methodName, String message) {
       super(
           "Unable to parse @ReactMethod annotation from native module method: "
               + moduleName
@@ -65,7 +62,7 @@ class TurboModuleInteropUtils {
     }
   }
 
-  static List<MethodDescriptor> getMethodDescriptorsFromModule(NativeModule module) {
+  public static List<MethodDescriptor> getMethodDescriptorsFromModule(NativeModule module) {
     final Method[] methods = getMethodsFromModule(module);
 
     List<MethodDescriptor> methodDescriptors = new ArrayList<>();
@@ -87,8 +84,8 @@ class TurboModuleInteropUtils {
 
       methodNames.add(methodName);
 
-      Class<?>[] paramClasses = method.getParameterTypes();
-      Class<?> returnType = method.getReturnType();
+      Class[] paramClasses = method.getParameterTypes();
+      Class returnType = method.getReturnType();
 
       if ("getConstants".equals(methodName)) {
         if (returnType != Map.class) {
@@ -121,22 +118,23 @@ class TurboModuleInteropUtils {
       // module.
       classForMethods = superClass;
     }
-    return classForMethods.getDeclaredMethods();
+    Method[] targetMethods = classForMethods.getDeclaredMethods();
+    return targetMethods;
   }
 
   private static String createJniSignature(
-      String moduleName, String methodName, Class<?>[] paramClasses, Class<?> returnClass) {
-    StringBuilder jniSignature = new StringBuilder("(");
-    for (Class<?> paramClass : paramClasses) {
-      jniSignature.append(convertParamClassToJniType(moduleName, methodName, paramClass));
+      String moduleName, String methodName, Class[] paramClasses, Class returnClass) {
+    String jniSignature = "(";
+    for (Class paramClass : paramClasses) {
+      jniSignature += convertParamClassToJniType(moduleName, methodName, paramClass);
     }
-    jniSignature.append(")");
-    jniSignature.append(convertReturnClassToJniType(moduleName, methodName, returnClass));
-    return jniSignature.toString();
+    jniSignature += ")";
+    jniSignature += convertReturnClassToJniType(moduleName, methodName, returnClass);
+    return jniSignature;
   }
 
   private static String convertParamClassToJniType(
-      String moduleName, String methodName, Class<?> paramClass) {
+      String moduleName, String methodName, Class paramClass) {
     if (paramClass == boolean.class) {
       return "Z";
     }
@@ -177,7 +175,7 @@ class TurboModuleInteropUtils {
   }
 
   private static String convertReturnClassToJniType(
-      String moduleName, String methodName, Class<?> returnClass) {
+      String moduleName, String methodName, Class returnClass) {
     if (returnClass == boolean.class) {
       return "Z";
     }
@@ -216,11 +214,11 @@ class TurboModuleInteropUtils {
             + returnClass.getCanonicalName());
   }
 
-  private static String convertClassToJniType(Class<?> cls) {
+  private static String convertClassToJniType(Class cls) {
     return 'L' + cls.getCanonicalName().replace('.', '/') + ';';
   }
 
-  private static int getJsArgCount(String moduleName, String methodName, Class<?>[] paramClasses) {
+  private static int getJsArgCount(String moduleName, String methodName, Class[] paramClasses) {
     for (int i = 0; i < paramClasses.length; i += 1) {
       if (paramClasses[i] == Promise.class) {
         if (i != (paramClasses.length - 1)) {
@@ -238,7 +236,7 @@ class TurboModuleInteropUtils {
   }
 
   private static String createJSIReturnKind(
-      String moduleName, String methodName, Class<?>[] paramClasses, Class<?> returnClass) {
+      String moduleName, String methodName, Class[] paramClasses, Class returnClass) {
     for (int i = 0; i < paramClasses.length; i += 1) {
       if (paramClasses[i] == Promise.class) {
         if (i != (paramClasses.length - 1)) {

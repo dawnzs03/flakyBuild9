@@ -13,6 +13,7 @@
 import type {RootTag} from '../Types/RootTagTypes';
 
 import {unstable_hasComponent} from '../NativeComponent/NativeComponentRegistryUnstable';
+import ReactNativeFeatureFlags from './ReactNativeFeatureFlags';
 
 let cachedConstants = null;
 
@@ -21,10 +22,6 @@ const errorMessageForMethod = (methodName: string): string =>
   methodName +
   "' is not available in the new React Native architecture.";
 
-function nativeViewConfigsInBridgelessModeEnabled(): boolean {
-  return global.RN$LegacyInterop_UIManager_getConstants !== undefined;
-}
-
 function getCachedConstants(): Object {
   if (!cachedConstants) {
     cachedConstants = global.RN$LegacyInterop_UIManager_getConstants();
@@ -32,9 +29,9 @@ function getCachedConstants(): Object {
   return cachedConstants;
 }
 
-const UIManagerJS: {[string]: $FlowFixMe} = {
+module.exports = {
   getViewManagerConfig: (viewManagerName: string): mixed => {
-    if (nativeViewConfigsInBridgelessModeEnabled()) {
+    if (ReactNativeFeatureFlags.enableNativeViewConfigsInBridgelessMode()) {
       return getCachedConstants()[viewManagerName];
     } else {
       console.error(
@@ -49,7 +46,7 @@ const UIManagerJS: {[string]: $FlowFixMe} = {
     return unstable_hasComponent(viewManagerName);
   },
   getConstants: (): Object => {
-    if (nativeViewConfigsInBridgelessModeEnabled()) {
+    if (ReactNativeFeatureFlags.enableNativeViewConfigsInBridgelessMode()) {
       return getCachedConstants();
     } else {
       console.error(errorMessageForMethod('getConstants'));
@@ -181,11 +178,3 @@ const UIManagerJS: {[string]: $FlowFixMe} = {
   dismissPopupMenu: (): void =>
     console.error(errorMessageForMethod('dismissPopupMenu')),
 };
-
-if (nativeViewConfigsInBridgelessModeEnabled()) {
-  Object.keys(getCachedConstants()).forEach(viewConfigName => {
-    UIManagerJS[viewConfigName] = getCachedConstants()[viewConfigName];
-  });
-}
-
-module.exports = UIManagerJS;

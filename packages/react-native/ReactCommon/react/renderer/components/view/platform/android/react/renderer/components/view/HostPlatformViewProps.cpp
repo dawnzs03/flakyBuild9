@@ -20,8 +20,9 @@ namespace facebook::react {
 HostPlatformViewProps::HostPlatformViewProps(
     const PropsParserContext& context,
     const HostPlatformViewProps& sourceProps,
-    const RawProps& rawProps)
-    : BaseViewProps(context, sourceProps, rawProps),
+    const RawProps& rawProps,
+    bool shouldSetRawProps)
+    : BaseViewProps(context, sourceProps, rawProps, shouldSetRawProps),
       elevation(
           CoreFeatures::enablePropIteratorSetter ? sourceProps.elevation
                                                  : convertRawProp(
@@ -121,7 +122,7 @@ void HostPlatformViewProps::setProp(
 
 bool HostPlatformViewProps::getProbablyMoreHorizontalThanVertical_DEPRECATED()
     const {
-  return yogaStyle.flexDirection() == yoga::FlexDirection::Row;
+  return yogaStyle.flexDirection() == YGFlexDirectionRow;
 }
 
 #if RN_DEBUG_STRING_CONVERTIBLE

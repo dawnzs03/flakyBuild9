@@ -15,29 +15,19 @@
 #include <yoga/Yoga.h>
 
 #include <yoga/bits/NumericBitfield.h>
-#include <yoga/enums/Align.h>
-#include <yoga/enums/Dimension.h>
-#include <yoga/enums/Direction.h>
-#include <yoga/enums/Display.h>
-#include <yoga/enums/FlexDirection.h>
-#include <yoga/enums/Gutter.h>
-#include <yoga/enums/Justify.h>
-#include <yoga/enums/Overflow.h>
-#include <yoga/enums/PositionType.h>
-#include <yoga/enums/Wrap.h>
 #include <yoga/numeric/FloatOptional.h>
 #include <yoga/style/CompactValue.h>
 
 namespace facebook::yoga {
 
-class YG_EXPORT Style {
+class YOGA_EXPORT Style {
   template <typename Enum>
-  using Values = std::array<CompactValue, ordinalCount<Enum>()>;
+  using Values = std::array<CompactValue, enums::count<Enum>()>;
 
- public:
-  using Dimensions = Values<Dimension>;
+public:
+  using Dimensions = Values<YGDimension>;
   using Edges = Values<YGEdge>;
-  using Gutters = Values<Gutter>;
+  using Gutters = Values<YGGutter>;
 
   static constexpr float DefaultFlexGrow = 0.0f;
   static constexpr float DefaultFlexShrink = 0.0f;
@@ -47,9 +37,7 @@ class YG_EXPORT Style {
   struct BitfieldRef {
     Style& style;
     uint8_t offset;
-    operator T() const {
-      return getEnumData<T>(style.flags, offset);
-    }
+    operator T() const { return getEnumData<T>(style.flags, offset); }
     BitfieldRef<T>& operator=(T x) {
       setEnumData<T>(style.flags, offset, x);
       return *this;
@@ -59,9 +47,7 @@ class YG_EXPORT Style {
   template <typename T, T Style::*Prop>
   struct Ref {
     Style& style;
-    operator T() const {
-      return style.*Prop;
-    }
+    operator T() const { return style.*Prop; }
     Ref<T, Prop>& operator=(T value) {
       style.*Prop = value;
       return *this;
@@ -73,12 +59,8 @@ class YG_EXPORT Style {
     struct Ref {
       Style& style;
       Idx idx;
-      operator CompactValue() const {
-        return (style.*Prop)[idx];
-      }
-      operator YGValue() const {
-        return (style.*Prop)[idx];
-      }
+      operator CompactValue() const { return (style.*Prop)[idx]; }
+      operator YGValue() const { return (style.*Prop)[idx]; }
       Ref& operator=(CompactValue value) {
         (style.*Prop)[idx] = value;
         return *this;
@@ -90,43 +72,37 @@ class YG_EXPORT Style {
       style.*Prop = values;
       return *this;
     }
-    operator const Values<Idx>&() const {
-      return style.*Prop;
-    }
-    Ref operator[](Idx idx) {
-      return {style, idx};
-    }
-    CompactValue operator[](Idx idx) const {
-      return (style.*Prop)[idx];
-    }
+    operator const Values<Idx>&() const { return style.*Prop; }
+    Ref operator[](Idx idx) { return {style, idx}; }
+    CompactValue operator[](Idx idx) const { return (style.*Prop)[idx]; }
   };
 
   Style() {
-    alignContent() = Align::FlexStart;
-    alignItems() = Align::Stretch;
+    alignContent() = YGAlignFlexStart;
+    alignItems() = YGAlignStretch;
   }
   ~Style() = default;
 
- private:
+private:
   static constexpr uint8_t directionOffset = 0;
   static constexpr uint8_t flexdirectionOffset =
-      directionOffset + minimumBitCount<Direction>();
+      directionOffset + minimumBitCount<YGDirection>();
   static constexpr uint8_t justifyContentOffset =
-      flexdirectionOffset + minimumBitCount<FlexDirection>();
+      flexdirectionOffset + minimumBitCount<YGFlexDirection>();
   static constexpr uint8_t alignContentOffset =
-      justifyContentOffset + minimumBitCount<Justify>();
+      justifyContentOffset + minimumBitCount<YGJustify>();
   static constexpr uint8_t alignItemsOffset =
-      alignContentOffset + minimumBitCount<Align>();
+      alignContentOffset + minimumBitCount<YGAlign>();
   static constexpr uint8_t alignSelfOffset =
-      alignItemsOffset + minimumBitCount<Align>();
+      alignItemsOffset + minimumBitCount<YGAlign>();
   static constexpr uint8_t positionTypeOffset =
-      alignSelfOffset + minimumBitCount<Align>();
+      alignSelfOffset + minimumBitCount<YGAlign>();
   static constexpr uint8_t flexWrapOffset =
-      positionTypeOffset + minimumBitCount<PositionType>();
+      positionTypeOffset + minimumBitCount<YGPositionType>();
   static constexpr uint8_t overflowOffset =
-      flexWrapOffset + minimumBitCount<Wrap>();
+      flexWrapOffset + minimumBitCount<YGWrap>();
   static constexpr uint8_t displayOffset =
-      overflowOffset + minimumBitCount<Overflow>();
+      overflowOffset + minimumBitCount<YGOverflow>();
 
   uint32_t flags = 0;
 
@@ -145,207 +121,111 @@ class YG_EXPORT Style {
   // Yoga specific properties, not compatible with flexbox specification
   FloatOptional aspectRatio_ = {};
 
- public:
+public:
   // for library users needing a type
   using ValueRepr = std::remove_reference<decltype(margin_[0])>::type;
 
-  Direction direction() const {
-    return getEnumData<Direction>(flags, directionOffset);
+  YGDirection direction() const {
+    return getEnumData<YGDirection>(flags, directionOffset);
   }
-  BitfieldRef<Direction> direction() {
-    return {*this, directionOffset};
-  }
+  BitfieldRef<YGDirection> direction() { return {*this, directionOffset}; }
 
-  FlexDirection flexDirection() const {
-    return getEnumData<FlexDirection>(flags, flexdirectionOffset);
+  YGFlexDirection flexDirection() const {
+    return getEnumData<YGFlexDirection>(flags, flexdirectionOffset);
   }
-  BitfieldRef<FlexDirection> flexDirection() {
+  BitfieldRef<YGFlexDirection> flexDirection() {
     return {*this, flexdirectionOffset};
   }
 
-  Justify justifyContent() const {
-    return getEnumData<Justify>(flags, justifyContentOffset);
+  YGJustify justifyContent() const {
+    return getEnumData<YGJustify>(flags, justifyContentOffset);
   }
-  BitfieldRef<Justify> justifyContent() {
+  BitfieldRef<YGJustify> justifyContent() {
     return {*this, justifyContentOffset};
   }
 
-  Align alignContent() const {
-    return getEnumData<Align>(flags, alignContentOffset);
+  YGAlign alignContent() const {
+    return getEnumData<YGAlign>(flags, alignContentOffset);
   }
-  BitfieldRef<Align> alignContent() {
-    return {*this, alignContentOffset};
-  }
+  BitfieldRef<YGAlign> alignContent() { return {*this, alignContentOffset}; }
 
-  Align alignItems() const {
-    return getEnumData<Align>(flags, alignItemsOffset);
+  YGAlign alignItems() const {
+    return getEnumData<YGAlign>(flags, alignItemsOffset);
   }
-  BitfieldRef<Align> alignItems() {
-    return {*this, alignItemsOffset};
-  }
+  BitfieldRef<YGAlign> alignItems() { return {*this, alignItemsOffset}; }
 
-  Align alignSelf() const {
-    return getEnumData<Align>(flags, alignSelfOffset);
+  YGAlign alignSelf() const {
+    return getEnumData<YGAlign>(flags, alignSelfOffset);
   }
-  BitfieldRef<Align> alignSelf() {
-    return {*this, alignSelfOffset};
-  }
+  BitfieldRef<YGAlign> alignSelf() { return {*this, alignSelfOffset}; }
 
-  PositionType positionType() const {
-    return getEnumData<PositionType>(flags, positionTypeOffset);
+  YGPositionType positionType() const {
+    return getEnumData<YGPositionType>(flags, positionTypeOffset);
   }
-  BitfieldRef<PositionType> positionType() {
+  BitfieldRef<YGPositionType> positionType() {
     return {*this, positionTypeOffset};
   }
 
-  Wrap flexWrap() const {
-    return getEnumData<Wrap>(flags, flexWrapOffset);
-  }
-  BitfieldRef<Wrap> flexWrap() {
-    return {*this, flexWrapOffset};
-  }
+  YGWrap flexWrap() const { return getEnumData<YGWrap>(flags, flexWrapOffset); }
+  BitfieldRef<YGWrap> flexWrap() { return {*this, flexWrapOffset}; }
 
-  Overflow overflow() const {
-    return getEnumData<Overflow>(flags, overflowOffset);
+  YGOverflow overflow() const {
+    return getEnumData<YGOverflow>(flags, overflowOffset);
   }
-  BitfieldRef<Overflow> overflow() {
-    return {*this, overflowOffset};
-  }
+  BitfieldRef<YGOverflow> overflow() { return {*this, overflowOffset}; }
 
-  Display display() const {
-    return getEnumData<Display>(flags, displayOffset);
+  YGDisplay display() const {
+    return getEnumData<YGDisplay>(flags, displayOffset);
   }
-  BitfieldRef<Display> display() {
-    return {*this, displayOffset};
-  }
+  BitfieldRef<YGDisplay> display() { return {*this, displayOffset}; }
 
-  FloatOptional flex() const {
-    return flex_;
-  }
-  Ref<FloatOptional, &Style::flex_> flex() {
+  FloatOptional flex() const { return flex_; }
+  Ref<FloatOptional, &Style::flex_> flex() { return {*this}; }
+
+  FloatOptional flexGrow() const { return flexGrow_; }
+  Ref<FloatOptional, &Style::flexGrow_> flexGrow() { return {*this}; }
+
+  FloatOptional flexShrink() const { return flexShrink_; }
+  Ref<FloatOptional, &Style::flexShrink_> flexShrink() { return {*this}; }
+
+  CompactValue flexBasis() const { return flexBasis_; }
+  Ref<CompactValue, &Style::flexBasis_> flexBasis() { return {*this}; }
+
+  const Edges& margin() const { return margin_; }
+  IdxRef<YGEdge, &Style::margin_> margin() { return {*this}; }
+
+  const Edges& position() const { return position_; }
+  IdxRef<YGEdge, &Style::position_> position() { return {*this}; }
+
+  const Edges& padding() const { return padding_; }
+  IdxRef<YGEdge, &Style::padding_> padding() { return {*this}; }
+
+  const Edges& border() const { return border_; }
+  IdxRef<YGEdge, &Style::border_> border() { return {*this}; }
+
+  const Gutters& gap() const { return gap_; }
+  IdxRef<YGGutter, &Style::gap_> gap() { return {*this}; }
+
+  const Dimensions& dimensions() const { return dimensions_; }
+  IdxRef<YGDimension, &Style::dimensions_> dimensions() { return {*this}; }
+
+  const Dimensions& minDimensions() const { return minDimensions_; }
+  IdxRef<YGDimension, &Style::minDimensions_> minDimensions() {
     return {*this};
   }
 
-  FloatOptional flexGrow() const {
-    return flexGrow_;
-  }
-  Ref<FloatOptional, &Style::flexGrow_> flexGrow() {
+  const Dimensions& maxDimensions() const { return maxDimensions_; }
+  IdxRef<YGDimension, &Style::maxDimensions_> maxDimensions() {
     return {*this};
-  }
-
-  FloatOptional flexShrink() const {
-    return flexShrink_;
-  }
-  Ref<FloatOptional, &Style::flexShrink_> flexShrink() {
-    return {*this};
-  }
-
-  CompactValue flexBasis() const {
-    return flexBasis_;
-  }
-  Ref<CompactValue, &Style::flexBasis_> flexBasis() {
-    return {*this};
-  }
-
-  const Edges& margin() const {
-    return margin_;
-  }
-  IdxRef<YGEdge, &Style::margin_> margin() {
-    return {*this};
-  }
-
-  const Edges& position() const {
-    return position_;
-  }
-  IdxRef<YGEdge, &Style::position_> position() {
-    return {*this};
-  }
-
-  const Edges& padding() const {
-    return padding_;
-  }
-  IdxRef<YGEdge, &Style::padding_> padding() {
-    return {*this};
-  }
-
-  const Edges& border() const {
-    return border_;
-  }
-  IdxRef<YGEdge, &Style::border_> border() {
-    return {*this};
-  }
-
-  CompactValue gap(Gutter gutter) const {
-    return gap_[yoga::to_underlying(gutter)];
-  }
-  void setGap(Gutter gutter, CompactValue value) {
-    gap_[yoga::to_underlying(gutter)] = value;
-  }
-
-  CompactValue dimension(Dimension axis) const {
-    return dimensions_[yoga::to_underlying(axis)];
-  }
-  void setDimension(Dimension axis, CompactValue value) {
-    dimensions_[yoga::to_underlying(axis)] = value;
-  }
-
-  CompactValue minDimension(Dimension axis) const {
-    return minDimensions_[yoga::to_underlying(axis)];
-  }
-  void setMinDimension(Dimension axis, CompactValue value) {
-    minDimensions_[yoga::to_underlying(axis)] = value;
-  }
-
-  CompactValue maxDimension(Dimension axis) const {
-    return maxDimensions_[yoga::to_underlying(axis)];
-  }
-  void setMaxDimension(Dimension axis, CompactValue value) {
-    maxDimensions_[yoga::to_underlying(axis)] = value;
   }
 
   // Yoga specific properties, not compatible with flexbox specification
-  FloatOptional aspectRatio() const {
-    return aspectRatio_;
-  }
-  Ref<FloatOptional, &Style::aspectRatio_> aspectRatio() {
-    return {*this};
-  }
-
-  CompactValue resolveColumnGap() const {
-    if (!gap_[yoga::to_underlying(Gutter::Column)].isUndefined()) {
-      return gap_[yoga::to_underlying(Gutter::Column)];
-    } else {
-      return gap_[yoga::to_underlying(Gutter::All)];
-    }
-  }
-
-  CompactValue resolveRowGap() const {
-    if (!gap_[yoga::to_underlying(Gutter::Row)].isUndefined()) {
-      return gap_[yoga::to_underlying(Gutter::Row)];
-    } else {
-      return gap_[yoga::to_underlying(Gutter::All)];
-    }
-  }
-
-  bool operator==(const Style& other) const {
-    return flags == other.flags && inexactEquals(flex_, other.flex_) &&
-        inexactEquals(flexGrow_, other.flexGrow_) &&
-        inexactEquals(flexShrink_, other.flexShrink_) &&
-        inexactEquals(flexBasis_, other.flexBasis_) &&
-        inexactEquals(margin_, other.margin_) &&
-        inexactEquals(position_, other.position_) &&
-        inexactEquals(padding_, other.padding_) &&
-        inexactEquals(border_, other.border_) &&
-        inexactEquals(gap_, other.gap_) &&
-        inexactEquals(dimensions_, other.dimensions_) &&
-        inexactEquals(minDimensions_, other.minDimensions_) &&
-        inexactEquals(maxDimensions_, other.maxDimensions_) &&
-        inexactEquals(aspectRatio_, other.aspectRatio_);
-  }
-
-  bool operator!=(const Style& other) const {
-    return !(*this == other);
-  }
+  FloatOptional aspectRatio() const { return aspectRatio_; }
+  Ref<FloatOptional, &Style::aspectRatio_> aspectRatio() { return {*this}; }
 };
 
+YOGA_EXPORT bool operator==(const Style& lhs, const Style& rhs);
+YOGA_EXPORT inline bool operator!=(const Style& lhs, const Style& rhs) {
+  return !(lhs == rhs);
+}
 } // namespace facebook::yoga

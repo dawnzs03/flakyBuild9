@@ -30,7 +30,9 @@ void EventEmitterWrapper::dispatchEvent(
 
 void EventEmitterWrapper::dispatchUniqueEvent(
     std::string eventName,
-    NativeMap* payload) {
+    NativeMap* payload,
+    int customCoalesceKey) {
+  // TODO: customCoalesceKey currently unused
   // It is marginal, but possible for this to be constructed without a valid
   // EventEmitter. In those cases, make sure we noop/blackhole events instead of
   // crashing.

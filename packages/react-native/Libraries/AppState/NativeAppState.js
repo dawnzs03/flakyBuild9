@@ -16,12 +16,10 @@ export type AppStateConstants = {|
   initialAppState: string,
 |};
 
-export type AppState = {|app_state: string|};
-
 export interface Spec extends TurboModule {
   +getConstants: () => AppStateConstants;
   +getCurrentAppState: (
-    success: (appState: AppState) => void,
+    success: (appState: {|app_state: string|}) => void,
     error: (error: Object) => void,
   ) => void;
 

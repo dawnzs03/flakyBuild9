@@ -9,6 +9,8 @@
 #include "DynamicPropsUtilities.h"
 #include "ShadowNodeFragment.h"
 
+#include <butter/small_vector.h>
+
 #include <react/debug/react_native_assert.h>
 #include <react/renderer/core/ComponentDescriptor.h>
 #include <react/renderer/core/ShadowNodeFragment.h>
@@ -278,20 +280,6 @@ void ShadowNode::setMounted(bool mounted) const {
   }
 
   family_->eventEmitter_->setEnabled(mounted);
-}
-
-void ShadowNode::progressStateIfNecessary() {
-  if (!hasBeenMounted_ && state_) {
-    ensureUnsealed();
-    auto mostRecentState = family_->getMostRecentStateIfObsolete(*state_);
-    if (mostRecentState) {
-      state_ = mostRecentState;
-      const auto& componentDescriptor = family_->componentDescriptor_;
-      // Must call ComponentDescriptor::adopt to trigger any side effect
-      // state may have. E.g. adjusting padding.
-      componentDescriptor.adopt(*this);
-    }
-  }
 }
 
 const ShadowNodeFamily& ShadowNode::getFamily() const {

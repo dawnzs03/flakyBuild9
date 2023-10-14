@@ -105,7 +105,6 @@ function wrapModuleSchema(
   };
 }
 
-// $FlowFixMe[unsupported-variance-annotation]
 function unwrapNullable<+T: NativeModuleTypeAnnotation>(
   x: Nullable<T>,
 ): [T, boolean] {
@@ -116,7 +115,6 @@ function unwrapNullable<+T: NativeModuleTypeAnnotation>(
   return [x, false];
 }
 
-// $FlowFixMe[unsupported-variance-annotation]
 function wrapNullable<+T: NativeModuleTypeAnnotation>(
   nullable: boolean,
   typeAnnotation: T,

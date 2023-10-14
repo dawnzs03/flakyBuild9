@@ -10,6 +10,9 @@
 #include <limits>
 #include <optional>
 
+#include <butter/map.h>
+#include <butter/small_vector.h>
+
 #include <folly/dynamic.h>
 #include <jsi/JSIDynamic.h>
 #include <jsi/jsi.h>
@@ -56,7 +59,7 @@ class RawProps final {
    * We need this temporary, only because we have a callsite that does not have
    * a `jsi::Runtime` behind the data.
    */
-  explicit RawProps(folly::dynamic dynamic) noexcept;
+  RawProps(const folly::dynamic& dynamic) noexcept;
 
   /*
    * Not moveable.
@@ -129,8 +132,12 @@ class RawProps final {
    * Parsed artefacts:
    * To be used by `RawPropParser`.
    */
-  mutable std::vector<RawPropsValueIndex> keyIndexToValueIndex_;
-  mutable std::vector<RawValue> values_;
+  mutable butter::
+      small_vector<RawPropsValueIndex, kNumberOfPropsPerComponentSoftCap>
+          keyIndexToValueIndex_;
+  mutable butter::
+      small_vector<RawValue, kNumberOfExplicitlySpecifiedPropsSoftCap>
+          values_;
 };
 
 } // namespace facebook::react

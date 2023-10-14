@@ -13,8 +13,7 @@ namespace react {
 
 RCTJscInstance::RCTJscInstance() {}
 
-std::unique_ptr<jsi::Runtime> RCTJscInstance::createJSRuntime(
-    std::shared_ptr<MessageQueueThread> msgQueueThread) noexcept
+std::unique_ptr<jsi::Runtime> RCTJscInstance::createJSRuntime() noexcept
 {
   return jsc::makeJSCRuntime();
 }

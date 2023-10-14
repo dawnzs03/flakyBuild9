@@ -57,7 +57,11 @@ NSString *RCTColorSchemePreference(UITraitCollection *traitCollection)
     return RCTAppearanceColorSchemeLight;
   }
 
+  traitCollection = traitCollection ?: [UITraitCollection currentTraitCollection];
   return appearances[@(traitCollection.userInterfaceStyle)] ?: RCTAppearanceColorSchemeLight;
+
+  // Default to light on older OS version - same behavior as Android.
+  return RCTAppearanceColorSchemeLight;
 }
 
 @interface RCTAppearance () <NativeAppearanceSpec>
@@ -65,19 +69,6 @@ NSString *RCTColorSchemePreference(UITraitCollection *traitCollection)
 
 @implementation RCTAppearance {
   NSString *_currentColorScheme;
-}
-
-- (instancetype)init
-{
-  if ((self = [super init])) {
-    UITraitCollection *traitCollection = RCTSharedApplication().delegate.window.traitCollection;
-    _currentColorScheme = RCTColorSchemePreference(traitCollection);
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(appearanceChanged:)
-                                                 name:RCTUserInterfaceStyleDidChangeNotification
-                                               object:nil];
-  }
-  return self;
 }
 
 RCT_EXPORT_MODULE(Appearance)
@@ -109,6 +100,9 @@ RCT_EXPORT_METHOD(setColorScheme : (NSString *)style)
 
 RCT_EXPORT_SYNCHRONOUS_TYPED_METHOD(NSString *, getColorScheme)
 {
+  if (_currentColorScheme == nil) {
+    _currentColorScheme = RCTColorSchemePreference(nil);
+  }
   return _currentColorScheme;
 }
 
@@ -135,15 +129,14 @@ RCT_EXPORT_SYNCHRONOUS_TYPED_METHOD(NSString *, getColorScheme)
 
 - (void)startObserving
 {
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(appearanceChanged:)
+                                               name:RCTUserInterfaceStyleDidChangeNotification
+                                             object:nil];
 }
 
 - (void)stopObserving
 {
-}
-
-- (void)invalidate
-{
-  [super invalidate];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 

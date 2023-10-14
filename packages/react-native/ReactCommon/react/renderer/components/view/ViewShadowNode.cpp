@@ -19,7 +19,11 @@ ViewShadowNodeProps::ViewShadowNodeProps(
     const PropsParserContext& context,
     const ViewShadowNodeProps& sourceProps,
     const RawProps& rawProps)
-    : ViewProps(context, sourceProps, rawProps){};
+    : ViewProps(
+          context,
+          sourceProps,
+          rawProps,
+          !CoreFeatures::enableMapBuffer){};
 
 ViewShadowNode::ViewShadowNode(
     const ShadowNodeFragment& fragment,
@@ -44,8 +48,8 @@ void ViewShadowNode::initialize() noexcept {
       !viewProps.nativeId.empty() || viewProps.accessible ||
       viewProps.opacity != 1.0 || viewProps.transform != Transform{} ||
       (viewProps.zIndex.has_value() &&
-       viewProps.yogaStyle.positionType() != yoga::PositionType::Static) ||
-      viewProps.yogaStyle.display() == yoga::Display::None ||
+       viewProps.yogaStyle.positionType() != YGPositionTypeStatic) ||
+      viewProps.yogaStyle.display() == YGDisplayNone ||
       viewProps.getClipsContentToBounds() || viewProps.events.bits.any() ||
       isColorMeaningful(viewProps.shadowColor) ||
       viewProps.accessibilityElementsHidden ||

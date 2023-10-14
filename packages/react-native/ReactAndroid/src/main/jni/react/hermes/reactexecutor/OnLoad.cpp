@@ -90,12 +90,17 @@ class HermesExecutorHolder
     return makeCxxInstance(std::move(factory));
   }
 
+  static bool canLoadFile(jni::alias_ref<jclass>, const std::string& path) {
+    return true;
+  }
+
   static void registerNatives() {
     registerHybrid(
         {makeNativeMethod("initHybrid", HermesExecutorHolder::initHybrid),
          makeNativeMethod(
              "initHybridDefaultConfig",
-             HermesExecutorHolder::initHybridDefaultConfig)});
+             HermesExecutorHolder::initHybridDefaultConfig),
+         makeNativeMethod("canLoadFile", HermesExecutorHolder::canLoadFile)});
   }
 
  private:

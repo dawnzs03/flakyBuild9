@@ -236,7 +236,7 @@ function Pressable(props: Props, forwardedRef): React.Node {
   } = props;
 
   const viewRef = useRef<React.ElementRef<typeof View> | null>(null);
-  const mergedRef = useMergeRefs(forwardedRef, viewRef);
+  useMergeRefs(forwardedRef, viewRef);
 
   const android_rippleConfig = useAndroidRippleForView(android_ripple, viewRef);
 
@@ -339,7 +339,7 @@ function Pressable(props: Props, forwardedRef): React.Node {
     <View
       {...restPropsWithDefaults}
       {...eventHandlers}
-      ref={mergedRef}
+      ref={viewRef}
       style={typeof style === 'function' ? style({pressed}) : style}
       collapsable={false}>
       {typeof children === 'function' ? children({pressed}) : children}

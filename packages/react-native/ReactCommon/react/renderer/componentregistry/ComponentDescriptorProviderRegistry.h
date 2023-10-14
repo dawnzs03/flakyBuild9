@@ -8,7 +8,6 @@
 #pragma once
 
 #include <shared_mutex>
-#include <unordered_map>
 
 #include <react/renderer/componentregistry/ComponentDescriptorProvider.h>
 #include <react/renderer/componentregistry/ComponentDescriptorRegistry.h>
@@ -61,7 +60,7 @@ class ComponentDescriptorProviderRegistry final {
   mutable std::shared_mutex mutex_;
   mutable std::vector<std::weak_ptr<const ComponentDescriptorRegistry>>
       componentDescriptorRegistries_;
-  mutable std::unordered_map<ComponentHandle, ComponentDescriptorProvider const>
+  mutable butter::map<ComponentHandle, ComponentDescriptorProvider const>
       componentDescriptorProviders_;
   mutable ComponentDescriptorProviderRequest
       componentDescriptorProviderRequest_{};

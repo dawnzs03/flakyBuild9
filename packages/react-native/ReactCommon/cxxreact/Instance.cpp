@@ -19,6 +19,7 @@
 #include "SystraceSection.h"
 
 #include <cxxreact/JSIndexedRAMBundle.h>
+#include <folly/MoveWrapper.h>
 #include <folly/json.h>
 #include <react/debug/react_native_assert.h>
 

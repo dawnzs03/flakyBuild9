@@ -26,7 +26,8 @@ class BaseViewProps : public YogaStylableProps, public AccessibilityProps {
   BaseViewProps(
       const PropsParserContext& context,
       const BaseViewProps& sourceProps,
-      const RawProps& rawProps);
+      const RawProps& rawProps,
+      bool shouldSetRawProps = true);
 
   void setProp(
       const PropsParserContext& context,

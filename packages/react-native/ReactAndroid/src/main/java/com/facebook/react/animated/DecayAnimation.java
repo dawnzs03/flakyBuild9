@@ -13,7 +13,7 @@ import com.facebook.react.bridge.ReadableMap;
  * Implementation of {@link AnimationDriver} providing support for decay animations. The
  * implementation is copied from the JS version in {@code AnimatedImplementation.js}.
  */
-class DecayAnimation extends AnimationDriver {
+public class DecayAnimation extends AnimationDriver {
 
   private final double mVelocity;
 

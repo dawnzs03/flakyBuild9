@@ -43,7 +43,7 @@ void EventDispatcher::dispatchEvent(RawEvent&& rawEvent, EventPriority priority)
 
   auto eventLogger = getEventLogger();
   if (eventLogger != nullptr) {
-    rawEvent.loggingTag = eventLogger->onEventStart(rawEvent.type);
+    rawEvent.loggingTag = eventLogger->onEventStart(rawEvent.type.c_str());
   }
   getEventQueue(priority).enqueueEvent(std::move(rawEvent));
 }

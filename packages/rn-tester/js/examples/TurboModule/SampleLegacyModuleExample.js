@@ -86,7 +86,7 @@ class SampleLegacyModuleExample extends React.Component<{||}, State> {
           getNSNumber: () => getSampleLegacyModule()?.getNSNumber(20.0),
           getUnsafeObject: () =>
             getSampleLegacyModule()?.getObject({a: 1, b: 'foo', c: null}),
-          getRootTag: () => getSampleLegacyModule()?.getRootTag(11),
+          getRootTag: () => getSampleLegacyModule()?.getRootTag(this.context),
           getValue: () =>
             getSampleLegacyModule()?.getValue(5, 'test', {a: 1, b: 'foo'}),
           callback: () =>

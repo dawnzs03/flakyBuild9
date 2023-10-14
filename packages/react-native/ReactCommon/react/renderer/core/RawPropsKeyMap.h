@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include <butter/small_vector.h>
+
 #include <react/renderer/core/RawPropsKey.h>
 #include <react/renderer/core/RawPropsPrimitives.h>
-#include <vector>
 
 namespace facebook::react {
 
@@ -53,8 +54,9 @@ class RawPropsKeyMap final {
       const Item& rhs) noexcept;
   static bool hasSameName(const Item& lhs, const Item& rhs) noexcept;
 
-  std::vector<Item> items_{};
-  std::vector<RawPropsPropNameLength> buckets_{};
+  butter::small_vector<Item, kNumberOfExplicitlySpecifiedPropsSoftCap> items_{};
+  butter::small_vector<RawPropsPropNameLength, kPropNameLengthHardCap>
+      buckets_{};
 };
 
 } // namespace facebook::react

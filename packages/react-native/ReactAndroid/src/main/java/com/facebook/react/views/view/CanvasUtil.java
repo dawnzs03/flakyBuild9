@@ -19,8 +19,7 @@ import javax.annotation.Nullable;
  * href="https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui-graphics/src/androidMain/kotlin/androidx/compose/ui/graphics/CanvasUtils.android.kt;drc=3b2dde134afab8d58b9c39ad4820eaf9a6e014a9">
  * Compose canvas utils </a>
  */
-class CanvasUtil {
-
+public class CanvasUtil {
   private CanvasUtil() {}
 
   private @Nullable static Method mReorderBarrierMethod = null;

@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <shared_mutex>
-#include <unordered_map>
 
 #include <fbjni/fbjni.h>
 #include <react/jni/JRuntimeExecutor.h>
@@ -140,7 +139,7 @@ class Binding : public jni::HybridClass<Binding>,
 
   BackgroundExecutor backgroundExecutor_;
 
-  std::unordered_map<SurfaceId, SurfaceHandler> surfaceHandlerRegistry_{};
+  butter::map<SurfaceId, SurfaceHandler> surfaceHandlerRegistry_{};
   std::shared_mutex
       surfaceHandlerRegistryMutex_; // Protects `surfaceHandlerRegistry_`.
 

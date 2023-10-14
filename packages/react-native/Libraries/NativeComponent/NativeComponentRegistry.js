@@ -55,20 +55,14 @@ export function get<Config>(
 ): HostComponent<Config> {
   ReactNativeViewConfigRegistry.register(name, () => {
     const {native, strict, verify} = getRuntimeConfig?.(name) ?? {
-      native: !global.RN$Bridgeless,
+      native: true,
       strict: false,
       verify: false,
     };
 
-    let viewConfig;
-    if (native) {
-      viewConfig = getNativeComponentAttributes(name);
-    } else {
-      viewConfig = createViewConfig(viewConfigProvider());
-      if (viewConfig == null) {
-        viewConfig = getNativeComponentAttributes(name);
-      }
-    }
+    const viewConfig = native
+      ? getNativeComponentAttributes(name)
+      : createViewConfig(viewConfigProvider());
 
     if (verify) {
       const nativeViewConfig = native

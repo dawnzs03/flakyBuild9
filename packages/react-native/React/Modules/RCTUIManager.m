@@ -1489,10 +1489,10 @@ NSMutableDictionary<NSString *, id> *RCTModuleConstantsForDestructuredComponent(
   // lazifyViewManagerConfig function in JS. This fuction uses NativeModules global object that is not available in the
   // New Architecture. To make native view configs work in the New Architecture we will populate these properties in
   // native.
-  if (RCTGetUseNativeViewConfigsInBridgelessMode()) {
-    moduleConstants[@"Commands"] = viewConfig[@"Commands"];
-    moduleConstants[@"Constants"] = viewConfig[@"Constants"];
-  }
+  moduleConstants[@"Commands"] = viewConfig[@"Commands"];
+  // In the Old Architecture "Constants" are empty.
+  moduleConstants[@"Constants"] = [NSDictionary new];
+
   // Add direct events
   for (NSString *eventName in viewConfig[@"directEvents"]) {
     if (!directEvents[eventName]) {

@@ -16,20 +16,23 @@ namespace facebook::react {
 Props::Props(
     const PropsParserContext& context,
     const Props& sourceProps,
-    const RawProps& rawProps) {
-  initialize(context, sourceProps, rawProps);
-}
-
-void Props::initialize(
-    const PropsParserContext& context,
-    const Props& sourceProps,
-    const RawProps& rawProps) {
-  nativeId = CoreFeatures::enablePropIteratorSetter
-      ? sourceProps.nativeId
-      : convertRawProp(context, rawProps, "nativeID", sourceProps.nativeId, {});
+    const RawProps& rawProps,
+    const bool shouldSetRawProps)
+    : nativeId(
+          CoreFeatures::enablePropIteratorSetter ? sourceProps.nativeId
+                                                 : convertRawProp(
+                                                       context,
+                                                       rawProps,
+                                                       "nativeID",
+                                                       sourceProps.nativeId,
+                                                       {}))
 #ifdef ANDROID
-  this->rawProps = (folly::dynamic)rawProps;
+      ,
+      rawProps(
+          shouldSetRawProps ? (folly::dynamic)rawProps
+                            : /* null */ folly::dynamic())
 #endif
+{
 }
 
 void Props::setProp(

@@ -15,7 +15,6 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.collection.SparseArrayCompat;
 import com.facebook.common.logging.FLog;
@@ -60,6 +59,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import javax.annotation.Nullable;
 
 public class SurfaceMountingManager {
   public static final String TAG = SurfaceMountingManager.class.getSimpleName();
@@ -1118,13 +1118,23 @@ public class SurfaceMountingManager {
       previousEventEmitterWrapper.destroy();
     }
 
-    Queue<PendingViewEvent> pendingEventQueue = viewState.mPendingEventQueue;
+    Queue<ViewEvent> pendingEventQueue = viewState.mPendingEventQueue;
     if (pendingEventQueue != null) {
       // Invoke pending event queued to the view state
-      for (PendingViewEvent viewEvent : pendingEventQueue) {
-        viewEvent.dispatch(eventEmitter);
+      for (ViewEvent viewEvent : pendingEventQueue) {
+        dispatchEvent(eventEmitter, viewEvent);
       }
       viewState.mPendingEventQueue = null;
+    }
+  }
+
+  private void dispatchEvent(EventEmitterWrapper eventEmitter, ViewEvent viewEvent) {
+    if (viewEvent.canCoalesceEvent()) {
+      eventEmitter.dispatchUnique(
+          viewEvent.getEventName(), viewEvent.getParams(), viewEvent.getCustomCoalesceKey());
+    } else {
+      eventEmitter.dispatch(
+          viewEvent.getEventName(), viewEvent.getParams(), viewEvent.getEventCategory());
     }
   }
 
@@ -1294,13 +1304,10 @@ public class SurfaceMountingManager {
     }
   }
 
-  @AnyThread
-  public void enqueuePendingEvent(
-      int reactTag,
-      String eventName,
-      boolean canCoalesceEvent,
-      @Nullable WritableMap params,
-      @EventCategoryDef int eventCategory) {
+  @UiThread
+  public void enqueuePendingEvent(int reactTag, ViewEvent viewEvent) {
+    UiThreadUtil.assertOnUiThread();
+
     // When the surface stopped we will reset the view state map. We are not going to enqueue
     // pending events as they are not expected to be dispatched anyways.
     if (mTagToViewState == null) {
@@ -1312,23 +1319,23 @@ public class SurfaceMountingManager {
       // Cannot queue event without view state. Do nothing here.
       return;
     }
+    EventEmitterWrapper eventEmitter = viewState.mEventEmitter;
+    if (eventEmitter != null) {
+      // TODO T152630743: Verify threading for mEventEmitter
+      FLog.i(
+          TAG,
+          "Queue pending events when event emitter is null for the given view state, this should be dispatched instead - surfaceId: "
+              + mSurfaceId
+              + " reactTag: "
+              + reactTag);
+      dispatchEvent(eventEmitter, viewEvent);
+      return;
+    }
 
-    PendingViewEvent viewEvent =
-        new PendingViewEvent(eventName, params, eventCategory, canCoalesceEvent);
-    UiThreadUtil.runOnUiThread(
-        new Runnable() {
-          @Override
-          public void run() {
-            if (viewState.mEventEmitter != null) {
-              viewEvent.dispatch(viewState.mEventEmitter);
-            } else {
-              if (viewState.mPendingEventQueue == null) {
-                viewState.mPendingEventQueue = new LinkedList<>();
-              }
-              viewState.mPendingEventQueue.add(viewEvent);
-            }
-          }
-        });
+    if (viewState.mPendingEventQueue == null) {
+      viewState.mPendingEventQueue = new LinkedList<>();
+    }
+    viewState.mPendingEventQueue.add(viewEvent);
   }
 
   /**
@@ -1344,10 +1351,7 @@ public class SurfaceMountingManager {
     @Nullable public ReadableMap mCurrentLocalData = null;
     @Nullable public StateWrapper mStateWrapper = null;
     @Nullable public EventEmitterWrapper mEventEmitter = null;
-
-    @ThreadConfined(UI)
-    @Nullable
-    public Queue<PendingViewEvent> mPendingEventQueue = null;
+    @Nullable public Queue<ViewEvent> mPendingEventQueue = null;
 
     private ViewState(
         int reactTag, @Nullable View view, @Nullable ReactViewManagerWrapper viewManager) {
@@ -1384,29 +1388,44 @@ public class SurfaceMountingManager {
     }
   }
 
-  private static class PendingViewEvent {
+  public static class ViewEvent {
     private final String mEventName;
     private final boolean mCanCoalesceEvent;
+    private final int mCustomCoalesceKey;
     private final @EventCategoryDef int mEventCategory;
-    private final @Nullable WritableMap mParams;
+    private @Nullable WritableMap mParams;
 
-    public PendingViewEvent(
+    public ViewEvent(
         String eventName,
         @Nullable WritableMap params,
         @EventCategoryDef int eventCategory,
-        boolean canCoalesceEvent) {
+        boolean canCoalesceEvent,
+        int customCoalesceKey) {
       mEventName = eventName;
       mParams = params;
       mEventCategory = eventCategory;
       mCanCoalesceEvent = canCoalesceEvent;
+      mCustomCoalesceKey = customCoalesceKey;
     }
 
-    public void dispatch(EventEmitterWrapper eventEmitter) {
-      if (mCanCoalesceEvent) {
-        eventEmitter.dispatchUnique(mEventName, mParams);
-      } else {
-        eventEmitter.dispatch(mEventName, mParams, mEventCategory);
-      }
+    public String getEventName() {
+      return mEventName;
+    }
+
+    public boolean canCoalesceEvent() {
+      return mCanCoalesceEvent;
+    }
+
+    public int getCustomCoalesceKey() {
+      return mCustomCoalesceKey;
+    }
+
+    public @EventCategoryDef int getEventCategory() {
+      return mEventCategory;
+    }
+
+    public @Nullable WritableMap getParams() {
+      return mParams;
     }
   }
 

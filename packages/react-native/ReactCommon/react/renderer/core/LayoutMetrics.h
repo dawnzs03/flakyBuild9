@@ -7,12 +7,12 @@
 
 #pragma once
 
+#include <folly/Hash.h>
 #include <react/renderer/core/LayoutPrimitives.h>
 #include <react/renderer/debug/DebugStringConvertible.h>
 #include <react/renderer/debug/flags.h>
 #include <react/renderer/graphics/Rect.h>
 #include <react/renderer/graphics/RectangleEdges.h>
-#include <react/utils/hash_combine.h>
 
 namespace facebook::react {
 
@@ -111,7 +111,8 @@ namespace std {
 template <>
 struct hash<facebook::react::LayoutMetrics> {
   size_t operator()(const facebook::react::LayoutMetrics& layoutMetrics) const {
-    return facebook::react::hash_combine(
+    return folly::hash::hash_combine(
+        0,
         layoutMetrics.frame,
         layoutMetrics.contentInsets,
         layoutMetrics.borderWidth,

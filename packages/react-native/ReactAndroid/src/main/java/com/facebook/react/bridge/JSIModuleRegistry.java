@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class JSIModuleRegistry {
+public class JSIModuleRegistry {
 
   private final Map<JSIModuleType, JSIModuleHolder> mModules = new HashMap<>();
 

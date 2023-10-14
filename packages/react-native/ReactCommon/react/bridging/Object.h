@@ -10,6 +10,7 @@
 #include <react/bridging/AString.h>
 #include <react/bridging/Base.h>
 
+#include <butter/map.h>
 #include <map>
 #include <unordered_map>
 
@@ -81,6 +82,12 @@ struct Bridging {
 };
 
 } // namespace map_detail
+
+#ifdef BUTTER_USE_FOLLY_CONTAINERS
+template <typename... Args>
+struct Bridging<butter::map<std::string, Args...>>
+    : map_detail::Bridging<butter::map<std::string, Args...>> {};
+#endif
 
 template <typename... Args>
 struct Bridging<std::map<std::string, Args...>>

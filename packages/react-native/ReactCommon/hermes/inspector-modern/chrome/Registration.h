@@ -7,13 +7,11 @@
 
 #pragma once
 
-#ifdef HERMES_ENABLE_DEBUGGER
-
 #include <memory>
 #include <string>
 
 #include <hermes/hermes.h>
-#include <hermes/inspector/RuntimeAdapter.h>
+#include <hermes/inspector-modern/RuntimeAdapter.h>
 
 namespace facebook {
 namespace hermes {
@@ -43,5 +41,3 @@ extern void disableDebugging(DebugSessionToken session);
 } // namespace inspector_modern
 } // namespace hermes
 } // namespace facebook
-
-#endif // HERMES_ENABLE_DEBUGGER

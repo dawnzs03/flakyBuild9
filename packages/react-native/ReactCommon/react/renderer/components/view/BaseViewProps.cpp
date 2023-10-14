@@ -51,8 +51,9 @@ std::array<float, 3> getTranslateForTransformOrigin(
 BaseViewProps::BaseViewProps(
     const PropsParserContext& context,
     const BaseViewProps& sourceProps,
-    const RawProps& rawProps)
-    : YogaStylableProps(context, sourceProps, rawProps),
+    const RawProps& rawProps,
+    bool shouldSetRawProps)
+    : YogaStylableProps(context, sourceProps, rawProps, shouldSetRawProps),
       AccessibilityProps(context, sourceProps, rawProps),
       opacity(
           CoreFeatures::enablePropIteratorSetter ? sourceProps.opacity
@@ -404,7 +405,7 @@ Transform BaseViewProps::resolveTransform(
 }
 
 bool BaseViewProps::getClipsContentToBounds() const {
-  return yogaStyle.overflow() != yoga::Overflow::Visible;
+  return yogaStyle.overflow() != YGOverflowVisible;
 }
 
 #pragma mark - DebugStringConvertible

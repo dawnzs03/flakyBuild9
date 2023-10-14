@@ -490,7 +490,8 @@ class TouchEventDispatchTest {
     }
     val argument = ArgumentCaptor.forClass(WritableMap::class.java)
     verify(uiManager, times(4))
-        .receiveEvent(anyInt(), anyInt(), anyString(), anyBoolean(), argument.capture(), anyInt())
+        .receiveEvent(
+            anyInt(), anyInt(), anyString(), anyBoolean(), anyInt(), argument.capture(), anyInt())
     Assert.assertEquals(startMoveEndExpectedSequence, argument.allValues)
   }
 
@@ -501,7 +502,8 @@ class TouchEventDispatchTest {
     }
     val argument = ArgumentCaptor.forClass(WritableMap::class.java)
     verify(uiManager, times(6))
-        .receiveEvent(anyInt(), anyInt(), anyString(), anyBoolean(), argument.capture(), anyInt())
+        .receiveEvent(
+            anyInt(), anyInt(), anyString(), anyBoolean(), anyInt(), argument.capture(), anyInt())
     Assert.assertEquals(startMoveCancelExpectedSequence, argument.allValues)
   }
 
@@ -512,7 +514,8 @@ class TouchEventDispatchTest {
     }
     val argument = ArgumentCaptor.forClass(WritableMap::class.java)
     verify(uiManager, times(6))
-        .receiveEvent(anyInt(), anyInt(), anyString(), anyBoolean(), argument.capture(), anyInt())
+        .receiveEvent(
+            anyInt(), anyInt(), anyString(), anyBoolean(), anyInt(), argument.capture(), anyInt())
     Assert.assertEquals(startPointerMoveUpExpectedSequence, argument.allValues)
   }
 

@@ -7,7 +7,6 @@
 
 package com.facebook.react;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.facebook.react.bridge.ModuleHolder;
 import com.facebook.react.bridge.ModuleSpec;
@@ -32,7 +31,7 @@ public abstract class TurboReactPackage implements ReactPackage {
   @Override
   public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
     throw new UnsupportedOperationException(
-        "createNativeModules method is not supported. Use getModule() method instead.");
+        "In case of TurboModules, createNativeModules is not supported. NativeModuleRegistry should instead use getModuleList or getModule method");
   }
 
   /**
@@ -42,9 +41,8 @@ public abstract class TurboReactPackage implements ReactPackage {
    * @param name name of the Native Module
    * @param reactContext {@link ReactApplicationContext} context for this
    */
-  @Override
   public abstract @Nullable NativeModule getModule(
-      @NonNull String name, @NonNull ReactApplicationContext reactContext);
+      String name, final ReactApplicationContext reactContext);
 
   /**
    * This is a temporary method till we implement TurboModules. Once we implement TurboModules, we

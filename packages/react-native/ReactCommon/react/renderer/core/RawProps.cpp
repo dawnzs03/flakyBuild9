@@ -37,14 +37,14 @@ RawProps::RawProps(jsi::Runtime& runtime, const jsi::Value& value) noexcept {
  * We need this temporary, only because we have a callsite that does not have
  * a `jsi::Runtime` behind the data.
  */
-RawProps::RawProps(folly::dynamic dynamic) noexcept {
+RawProps::RawProps(const folly::dynamic& dynamic) noexcept {
   if (dynamic.isNull()) {
     mode_ = Mode::Empty;
     return;
   }
 
   mode_ = Mode::Dynamic;
-  dynamic_ = std::move(dynamic);
+  dynamic_ = dynamic;
 }
 
 void RawProps::parse(

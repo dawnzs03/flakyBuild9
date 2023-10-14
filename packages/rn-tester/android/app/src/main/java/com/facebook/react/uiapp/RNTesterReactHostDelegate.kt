@@ -14,7 +14,6 @@ import com.facebook.react.JSEngineResolutionAlgorithm
 import com.facebook.react.ReactPackage
 import com.facebook.react.ReactPackageTurboModuleManagerDelegate
 import com.facebook.react.TurboReactPackage
-import com.facebook.react.ViewManagerOnDemandReactPackage
 import com.facebook.react.bridge.JSBundleLoader
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
@@ -91,6 +90,7 @@ class RNTesterReactHostDelegate internal constructor(context: Context) : ReactHo
                               "SampleTurboModule",
                               false, // canOverrideExistingModule
                               false, // needsEagerInit
+                              true, // hasConstants
                               false, // isCxxModule
                               true // isTurboModule
                               ),
@@ -100,6 +100,7 @@ class RNTesterReactHostDelegate internal constructor(context: Context) : ReactHo
                               "SampleLegacyModule",
                               false, // canOverrideExistingModule
                               false, // needsEagerInit
+                              true, // hasConstants
                               false, // isCxxModule
                               false // isTurboModule
                               ),
@@ -109,7 +110,7 @@ class RNTesterReactHostDelegate internal constructor(context: Context) : ReactHo
                 }
               }
         },
-        object : ViewManagerOnDemandReactPackage, ReactPackage {
+        object : ReactPackage {
           override fun createNativeModules(
               reactContext: ReactApplicationContext
           ): List<NativeModule> = emptyList()
@@ -118,22 +119,6 @@ class RNTesterReactHostDelegate internal constructor(context: Context) : ReactHo
               reactContext: ReactApplicationContext
           ): List<ViewManager<*, *>> =
               listOf(MyNativeViewManager(), MyLegacyViewManager(reactContext))
-
-          override fun getViewManagerNames(
-              reactContext: ReactApplicationContext
-          ): Collection<String> =
-              listOf(MyNativeViewManager.REACT_CLASS, MyLegacyViewManager.REACT_CLASS)
-
-          override fun createViewManager(
-              reactContext: ReactApplicationContext,
-              viewManagerName: String
-          ): ViewManager<*, *>? {
-            return when (viewManagerName) {
-              MyNativeViewManager.REACT_CLASS -> MyNativeViewManager()
-              MyLegacyViewManager.REACT_CLASS -> MyLegacyViewManager(reactContext)
-              else -> null
-            }
-          }
         })
   }
 }

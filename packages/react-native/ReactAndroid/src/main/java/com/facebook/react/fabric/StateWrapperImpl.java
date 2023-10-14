@@ -83,18 +83,4 @@ public class StateWrapperImpl implements StateWrapper {
       mHybridData.resetNative();
     }
   }
-
-  @Override
-  public String toString() {
-    if (mDestroyed) {
-      return "<destroyed>";
-    }
-
-    ReadableNativeMap map = getStateDataImpl();
-    if (map == null) {
-      return "<unexpected null>";
-    }
-
-    return map.toString();
-  }
 }

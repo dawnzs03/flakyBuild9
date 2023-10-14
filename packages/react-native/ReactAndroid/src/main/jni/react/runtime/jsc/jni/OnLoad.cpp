@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <cxxreact/MessageQueueThread.h>
 #include <fbjni/fbjni.h>
 #include <jsc/JSCRuntime.h>
 #include <jsi/jsi.h>
@@ -30,8 +29,7 @@ class JSCInstance : public jni::HybridClass<JSCInstance, JJSEngineInstance> {
     });
   }
 
-  std::unique_ptr<jsi::Runtime> createJSRuntime(
-      std::shared_ptr<MessageQueueThread> msgQueueThread) noexcept {
+  std::unique_ptr<jsi::Runtime> createJSRuntime() noexcept {
     return jsc::makeJSCRuntime();
   }
 

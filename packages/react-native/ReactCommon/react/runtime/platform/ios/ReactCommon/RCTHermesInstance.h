@@ -7,7 +7,6 @@
 
 #import <UIKit/UIKit.h>
 
-#import <cxxreact/MessageQueueThread.h>
 #import <hermes/Public/CrashManager.h>
 #import <jsi/jsi.h>
 #import <react/runtime/JSEngineInstance.h>
@@ -26,8 +25,7 @@ class RCTHermesInstance : public JSEngineInstance {
       std::shared_ptr<const ReactNativeConfig> reactNativeConfig,
       CrashManagerProvider crashManagerProvider);
 
-  std::unique_ptr<jsi::Runtime> createJSRuntime(
-      std::shared_ptr<MessageQueueThread> msgQueueThread) noexcept override;
+  std::unique_ptr<jsi::Runtime> createJSRuntime() noexcept override;
 
   ~RCTHermesInstance(){};
 

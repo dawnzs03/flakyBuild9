@@ -247,13 +247,12 @@ public class MountItemDispatcher {
     // If there are MountItems to dispatch, we make sure all the "pre mount items" are executed
     // first
     Collection<MountItem> preMountItemsToDispatch = getAndResetPreMountItems();
+
     if (preMountItemsToDispatch != null) {
       Systrace.beginSection(
           Systrace.TRACE_TAG_REACT_JAVA_BRIDGE, "FabricUIManager::mountViews preMountItems");
+
       for (MountItem preMountItem : preMountItemsToDispatch) {
-        if (ENABLE_FABRIC_LOGS) {
-          printMountItem(preMountItem, "dispatchMountItems: Executing preMountItem");
-        }
         executeOrEnqueue(preMountItem);
       }
 
@@ -331,8 +330,11 @@ public class MountItemDispatcher {
         }
 
         if (ENABLE_FABRIC_LOGS) {
-          printMountItem(preMountItemToDispatch, "dispatchPreMountItems");
+          printMountItem(
+              preMountItemToDispatch,
+              "dispatchPreMountItems: Dispatching PreAllocateViewMountItem");
         }
+
         executeOrEnqueue(preMountItemToDispatch);
       }
     } finally {

@@ -9,7 +9,8 @@
 
 #include <memory>
 #include <shared_mutex>
-#include <unordered_map>
+
+#include <butter/map.h>
 
 #include <react/renderer/core/ReactPrimitives.h>
 #include <react/renderer/timeline/Timeline.h>
@@ -66,7 +67,7 @@ class TimelineController final : public UIManagerCommitHook {
   /*
    * Owning collection of all running `Timeline` instances.
    */
-  mutable std::unordered_map<SurfaceId, std::unique_ptr<Timeline>> timelines_;
+  mutable butter::map<SurfaceId, std::unique_ptr<Timeline>> timelines_;
 
   mutable const UIManager* uiManager_;
   mutable SurfaceId lastUpdatedSurface_;

@@ -14,8 +14,6 @@ import {keyExtractor as defaultKeyExtractor} from './VirtualizeUtils';
 
 import invariant from 'invariant';
 
-type LayoutEventDirection = 'top-down' | 'bottom-up';
-
 export type CellMetrics = {
   /**
    * Index of the item in the list
@@ -85,7 +83,7 @@ export default class ListMetricsAggregator {
 
   // Fabric and Paper may call onLayout in different orders. We can tell which
   // direction layout events happen on the first layout.
-  _onLayoutDirection: LayoutEventDirection = 'top-down';
+  _onLayoutDirection: 'top-down' | 'bottom-up' = 'top-down';
 
   /**
    * Notify the ListMetricsAggregator that a cell has been laid out.
@@ -284,26 +282,6 @@ export default class ListMetricsAggregator {
    */
   hasContentLength(): boolean {
     return this._contentLength != null;
-  }
-
-  /**
-   * Whether the ListMetricsAggregator is notified of cell metrics before
-   * ScrollView metrics (bottom-up) or ScrollView metrics before cell metrics
-   * (top-down).
-   *
-   * Must be queried after cell layout
-   */
-  getLayoutEventDirection(): LayoutEventDirection {
-    return this._onLayoutDirection;
-  }
-
-  /**
-   * Whether the ListMetricsAggregator must be aware of the current length of
-   * ScrollView content to be able to correctly resolve the (flow-relative)
-   * metrics of a cell.
-   */
-  needsContentLengthForCellMetrics(): boolean {
-    return this._orientation.horizontal && this._orientation.rtl;
   }
 
   /**

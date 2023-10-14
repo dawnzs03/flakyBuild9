@@ -10,86 +10,69 @@
 #include <yoga/Yoga.h>
 
 #include <yoga/debug/AssertFatal.h>
-#include <yoga/enums/Dimension.h>
-#include <yoga/enums/FlexDirection.h>
 
 namespace facebook::yoga {
 
-inline bool isRow(const FlexDirection flexDirection) {
-  return flexDirection == FlexDirection::Row ||
-      flexDirection == FlexDirection::RowReverse;
+inline bool isRow(const YGFlexDirection flexDirection) {
+  return flexDirection == YGFlexDirectionRow ||
+      flexDirection == YGFlexDirectionRowReverse;
 }
 
-inline bool isColumn(const FlexDirection flexDirection) {
-  return flexDirection == FlexDirection::Column ||
-      flexDirection == FlexDirection::ColumnReverse;
+inline bool isColumn(const YGFlexDirection flexDirection) {
+  return flexDirection == YGFlexDirectionColumn ||
+      flexDirection == YGFlexDirectionColumnReverse;
 }
 
-inline FlexDirection resolveDirection(
-    const FlexDirection flexDirection,
-    const Direction direction) {
-  if (direction == Direction::RTL) {
-    if (flexDirection == FlexDirection::Row) {
-      return FlexDirection::RowReverse;
-    } else if (flexDirection == FlexDirection::RowReverse) {
-      return FlexDirection::Row;
+inline YGFlexDirection resolveDirection(
+    const YGFlexDirection flexDirection,
+    const YGDirection direction) {
+  if (direction == YGDirectionRTL) {
+    if (flexDirection == YGFlexDirectionRow) {
+      return YGFlexDirectionRowReverse;
+    } else if (flexDirection == YGFlexDirectionRowReverse) {
+      return YGFlexDirectionRow;
     }
   }
 
   return flexDirection;
 }
 
-inline FlexDirection resolveCrossDirection(
-    const FlexDirection flexDirection,
-    const Direction direction) {
+inline YGFlexDirection resolveCrossDirection(
+    const YGFlexDirection flexDirection,
+    const YGDirection direction) {
   return isColumn(flexDirection)
-      ? resolveDirection(FlexDirection::Row, direction)
-      : FlexDirection::Column;
+      ? resolveDirection(YGFlexDirectionRow, direction)
+      : YGFlexDirectionColumn;
 }
 
-inline YGEdge leadingEdge(const FlexDirection flexDirection) {
+inline YGEdge leadingEdge(const YGFlexDirection flexDirection) {
   switch (flexDirection) {
-    case FlexDirection::Column:
+    case YGFlexDirectionColumn:
       return YGEdgeTop;
-    case FlexDirection::ColumnReverse:
+    case YGFlexDirectionColumnReverse:
       return YGEdgeBottom;
-    case FlexDirection::Row:
+    case YGFlexDirectionRow:
       return YGEdgeLeft;
-    case FlexDirection::RowReverse:
+    case YGFlexDirectionRowReverse:
       return YGEdgeRight;
   }
 
-  fatalWithMessage("Invalid FlexDirection");
+  fatalWithMessage("Invalid YGFlexDirection");
 }
 
-inline YGEdge trailingEdge(const FlexDirection flexDirection) {
+inline YGEdge trailingEdge(const YGFlexDirection flexDirection) {
   switch (flexDirection) {
-    case FlexDirection::Column:
+    case YGFlexDirectionColumn:
       return YGEdgeBottom;
-    case FlexDirection::ColumnReverse:
+    case YGFlexDirectionColumnReverse:
       return YGEdgeTop;
-    case FlexDirection::Row:
+    case YGFlexDirectionRow:
       return YGEdgeRight;
-    case FlexDirection::RowReverse:
+    case YGFlexDirectionRowReverse:
       return YGEdgeLeft;
   }
 
-  fatalWithMessage("Invalid FlexDirection");
-}
-
-inline Dimension dimension(const FlexDirection flexDirection) {
-  switch (flexDirection) {
-    case FlexDirection::Column:
-      return Dimension::Height;
-    case FlexDirection::ColumnReverse:
-      return Dimension::Height;
-    case FlexDirection::Row:
-      return Dimension::Width;
-    case FlexDirection::RowReverse:
-      return Dimension::Width;
-  }
-
-  fatalWithMessage("Invalid FlexDirection");
+  fatalWithMessage("Invalid YGFlexDirection");
 }
 
 } // namespace facebook::yoga
