@@ -289,7 +289,12 @@ test.suite(
         await assertAsyncScriptPinned(() => driver.executeAsyncScript(script))
 
         async function assertAsyncScriptPinned(fn) {
-          await fn()
+          try {
+            await fn()
+            return
+          } catch (err) {
+            throw err
+          }
         }
       })
     })
