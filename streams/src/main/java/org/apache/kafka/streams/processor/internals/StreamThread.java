@@ -1126,7 +1126,7 @@ public class StreamThread extends Thread {
                     .collect(Collectors.toSet())
             );
 
-            if ((now - lastPurgeMs) > purgeTimeMs) {
+            if (committed > 0 && (now - lastPurgeMs) > purgeTimeMs) {
                 // try to purge the committed records for repartition topics if possible
                 taskManager.maybePurgeCommittedRecords();
                 lastPurgeMs = now;

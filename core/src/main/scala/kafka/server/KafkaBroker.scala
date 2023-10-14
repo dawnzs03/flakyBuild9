@@ -19,7 +19,6 @@ package kafka.server
 
 import com.yammer.metrics.core.MetricName
 import kafka.log.LogManager
-import kafka.log.remote.RemoteLogManager
 import kafka.metrics.LinuxIoMetricsCollector
 import kafka.network.SocketServer
 import kafka.security.CredentialProvider
@@ -28,7 +27,6 @@ import org.apache.kafka.common.ClusterResource
 import org.apache.kafka.common.internals.ClusterResourceListeners
 import org.apache.kafka.common.metrics.{Metrics, MetricsReporter}
 import org.apache.kafka.common.network.ListenerName
-import org.apache.kafka.common.security.token.delegation.internals.DelegationTokenCache
 import org.apache.kafka.common.utils.Time
 import org.apache.kafka.coordinator.group.GroupCoordinator
 import org.apache.kafka.metadata.BrokerState
@@ -81,7 +79,6 @@ trait KafkaBroker extends Logging {
   def kafkaScheduler: Scheduler
   def kafkaYammerMetrics: KafkaYammerMetrics
   def logManager: LogManager
-  def remoteLogManagerOpt: Option[RemoteLogManager]
   def metrics: Metrics
   def quotaManagers: QuotaFactory.QuotaManagers
   def replicaManager: ReplicaManager
@@ -95,7 +92,6 @@ trait KafkaBroker extends Logging {
   def brokerTopicStats: BrokerTopicStats
   def credentialProvider: CredentialProvider
   def clientToControllerChannelManager: BrokerToControllerChannelManager
-  def tokenCache: DelegationTokenCache
 
   private val metricsGroup = new KafkaMetricsGroup(this.getClass) {
     // For backwards compatibility, we need to keep older metrics tied

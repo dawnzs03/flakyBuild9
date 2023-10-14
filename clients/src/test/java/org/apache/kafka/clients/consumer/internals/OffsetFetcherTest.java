@@ -1254,7 +1254,8 @@ public class OffsetFetcherTest {
                 maxPollRecords,
                 true, // check crc
                 CommonClientConfigs.DEFAULT_CLIENT_RACK,
-                new Deserializers<>(new ByteArrayDeserializer(), new ByteArrayDeserializer()),
+                new ByteArrayDeserializer(),
+                new ByteArrayDeserializer(),
                 isolationLevel);
         Fetcher<byte[], byte[]> fetcher = new Fetcher<>(
                 logContext,

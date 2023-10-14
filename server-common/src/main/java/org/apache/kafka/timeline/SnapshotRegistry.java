@@ -162,12 +162,6 @@ public class SnapshotRegistry {
         return snapshots.containsKey(epoch);
     }
 
-    private String epochsToString() {
-        return epochsList()
-            .stream()
-            .map(Object::toString)
-            .collect(Collectors.joining(", "));
-    }
     /**
      * Gets the snapshot for a specific epoch.
      */
@@ -175,7 +169,8 @@ public class SnapshotRegistry {
         Snapshot snapshot = snapshots.get(epoch);
         if (snapshot == null) {
             throw new RuntimeException("No in-memory snapshot for epoch " + epoch + ". Snapshot " +
-                "epochs are: " + epochsToString());
+                "epochs are: " + epochsList().stream().map(e -> e.toString()).
+                    collect(Collectors.joining(", ")));
         }
         return snapshot;
     }
@@ -192,8 +187,7 @@ public class SnapshotRegistry {
         Snapshot last = head.prev();
         if (last.epoch() > epoch) {
             throw new RuntimeException("Can't create a new in-memory snapshot at epoch " + epoch +
-                " because there is already a snapshot with epoch " + last.epoch() + ". Snapshot epochs are " +
-                epochsToString());
+                " because there is already a snapshot with epoch " + last.epoch());
         } else if (last.epoch() == epoch) {
             return last;
         }

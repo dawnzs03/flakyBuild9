@@ -16,28 +16,31 @@
  */
 package org.apache.kafka.clients.consumer.internals.events;
 
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.internals.CommitRequestManager;
 import org.apache.kafka.clients.consumer.internals.ConsumerMetadata;
 import org.apache.kafka.clients.consumer.internals.NoopBackgroundEvent;
-import org.apache.kafka.clients.consumer.internals.RequestManagers;
+import org.apache.kafka.clients.consumer.internals.RequestManager;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.TopicPartition;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
 
 public class ApplicationEventProcessor {
 
     private final BlockingQueue<BackgroundEvent> backgroundEventQueue;
-
+    private final Map<RequestManager.Type, Optional<RequestManager>> registry;
     private final ConsumerMetadata metadata;
 
-    private final RequestManagers requestManagers;
-
     public ApplicationEventProcessor(final BlockingQueue<BackgroundEvent> backgroundEventQueue,
-                                     final RequestManagers requestManagers,
+                                     final Map<RequestManager.Type, Optional<RequestManager>> requestManagerRegistry,
                                      final ConsumerMetadata metadata) {
         this.backgroundEventQueue = backgroundEventQueue;
-        this.requestManagers = requestManagers;
+        this.registry = requestManagerRegistry;
         this.metadata = metadata;
     }
 
@@ -72,17 +75,19 @@ public class ApplicationEventProcessor {
     }
 
     private boolean process(final PollApplicationEvent event) {
-        if (!requestManagers.commitRequestManager.isPresent()) {
+        Optional<RequestManager> commitRequestManger = registry.get(RequestManager.Type.COMMIT);
+        if (!commitRequestManger.isPresent()) {
             return true;
         }
 
-        CommitRequestManager manager = requestManagers.commitRequestManager.get();
+        CommitRequestManager manager = (CommitRequestManager) commitRequestManger.get();
         manager.updateAutoCommitTimer(event.pollTimeMs);
         return true;
     }
 
     private boolean process(final CommitApplicationEvent event) {
-        if (!requestManagers.commitRequestManager.isPresent()) {
+        Optional<RequestManager> commitRequestManger = registry.get(RequestManager.Type.COMMIT);
+        if (!commitRequestManger.isPresent()) {
             // Leaving this error handling here, but it is a bit strange as the commit API should enforce the group.id
             // upfront so we should never get to this block.
             Exception exception = new KafkaException("Unable to commit offset. Most likely because the group.id wasn't set");
@@ -90,7 +95,7 @@ public class ApplicationEventProcessor {
             return false;
         }
 
-        CommitRequestManager manager = requestManagers.commitRequestManager.get();
+        CommitRequestManager manager = (CommitRequestManager) commitRequestManger.get();
         manager.addOffsetCommitRequest(event.offsets()).whenComplete((r, e) -> {
             if (e != null) {
                 event.future().completeExceptionally(e);
@@ -102,18 +107,20 @@ public class ApplicationEventProcessor {
     }
 
     private boolean process(final OffsetFetchApplicationEvent event) {
-        if (!requestManagers.commitRequestManager.isPresent()) {
-            event.future().completeExceptionally(new KafkaException("Unable to fetch committed " +
-                    "offset because the CommittedRequestManager is not available. Check if group.id was set correctly"));
+        Optional<RequestManager> commitRequestManger = registry.get(RequestManager.Type.COMMIT);
+        CompletableFuture<Map<TopicPartition, OffsetAndMetadata>> future = event.future();
+        if (!commitRequestManger.isPresent()) {
+            future.completeExceptionally(new KafkaException("Unable to fetch committed offset because the " +
+                    "CommittedRequestManager is not available. Check if group.id was set correctly"));
             return false;
         }
-        CommitRequestManager manager = requestManagers.commitRequestManager.get();
+        CommitRequestManager manager = (CommitRequestManager) commitRequestManger.get();
         manager.addOffsetFetchRequest(event.partitions()).whenComplete((r, e) -> {
             if (e != null) {
-                event.future().completeExceptionally(e);
+                future.completeExceptionally(e);
                 return;
             }
-            event.future().complete(r);
+            future.complete(r);
         });
         return true;
     }
@@ -124,10 +131,11 @@ public class ApplicationEventProcessor {
     }
 
     private boolean process(final AssignmentChangeApplicationEvent event) {
-        if (!requestManagers.commitRequestManager.isPresent()) {
+        Optional<RequestManager> commitRequestManger = registry.get(RequestManager.Type.COMMIT);
+        if (!commitRequestManger.isPresent()) {
             return false;
         }
-        CommitRequestManager manager = requestManagers.commitRequestManager.get();
+        CommitRequestManager manager = (CommitRequestManager) commitRequestManger.get();
         manager.updateAutoCommitTimer(event.currentTimeMs);
         manager.maybeAutoCommit(event.offsets);
         return true;

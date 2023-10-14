@@ -34,10 +34,11 @@ import org.apache.kafka.streams.processor.internals.InternalProcessorContext;
 import org.apache.kafka.test.MockProcessorSupplier;
 import org.apache.kafka.test.NoOpValueTransformerWithKeySupplier;
 import org.apache.kafka.test.StreamsTestUtils;
+import org.easymock.EasyMockRunner;
+import org.easymock.Mock;
+import org.easymock.MockType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Properties;
 
@@ -45,12 +46,12 @@ import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 
-@RunWith(MockitoJUnitRunner.StrictStubs.class)
+@RunWith(EasyMockRunner.class)
 public class KStreamTransformValuesTest {
     private final String topicName = "topic";
     private final MockProcessorSupplier<Integer, Integer> supplier = new MockProcessorSupplier<>();
     private final Properties props = StreamsTestUtils.getStreamsConfig(Serdes.Integer(), Serdes.Integer());
-    @Mock
+    @Mock(MockType.NICE)
     private InternalProcessorContext context;
 
     @SuppressWarnings("deprecation") // Old PAPI. Needs to be migrated.

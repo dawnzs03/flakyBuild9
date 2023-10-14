@@ -733,13 +733,11 @@ public class MemoryRecords extends AbstractRecords {
         return MemoryRecords.readableRecords(buffer);
     }
 
-    private static void writeLeaderChangeMessage(
-        ByteBuffer buffer,
-        long initialOffset,
-        long timestamp,
-        int leaderEpoch,
-        LeaderChangeMessage leaderChangeMessage
-    ) {
+    private static void writeLeaderChangeMessage(ByteBuffer buffer,
+                                                 long initialOffset,
+                                                 long timestamp,
+                                                 int leaderEpoch,
+                                                 LeaderChangeMessage leaderChangeMessage) {
         try (MemoryRecordsBuilder builder = new MemoryRecordsBuilder(
             buffer, RecordBatch.CURRENT_MAGIC_VALUE, CompressionType.NONE,
             TimestampType.CREATE_TIME, initialOffset, timestamp,
@@ -762,8 +760,7 @@ public class MemoryRecords extends AbstractRecords {
         return MemoryRecords.readableRecords(buffer);
     }
 
-    private static void writeSnapshotHeaderRecord(
-        ByteBuffer buffer,
+    private static void writeSnapshotHeaderRecord(ByteBuffer buffer,
         long initialOffset,
         long timestamp,
         int leaderEpoch,
@@ -791,8 +788,7 @@ public class MemoryRecords extends AbstractRecords {
         return MemoryRecords.readableRecords(buffer);
     }
 
-    private static void writeSnapshotFooterRecord(
-        ByteBuffer buffer,
+    private static void writeSnapshotFooterRecord(ByteBuffer buffer,
         long initialOffset,
         long timestamp,
         int leaderEpoch,

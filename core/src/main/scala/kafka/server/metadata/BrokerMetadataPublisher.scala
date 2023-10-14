@@ -105,7 +105,6 @@ class BrokerMetadataPublisher(
   var dynamicConfigPublisher: DynamicConfigPublisher,
   dynamicClientQuotaPublisher: DynamicClientQuotaPublisher,
   scramPublisher: ScramPublisher,
-  delegationTokenPublisher: DelegationTokenPublisher,
   aclPublisher: AclPublisher,
   fatalFaultHandler: FaultHandler,
   metadataPublishingFaultHandler: FaultHandler
@@ -227,9 +226,6 @@ class BrokerMetadataPublisher(
 
       // Apply SCRAM delta.
       scramPublisher.onMetadataUpdate(delta, newImage)
-
-      // Apply DelegationToken delta.
-      delegationTokenPublisher.onMetadataUpdate(delta, newImage)
 
       // Apply ACL delta.
       aclPublisher.onMetadataUpdate(delta, newImage, manifest)

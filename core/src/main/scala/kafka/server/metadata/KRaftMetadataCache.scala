@@ -401,4 +401,3 @@ class KRaftMetadataCache(val brokerId: Int) extends MetadataCache with Logging w
       true)
   }
 }
-
