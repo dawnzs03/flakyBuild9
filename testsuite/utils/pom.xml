@@ -258,7 +258,7 @@
         </dependency>
 
         <dependency>
-            <groupId>${ee.maven.groupId}</groupId>
+            <groupId>org.wildfly</groupId>
             <artifactId>wildfly-undertow</artifactId>
             <scope>compile</scope>
         </dependency>

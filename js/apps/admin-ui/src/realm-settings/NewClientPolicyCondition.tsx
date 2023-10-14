@@ -38,7 +38,7 @@ type ConfigProperty = ConfigPropertyRepresentation & {
 };
 
 export default function NewClientPolicyCondition() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -188,8 +188,10 @@ export default function NewClientPolicyCondition() {
               <HelpItem
                 helpText={
                   conditionType
-                    ? `${camelCase(conditionType.replace(/-/g, " "))}Help`
-                    : "conditionsHelp"
+                    ? `realm-settings-help:${camelCase(
+                        conditionType.replace(/-/g, " "),
+                      )}`
+                    : "realm-settings-help:conditions"
                 }
                 fieldLabelId="realm-settings:conditionType"
               />
@@ -254,7 +256,7 @@ export default function NewClientPolicyCondition() {
               data-testid="addCondition-saveBtn"
               isDisabled={conditionType === "" && !conditionName}
             >
-              {conditionName ? t("save") : t("add")}
+              {conditionName ? t("common:save") : t("common:add")}
             </Button>
             <Button
               variant="link"
@@ -263,7 +265,7 @@ export default function NewClientPolicyCondition() {
                 navigate(toEditClientPolicy({ realm, policyName: policyName! }))
               }
             >
-              {t("cancel")}
+              {t("common:cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

@@ -166,5 +166,4 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     public IdentityProviderDataMarshaller getMarshaller() {
         return new DefaultDataMarshaller();
     }
-
 }

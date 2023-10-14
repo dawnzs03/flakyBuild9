@@ -21,7 +21,7 @@ type EditFlowModalProps = {
 };
 
 export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
   const { addAlert, addError } = useAlerts();
   const form = useForm<AuthenticationFlowRepresentation>({ mode: "onChange" });
   const { reset, handleSubmit } = form;
@@ -36,7 +36,7 @@ export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
       );
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("updateFlowError", error);
+      addError("authentication:updateFlowError", error);
     }
     toggleDialog();
   };
@@ -61,7 +61,7 @@ export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
           variant={ButtonVariant.link}
           onClick={() => toggleDialog()}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
       isOpen

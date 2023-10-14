@@ -35,7 +35,6 @@
         <dependency>
             <groupId>org.wildfly.common</groupId>
             <artifactId>wildfly-common</artifactId>
-            <version>${wildfly.common.wildfly.aligned.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

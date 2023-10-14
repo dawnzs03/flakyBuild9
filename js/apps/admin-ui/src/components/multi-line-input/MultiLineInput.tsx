@@ -44,18 +44,12 @@ export const MultiLineInput = ({
   });
 
   const fields = useMemo<string[]>(() => {
-    let values = stringify
-      ? stringToMultiline(
-          Array.isArray(value) && value.length === 1 ? value[0] : value,
-        )
-      : value;
+    let values = stringify ? stringToMultiline(value as string) : value;
 
     values =
       Array.isArray(values) && values.length !== 0
         ? values
-        : (stringify
-            ? stringToMultiline(defaultValue as string)
-            : defaultValue) || [""];
+        : defaultValue || [""];
 
     return values;
   }, [value]);
@@ -101,7 +95,7 @@ export const MultiLineInput = ({
               variant={ButtonVariant.link}
               onClick={() => remove(index)}
               tabIndex={-1}
-              aria-label={t("remove")}
+              aria-label={t("common:remove")}
               isDisabled={fields.length === 1 || isDisabled}
             >
               <MinusCircleIcon />
@@ -112,11 +106,11 @@ export const MultiLineInput = ({
               variant={ButtonVariant.link}
               onClick={append}
               tabIndex={-1}
-              aria-label={t("add")}
+              aria-label={t("common:add")}
               data-testid="addValue"
               isDisabled={!value || isDisabled}
             >
-              <PlusCircleIcon /> {t(addButtonLabel || "add")}
+              <PlusCircleIcon /> {t(addButtonLabel || "common:add")}
             </Button>
           )}
         </Fragment>

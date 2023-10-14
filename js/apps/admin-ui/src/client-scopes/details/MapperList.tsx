@@ -47,7 +47,7 @@ export const MapperList = ({
   onDelete,
   detailLink,
 }: MapperListProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("client-scopes");
 
   const [mapperAction, setMapperAction] = useState(false);
   const mapperList = model.protocolMappers;
@@ -105,8 +105,8 @@ export const MapperList = ({
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="clientScopeList"
-        searchPlaceholderKey="searchForMapper"
+        ariaLabelKey="client-scopes:clientScopeList"
+        searchPlaceholderKey="common:searchForMapper"
         toolbarItem={
           <Dropdown
             onSelect={() => setMapperAction(false)}
@@ -117,7 +117,7 @@ export const MapperList = ({
                 onToggle={() => setMapperAction(!mapperAction)}
                 toggleIndicator={CaretDownIcon}
               >
-                {t("addMapper")}
+                {t("common:addMapper")}
               </DropdownToggle>
             }
             isOpen={mapperAction}
@@ -139,7 +139,7 @@ export const MapperList = ({
         }
         actions={[
           {
-            title: t("delete"),
+            title: t("common:delete"),
             onRowClick: onDelete,
           } as Action<Row>,
         ]}
@@ -160,11 +160,11 @@ export const MapperList = ({
         ]}
         emptyState={
           <ListEmptyState
-            message={t("emptyMappers")}
-            instructions={t("emptyMappersInstructions")}
+            message={t("common:emptyMappers")}
+            instructions={t("common:emptyMappersInstructions")}
             secondaryActions={[
               {
-                text: t("emptyPrimaryAction"),
+                text: t("common:emptyPrimaryAction"),
                 onClick: () => toggleAddMapperDialog(true),
               },
               {

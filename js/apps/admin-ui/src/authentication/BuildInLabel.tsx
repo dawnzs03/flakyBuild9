@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import style from "./build-in-label.module.css";
 
 export const BuildInLabel = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
 
   return (
     <Label icon={<CheckCircleIcon className={style.icon} />}>

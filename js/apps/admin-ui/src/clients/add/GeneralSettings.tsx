@@ -15,7 +15,7 @@ import { ClientDescription } from "../ClientDescription";
 import { getProtocolName } from "../utils";
 
 export const GeneralSettings = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const {
     control,
     formState: { errors },
@@ -31,7 +31,10 @@ export const GeneralSettings = () => {
         fieldId="kc-type"
         validated={errors.protocol ? "error" : "default"}
         labelIcon={
-          <HelpItem helpText={t("clientTypeHelp")} fieldLabelId="clientType" />
+          <HelpItem
+            helpText={t("clients-help:clientType")}
+            fieldLabelId="clients:clientType"
+          />
         }
       >
         <Controller

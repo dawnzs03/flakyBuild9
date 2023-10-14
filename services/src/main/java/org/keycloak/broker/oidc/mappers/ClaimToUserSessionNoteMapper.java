@@ -104,31 +104,30 @@ public class ClaimToUserSessionNoteMapper extends AbstractClaimMapper {
     }
 
     private void addClaimsToSessionNote(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        Map<String, List<String>> claims = mapperModel.getConfigMap(CLAIMS_PROPERTY_NAME);
+        Map<String, String> claims = mapperModel.getConfigMap(CLAIMS_PROPERTY_NAME);
         boolean areClaimValuesRegex =
                 Boolean.parseBoolean(mapperModel.getConfig().get(ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME));
 
-        for (Map.Entry<String, List<String>> claim : claims.entrySet()) {
-            Object claimValueObj = getClaimValue(context, claim.getKey());
-            for (String value : claim.getValue()) {
-                if (claimValueObj != null) {
-                    if (!(claimValueObj instanceof String)) {
-                        LOG.warnf(
-                                "Claim '%s' does not contain a string value for user with brokerUserId '%s'. "
-                                + "Actual value is of type '%s': %s",
-                                claim.getKey(),
-                                context.getBrokerUserId(), claimValueObj.getClass(), claimValueObj);
-                        continue;
-                    }
+        for (Map.Entry<String, String> claim : claims.entrySet()) {
+            Object valueObj = getClaimValue(context, claim.getKey());
 
-                    String claimValue = (String) claimValueObj;
+            if (valueObj != null) {
+                if (!(valueObj instanceof String)) {
+                    LOG.warnf(
+                            "Claim '%s' does not contain a string value for user with brokerUserId '%s'. " +
+                                    "Actual value is of type '%s': %s",
+                            claim.getKey(),
+                            context.getBrokerUserId(), valueObj.getClass(), valueObj);
+                    continue;
+                }
 
-                    boolean claimValuesMatch = areClaimValuesRegex ? valueMatchesRegex(value, claimValue)
-                            : valueEquals(value, claimValue);
+                String value = (String) valueObj;
 
-                    if (claimValuesMatch) {
-                        context.getAuthenticationSession().setUserSessionNote(claim.getKey(), claimValue);
-                    }
+                boolean claimValuesMatch = areClaimValuesRegex ? valueMatchesRegex(claim.getValue(), value)
+                        : valueEquals(claim.getValue(), value);
+
+                if (claimValuesMatch) {
+                    context.getAuthenticationSession().setUserSessionNote(claim.getKey(), value);
                 }
             }
         }

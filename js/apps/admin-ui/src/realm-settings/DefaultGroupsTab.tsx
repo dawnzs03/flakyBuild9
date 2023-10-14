@@ -33,7 +33,7 @@ import { useFetch } from "../utils/useFetch";
 import useToggle from "../utils/useToggle";
 
 export const DefaultsGroupsTab = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
 
   const [isKebabOpen, toggleKebab] = useToggle();
   const [isGroupPickerOpen, toggleGroupPicker] = useToggle();
@@ -103,7 +103,7 @@ export const DefaultsGroupsTab = () => {
   const [toggleRemoveDialog, RemoveDialog] = useConfirmDialog({
     titleKey: t("removeConfirmTitle", { count: selectedRows.length }),
     messageKey: t("removeConfirm", { count: selectedRows.length }),
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: removeGroup,
   });
@@ -120,7 +120,7 @@ export const DefaultsGroupsTab = () => {
           type="selectMany"
           text={{
             title: "realm-settings:addDefaultGroups",
-            ok: "add",
+            ok: "common:add",
           }}
           onConfirm={(groups) => {
             addGroups(groups || []);
@@ -187,7 +187,7 @@ export const DefaultsGroupsTab = () => {
                       toggleKebab();
                     }}
                   >
-                    {t("remove")}
+                    {t("common:remove")}
                   </DropdownItem>,
                 ]}
               />
@@ -196,7 +196,7 @@ export const DefaultsGroupsTab = () => {
         }
         actions={[
           {
-            title: t("remove"),
+            title: t("common:remove"),
             onRowClick: (group) => {
               setSelectedRows([group]);
               toggleRemoveDialog();
@@ -207,11 +207,11 @@ export const DefaultsGroupsTab = () => {
         columns={[
           {
             name: "name",
-            displayKey: "groupName",
+            displayKey: "groups:groupName",
           },
           {
             name: "path",
-            displayKey: "path",
+            displayKey: "groups:path",
           },
         ]}
         emptyState={

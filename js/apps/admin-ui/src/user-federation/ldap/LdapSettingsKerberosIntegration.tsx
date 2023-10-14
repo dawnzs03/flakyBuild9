@@ -18,7 +18,8 @@ export const LdapSettingsKerberosIntegration = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsKerberosIntegrationProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
+  const { t: helpText } = useTranslation("user-federation-help");
 
   const allowKerberosAuth: [string] = useWatch({
     control: form.control,
@@ -31,7 +32,7 @@ export const LdapSettingsKerberosIntegration = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("kerberosIntegration")}
-          description={t("ldapKerberosSettingsDescription")}
+          description={helpText("ldapKerberosSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}
@@ -41,7 +42,9 @@ export const LdapSettingsKerberosIntegration = ({
           label={t("allowKerberosAuthentication")}
           labelIcon={
             <HelpItem
-              helpText={t("allowKerberosAuthenticationHelp")}
+              helpText={t(
+                "user-federation-help:allowKerberosAuthenticationHelp",
+              )}
               fieldLabelId="user-federation:allowKerberosAuthentication"
             />
           }
@@ -59,8 +62,8 @@ export const LdapSettingsKerberosIntegration = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("allowKerberosAuthentication")}
               />
             )}
@@ -73,7 +76,7 @@ export const LdapSettingsKerberosIntegration = ({
               label={t("kerberosRealm")}
               labelIcon={
                 <HelpItem
-                  helpText={t("kerberosRealmHelp")}
+                  helpText={t("user-federation-help:kerberosRealmHelp")}
                   fieldLabelId="user-federation:kerberosRealm"
                 />
               }
@@ -111,7 +114,7 @@ export const LdapSettingsKerberosIntegration = ({
               label={t("serverPrincipal")}
               labelIcon={
                 <HelpItem
-                  helpText={t("serverPrincipalHelp")}
+                  helpText={t("user-federation-help:serverPrincipalHelp")}
                   fieldLabelId="user-federation:serverPrincipal"
                 />
               }
@@ -149,7 +152,7 @@ export const LdapSettingsKerberosIntegration = ({
               label={t("keyTab")}
               labelIcon={
                 <HelpItem
-                  helpText={t("keyTabHelp")}
+                  helpText={t("user-federation-help:keyTabHelp")}
                   fieldLabelId="user-federation:keyTab"
                 />
               }
@@ -183,44 +186,10 @@ export const LdapSettingsKerberosIntegration = ({
             </FormGroup>
 
             <FormGroup
-              label={t("krbPrincipalAttribute")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("krbPrincipalAttributeHelp")}
-                  fieldLabelId="user-federation:krbPrincipalAttribute"
-                />
-              }
-              fieldId="kc-krb-principal-attribute"
-              validated={
-                (form.formState.errors.config as any)
-                  ?.krbPrincipalAttribute?.[0]
-                  ? "error"
-                  : "default"
-              }
-              helperTextInvalid={
-                (form.formState.errors.config as any)
-                  ?.krbPrincipalAttribute?.[0].message
-              }
-            >
-              <KeycloakTextInput
-                defaultValue="userPrincipalName"
-                id="kc-krb-principal-attribute"
-                data-testid="krb-principal-attribute"
-                validated={
-                  (form.formState.errors.config as any)
-                    ?.krbPrincipalAttribute?.[0]
-                    ? "error"
-                    : "default"
-                }
-                {...form.register("config.krbPrincipalAttribute.0")}
-              />
-            </FormGroup>
-
-            <FormGroup
               label={t("debug")}
               labelIcon={
                 <HelpItem
-                  helpText={t("debugHelp")}
+                  helpText={t("user-federation-help:debugHelp")}
                   fieldLabelId="user-federation:debug"
                 />
               }
@@ -239,8 +208,8 @@ export const LdapSettingsKerberosIntegration = ({
                     isDisabled={false}
                     onChange={(value) => field.onChange([`${value}`])}
                     isChecked={field.value[0] === "true"}
-                    label={t("on")}
-                    labelOff={t("off")}
+                    label={t("common:on")}
+                    labelOff={t("common:off")}
                     aria-label={t("debug")}
                   />
                 )}
@@ -252,7 +221,9 @@ export const LdapSettingsKerberosIntegration = ({
           label={t("useKerberosForPasswordAuthentication")}
           labelIcon={
             <HelpItem
-              helpText={t("useKerberosForPasswordAuthenticationHelp")}
+              helpText={t(
+                "user-federation-help:useKerberosForPasswordAuthenticationHelp",
+              )}
               fieldLabelId="user-federation:useKerberosForPasswordAuthentication"
             />
           }
@@ -270,8 +241,8 @@ export const LdapSettingsKerberosIntegration = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("useKerberosForPasswordAuthentication")}
               />
             )}

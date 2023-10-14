@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.actions;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -185,18 +184,10 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 		setRegistrationEmailAsUsername(testRealm(), true);
 		try {
-			UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-			String firstName = user.getFirstName();
-			String lastName = user.getLastName();
-			assertNotNull(firstName);
-			assertNotNull(lastName);
 			changeEmailUsingRequiredAction("new@localhost", true);
-			user = ActionUtil.findUserWithAdminClient(adminClient, "new@localhost");
+
+			UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new@localhost");
 			Assert.assertNotNull(user);
-			firstName = user.getFirstName();
-			lastName = user.getLastName();
-			assertNotNull(firstName);
-			assertNotNull(lastName);
 		} finally {
 			setRegistrationEmailAsUsername(testRealm(), genuineRegistrationEmailAsUsername);
 		}

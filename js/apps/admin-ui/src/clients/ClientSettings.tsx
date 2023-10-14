@@ -20,7 +20,7 @@ export type ClientSettingsProps = {
 };
 
 export const ClientSettings = (props: ClientSettingsProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
 
   const { watch } = useFormContext<FormFields>();
   const protocol = watch("protocol");

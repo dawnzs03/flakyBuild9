@@ -3,10 +3,6 @@ set -euxo pipefail
 
 UUID=${1:-$(git rev-parse --short HEAD)}
 
-INSTALL_NAMESPACE=${2:-default}
-
-TARGET_NAMESPACES=${3-$INSTALL_NAMESPACE}
-
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # This version translates to one day for ttl.sh
@@ -32,6 +28,6 @@ VERSION="86400000.0.0"
   docker push "ttl.sh/${UUID}keycloak-operator:${VERSION}"
 )
 
-$SCRIPT_DIR/prepare-olm-test.sh ttl.sh ${VERSION} NONE ${UUID} $TARGET_NAMESPACES
+$SCRIPT_DIR/prepare-olm-test.sh ttl.sh ${VERSION} NONE ${UUID}
 
-$SCRIPT_DIR/install-keycloak-operator.sh $INSTALL_NAMESPACE
+$SCRIPT_DIR/install-keycloak-operator.sh

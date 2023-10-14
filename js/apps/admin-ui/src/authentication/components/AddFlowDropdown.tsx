@@ -29,7 +29,7 @@ export const AddFlowDropdown = ({
   onAddExecution,
   onAddFlow,
 }: AddFlowDropdownProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
 
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<FlowType>();
@@ -45,7 +45,7 @@ export const AddFlowDropdown = ({
   );
 
   return (
-    <Tooltip content={t("add")}>
+    <Tooltip content={t("common:add")}>
       <>
         <Dropdown
           isPlain
@@ -53,7 +53,7 @@ export const AddFlowDropdown = ({
           data-testid={`${execution.displayName}-edit-dropdown`}
           isOpen={open}
           toggle={
-            <DropdownToggle onToggle={setOpen} aria-label={t("add")}>
+            <DropdownToggle onToggle={setOpen} aria-label={t("common:add")}>
               <PlusIcon />
             </DropdownToggle>
           }

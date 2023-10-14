@@ -10,15 +10,10 @@ export enum Feature {
 }
 
 export default function useIsFeatureEnabled() {
-  const { features } = useServerInfo();
+  const { profileInfo } = useServerInfo();
+  const disabledFilters = profileInfo?.disabledFeatures ?? [];
 
   return function isFeatureEnabled(feature: Feature) {
-    if (!features) {
-      return false;
-    }
-    return features
-      .filter((f) => f.enabled)
-      .map((f) => f.name)
-      .includes(feature);
+    return !disabledFilters.includes(feature);
   };
 }

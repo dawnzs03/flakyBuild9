@@ -30,7 +30,7 @@ export const AuthenticationOverrides = ({
   reset,
   hasConfigureAccess,
 }: AuthenticationOverridesProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const [flows, setFlows] = useState<JSX.Element[]>([]);
   const [browserFlowOpen, setBrowserFlowOpen] = useState(false);
   const [directGrantOpen, setDirectGrantOpen] = useState(false);
@@ -46,7 +46,7 @@ export const AuthenticationOverrides = ({
       filteredFlows = sortBy(filteredFlows, [(f) => f.alias]);
       setFlows([
         <SelectOption key="empty" value="">
-          {t("choose")}
+          {t("common:choose")}
         </SelectOption>,
         ...filteredFlows.map((flow) => (
           <SelectOption key={flow.id} value={flow.id}>
@@ -69,8 +69,8 @@ export const AuthenticationOverrides = ({
         fieldId="browserFlow"
         labelIcon={
           <HelpItem
-            helpText={t("browserFlowHelp")}
-            fieldLabelId="browserFlow"
+            helpText={t("clients-help:browserFlow")}
+            fieldLabelId="clients:browserFlow"
           />
         }
       >
@@ -101,8 +101,8 @@ export const AuthenticationOverrides = ({
           fieldId="directGrant"
           labelIcon={
             <HelpItem
-              helpText={t("directGrantHelp")}
-              fieldLabelId="directGrant"
+              helpText={t("clients-help:directGrant")}
+              fieldLabelId="clients:directGrant"
             />
           }
         >
@@ -134,14 +134,14 @@ export const AuthenticationOverrides = ({
           onClick={save}
           data-testid="OIDCAuthFlowOverrideSave"
         >
-          {t("save")}
+          {t("common:save")}
         </Button>
         <Button
           variant="link"
           onClick={reset}
           data-testid="OIDCAuthFlowOverrideRevert"
         >
-          {t("revert")}
+          {t("common:revert")}
         </Button>
       </ActionGroup>
     </FormAccess>

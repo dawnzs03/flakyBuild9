@@ -10,7 +10,7 @@ const CreateClientScope = lazy(() => import("../CreateClientScope"));
 export const NewClientScopeRoute: AppRouteObject = {
   path: "/:realm/client-scopes/new",
   element: <CreateClientScope />,
-  breadcrumb: (t) => t("createClientScope"),
+  breadcrumb: (t) => t("client-scopes:createClientScope"),
   handle: {
     access: "manage-clients",
   },

@@ -22,7 +22,7 @@ export const GroupToolbar = ({
   toggleDelete,
   kebabDisabled,
 }: GroupToolbarProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("groups");
   const { currentGroup } = useSubGroups();
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users") || currentGroup()?.access?.manage;
@@ -58,7 +58,7 @@ export const GroupToolbar = ({
                 toggleKebab();
               }}
             >
-              {t("delete")}
+              {t("common:delete")}
             </DropdownItem>,
           ]}
         />

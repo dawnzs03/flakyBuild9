@@ -19,7 +19,7 @@ type ToggleProps = {
   label: string;
 };
 export const Toggle = ({ name, label }: ToggleProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { control } = useFormContext<FormFields>();
 
   return (
@@ -29,7 +29,7 @@ export const Toggle = ({ name, label }: ToggleProps) => {
       fieldId={label}
       labelIcon={
         <HelpItem
-          helpText={t(`${label}Help`)}
+          helpText={t(`clients-help:${label}`)}
           fieldLabelId={`clients:${label}`}
         />
       }
@@ -42,8 +42,8 @@ export const Toggle = ({ name, label }: ToggleProps) => {
           <Switch
             id={name!}
             data-testid={label}
-            label={t("on")}
-            labelOff={t("off")}
+            label={t("common:on")}
+            labelOff={t("common:off")}
             isChecked={field.value === "true"}
             onChange={(value) => field.onChange(value.toString())}
             aria-label={t(label)}
@@ -55,7 +55,7 @@ export const Toggle = ({ name, label }: ToggleProps) => {
 };
 
 export const SamlConfig = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { control } = useFormContext<FormFields>();
 
   const [nameFormatOpen, setNameFormatOpen] = useState(false);
@@ -70,8 +70,8 @@ export const SamlConfig = () => {
         fieldId="nameIdFormat"
         labelIcon={
           <HelpItem
-            helpText={t("nameIdFormatHelp")}
-            fieldLabelId="nameIdFormat"
+            helpText={t("clients-help:nameIdFormat")}
+            fieldLabelId="clients:nameIdFormat"
           />
         }
       >

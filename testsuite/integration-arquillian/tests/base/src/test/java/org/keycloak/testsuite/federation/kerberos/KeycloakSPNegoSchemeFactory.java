@@ -81,7 +81,18 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
         @Override
         protected byte[] generateGSSToken(byte[] input, Oid oid, String authServer, Credentials credentials) throws GSSException {
-            KerberosUsernamePasswordAuthenticator authenticator = new KerberosUsernamePasswordAuthenticator(kerberosConfig);
+            KerberosUsernamePasswordAuthenticator authenticator = new KerberosUsernamePasswordAuthenticator(kerberosConfig) {
+
+                // Disable strict check for the configured kerberos realm, which is on super-method
+                @Override
+                protected String getKerberosPrincipal(String username) throws LoginException {
+                    if (username.contains("@")) {
+                        return username;
+                    } else {
+                        return username + "@" + config.getKerberosRealm();
+                    }
+                }
+            };
 
             try {
                 Subject clientSubject = authenticator.authenticateSubject(username, password);

@@ -7,7 +7,7 @@ export const User = () => {
     <UserSelect
       name="users"
       label="users"
-      helpText={t("policyUsers")}
+      helpText={t("clients-help:policyUsers")}
       defaultValue={[]}
       isRequired
     />

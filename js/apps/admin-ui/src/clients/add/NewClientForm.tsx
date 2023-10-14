@@ -25,7 +25,7 @@ import { GeneralSettings } from "./GeneralSettings";
 import { LoginSettings } from "./LoginSettings";
 
 export default function NewClientForm() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { realm } = useRealm();
   const navigate = useNavigate();
 
@@ -60,10 +60,10 @@ export default function NewClientForm() {
         ...client,
         clientId: client.clientId?.trim(),
       });
-      addAlert(t("createClientSuccess"), AlertVariant.success);
+      addAlert(t("createSuccess"), AlertVariant.success);
       navigate(toClient({ realm, clientId: newClient.id, tab: "settings" }));
     } catch (error) {
-      addError("createClientError", error);
+      addError("clients:createError", error);
     }
   };
 
@@ -97,7 +97,10 @@ export default function NewClientForm() {
   const title = t("createClient");
   return (
     <>
-      <ViewHeader titleKey="createClient" subKey="clientsExplain" />
+      <ViewHeader
+        titleKey="clients:createClient"
+        subKey="clients:clientsExplain"
+      />
       <PageSection variant="light">
         <FormProvider {...form}>
           <Wizard
@@ -144,7 +147,7 @@ export default function NewClientForm() {
                           forward(onNext);
                         }}
                       >
-                        {isFinalStep() ? t("save") : t("next")}
+                        {isFinalStep() ? t("common:save") : t("common:next")}
                       </Button>
                       <Button
                         variant="secondary"
@@ -155,14 +158,14 @@ export default function NewClientForm() {
                         }}
                         isDisabled={activeStep.name === t("generalSettings")}
                       >
-                        {t("back")}
+                        {t("common:back")}
                       </Button>
                       <Button
                         data-testid="cancel"
                         variant="link"
                         onClick={onClose}
                       >
-                        {t("cancel")}
+                        {t("common:cancel")}
                       </Button>
                     </>
                   )}

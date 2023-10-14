@@ -46,7 +46,9 @@ import java.util.concurrent.TimeUnit;
 
 import jakarta.inject.Inject;
 
-@ControllerConfiguration(
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
+
+@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE,
     dependents = {
         @Dependent(type = KeycloakAdminSecretDependentResource.class),
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
@@ -66,12 +68,12 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
-        var namespaces = context.getControllerConfiguration().getNamespaces();
+        String namespace = context.getControllerConfiguration().getConfigurationService().getKubernetesClient().getNamespace();
 
         InformerConfiguration<StatefulSet> statefulSetIC = InformerConfiguration
                 .from(StatefulSet.class)
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(namespaces)
+                .withNamespaces(namespace)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
                 .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
@@ -79,7 +81,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         InformerConfiguration<Service> servicesIC = InformerConfiguration
                 .from(Service.class)
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(namespaces)
+                .withNamespaces(namespace)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
                 .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
@@ -128,9 +130,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
             updateControl = UpdateControl.updateStatus(kc);
         }
 
-        if (!status.isReady() || context.getSecondaryResource(StatefulSet.class)
-                .map(s -> s.getMetadata().getAnnotations().get(Constants.KEYCLOAK_MISSING_SECRETS_ANNOTATION))
-                .filter(Boolean::valueOf).isPresent()) {
+        if (!status.isReady()) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         }
 

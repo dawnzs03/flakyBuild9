@@ -26,7 +26,6 @@ import org.keycloak.http.FormPartValue;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
@@ -49,7 +48,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
@@ -159,9 +157,7 @@ public class RealmLocalizationResource {
     @Operation()
     public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale,
             @Deprecated @QueryParam("useRealmDefaultLocaleFallback") Boolean useFallback) {
-        if (!AdminPermissions.realms(session, auth.adminAuth()).isAdmin()) {
-            throw new ForbiddenException();
-        }
+        auth.requireAnyAdminRole();
 
         // this fallback is no longer needed since the fix for #15845, don't forget to remove it from the API
         if (useFallback != null && useFallback) {

@@ -12,7 +12,7 @@ export const KeyProviderModal = ({
   providerType,
   onClose,
 }: KeyProviderModalProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   return (
     <Modal
       className="add-provider-modal"

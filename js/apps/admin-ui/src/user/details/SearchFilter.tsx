@@ -23,7 +23,7 @@ export const SearchDropdown = ({
   searchType,
   onSelect,
 }: SearchDropdownProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const [searchToggle, setSearchToggle] = useState(false);
 
   const createDropdown = (searchType: SearchType) => (
@@ -54,7 +54,7 @@ export const SearchDropdown = ({
 };
 
 export const SearchToolbar = ({ searchType, onSelect }: SearchToolbarProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const [open, setOpen] = useState(false);
 
   return (

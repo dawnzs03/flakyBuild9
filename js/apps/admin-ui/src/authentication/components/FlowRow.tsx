@@ -47,7 +47,7 @@ export const FlowRow = ({
   onAddFlow,
   onDelete,
 }: FlowRowProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
   const hasSubList = !!execution.executionList?.length;
 
   return (
@@ -65,7 +65,7 @@ export const FlowRow = ({
           aria-labelledby={execution.id}
         >
           <DataListControl>
-            <DataListDragButton aria-label={t("dragHelp")} />
+            <DataListDragButton aria-label={t("common-help:dragHelp")} />
           </DataListControl>
           {hasSubList && (
             <DataListToggle
@@ -116,11 +116,11 @@ export const FlowRow = ({
                   </>
                 )}
                 {!builtIn && (
-                  <Tooltip content={t("delete")}>
+                  <Tooltip content={t("common:delete")}>
                     <Button
                       variant="plain"
                       data-testid={`${execution.displayName}-delete`}
-                      aria-label={t("delete")}
+                      aria-label={t("common:delete")}
                       onClick={() => onDelete(execution)}
                     >
                       <TrashIcon />

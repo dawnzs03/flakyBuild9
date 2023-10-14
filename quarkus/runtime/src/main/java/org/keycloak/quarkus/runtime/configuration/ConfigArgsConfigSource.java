@@ -77,14 +77,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     }
 
     private static String getRawConfigArgs() {
-        String args = System.getProperty(CLI_ARGS);
-
-        if (args != null) {
-            return args;
-        }
-
-        // make sure quarkus.args property is properly formatted
-        return String.join(ARG_SEPARATOR, System.getProperty("quarkus.args", "").split(" "));
+        return System.getProperty(CLI_ARGS, "");
     }
 
     @Override

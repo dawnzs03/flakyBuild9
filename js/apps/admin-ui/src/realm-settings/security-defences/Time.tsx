@@ -13,7 +13,7 @@ export const Time = ({
   name: string;
   style?: CSSProperties;
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const {
     control,
     formState: { errors },
@@ -25,14 +25,14 @@ export const Time = ({
       fieldId={name}
       labelIcon={
         <HelpItem
-          helpText={t(`${name}Help`)}
+          helpText={t(`realm-settings-help:${name}`)}
           fieldLabelId={`realm-settings:${name}`}
         />
       }
       validated={
         errors[name] ? ValidatedOptions.error : ValidatedOptions.default
       }
-      helperTextInvalid={t("required")}
+      helperTextInvalid={t("common:required")}
     >
       <Controller
         name={name}

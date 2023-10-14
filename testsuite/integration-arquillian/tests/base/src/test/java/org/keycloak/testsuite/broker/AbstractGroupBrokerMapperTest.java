@@ -36,10 +36,6 @@ public abstract class AbstractGroupBrokerMapperTest extends AbstractGroupMapperT
             "    \"value\": \"value 1\"\n" +
             "  },\n" +
             "  {\n" +
-            "    \"key\": \"" + KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME + "\",\n" +
-            "    \"value\": \"value 2\"\n" +
-            "  },\n" +
-            "  {\n" +
             "    \"key\": \"" + KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2 + "\",\n" +
             "    \"value\": \"value 2\"\n" +
             "  }\n" +
@@ -73,7 +69,7 @@ public abstract class AbstractGroupBrokerMapperTest extends AbstractGroupMapperT
     protected void updateUser() {
         UserRepresentation user = findUser(bc.providerRealmName(), bc.getUserLogin(), bc.getUserEmail());
         ImmutableMap<String, List<String>> matchingAttributes = ImmutableMap.<String, List<String>>builder()
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").add("value 2").build())
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
                 .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2, ImmutableList.<String>builder().add(newValueForAttribute2).build())
                 .put("some.other.attribute", ImmutableList.<String>builder().add("some value").build())
                 .build();
@@ -116,7 +112,7 @@ public abstract class AbstractGroupBrokerMapperTest extends AbstractGroupMapperT
     protected static Map<String, List<String>> createMatchingAttributes() {
         return ImmutableMap.<String, List<String>> builder()
                 .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME,
-                        ImmutableList.<String> builder().add("value 1").add("value 2").build())
+                        ImmutableList.<String> builder().add("value 1").build())
                 .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2,
                         ImmutableList.<String> builder().add("value 2").build())
                 .build();

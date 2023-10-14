@@ -44,7 +44,7 @@ const DetailLink = (comp: ComponentRepresentation) => {
 export const ClientRegistrationList = ({
   subType,
 }: ClientRegistrationListProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { subTab } = useParams<ClientRegistrationParams>();
   const navigate = useNavigate();
 
@@ -65,11 +65,11 @@ export const ClientRegistrationList = ({
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clientRegisterPolicyDeleteConfirmTitle",
+    titleKey: "clients:clientRegisterPolicyDeleteConfirmTitle",
     messageKey: t("clientRegisterPolicyDeleteConfirm", {
       name: selectedPolicy?.name,
     }),
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -80,7 +80,7 @@ export const ClientRegistrationList = ({
         addAlert(t("clientRegisterPolicyDeleteSuccess"));
         setSelectedPolicy(undefined);
       } catch (error) {
-        addError("clientRegisterPolicyDeleteError", error);
+        addError("clients:clientRegisterPolicyDeleteError", error);
       }
     },
   });
@@ -103,8 +103,8 @@ export const ClientRegistrationList = ({
       )}
       <DeleteConfirm />
       <KeycloakDataTable
-        ariaLabelKey="initialAccessToken"
-        searchPlaceholderKey="searchInitialAccessToken"
+        ariaLabelKey="clients:initialAccessToken"
+        searchPlaceholderKey="clients:searchInitialAccessToken"
         loader={policies}
         toolbarItem={
           <ToolbarItem>
@@ -115,7 +115,7 @@ export const ClientRegistrationList = ({
         }
         actions={[
           {
-            title: t("delete"),
+            title: t("common:delete"),
             onRowClick: (policy) => {
               setSelectedPolicy(policy);
               toggleDeleteDialog();
@@ -125,12 +125,12 @@ export const ClientRegistrationList = ({
         columns={[
           {
             name: "name",
-            displayKey: "name",
+            displayKey: "common:name",
             cellRenderer: DetailLink,
           },
           {
             name: "providerId",
-            displayKey: "providerId",
+            displayKey: "clients:providerId",
           },
         ]}
       />

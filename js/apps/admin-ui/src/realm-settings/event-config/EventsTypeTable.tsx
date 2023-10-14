@@ -26,7 +26,7 @@ export function EventsTypeTable({
   onSelect,
   onDelete,
 }: EventsTypeTableProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
 
   const data = eventTypes.map((type) => ({
     id: type,
@@ -54,7 +54,7 @@ export function EventsTypeTable({
           ? []
           : [
               {
-                title: t("remove"),
+                title: t("common:remove"),
                 onRowClick: onDelete,
               } as Action<EventType>,
             ]

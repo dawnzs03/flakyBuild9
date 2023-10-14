@@ -14,7 +14,7 @@ import { HelpItem } from "ui-shared";
 const TYPES = ["basic-flow", "client-flow"] as const;
 
 export const FlowType = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
   const { control } = useFormContext<AuthenticationFlowRepresentation>();
   const [open, setOpen] = useState(false);
 
@@ -23,8 +23,8 @@ export const FlowType = () => {
       label={t("flowType")}
       labelIcon={
         <HelpItem
-          helpText={t("topLevelFlowTypeHelp")}
-          fieldLabelId="flowType"
+          helpText={t("authentication-help:topLevelFlowType")}
+          fieldLabelId="authentication:flowType"
         />
       }
       fieldId="flowType"

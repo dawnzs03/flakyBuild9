@@ -118,7 +118,7 @@ public class ProtocolMapperUtil {
                                                                                 String tokenClaimName,
                                                                                 boolean accessToken, boolean idToken) {
 
-        return createUserRealmRoleMappingMapper(realmRolePrefix, name, tokenClaimName, accessToken, idToken, true);
+        return createUserRealmRoleMappingMapper(realmRolePrefix, name, tokenClaimName, accessToken, idToken, false);
     }
 
     public static ProtocolMapperRepresentation createUserRealmRoleMappingMapper(String realmRolePrefix,
@@ -134,7 +134,7 @@ public class ProtocolMapperUtil {
                                                                                 String tokenClaimName,
                                                                                 boolean accessToken, boolean idToken) {
 
-        return createUserClientRoleMappingMapper(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken, true);
+        return createUserClientRoleMappingMapper(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken, false);
     }
 
     public static ProtocolMapperRepresentation createUserClientRoleMappingMapper(String clientId, String clientRolePrefix,

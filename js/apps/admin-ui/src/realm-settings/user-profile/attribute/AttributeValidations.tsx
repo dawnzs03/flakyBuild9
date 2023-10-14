@@ -27,7 +27,7 @@ import { AddValidatorDialog } from "../attribute/AddValidatorDialog";
 import "../../realm-settings-section.css";
 
 export const AttributeValidations = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const [addValidatorModalOpen, toggleModal] = useToggle();
   const [validatorToDelete, setValidatorToDelete] = useState<string>();
   const { setValue, control, register, getValues } = useFormContext();
@@ -47,7 +47,7 @@ export const AttributeValidations = () => {
     messageKey: t("deleteValidatorConfirmMsg", {
       validatorName: validatorToDelete,
     }),
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       const updatedValidators = validators.filter(
@@ -123,7 +123,7 @@ export const AttributeValidations = () => {
                         setValidatorToDelete(validator.key);
                       }}
                     >
-                      {t("delete")}
+                      {t("common:delete")}
                     </Button>
                   </Td>
                 </Tr>

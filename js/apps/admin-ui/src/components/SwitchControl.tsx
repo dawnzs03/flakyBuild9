@@ -20,7 +20,7 @@ export const DefaultSwitchControl = <
 >(
   props: DefaultSwitchControlProps<T, P>,
 ) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
 
   return <SwitchControl {...props} labelOn={t("on")} labelOff={t("off")} />;
 };

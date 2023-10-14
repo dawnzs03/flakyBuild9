@@ -14,7 +14,7 @@ export const ValidatorSelect = ({
   selectedValidators,
   onChange,
 }: ValidatorSelectProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const allValidator: ComponentTypeRepresentation[] =
     useServerInfo().componentTypes?.["org.keycloak.validate.Validator"] || [];
   const validators = useMemo(
@@ -39,7 +39,7 @@ export const ValidatorSelect = ({
         variant="single"
         aria-label={t("selectOne")}
         isOpen={open}
-        placeholderText={t("choose")}
+        placeholderText={t("common:choose")}
         menuAppendTo="parent"
         maxHeight={300}
       >

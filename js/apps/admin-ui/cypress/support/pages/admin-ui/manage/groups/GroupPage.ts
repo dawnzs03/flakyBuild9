@@ -110,7 +110,7 @@ export default class GroupPage extends PageObject {
     listingPage.clickDetailMenu("Move to");
     moveGroupModal
       .assertModalVisible(true)
-      .assertModalTitleEqual(`Move ${groupName} to Root`);
+      .assertModalTitleEqual(`Move ${groupName} to root`);
     if (!destinationGroupName.includes("root")) {
       for (const destination of destinationGroupName) {
         moveGroupModal

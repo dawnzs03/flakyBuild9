@@ -35,7 +35,7 @@ export type FormFields = Omit<
 >;
 
 export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const [resource, setResource] = useState<ResourceServerRepresentation>();
   const [importDialog, toggleImportDialog] = useToggle();
 
@@ -59,7 +59,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
       addAlert(t("importResourceSuccess"), AlertVariant.success);
       reset({ ...value });
     } catch (error) {
-      addError("importResourceError", error);
+      addError("clients:importResourceError", error);
     }
   };
 
@@ -71,7 +71,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
       );
       addAlert(t("updateResourceSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("resourceSaveError", error);
+      addError("clients:resourceSaveError", error);
     }
   };
 
@@ -96,7 +96,10 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           label={t("import")}
           fieldId="import"
           labelIcon={
-            <HelpItem helpText={t("importHelp")} fieldLabelId="import" />
+            <HelpItem
+              helpText={t("clients-help:import")}
+              fieldLabelId="clients:import"
+            />
           }
         >
           <Button variant="secondary" onClick={toggleImportDialog}>
@@ -108,8 +111,8 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           label={t("policyEnforcementMode")}
           labelIcon={
             <HelpItem
-              helpText={t("policyEnforcementModeHelp")}
-              fieldLabelId="policyEnforcementMode"
+              helpText={t("clients-help:policyEnforcementMode")}
+              fieldLabelId="clients:policyEnforcementMode"
             />
           }
           fieldId="policyEnforcementMode"
@@ -147,8 +150,8 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           fieldId="allowRemoteResourceManagement"
           labelIcon={
             <HelpItem
-              helpText={t("allowRemoteResourceManagementHelp")}
-              fieldLabelId="allowRemoteResourceManagement"
+              helpText={t("clients-help:allowRemoteResourceManagement")}
+              fieldLabelId="clients:allowRemoteResourceManagement"
             />
           }
         >
@@ -160,8 +163,8 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
             render={({ field }) => (
               <Switch
                 id="allowRemoteResourceManagement"
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 isChecked={field.value}
                 onChange={field.onChange}
                 aria-label={t("allowRemoteResourceManagement")}

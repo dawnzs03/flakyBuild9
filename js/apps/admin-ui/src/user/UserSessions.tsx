@@ -10,7 +10,7 @@ import type { UserParams } from "./routes/User";
 export const UserSessions = () => {
   const { id } = useParams<UserParams>();
   const { realm } = useRealm();
-  const { t } = useTranslation();
+  const { t } = useTranslation("sessions");
 
   const loader = () => adminClient.users.listSessions({ id, realm });
 

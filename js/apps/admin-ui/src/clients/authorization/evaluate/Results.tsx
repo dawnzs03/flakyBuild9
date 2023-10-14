@@ -53,7 +53,7 @@ function filterResults(
 }
 
 export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
 
   const [filterDropdownOpen, toggleFilterDropdown] = useToggle();
 
@@ -92,14 +92,14 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
                 name={"inputGroupName"}
                 id={"inputGroupName"}
                 type="search"
-                aria-label={t("search")}
-                placeholder={t("search")}
+                aria-label={t("common:search")}
+                placeholder={t("common:search")}
                 onChange={setSearchInput}
                 onKeyDown={handleKeyDown}
               />
               <Button
                 variant={ButtonVariant.control}
-                aria-label={t("search")}
+                aria-label={t("common:search")}
                 onClick={() => confirmSearchQuery()}
               >
                 <SearchIcon />
@@ -170,15 +170,15 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
           <Divider />
           <ListEmptyState
             isSearchVariant
-            message={t("noSearchResults")}
-            instructions={t("noSearchResultsInstructions")}
+            message={t("common:noSearchResults")}
+            instructions={t("common:noSearchResultsInstructions")}
           />
         </>
       )}
       <Form>
         <FixedButtonsGroup name="authorization">
           <Button data-testid="authorization-eval" id="back-btn" onClick={back}>
-            {t("back")}
+            {t("common:back")}
           </Button>{" "}
           <Button
             data-testid="authorization-reevaluate"
@@ -186,7 +186,7 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
             variant="secondary"
             onClick={refresh}
           >
-            {t("reevaluate")}
+            {t("clients:reevaluate")}
           </Button>{" "}
           <AuthorizationDataModal data={evaluateResult.rpt!} />
         </FixedButtonsGroup>

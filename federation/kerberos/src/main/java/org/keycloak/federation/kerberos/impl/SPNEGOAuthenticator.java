@@ -27,7 +27,6 @@ import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KerberosSerializationUtils;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
-import org.keycloak.federation.kerberos.KerberosPrincipal;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
@@ -111,10 +110,12 @@ public class SPNEGOAuthenticator {
     }
 
     /**
-     * @return kerberos principal to be used in Keycloak
+     * @return username to be used in Keycloak. Username is authenticated kerberos principal without realm name
      */
-    public KerberosPrincipal getAuthenticatedKerberosPrincipal() {
-        return new KerberosPrincipal(authenticatedKerberosPrincipal);
+    public String getAuthenticatedUsername() {
+        String[] tokens = authenticatedKerberosPrincipal.split("@");
+        String username = tokens[0];
+        return username;
     }
 
 

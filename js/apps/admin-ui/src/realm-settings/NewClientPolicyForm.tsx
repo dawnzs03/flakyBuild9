@@ -67,7 +67,7 @@ type PolicyDetailAttributes = {
 };
 
 export default function NewClientPolicyForm() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>();
@@ -113,12 +113,12 @@ export default function NewClientPolicyForm() {
     onChange,
     value,
   }: ClientPoliciesHeaderProps) => {
-    const { t } = useTranslation();
+    const { t } = useTranslation("realm-settings");
 
     const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
       titleKey: "realm-settings:disablePolicyConfirmTitle",
       messageKey: "realm-settings:disablePolicyConfirm",
-      continueButtonLabel: "disable",
+      continueButtonLabel: "common:disable",
       onConfirm: () => {
         onChange(!value);
         save();
@@ -461,7 +461,7 @@ export default function NewClientPolicyForm() {
           className="pf-u-mt-lg"
         >
           <FormGroup
-            label={t("name")}
+            label={t("common:name")}
             fieldId="kc-client-profile-name"
             isRequired
             helperTextInvalid={form.formState.errors.name?.message}
@@ -480,7 +480,7 @@ export default function NewClientPolicyForm() {
                   : ValidatedOptions.default
               }
               {...form.register("name", {
-                required: { value: true, message: t("required") },
+                required: { value: true, message: t("common:required") },
                 validate: (value) =>
                   policies?.some((policy) => policy.name === value)
                     ? t("createClientProfileNameHelperText").toString()
@@ -488,7 +488,7 @@ export default function NewClientPolicyForm() {
               })}
             />
           </FormGroup>
-          <FormGroup label={t("description")} fieldId="kc-description">
+          <FormGroup label={t("common:description")} fieldId="kc-description">
             <KeycloakTextArea
               aria-label={t("description")}
               id="kc-client-policy-description"
@@ -503,7 +503,7 @@ export default function NewClientPolicyForm() {
               data-testid="saveCreatePolicy"
               isDisabled={!form.formState.isValid}
             >
-              {t("save")}
+              {t("common:save")}
             </Button>
             <Button
               id="cancelCreatePolicy"
@@ -520,7 +520,9 @@ export default function NewClientPolicyForm() {
               }
               data-testid="cancelCreatePolicy"
             >
-              {showAddConditionsAndProfilesForm ? t("reload") : t("cancel")}
+              {showAddConditionsAndProfilesForm
+                ? t("common:reload")
+                : t("common:cancel")}
             </Button>
           </ActionGroup>
           {(showAddConditionsAndProfilesForm || form.formState.isSubmitted) && (
@@ -530,7 +532,7 @@ export default function NewClientPolicyForm() {
                   <Text className="kc-conditions" component={TextVariants.h1}>
                     {t("conditions")}
                     <HelpItem
-                      helpText={t("conditionsHelp")}
+                      helpText={t("realm-settings-help:conditions")}
                       fieldLabelId="realm-settings:conditions"
                     />
                   </Text>
@@ -648,7 +650,7 @@ export default function NewClientPolicyForm() {
                   >
                     {t("clientProfiles")}
                     <HelpItem
-                      helpText={t("clientProfilesHelp")}
+                      helpText={t("realm-settings-help:clientProfiles")}
                       fieldLabelId="realm-settings:clientProfiles"
                     />
                   </Text>

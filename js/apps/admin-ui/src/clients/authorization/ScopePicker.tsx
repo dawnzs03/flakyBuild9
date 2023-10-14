@@ -19,7 +19,7 @@ type Scope = {
 };
 
 export const ScopePicker = ({ clientId }: { clientId: string }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { control } = useFormContext();
 
   const [open, setOpen] = useState(false);
@@ -52,7 +52,10 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
     <FormGroup
       label={t("authorizationScopes")}
       labelIcon={
-        <HelpItem helpText={t("clientScopesHelp")} fieldLabelId="scopes" />
+        <HelpItem
+          helpText={t("clients-help:scopes")}
+          fieldLabelId="clients:scopes"
+        />
       }
       fieldId="scopes"
     >
@@ -66,8 +69,8 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
             variant={SelectVariant.typeaheadMulti}
             chipGroupProps={{
               numChips: 3,
-              expandedText: t("hide"),
-              collapsedText: t("showRemaining"),
+              expandedText: t("common:hide"),
+              collapsedText: t("common:showRemaining"),
             }}
             onToggle={setOpen}
             isOpen={open}

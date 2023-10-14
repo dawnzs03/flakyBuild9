@@ -58,7 +58,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     public static final String READ_ONLY_ATTRIBUTE_KEY = "kc.read.only";
 
     protected final UserProfileContext context;
-    protected final KeycloakSession session;
+    private final KeycloakSession session;
     private final Map<String, AttributeMetadata> metadataByAttribute;
     protected final UserModel user;
 
@@ -74,18 +74,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public boolean isReadOnly(String attributeName) {
-        if (UserModel.USERNAME.equals(attributeName)) {
-            if (isServiceAccountUser()) {
-                return true;
-            }
-        }
-
-        if (UserModel.EMAIL.equals(attributeName)) {
-            if (isServiceAccountUser()) {
-                return false;
-            }
-        }
-
         if (isReadOnlyFromMetadata(attributeName) || isReadOnlyInternalAttribute(attributeName)) {
             return true;
         }
@@ -175,18 +163,8 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     }
 
     @Override
-    public Map<String, List<String>> getWritable() {
-        Map<String, List<String>> attributes = new HashMap<>(this);
-
-        for (String name : nameSet()) {
-            AttributeMetadata metadata = getMetadata(name);
-
-            if (metadata == null || !metadata.canEdit(createAttributeContext(metadata))) {
-                attributes.remove(name);
-            }
-        }
-
-        return attributes;
+    public Set<Entry<String, List<String>>> attributeSet() {
+        return entrySet();
     }
 
     @Override
@@ -218,10 +196,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     @Override
     public Map<String, List<String>> toMap() {
         return this;
-    }
-
-    protected boolean isServiceAccountUser() {
-        return user != null && user.getServiceAccountClientLink() != null;
     }
 
     private AttributeContext createAttributeContext(Entry<String, List<String>> attribute, AttributeMetadata metadata) {
@@ -288,8 +262,8 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                     key = key.substring(Constants.USER_ATTRIBUTES_PREFIX.length());
                 }
 
-                Object value = entry.getValue();
                 List<String> values;
+                Object value = entry.getValue();
 
                 if (value instanceof String) {
                     values = Collections.singletonList((String) value);
@@ -318,34 +292,29 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         if (user != null) {
-            List<String> username = newAttributes.getOrDefault(UserModel.USERNAME, Collections.emptyList());
+            List<String> username = newAttributes.get(UserModel.USERNAME);
 
-            if (username.isEmpty() && isReadOnly(UserModel.USERNAME)) {
+            if (username == null || username.isEmpty() || (!realm.isEditUsernameAllowed() && UserProfileContext.USER_API.equals(context))) {
                 setUserName(newAttributes, Collections.singletonList(user.getUsername()));
             }
         }
 
-        List<String> email = newAttributes.getOrDefault(UserModel.EMAIL, Collections.emptyList());
+        List<String> email = newAttributes.get(UserModel.EMAIL);
 
-        if (!email.isEmpty() && realm.isRegistrationEmailAsUsername()) {
-            List<String> lowerCaseEmailList = email.stream()
+        if (email != null && realm.isRegistrationEmailAsUsername()) {
+            final List<String> lowerCaseEmailList = email.stream()
                     .filter(Objects::nonNull)
                     .map(String::toLowerCase)
                     .collect(Collectors.toList());
 
             setUserName(newAttributes, lowerCaseEmailList);
-
-            if (user != null && isReadOnly(UserModel.EMAIL)) {
-                newAttributes.put(UserModel.EMAIL, Collections.singletonList(user.getEmail()));
-                setUserName(newAttributes, Collections.singletonList(user.getEmail()));
-            }
         }
 
         return newAttributes;
     }
 
     private void setUserName(Map<String, List<String>> newAttributes, List<String> lowerCaseEmailList) {
-        if (isServiceAccountUser()) {
+        if (user != null && user.getServiceAccountClientLink() != null) {
             return;
         }
         newAttributes.put(UserModel.USERNAME, lowerCaseEmailList);
@@ -373,11 +342,16 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             return true;
         }
 
-        if (isServiceAccountUser()) {
+        // expect any attribute if managing the user profile using REST
+        if (UserProfileContext.USER_API.equals(context) || UserProfileContext.ACCOUNT.equals(context)) {
             return true;
         }
 
-        if (isReadOnlyInternalAttribute(name)) {
+        if (isReadOnly(name)) {
+            return true;
+        }
+
+        if (user != null && user.getServiceAccountClientLink() != null) {
             return true;
         }
 

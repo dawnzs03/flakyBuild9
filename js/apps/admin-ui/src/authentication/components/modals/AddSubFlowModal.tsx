@@ -40,7 +40,7 @@ export const AddSubFlowModal = ({
   onConfirm,
   onCancel,
 }: AddSubFlowProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
   const {
     register,
     control,
@@ -77,7 +77,7 @@ export const AddSubFlowModal = ({
           type="submit"
           form="sub-flow-form"
         >
-          {t("add")}
+          {t("common:add")}
         </Button>,
         <Button
           key="cancel"
@@ -85,21 +85,24 @@ export const AddSubFlowModal = ({
           variant={ButtonVariant.link}
           onClick={onCancel}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
       isOpen
     >
       <Form id="sub-flow-form" onSubmit={handleSubmit(onConfirm)} isHorizontal>
         <FormGroup
-          label={t("name")}
+          label={t("common:name")}
           fieldId="name"
-          helperTextInvalid={t("required")}
+          helperTextInvalid={t("common:required")}
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }
           labelIcon={
-            <HelpItem helpText={t("flowNameHelp")} fieldLabelId="name" />
+            <HelpItem
+              helpText={t("authentication-help:name")}
+              fieldLabelId="name"
+            />
           }
           isRequired
         >
@@ -113,11 +116,11 @@ export const AddSubFlowModal = ({
           />
         </FormGroup>
         <FormGroup
-          label={t("description")}
+          label={t("common:description")}
           fieldId="description"
           labelIcon={
             <HelpItem
-              helpText={t("flowNameDescriptionHelp")}
+              helpText={t("authentication-help:description")}
               fieldLabelId="description"
             />
           }
@@ -132,7 +135,10 @@ export const AddSubFlowModal = ({
           label={t("flowType")}
           fieldId="flowType"
           labelIcon={
-            <HelpItem helpText={t("flowTypeHelp")} fieldLabelId="flowType" />
+            <HelpItem
+              helpText={t("authentication-help:flowType")}
+              fieldLabelId="authentication:flowType"
+            />
           }
         >
           <Controller
@@ -170,8 +176,8 @@ export const AddSubFlowModal = ({
             label={t("flowType")}
             labelIcon={
               <HelpItem
-                helpText={t("authenticationFlowTypeHelp")}
-                fieldLabelId="flowType"
+                helpText={t("authentication-help:flowType")}
+                fieldLabelId="authentication:flowType"
               />
             }
             fieldId="flowType"

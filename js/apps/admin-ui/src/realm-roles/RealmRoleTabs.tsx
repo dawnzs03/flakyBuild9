@@ -52,7 +52,7 @@ import { toRealmRoles } from "./routes/RealmRoles";
 
 export default function RealmRoleTabs() {
   const isFeatureEnabled = useIsFeatureEnabled();
-  const { t } = useTranslation();
+  const { t } = useTranslation("roles");
   const form = useForm<AttributeForm>({
     mode: "onChange",
   });
@@ -105,7 +105,7 @@ export default function RealmRoleTabs() {
     },
     ({ realm, role }) => {
       if (!realm || !role) {
-        throw new Error(t("notFound"));
+        throw new Error(t("common:notFound"));
       }
 
       const convertedRole = convert(role);
@@ -195,7 +195,7 @@ export default function RealmRoleTabs() {
     messageKey: t("roles:roleDeleteConfirmDialog", {
       selectedRoleName: roleName || t("createRole"),
     }),
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -260,7 +260,7 @@ export default function RealmRoleTabs() {
     messageKey: t("roles:removeAllAssociatedRolesConfirmDialog", {
       name: roleName || t("createRole"),
     }),
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -335,7 +335,7 @@ export default function RealmRoleTabs() {
       <PageSection variant="light" className="pf-u-p-0">
         <RoutableTabs isBox mountOnEnter defaultLocation={toTab("details")}>
           <Tab
-            title={<TabTitleText>{t("details")}</TabTitleText>}
+            title={<TabTitleText>{t("common:details")}</TabTitleText>}
             {...detailsTab}
           >
             <RoleForm
@@ -369,7 +369,7 @@ export default function RealmRoleTabs() {
             <Tab
               data-testid="attributesTab"
               className="kc-attributes-tab"
-              title={<TabTitleText>{t("attributes")}</TabTitleText>}
+              title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
               {...attributesTab}
             >
               <AttributesForm
@@ -391,7 +391,7 @@ export default function RealmRoleTabs() {
           )}
           {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
             <Tab
-              title={<TabTitleText>{t("permissions")}</TabTitleText>}
+              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
               {...permissionsTab}
             >
               <PermissionsTab id={id} type="roles" />

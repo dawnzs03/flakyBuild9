@@ -34,7 +34,7 @@ import { toClients } from "../routes/Clients";
 const isXml = (text: string) => text.match(/(<.[^(><.)]+>)/g);
 
 export default function ImportForm() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const navigate = useNavigate();
   const { realm } = useRealm();
   const form = useForm<FormFields>();
@@ -50,7 +50,7 @@ export default function ImportForm() {
       convertToFormValues(parsed, setValue);
       setImported(parsed);
     } catch (error) {
-      addError("importParseError", error);
+      addError("clients:importParseError", error);
     }
   };
 
@@ -93,13 +93,16 @@ export default function ImportForm() {
       addAlert(t("clientImportSuccess"), AlertVariant.success);
       navigate(toClient({ realm, clientId: newClient.id, tab: "settings" }));
     } catch (error) {
-      addError("clientImportError", error);
+      addError("clients:clientImportError", error);
     }
   };
 
   return (
     <>
-      <ViewHeader titleKey="importClient" subKey="clientsExplain" />
+      <ViewHeader
+        titleKey="clients:importClient"
+        subKey="clients:clientsExplain"
+      />
       <PageSection variant="light">
         <FormAccess
           isHorizontal
@@ -111,11 +114,11 @@ export default function ImportForm() {
               id="realm-file"
               language={Language.json}
               extension=".json,.xml"
-              helpText={t("helpFileUploadClient")}
+              helpText={t("common-help:helpFileUploadClient")}
               onChange={handleFileChange}
             />
             <ClientDescription hasConfigureAccess />
-            <FormGroup label={t("type")} fieldId="kc-type">
+            <FormGroup label={t("common:type")} fieldId="kc-type">
               <KeycloakTextInput
                 id="kc-type"
                 isReadOnly
@@ -125,7 +128,7 @@ export default function ImportForm() {
             <CapabilityConfig unWrap={true} />
             <ActionGroup>
               <Button variant="primary" type="submit">
-                {t("save")}
+                {t("common:save")}
               </Button>
               <Button
                 variant="link"
@@ -133,7 +136,7 @@ export default function ImportForm() {
                   <Link {...props} to={toClients({ realm })} />
                 )}
               >
-                {t("cancel")}
+                {t("common:cancel")}
               </Button>
             </ActionGroup>
           </FormProvider>

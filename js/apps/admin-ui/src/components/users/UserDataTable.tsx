@@ -50,7 +50,7 @@ export type UserAttribute = {
 };
 
 export function UserDataTable() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const navigate = useNavigate();
@@ -152,7 +152,7 @@ export function UserDataTable() {
   });
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "deleteConfirmUsers",
+    titleKey: "users:deleteConfirm",
     messageKey: t("deleteConfirmDialog", { count: selectedRows.length }),
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
@@ -309,7 +309,7 @@ export function UserDataTable() {
               clearAllFilters();
             }}
           >
-            {t("clearAllFilters")}
+            {t("common:clearAllFilters")}
           </Button>
         </ToolbarItem>
       </div>
@@ -325,7 +325,7 @@ export function UserDataTable() {
         key={key}
         loader={loader}
         isPaginated
-        ariaLabelKey="titleUsers"
+        ariaLabelKey="users:title"
         canSelectAll
         onSelect={(rows: UserRepresentation[]) => setSelectedRows([...rows])}
         emptyState={
@@ -357,7 +357,7 @@ export function UserDataTable() {
 
           return [
             {
-              title: t("delete"),
+              title: t("common:delete"),
               onClick: () => {
                 setSelectedRows([user]);
                 toggleDeleteDialog();

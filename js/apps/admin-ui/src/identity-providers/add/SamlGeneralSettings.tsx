@@ -1,5 +1,5 @@
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
-import { useWatch, useFormContext } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormattedLink } from "../../components/external-link/FormattedLink";
@@ -14,32 +14,34 @@ import { TextField } from "../component/TextField";
 import "./saml-general-settings.css";
 
 type SamlGeneralSettingsProps = {
+  id: string;
   isAliasReadonly?: boolean;
 };
 
 export const SamlGeneralSettings = ({
+  id,
   isAliasReadonly = false,
 }: SamlGeneralSettingsProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const { realm } = useRealm();
 
   const {
     register,
-    control,
+    watch,
     formState: { errors },
   } = useFormContext();
 
-  const alias = useWatch({ control, name: "alias" });
+  const alias = watch("alias");
 
   return (
     <>
-      <RedirectUrl id={alias} />
+      <RedirectUrl id={id} />
 
       <FormGroup
         label={t("alias")}
         labelIcon={
           <HelpItem
-            helpText={t("aliasHelp")}
+            helpText={t("identity-providers-help:alias")}
             fieldLabelId="identity-providers:alias"
           />
         }
@@ -48,7 +50,7 @@ export const SamlGeneralSettings = ({
         validated={
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           isRequired
@@ -68,25 +70,23 @@ export const SamlGeneralSettings = ({
         data-testid="displayName"
       />
       <DisplayOrder />
-      {isAliasReadonly ? (
-        <FormGroup
-          label={t("endpoints")}
-          fieldId="endpoints"
-          labelIcon={
-            <HelpItem
-              helpText={t("aliasHelp")}
-              fieldLabelId="identity-providers:alias"
-            />
-          }
-          className="keycloak__identity-providers__saml_link"
-        >
-          <FormattedLink
-            title={t("samlEndpointsLabel")}
-            href={`${environment.authUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
-            isInline
+      <FormGroup
+        label={t("endpoints")}
+        fieldId="endpoints"
+        labelIcon={
+          <HelpItem
+            helpText={t("identity-providers-help:alias")}
+            fieldLabelId="identity-providers:alias"
           />
-        </FormGroup>
-      ) : null}
+        }
+        className="keycloak__identity-providers__saml_link"
+      >
+        <FormattedLink
+          title={t("samlEndpointsLabel")}
+          href={`${environment.authUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
+          isInline
+        />
+      </FormGroup>
     </>
   );
 };

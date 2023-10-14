@@ -10,7 +10,7 @@ const NewClientForm = lazy(() => import("../add/NewClientForm"));
 export const AddClientRoute: AppRouteObject = {
   path: "/:realm/clients/add-client",
   element: <NewClientForm />,
-  breadcrumb: (t) => t("createClient"),
+  breadcrumb: (t) => t("clients:createClient"),
   handle: {
     access: "manage-clients",
   },

@@ -49,7 +49,7 @@ export const KeysProvidersTab = ({
   realmComponents,
   refresh,
 }: KeysProvidersTabProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
@@ -91,7 +91,7 @@ export const KeysProvidersTab = ({
     messageKey: t("deleteProviderConfirm", {
       provider: selectedComponent?.name,
     }),
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -166,14 +166,14 @@ export const KeysProvidersTab = ({
                   id={"inputGroupName"}
                   data-testid="provider-search-input"
                   type="search"
-                  aria-label={t("search")}
-                  placeholder={t("search")}
+                  aria-label={t("common:search")}
+                  placeholder={t("common:search")}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
                 />
                 <Button
                   variant={ButtonVariant.control}
-                  aria-label={t("search")}
+                  aria-label={t("common:search")}
                   onClick={onSearch}
                 >
                   <SearchIcon />
@@ -257,7 +257,7 @@ export const KeysProvidersTab = ({
           ]}
           actions={[
             {
-              title: t("delete"),
+              title: t("common:delete"),
               onClick: (_key, _idx, component) => {
                 setSelectedComponent(component as ComponentRepresentation);
                 toggleDeleteDialog();

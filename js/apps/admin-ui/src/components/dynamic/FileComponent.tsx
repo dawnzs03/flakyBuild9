@@ -15,7 +15,7 @@ export const FileComponent = ({
   defaultValue,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
   const [filename, setFilename] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +23,9 @@ export const FileComponent = ({
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
+      labelIcon={
+        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
+      }
       fieldId={name!}
     >
       <Controller

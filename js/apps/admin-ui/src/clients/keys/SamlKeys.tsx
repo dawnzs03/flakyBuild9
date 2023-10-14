@@ -70,7 +70,7 @@ const KeySection = ({
   onGenerate,
   onImport,
 }: KeySectionProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { control, watch } = useFormContext<FormFields>();
   const title = KEYS_MAPPING[attr].title;
   const key = KEYS_MAPPING[attr].key;
@@ -92,7 +92,7 @@ const KeySection = ({
           <FormGroup
             labelIcon={
               <HelpItem
-                helpText={t(`${key}Help`)}
+                helpText={t(`clients-help:${key}`)}
                 fieldLabelId={`clients:${key}`}
               />
             }
@@ -108,8 +108,8 @@ const KeySection = ({
                 <Switch
                   data-testid={key}
                   id={key}
-                  label={t("on")}
-                  labelOff={t("off")}
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => {
                     const v = value.toString();
@@ -143,7 +143,7 @@ const KeySection = ({
                   {t("importKey")}
                 </Button>
                 <Button variant="tertiary" onClick={toggleImportDialog}>
-                  {t("export")}
+                  {t("common:export")}
                 </Button>
               </ActionGroup>
             </Form>
@@ -155,7 +155,7 @@ const KeySection = ({
 };
 
 export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const [isChanged, setIsChanged] = useState<KeyTypes>();
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation[]>();
   const [selectedType, setSelectedType] = useState<KeyTypes>();
@@ -195,7 +195,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("generateError", error);
+      addError("clients:generateError", error);
     }
   };
 
@@ -207,8 +207,8 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     messageKey: t("disableSigningExplain", {
       key: t(key),
     }),
-    continueButtonLabel: "yes",
-    cancelButtonLabel: "no",
+    continueButtonLabel: "common:yes",
+    cancelButtonLabel: "common:no",
     onConfirm: () => {
       setValue(KEYS_MAPPING[selectedType!].name, "false");
       save();
@@ -216,10 +216,10 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   });
 
   const [toggleReGenerateDialog, ReGenerateConfirm] = useConfirmDialog({
-    titleKey: "reGenerateSigning",
-    messageKey: "reGenerateSigningExplain",
-    continueButtonLabel: "yes",
-    cancelButtonLabel: "no",
+    titleKey: "clients:reGenerateSigning",
+    messageKey: "clients:reGenerateSigningExplain",
+    continueButtonLabel: "common:yes",
+    cancelButtonLabel: "common:no",
     onConfirm: () => {
       generate(selectedType!);
     },

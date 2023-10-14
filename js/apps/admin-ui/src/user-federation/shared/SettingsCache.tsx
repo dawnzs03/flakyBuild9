@@ -22,7 +22,7 @@ export type SettingsCacheProps = {
 };
 
 const CacheFields = ({ form }: { form: UseFormReturn }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
 
   const [isCachePolicyOpen, toggleCachePolicy] = useToggle();
   const [isEvictionHourOpen, toggleEvictionHour] = useToggle();
@@ -79,7 +79,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
         label={t("cachePolicy")}
         labelIcon={
           <HelpItem
-            helpText={t("cachePolicyHelp")}
+            helpText={t("user-federation-help:cachePolicyHelp")}
             fieldLabelId="user-federation:cachePolicy"
           />
         }
@@ -117,7 +117,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           label={t("evictionDay")}
           labelIcon={
             <HelpItem
-              helpText={t("evictionDayHelp")}
+              helpText={t("user-federation-help:evictionDayHelp")}
               fieldLabelId="user-federation:evictionDay"
             />
           }
@@ -143,25 +143,25 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
                 variant={SelectVariant.single}
               >
                 <SelectOption key={0} value="1" isPlaceholder>
-                  {t("Sunday")}
+                  {t("common:Sunday")}
                 </SelectOption>
                 <SelectOption key={1} value="2">
-                  {t("Monday")}
+                  {t("common:Monday")}
                 </SelectOption>
                 <SelectOption key={2} value="3">
-                  {t("Tuesday")}
+                  {t("common:Tuesday")}
                 </SelectOption>
                 <SelectOption key={3} value="4">
-                  {t("Wednesday")}
+                  {t("common:Wednesday")}
                 </SelectOption>
                 <SelectOption key={4} value="5">
-                  {t("Thursday")}
+                  {t("common:Thursday")}
                 </SelectOption>
                 <SelectOption key={5} value="6">
-                  {t("Friday")}
+                  {t("common:Friday")}
                 </SelectOption>
                 <SelectOption key={6} value="7">
-                  {t("Saturday")}
+                  {t("common:Saturday")}
                 </SelectOption>
               </Select>
             )}
@@ -175,7 +175,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
             label={t("evictionHour")}
             labelIcon={
               <HelpItem
-                helpText={t("evictionHourHelp")}
+                helpText={t("user-federation-help:evictionHourHelp")}
                 fieldLabelId="user-federation:evictionHour"
               />
             }
@@ -207,7 +207,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
             label={t("evictionMinute")}
             labelIcon={
               <HelpItem
-                helpText={t("evictionMinuteHelp")}
+                helpText={t("user-federation-help:evictionMinuteHelp")}
                 fieldLabelId="user-federation:evictionMinute"
               />
             }
@@ -242,7 +242,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           label={t("maxLifespan")}
           labelIcon={
             <HelpItem
-              helpText={t("maxLifespanHelp")}
+              helpText={t("user-federation-help:maxLifespanHelp")}
               fieldLabelId="user-federation:maxLifespan"
             />
           }
@@ -287,14 +287,15 @@ export const SettingsCache = ({
   showSectionDescription = false,
   unWrap = false,
 }: SettingsCacheProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
+  const { t: helpText } = useTranslation("user-federation-help");
 
   return (
     <>
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("cacheSettings")}
-          description={t("cacheSettingsDescription")}
+          description={helpText("cacheSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}

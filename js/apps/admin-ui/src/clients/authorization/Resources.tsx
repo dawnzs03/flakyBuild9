@@ -50,7 +50,7 @@ const UriRenderer = ({ row }: { row: ResourceRepresentation }) => (
 );
 
 export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -97,7 +97,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "deleteResource",
+    titleKey: "clients:deleteResource",
     children: (
       <>
         {t("deleteResourceConfirm")}
@@ -120,7 +120,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
         )}
       </>
     ),
-    continueButtonLabel: "confirm",
+    continueButtonLabel: "clients:confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.delResource({
@@ -130,7 +130,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
         addAlert(t("resourceDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("resourceDeletedError", error);
+        addError("clients:resourceDeletedError", error);
       }
     },
   });
@@ -186,9 +186,9 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
-                  <Th>{t("name")}</Th>
+                  <Th>{t("common:name")}</Th>
                   <Th>{t("displayName")}</Th>
-                  <Th>{t("type")}</Th>
+                  <Th>{t("common:type")}</Th>
                   <Th>{t("owner")}</Th>
                   <Th>{t("uris")}</Th>
                   <Th aria-hidden="true" />
@@ -254,7 +254,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                       actions={{
                         items: [
                           {
-                            title: t("delete"),
+                            title: t("common:delete"),
                             onClick: async () => {
                               setSelectedResource(resource);
                               setPermission(
@@ -293,8 +293,8 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
       {noData && searching && (
         <ListEmptyState
           isSearchVariant
-          message={t("noSearchResults")}
-          instructions={t("noSearchResultsInstructions")}
+          message={t("common:noSearchResults")}
+          instructions={t("common:noSearchResultsInstructions")}
         />
       )}
       {noData && !searching && (

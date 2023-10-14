@@ -1,17 +1,31 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { PageSection, PageSectionVariants } from "@patternfly/react-core";
-import { useFormContext } from "react-hook-form";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 
-import { AttributesForm } from "../components/key-value-form/AttributeForm";
-import { UserFormFields, toUserFormFields } from "./form-state";
+import {
+  AttributeForm,
+  AttributesForm,
+} from "../components/key-value-form/AttributeForm";
+import { arrayToKeyValue } from "../components/key-value-form/key-value-convert";
+import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
 
 type UserAttributesProps = {
   user: UserRepresentation;
-  save: (user: UserFormFields) => void;
+  save: (user: UserRepresentation) => void;
 };
 
 export const UserAttributes = ({ user, save }: UserAttributesProps) => {
-  const form = useFormContext<UserFormFields>();
+  const form = useForm<AttributeForm>({ mode: "onChange" });
+  const { config } = useUserProfile();
+
+  const convertAttributes = () => {
+    return arrayToKeyValue<UserRepresentation>(user.attributes!);
+  };
+
+  useEffect(() => {
+    form.setValue("attributes", convertAttributes());
+  }, [user, config]);
 
   return (
     <PageSection variant={PageSectionVariants.light}>
@@ -21,8 +35,7 @@ export const UserAttributes = ({ user, save }: UserAttributesProps) => {
         fineGrainedAccess={user.access?.manage}
         reset={() =>
           form.reset({
-            ...form.getValues(),
-            attributes: toUserFormFields(user).attributes,
+            attributes: convertAttributes(),
           })
         }
       />

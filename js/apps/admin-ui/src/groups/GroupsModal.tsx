@@ -29,7 +29,7 @@ export const GroupsModal = ({
   handleModalToggle,
   refresh,
 }: GroupsModalProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("groups");
   const { addAlert, addError } = useAlerts();
   const {
     register,
@@ -63,7 +63,7 @@ export const GroupsModal = ({
         AlertVariant.success,
       );
     } catch (error) {
-      addError("couldNotCreateGroup", error);
+      addError("groups:couldNotCreateGroup", error);
     }
   };
 
@@ -92,16 +92,16 @@ export const GroupsModal = ({
             handleModalToggle();
           }}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >
       <Form id="group-form" isHorizontal onSubmit={handleSubmit(submitForm)}>
         <FormGroup
           name="create-modal-group"
-          label={t("name")}
+          label={t("common:name")}
           fieldId="create-group-name"
-          helperTextInvalid={t("required")}
+          helperTextInvalid={t("common:required")}
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }

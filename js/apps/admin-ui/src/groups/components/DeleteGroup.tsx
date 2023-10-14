@@ -19,7 +19,7 @@ export const DeleteGroup = ({
   toggleDialog,
   refresh,
 }: DeleteConfirmProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("groups");
   const { addAlert, addError } = useAlerts();
 
   const multiDelete = async () => {
@@ -32,18 +32,18 @@ export const DeleteGroup = ({
       refresh();
       addAlert(t("groupDeleted", { count: selectedRows.length }));
     } catch (error) {
-      addError("groupDeleteError", error);
+      addError("groups:groupDeleteError", error);
     }
   };
 
   return (
     <ConfirmDialogModal
       titleKey={t("deleteConfirmTitle", { count: selectedRows.length })}
-      messageKey={t("deleteConfirmGroup", {
+      messageKey={t("deleteConfirm", {
         count: selectedRows.length,
         groupName: selectedRows[0]?.name,
       })}
-      continueButtonLabel="delete"
+      continueButtonLabel="common:delete"
       continueButtonVariant={ButtonVariant.danger}
       onConfirm={multiDelete}
       open={show}

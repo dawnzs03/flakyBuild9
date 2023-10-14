@@ -56,7 +56,7 @@ export function UserDataTableToolbarItems({
   createAttributeSearchChips,
   searchUserWithAttributes,
 }: UserDataTableToolbarItemsProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const [kebabOpen, setKebabOpen] = useState(false);
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
 

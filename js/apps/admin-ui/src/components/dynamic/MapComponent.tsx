@@ -23,7 +23,7 @@ type IdKeyValueType = KeyValueType & {
 };
 
 export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("dynamic");
 
   const { getValues, setValue, register } = useFormContext();
   const [map, setMap] = useState<IdKeyValueType[]>([]);
@@ -63,7 +63,9 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
+      labelIcon={
+        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
+      }
       fieldId={name!}
     >
       <Flex direction={{ default: "column" }}>
@@ -72,10 +74,10 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
             grow={{ default: "grow" }}
             spacer={{ default: "spacerNone" }}
           >
-            <strong>{t("key")}</strong>
+            <strong>{t("common:key")}</strong>
           </FlexItem>
           <FlexItem grow={{ default: "grow" }}>
-            <strong>{t("value")}</strong>
+            <strong>{t("common:value")}</strong>
           </FlexItem>
         </Flex>
         {map.map((attribute, index) => (
@@ -83,7 +85,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
             <FlexItem grow={{ default: "grow" }}>
               <TextInput
                 name={`${fieldName}.${index}.key`}
-                placeholder={t("keyPlaceholder")}
+                placeholder={t("common:keyPlaceholder")}
                 aria-label={t("key")}
                 defaultValue={attribute.key}
                 data-testid={`${fieldName}.${index}.key`}
@@ -97,8 +99,8 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
             >
               <TextInput
                 name={`${fieldName}.${index}.value`}
-                placeholder={t("valuePlaceholder")}
-                aria-label={t("value")}
+                placeholder={t("common:valuePlaceholder")}
+                aria-label={t("common:value")}
                 defaultValue={attribute.value}
                 data-testid={`${fieldName}.${index}.value`}
                 onChange={(value) => updateValue(index, value)}
@@ -108,7 +110,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
             <FlexItem>
               <Button
                 variant="link"
-                title={t("removeAttribute")}
+                title={t("common:removeAttribute")}
                 isDisabled={map.length === 1}
                 onClick={() => remove(index)}
                 data-testid={`${fieldName}.${index}.remove`}
@@ -130,7 +132,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
               setMap([...map, { key: "", value: "", id: generateId() }])
             }
           >
-            {t("addAttribute")}
+            {t("common:addAttribute")}
           </Button>
         </ActionListItem>
       </ActionList>

@@ -92,11 +92,11 @@ const ClientDetailHeader = ({
   toggleDownloadDialog,
   toggleDeleteDialog,
 }: ClientDetailHeaderProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "disableConfirmTitle",
-    messageKey: "disableConfirm",
-    continueButtonLabel: "disable",
+    titleKey: "clients:disableConfirmTitle",
+    messageKey: "clients:disableConfirm",
+    continueButtonLabel: "common:disable",
     onConfirm: () => {
       onChange(!value);
       save();
@@ -136,7 +136,7 @@ const ClientDetailHeader = ({
       {t("downloadAdapterConfig")}
     </DropdownItem>,
     <DropdownItem key="export" onClick={() => exportClient(client)}>
-      {t("export")}
+      {t("common:export")}
     </DropdownItem>,
     ...(!isRealmClient(client) && isManager
       ? [
@@ -146,7 +146,7 @@ const ClientDetailHeader = ({
             key="delete"
             onClick={toggleDeleteDialog}
           >
-            {t("delete")}
+            {t("common:delete")}
           </DropdownItem>,
         ]
       : []),
@@ -157,11 +157,11 @@ const ClientDetailHeader = ({
       <DisableConfirm />
       <ViewHeader
         titleKey={client.clientId!}
-        subKey="clientsExplain"
+        subKey="clients:clientsExplain"
         badges={badges}
         divider={false}
         isReadOnly={!isManager}
-        helpTextKey="enableDisable"
+        helpTextKey="clients-help:enableDisable"
         dropdownItems={dropdownItems}
         isEnabled={value}
         onToggle={(value) => {
@@ -188,7 +188,7 @@ export type FormFields = Omit<
 >;
 
 export default function ClientDetails() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const { hasAccess } = useAccess();
@@ -273,9 +273,9 @@ export default function ClientDetails() {
   const authorizationExportTab = useAuthorizationTab("export");
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clientDeleteConfirmTitle",
-    messageKey: "clientDeleteConfirm",
-    continueButtonLabel: "delete",
+    titleKey: "clients:clientDeleteConfirmTitle",
+    messageKey: "clients:clientDeleteConfirm",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -283,7 +283,7 @@ export default function ClientDetails() {
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
         navigate(toClients({ realm }));
       } catch (error) {
-        addError("clientDeleteError", error);
+        addError("clients:clientDeleteError", error);
       }
     },
   });
@@ -306,7 +306,7 @@ export default function ClientDetails() {
     () => adminClient.clients.findOne({ id: clientId }),
     (fetchedClient) => {
       if (!fetchedClient) {
-        throw new Error(t("notFound"));
+        throw new Error(t("common:notFound"));
       }
       setClient(cloneDeep(fetchedClient));
       setupForm(fetchedClient);
@@ -361,7 +361,7 @@ export default function ClientDetails() {
       setClient(newClient);
       addAlert(t(messageKey), AlertVariant.success);
     } catch (error) {
-      addError("clientSaveError", error);
+      addError("clients:clientSaveError", error);
     }
   };
 
@@ -372,8 +372,8 @@ export default function ClientDetails() {
   return (
     <>
       <ConfirmDialogModal
-        continueButtonLabel="yes"
-        cancelButtonLabel="no"
+        continueButtonLabel="common:yes"
+        cancelButtonLabel="common:no"
         titleKey={t("changeAuthenticatorConfirmTitle", {
           clientAuthenticatorType: clientAuthenticatorType,
         })}
@@ -422,7 +422,7 @@ export default function ClientDetails() {
             <Tab
               id="settings"
               data-testid="clientSettingsTab"
-              title={<TabTitleText>{t("settings")}</TabTitleText>}
+              title={<TabTitleText>{t("common:settings")}</TabTitleText>}
               {...settingsTab}
             >
               <ClientSettings
@@ -478,7 +478,7 @@ export default function ClientDetails() {
               <RolesList
                 loader={loader}
                 paginated={false}
-                messageBundle="client"
+                messageBundle="clients"
                 toCreate={toCreateRole({ realm, clientId: client.id! })}
                 toDetail={(roleId) =>
                   toClientRole({
@@ -581,7 +581,9 @@ export default function ClientDetails() {
                   <Tab
                     id="permissions"
                     data-testid="authorizationPermissions"
-                    title={<TabTitleText>{t("permissions")}</TabTitleText>}
+                    title={
+                      <TabTitleText>{t("common:permissions")}</TabTitleText>
+                    }
                     {...authorizationPermissionsTab}
                   >
                     <AuthorizationPermissions clientId={clientId} />
@@ -597,7 +599,7 @@ export default function ClientDetails() {
                   <Tab
                     id="export"
                     data-testid="authorizationExport"
-                    title={<TabTitleText>{t("export")}</TabTitleText>}
+                    title={<TabTitleText>{t("common:export")}</TabTitleText>}
                     {...authorizationExportTab}
                   >
                     <AuthorizationExport />
@@ -628,7 +630,7 @@ export default function ClientDetails() {
                 <Tab
                   id="permissions"
                   data-testid="permissionsTab"
-                  title={<TabTitleText>{t("permissions")}</TabTitleText>}
+                  title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
                   {...permissionsTab}
                 >
                   <PermissionsTab id={client.id!} type="clients" />

@@ -22,7 +22,7 @@ export const GeneratedCodeTab = ({
   user,
   label,
 }: GeneratedCodeTabProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
 
   return user ? (
     <CodeBlock

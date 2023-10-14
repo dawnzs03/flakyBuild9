@@ -8,7 +8,7 @@ import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTe
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const NameDescription = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
   const {
     register,
     formState: { errors },
@@ -17,14 +17,17 @@ export const NameDescription = () => {
   return (
     <>
       <FormGroup
-        label={t("name")}
+        label={t("common:name")}
         fieldId="kc-name"
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
         validated={
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
         labelIcon={
-          <HelpItem helpText={t("flowNameHelp")} fieldLabelId="name" />
+          <HelpItem
+            helpText={t("authentication-help:name")}
+            fieldLabelId="name"
+          />
         }
         isRequired
       >
@@ -38,11 +41,11 @@ export const NameDescription = () => {
         />
       </FormGroup>
       <FormGroup
-        label={t("description")}
+        label={t("common:description")}
         fieldId="kc-description"
         labelIcon={
           <HelpItem
-            helpText={t("flowDescriptionHelp")}
+            helpText={t("authentication-help:description")}
             fieldLabelId="description"
           />
         }
@@ -62,7 +65,7 @@ export const NameDescription = () => {
           {...register("description", {
             maxLength: {
               value: 255,
-              message: t("maxLength", { length: 255 }),
+              message: t("common:maxLength", { length: 255 }),
             },
           })}
         />

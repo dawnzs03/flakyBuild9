@@ -33,7 +33,7 @@ import {
 import { toClientRegistration } from "../routes/ClientRegistration";
 
 export default function DetailProvider() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { id, providerId, subTab } = useParams<RegistrationProviderParams>();
   const navigate = useNavigate();
   const form = useForm<ComponentRepresentation>({
@@ -92,16 +92,16 @@ export default function DetailProvider() {
       }
       addAlert(t(`provider${id ? "Updated" : "Create"}Success`));
     } catch (error) {
-      addError(`provider${id ? "Updated" : "Create"}Error`, error);
+      addError(`clients:provider${id ? "Updated" : "Create"}Error`, error);
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clientRegisterPolicyDeleteConfirmTitle",
+    titleKey: "clients:clientRegisterPolicyDeleteConfirmTitle",
     messageKey: t("clientRegisterPolicyDeleteConfirm", {
       name: providerName,
     }),
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -112,7 +112,7 @@ export default function DetailProvider() {
         addAlert(t("clientRegisterPolicyDeleteSuccess"));
         navigate(toClientRegistration({ realm, subTab }));
       } catch (error) {
-        addError("clientRegisterPolicyDeleteError", error);
+        addError("clients:clientRegisterPolicyDeleteError", error);
       }
     },
   });
@@ -124,7 +124,7 @@ export default function DetailProvider() {
   return (
     <>
       <ViewHeader
-        titleKey={id ? providerName! : "createPolicy"}
+        titleKey={id ? providerName! : "clients:createPolicy"}
         subKey={id}
         dropdownItems={
           id
@@ -134,7 +134,7 @@ export default function DetailProvider() {
                   key="delete"
                   onClick={toggleDeleteDialog}
                 >
-                  {t("delete")}
+                  {t("common:delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -156,15 +156,15 @@ export default function DetailProvider() {
             />
           </FormGroup>
           <FormGroup
-            label={t("name")}
+            label={t("common:name")}
             fieldId="kc-name"
-            helperTextInvalid={t("required")}
+            helperTextInvalid={t("common:required")}
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
             labelIcon={
               <HelpItem
-                helpText={t("clientPolicyNameHelp")}
+                helpText={t("clients-help:clientPolicyName")}
                 fieldLabelId="kc-name"
               />
             }
@@ -184,7 +184,7 @@ export default function DetailProvider() {
           </FormProvider>
           <ActionGroup>
             <Button data-testid="save" type="submit">
-              {t("save")}
+              {t("common:save")}
             </Button>
             <Button
               variant="link"
@@ -195,7 +195,7 @@ export default function DetailProvider() {
                 ></Link>
               )}
             >
-              {t("cancel")}
+              {t("common:cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

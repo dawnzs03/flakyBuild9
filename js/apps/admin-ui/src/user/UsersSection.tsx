@@ -15,7 +15,7 @@ import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import "./user-section.css";
 
 export default function UsersSection() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const { realm: realmName } = useRealm();
   const isFeatureEnabled = useIsFeatureEnabled();
 
@@ -33,7 +33,7 @@ export default function UsersSection() {
   return (
     <>
       <ViewHeader
-        titleKey="titleUsers"
+        titleKey="users:title"
         subKey="users:usersExplain"
         helpUrl={helpUrls.usersUrl}
         divider={false}
@@ -64,7 +64,7 @@ export default function UsersSection() {
             <Tab
               id="permissions"
               data-testid="permissionsTab"
-              title={<TabTitleText>{t("permissions")}</TabTitleText>}
+              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
               {...permissionsTab}
             >
               <PermissionsTab type="users" />

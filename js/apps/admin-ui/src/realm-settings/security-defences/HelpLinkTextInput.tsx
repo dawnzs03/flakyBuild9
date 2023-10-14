@@ -15,7 +15,7 @@ export const HelpLinkTextInput = ({
   fieldName,
   url,
 }: HelpLinkTextInputProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const { register } = useFormContext();
   const name = fieldName.substr(fieldName.indexOf(".") + 1);
   return (
@@ -25,9 +25,9 @@ export const HelpLinkTextInput = ({
       labelIcon={
         <HelpItem
           helpText={
-            <Trans i18nKey={`${name}Help`}>
+            <Trans i18nKey={`realm-settings-help:${name}`}>
               Default value prevents pages from being included
-              <FormattedLink href={url} title={t("learnMore")} />
+              <FormattedLink href={url} title={t("common:learnMore")} />
             </Trans>
           }
           fieldLabelId={name}

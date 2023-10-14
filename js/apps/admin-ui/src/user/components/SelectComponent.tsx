@@ -9,12 +9,14 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { Options } from "../UserProfileFields";
-import { fieldName, unWrap } from "../utils";
+import { DEFAULT_ROLES, fieldName } from "../utils";
 import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
 
-type OptionLabel = Record<string, string> | undefined;
-export const SelectComponent = (attribute: UserProfileFieldsProps) => {
-  const { t } = useTranslation();
+export const SelectComponent = ({
+  roles = [],
+  ...attribute
+}: UserProfileFieldsProps) => {
+  const { t } = useTranslation("users");
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
 
@@ -43,12 +45,6 @@ export const SelectComponent = (attribute: UserProfileFieldsProps) => {
   const options =
     (attribute.validations?.options as Options | undefined)?.options || [];
 
-  const optionLabel = attribute.annotations?.[
-    "inputOptionLabels"
-  ] as OptionLabel;
-  const label = (label: string) =>
-    optionLabel ? t(unWrap(optionLabel[label])) : label;
-
   return (
     <UserProfileGroup {...attribute}>
       <Controller
@@ -69,12 +65,20 @@ export const SelectComponent = (attribute: UserProfileFieldsProps) => {
               }
             }}
             selections={
-              field.value ? field.value : isMultiValue(field) ? [] : t("choose")
+              field.value
+                ? field.value
+                : isMultiValue(field)
+                ? []
+                : t("common:choose")
             }
             variant={isMultiValue(field) ? "typeaheadmulti" : "single"}
-            aria-label={t("selectOne")}
+            aria-label={t("common:selectOne")}
             isOpen={open}
-            readOnly={attribute.readOnly}
+            isDisabled={
+              !(attribute.permissions?.edit || DEFAULT_ROLES).some((r) =>
+                roles.includes(r),
+              )
+            }
           >
             {options.map((option) => (
               <SelectOption
@@ -82,7 +86,7 @@ export const SelectComponent = (attribute: UserProfileFieldsProps) => {
                 key={option}
                 value={option}
               >
-                {label(option)}
+                {option}
               </SelectOption>
             ))}
           </Select>

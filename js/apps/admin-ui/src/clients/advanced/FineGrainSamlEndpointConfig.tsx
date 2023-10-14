@@ -14,65 +14,65 @@ export const FineGrainSamlEndpointConfig = ({
   save,
   reset,
 }: FineGrainSamlEndpointConfigProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   return (
     <FormAccess role="manage-realm" isHorizontal>
       <ApplicationUrls />
       <TextControl
         name="attributes.saml_assertion_consumer_url_post"
         label={t("assertionConsumerServicePostBindingURL")}
-        labelIcon={t("assertionConsumerServicePostBindingURLHelp")}
+        labelIcon={t("clients-help:assertionConsumerServicePostBindingURL")}
         type="url"
       />
       <TextControl
         name="attributes.saml_assertion_consumer_url_redirect"
         label={t("assertionConsumerServiceRedirectBindingURL")}
-        labelIcon={t("assertionConsumerServiceRedirectBindingURLHelp")}
+        labelIcon={t("clients-help:assertionConsumerServiceRedirectBindingURL")}
         type="url"
       />
       <TextControl
         name="attributes.saml_single_logout_service_url_post"
         label={t("logoutServicePostBindingURL")}
-        labelIcon={t("logoutServicePostBindingURLHelp")}
+        labelIcon={t("clients-help:logoutServicePostBindingURL")}
         type="url"
       />
       <TextControl
         name="attributes.saml_single_logout_service_url_redirect"
         label={t("logoutServiceRedirectBindingURL")}
-        labelIcon={t("logoutServiceRedirectBindingURLHelp")}
+        labelIcon={t("clients-help:logoutServiceRedirectBindingURL")}
         type="url"
       />
       <TextControl
         name="attributes.saml_single_logout_service_url_soap"
         label={t("logoutServiceSoapBindingUrl")}
-        labelIcon={t("logoutServiceSoapBindingUrlHelp")}
+        labelIcon={t("clients-help:logoutServiceSoapBindingUrl")}
         type="url"
       />
       <TextControl
         name="attributes.saml_single_logout_service_url_artifact"
         label={t("logoutServiceArtifactBindingUrl")}
-        labelIcon={t("logoutServiceArtifactBindingUrlHelp")}
+        labelIcon={t("clients-help:logoutServiceArtifactBindingUrl")}
         type="url"
       />
       <TextControl
         name="attributes.saml_artifact_binding_url"
         label={t("artifactBindingUrl")}
-        labelIcon={t("artifactBindingUrlHelp")}
+        labelIcon={t("clients-help:artifactBindingUrl")}
         type="url"
       />
       <TextControl
         name="attributes.saml_artifact_resolution_service_url"
         label={t("artifactResolutionService")}
-        labelIcon={t("artifactResolutionServiceHelp")}
+        labelIcon={t("clients-help:artifactResolutionService")}
         type="url"
       />
 
       <ActionGroup>
         <Button variant="tertiary" onClick={save} data-testid="fineGrainSave">
-          {t("save")}
+          {t("common:save")}
         </Button>
         <Button variant="link" onClick={reset} data-testid="fineGrainRevert">
-          {t("revert")}
+          {t("common:revert")}
         </Button>
       </ActionGroup>
     </FormAccess>

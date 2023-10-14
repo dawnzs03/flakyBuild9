@@ -13,7 +13,7 @@ import {
 import { ClientRegistrationList } from "./ClientRegistrationList";
 
 export const ClientRegistration = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { realm } = useRealm();
 
   const useTab = (subTab: ClientRegistrationTab) =>
@@ -34,7 +34,7 @@ export const ClientRegistration = () => {
             {t("anonymousAccessPolicies")}{" "}
             <HelpItem
               fieldLabelId=""
-              helpText={t("anonymousAccessPoliciesHelp")}
+              helpText={t("clients-help:anonymousAccessPolicies")}
               noVerticalAlign={false}
               unWrap
             />
@@ -51,7 +51,7 @@ export const ClientRegistration = () => {
             {t("authenticatedAccessPolicies")}{" "}
             <HelpItem
               fieldLabelId=""
-              helpText={t("authenticatedAccessPoliciesHelp")}
+              helpText={t("clients-help:authenticatedAccessPolicies")}
               noVerticalAlign={false}
               unWrap
             />

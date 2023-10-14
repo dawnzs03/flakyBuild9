@@ -41,7 +41,7 @@ export default function UserFederationSection() {
   const [userFederations, setUserFederations] =
     useState<ComponentRepresentation[]>();
   const { addAlert, addError } = useAlerts();
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -99,7 +99,7 @@ export default function UserFederationSection() {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("userFedDeleteConfirmTitle"),
     messageKey: t("userFedDeleteConfirm"),
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -150,15 +150,15 @@ export default function UserFederationSection() {
               }}
               data-testid="card-delete"
             >
-              {t("delete")}
+              {t("common:delete")}
             </DropdownItem>,
           ]}
           title={userFederation.name!}
           footerText={toUpperCase(userFederation.providerId!)}
           labelText={
             userFederation.config?.["enabled"]?.[0] !== "false"
-              ? `${t("enabled")}`
-              : `${t("disabled")}`
+              ? `${t("common:enabled")}`
+              : `${t("common:disabled")}`
           }
           labelColor={
             userFederation.config?.["enabled"]?.[0] !== "false"

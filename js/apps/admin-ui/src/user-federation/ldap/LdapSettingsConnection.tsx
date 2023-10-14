@@ -59,7 +59,8 @@ export const LdapSettingsConnection = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsConnectionProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
+  const { t: helpText } = useTranslation("user-federation-help");
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const edit = !!id;
@@ -93,7 +94,9 @@ export const LdapSettingsConnection = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("connectionAndAuthenticationSettings")}
-          description={t("ldapConnectionAndAuthorizationSettingsDescription")}
+          description={helpText(
+            "ldapConnectionAndAuthorizationSettingsDescription",
+          )}
           showDescription={showSectionDescription}
         />
       )}
@@ -102,7 +105,9 @@ export const LdapSettingsConnection = ({
           label={t("connectionURL")}
           labelIcon={
             <HelpItem
-              helpText={t("consoleDisplayConnectionUrlHelp")}
+              helpText={t(
+                "user-federation-help:consoleDisplayConnectionUrlHelp",
+              )}
               fieldLabelId="user-federation:connectionURL"
             />
           }
@@ -139,7 +144,7 @@ export const LdapSettingsConnection = ({
           label={t("enableStartTls")}
           labelIcon={
             <HelpItem
-              helpText={t("enableStartTlsHelp")}
+              helpText={t("user-federation-help:enableStartTlsHelp")}
               fieldLabelId="user-federation:enableStartTls"
             />
           }
@@ -157,8 +162,8 @@ export const LdapSettingsConnection = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("enableStartTls")}
               />
             )}
@@ -169,7 +174,7 @@ export const LdapSettingsConnection = ({
           label={t("useTruststoreSpi")}
           labelIcon={
             <HelpItem
-              helpText={t("useTruststoreSpiHelp")}
+              helpText={t("user-federation-help:useTruststoreSpiHelp")}
               fieldLabelId="user-federation:useTruststoreSpi"
             />
           }
@@ -202,7 +207,7 @@ export const LdapSettingsConnection = ({
           label={t("connectionPooling")}
           labelIcon={
             <HelpItem
-              helpText={t("connectionPoolingHelp")}
+              helpText={t("user-federation-help:connectionPoolingHelp")}
               fieldLabelId="user-federation:connectionPooling"
             />
           }
@@ -220,8 +225,8 @@ export const LdapSettingsConnection = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("connectionPooling")}
               />
             )}
@@ -231,7 +236,7 @@ export const LdapSettingsConnection = ({
           label={t("connectionTimeout")}
           labelIcon={
             <HelpItem
-              helpText={t("connectionTimeoutHelp")}
+              helpText={t("user-federation-help:connectionTimeoutHelp")}
               fieldLabelId="user-federation:consoleTimeout"
             />
           }
@@ -252,14 +257,14 @@ export const LdapSettingsConnection = ({
             data-testid="test-connection-button"
             onClick={() => testLdap("testConnection")}
           >
-            {t("testConnection")}
+            {t("common:testConnection")}
           </Button>
         </FormGroup>
         <FormGroup
           label={t("bindType")}
           labelIcon={
             <HelpItem
-              helpText={t("bindTypeHelp")}
+              helpText={t("user-federation-help:bindTypeHelp")}
               fieldLabelId="user-federation:bindType"
             />
           }
@@ -299,7 +304,7 @@ export const LdapSettingsConnection = ({
               label={t("bindDn")}
               labelIcon={
                 <HelpItem
-                  helpText={t("bindDnHelp")}
+                  helpText={t("user-federation-help:bindDnHelp")}
                   fieldLabelId="user-federation:bindDn"
                 />
               }
@@ -328,7 +333,7 @@ export const LdapSettingsConnection = ({
               label={t("bindCredentials")}
               labelIcon={
                 <HelpItem
-                  helpText={t("bindCredentialsHelp")}
+                  helpText={t("user-federation-help:bindCredentialsHelp")}
                   fieldLabelId="user-federation:bindCredentials"
                 />
               }

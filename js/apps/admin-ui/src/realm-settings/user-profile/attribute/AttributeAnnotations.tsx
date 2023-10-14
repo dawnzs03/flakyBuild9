@@ -7,7 +7,7 @@ import { KeyValueInput } from "../../../components/key-value-form/KeyValueInput"
 import "../../realm-settings-section.css";
 
 export const AttributeAnnotations = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
 
   return (
     <FormAccess role="manage-realm" isHorizontal>

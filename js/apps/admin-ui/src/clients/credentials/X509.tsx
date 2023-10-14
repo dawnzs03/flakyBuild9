@@ -7,7 +7,7 @@ import { beerify, convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
 export const X509 = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const {
     register,
     control,
@@ -19,8 +19,8 @@ export const X509 = () => {
         label={t("allowRegexComparison")}
         labelIcon={
           <HelpItem
-            helpText={t("allowRegexComparisonHelp")}
-            fieldLabelId="allowRegexComparison"
+            helpText={t("clients-help:allowRegexComparison")}
+            fieldLabelId="clients:allowRegexComparison"
           />
         }
         fieldId="allowRegexComparison"
@@ -35,8 +35,8 @@ export const X509 = () => {
           render={({ field }) => (
             <Switch
               id="allowRegexComparison"
-              label={t("on")}
-              labelOff={t("off")}
+              label={t("common:on")}
+              labelOff={t("common:off")}
               isChecked={field.value === "true"}
               onChange={(value) => field.onChange(value.toString())}
               aria-label={t("allowRegexComparison")}
@@ -48,9 +48,12 @@ export const X509 = () => {
         label={t("subject")}
         fieldId="kc-subject"
         labelIcon={
-          <HelpItem helpText={t("subjectHelp")} fieldLabelId="subject" />
+          <HelpItem
+            helpText={t("clients-help:subject")}
+            fieldLabelId="clients:subject"
+          />
         }
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
         validated={
           errors.attributes?.[beerify("x509.subjectdn")]
             ? ValidatedOptions.error

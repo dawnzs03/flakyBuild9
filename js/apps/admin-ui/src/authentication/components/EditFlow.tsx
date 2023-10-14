@@ -27,7 +27,7 @@ type EditFlowProps = {
 type FormFields = Omit<ExpandableExecution, "executionList">;
 
 export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
   const {
     register,
     reset,
@@ -45,11 +45,11 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
 
   return (
     <>
-      <Tooltip content={t("edit")}>
+      <Tooltip content={t("common:edit")}>
         <Button
           variant="plain"
           data-testid={`${execution.id}-edit`}
-          aria-label={t("edit")}
+          aria-label={t("common:edit")}
           onClick={toggle}
         >
           <PencilAltIcon />
@@ -76,7 +76,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               variant={ButtonVariant.link}
               onClick={toggle}
             >
-              {t("cancel")}
+              {t("common:cancel")}
             </Button>,
           ]}
           isOpen
@@ -87,16 +87,19 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
             isHorizontal
           >
             <FormGroup
-              label={t("name")}
+              label={t("common:name")}
               fieldId="name"
-              helperTextInvalid={t("required")}
+              helperTextInvalid={t("common:required")}
               validated={
                 errors.displayName
                   ? ValidatedOptions.error
                   : ValidatedOptions.default
               }
               labelIcon={
-                <HelpItem helpText={t("flowNameHelp")} fieldLabelId="name" />
+                <HelpItem
+                  helpText={t("authentication-help:name")}
+                  fieldLabelId="name"
+                />
               }
               isRequired
             >
@@ -113,11 +116,11 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               />
             </FormGroup>
             <FormGroup
-              label={t("description")}
+              label={t("common:description")}
               fieldId="kc-description"
               labelIcon={
                 <HelpItem
-                  helpText={t("flowDescriptionHelp")}
+                  helpText={t("authentication-help:description")}
                   fieldLabelId="description"
                 />
               }
@@ -139,7 +142,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
                 {...register("description", {
                   maxLength: {
                     value: 255,
-                    message: t("maxLength", { length: 255 }),
+                    message: t("common:maxLength", { length: 255 }),
                   },
                 })}
               />

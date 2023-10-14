@@ -36,7 +36,7 @@ type UsedByModalProps = {
 };
 
 const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
 
   const loader = async (
     first?: number,
@@ -75,15 +75,15 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
           key="cancel"
           onClick={onClose}
         >
-          {t("close")}
+          {t("common:close")}
         </Button>,
       ]}
     >
       <KeycloakDataTable
         loader={loader}
         isPaginated
-        ariaLabelKey="usedBy"
-        searchPlaceholderKey="search"
+        ariaLabelKey="authentication:usedBy"
+        searchPlaceholderKey="common:search"
         columns={[
           {
             name: "name",
@@ -95,7 +95,7 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
 };
 
 export const UsedBy = ({ authType: { id, usedBy }, realm }: UsedByProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
   const [open, toggle] = useToggle();
 
   const key = Object.entries(realm).find(

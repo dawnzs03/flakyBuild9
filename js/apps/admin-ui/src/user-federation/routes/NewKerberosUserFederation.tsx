@@ -12,7 +12,7 @@ const UserFederationKerberosSettings = lazy(
 export const NewKerberosUserFederationRoute: AppRouteObject = {
   path: "/:realm/user-federation/kerberos/new",
   element: <UserFederationKerberosSettings />,
-  breadcrumb: (t) => t("settings"),
+  breadcrumb: (t) => t("common:settings"),
   handle: {
     access: "view-realm",
   },

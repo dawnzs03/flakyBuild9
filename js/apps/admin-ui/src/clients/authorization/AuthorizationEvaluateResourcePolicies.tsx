@@ -33,7 +33,7 @@ export const AuthorizationEvaluateResourcePolicies = ({
   resource,
 }: Props) => {
   const [expanded, setExpanded] = useState<boolean>(false);
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { realm } = useRealm();
   const { clientId } = useParams<ClientParams>();
 

@@ -15,7 +15,7 @@ type ClientProfile = ClientProfileRepresentation & {
 };
 
 const AliasRenderer = ({ name, global }: ClientProfile) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("roles");
 
   return (
     <>
@@ -33,7 +33,7 @@ export type AddClientProfileModalProps = {
 };
 
 export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("roles");
   const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
 
   const [tableProfiles, setTableProfiles] = useState<ClientProfile[]>();
@@ -87,7 +87,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
             props.onConfirm(selectedRows);
           }}
         >
-          {t("add")}
+          {t("common:add")}
         </Button>,
         <Button
           key="cancel"
@@ -96,7 +96,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
             props.toggleDialog();
           }}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >
@@ -116,7 +116,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
           },
           {
             name: "description",
-            displayKey: "description",
+            displayKey: "common:description",
           },
         ]}
         emptyState={

@@ -41,7 +41,7 @@ type KeysProps = {
 const attr = "jwt.credential";
 
 export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const {
     control,
     register,
@@ -85,7 +85,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
       addAlert(t("generateSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addError("generateError", error);
+      addError("clients:generateError", error);
     }
   };
 
@@ -107,7 +107,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
       addAlert(t("importSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addError("importError", error);
+      addError("clients:importError", error);
     }
   };
 
@@ -144,8 +144,8 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
               fieldId="useJwksUrl"
               labelIcon={
                 <HelpItem
-                  helpText={t("useJwksUrlHelp")}
-                  fieldLabelId="useJwksUrl"
+                  helpText={t("clients-help:useJwksUrl")}
+                  fieldLabelId="clients:useJwksUrl"
                 />
               }
             >
@@ -156,8 +156,8 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                   <Switch
                     data-testid="useJwksUrl"
                     id="useJwksUrl-switch"
-                    label={t("on")}
-                    labelOff={t("off")}
+                    label={t("common:on")}
+                    labelOff={t("common:off")}
                     isChecked={field.value === "true"}
                     onChange={(value) => field.onChange(`${value}`)}
                     aria-label={t("useJwksUrl")}
@@ -177,8 +177,8 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                 fieldId="jwksUrl"
                 labelIcon={
                   <HelpItem
-                    helpText={t("jwksUrlHelp")}
-                    fieldLabelId="jwksUrl"
+                    helpText={t("clients-help:jwksUrl")}
+                    fieldLabelId="clients:jwksUrl"
                   />
                 }
               >
@@ -197,7 +197,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                 onClick={save}
                 isDisabled={!isDirty}
               >
-                {t("save")}
+                {t("common:save")}
               </Button>
               <Button
                 data-testid="generate"

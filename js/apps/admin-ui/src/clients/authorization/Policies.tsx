@@ -62,7 +62,7 @@ const DependentPoliciesRenderer = ({
 };
 
 export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const navigate = useNavigate();
@@ -118,7 +118,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "deletePolicy",
+    titleKey: "clients:deletePolicy",
     children: (
       <>
         {t("deletePolicyConfirm")}
@@ -143,7 +143,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
           )}
       </>
     ),
-    continueButtonLabel: "confirm",
+    continueButtonLabel: "clients:confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.delPolicy({
@@ -153,7 +153,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
         addAlert(t("policyDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("policyDeletedError", error);
+        addError("clients:policyDeletedError", error);
       }
     },
   });
@@ -213,10 +213,10 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
                 <Thead>
                   <Tr>
                     <Th aria-hidden="true" />
-                    <Th>{t("name")}</Th>
-                    <Th>{t("type")}</Th>
+                    <Th>{t("common:name")}</Th>
+                    <Th>{t("common:type")}</Th>
                     <Th>{t("dependentPermission")}</Th>
-                    <Th>{t("description")}</Th>
+                    <Th>{t("common:description")}</Th>
                     <Th aria-hidden="true" />
                   </Tr>
                 </Thead>
@@ -258,7 +258,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
                         actions={{
                           items: [
                             {
-                              title: t("delete"),
+                              title: t("common:delete"),
                               onClick: async () => {
                                 setSelectedPolicy(policy);
                                 toggleDeleteDialog();
@@ -308,8 +308,8 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
       {noData && searching && (
         <ListEmptyState
           isSearchVariant
-          message={t("noSearchResults")}
-          instructions={t("noSearchResultsInstructions")}
+          message={t("common:noSearchResults")}
+          instructions={t("common:noSearchResultsInstructions")}
         />
       )}
       {noData && !searching && (

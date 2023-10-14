@@ -12,35 +12,35 @@ type ClientDescriptionProps = {
 export const ClientDescription = ({
   hasConfigureAccess: configure,
 }: ClientDescriptionProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   return (
     <FormAccess role="manage-clients" fineGrainedAccess={configure} unWrap>
       <TextControl
         name="clientId"
-        label={t("clientId")}
-        labelIcon={t("clientIdHelp")}
-        rules={{ required: { value: true, message: t("required") } }}
+        label={t("common:clientId")}
+        labelIcon={t("clients-help:clientId")}
+        rules={{ required: { value: true, message: t("common:required") } }}
       />
       <TextControl
         name="name"
-        label={t("name")}
-        labelIcon={t("clientNameHelp")}
+        label={t("common:name")}
+        labelIcon={t("clients-help:clientName")}
       />
       <TextAreaControl
         name="description"
-        label={t("description")}
-        labelIcon={t("clientDescriptionHelp")}
+        label={t("common:description")}
+        labelIcon={t("clients-help:description")}
         rules={{
           maxLength: {
             value: 255,
-            message: t("maxLength", { length: 255 }),
+            message: t("common:maxLength", { length: 255 }),
           },
         }}
       />
       <DefaultSwitchControl
         name="alwaysDisplayInConsole"
         label={t("alwaysDisplayInUI")}
-        labelIcon={t("alwaysDisplayInUIHelp")}
+        labelIcon={t("clients-help:alwaysDisplayInUI")}
       />
     </FormAccess>
   );

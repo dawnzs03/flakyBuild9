@@ -36,7 +36,7 @@ export const KeyProviderForm = ({
   providerType,
   onClose,
 }: KeyProviderFormProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const { id } = useParams<{ id: string }>();
   const { addAlert, addError } = useAlerts();
 
@@ -104,7 +104,7 @@ export const KeyProviderForm = ({
           label={t("providerId")}
           labelIcon={
             <HelpItem
-              helpText={t("mapperNameHelp")}
+              helpText={t("client-scopes-help:mapperName")}
               fieldLabelId="providerId"
             />
           }
@@ -120,16 +120,19 @@ export const KeyProviderForm = ({
         </FormGroup>
       )}
       <FormGroup
-        label={t("name")}
+        label={t("common:name")}
         labelIcon={
-          <HelpItem helpText={t("mapperNameHelp")} fieldLabelId="name" />
+          <HelpItem
+            helpText={t("client-scopes-help:mapperName")}
+            fieldLabelId="name"
+          />
         }
         fieldId="name"
         isRequired
         validated={
           errors.name ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
       >
         <Controller
           name="name"
@@ -160,10 +163,10 @@ export const KeyProviderForm = ({
           variant="primary"
           type="submit"
         >
-          {t("save")}
+          {t("common:save")}
         </Button>
         <Button onClick={() => onClose?.()} variant="link">
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>
       </ActionGroup>
     </FormAccess>
@@ -171,7 +174,7 @@ export const KeyProviderForm = ({
 };
 
 export default function KeyProviderFormPage() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const params = useParams<KeyProviderParams>();
   const navigate = useNavigate();
 

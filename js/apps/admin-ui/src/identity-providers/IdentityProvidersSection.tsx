@@ -44,7 +44,7 @@ import { toIdentityProvider } from "./routes/IdentityProvider";
 import { toIdentityProviderCreate } from "./routes/IdentityProviderCreate";
 
 const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const { realm } = useRealm();
 
   return (
@@ -64,7 +64,7 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
           isRead
           className="pf-u-ml-sm"
         >
-          {t("disabled")}
+          {t("common:disabled")}
         </Badge>
       )}
     </Link>
@@ -72,7 +72,7 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
 };
 
 export default function IdentityProvidersSection() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const identityProviders = groupBy(
     useServerInfo().identityProviders,
     "groupName",
@@ -94,7 +94,7 @@ export default function IdentityProvidersSection() {
     async () => {
       const provider = await adminClient.realms.findOne({ realm });
       if (!provider) {
-        throw new Error(t("notFound"));
+        throw new Error(t("common:notFound"));
       }
       return provider.identityProviders!;
     },
@@ -138,7 +138,7 @@ export default function IdentityProvidersSection() {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "identity-providers:deleteProvider",
     messageKey: t("deleteConfirm", { provider: selectedProvider?.alias }),
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -149,9 +149,9 @@ export default function IdentityProvidersSection() {
           ...providers!.filter((p) => p.alias !== selectedProvider?.alias),
         ]);
         refresh();
-        addAlert(t("deletedSuccessIdentityProvider"), AlertVariant.success);
+        addAlert(t("deletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("deleteErrorIdentityProvider", error);
+        addError("identity-providers:deleteError", error);
       }
     },
   });
@@ -173,7 +173,7 @@ export default function IdentityProvidersSection() {
         />
       )}
       <ViewHeader
-        titleKey="identityProviders"
+        titleKey="common:identityProviders"
         subKey="identity-providers:listExplain"
         helpUrl={helpUrls.identityProvidersUrl}
       />
@@ -219,7 +219,7 @@ export default function IdentityProvidersSection() {
         {providers.length !== 0 && (
           <KeycloakDataTable
             loader={providers}
-            ariaLabelKey="identityProviders"
+            ariaLabelKey="common:identityProviders"
             searchPlaceholderKey="identity-providers:searchForProvider"
             toolbarItem={
               <>
@@ -252,7 +252,7 @@ export default function IdentityProvidersSection() {
             }
             actions={[
               {
-                title: t("delete"),
+                title: t("common:delete"),
                 onRowClick: (provider) => {
                   setSelectedProvider(provider);
                   toggleDeleteDialog();
@@ -262,7 +262,7 @@ export default function IdentityProvidersSection() {
             columns={[
               {
                 name: "alias",
-                displayKey: "name",
+                displayKey: "common:name",
                 cellRenderer: DetailLink,
               },
               {

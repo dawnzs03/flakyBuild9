@@ -28,7 +28,7 @@ export const RevocationPanel = ({
   const revocationFieldName = "notBefore";
   const pushRevocationButtonRef = useRef<HTMLElement>();
 
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { realm } = useRealm();
   const { addAlert } = useAlerts();
   const formatDate = useFormatDate();
@@ -49,7 +49,7 @@ export const RevocationPanel = ({
     if (date > 0) {
       return formatDate(new Date(date * 1000), FORMAT_DATE_AND_TIME);
     } else {
-      return t("none");
+      return t("common:none");
     }
   };
 
@@ -63,7 +63,7 @@ export const RevocationPanel = ({
   return (
     <>
       <Text className="pf-u-pb-lg">
-        <Trans i18nKey="notBeforeIntro">
+        <Trans i18nKey="clients-help:notBeforeIntro">
           In order to successfully push setup url on
           <Link to={toClient({ realm, clientId: id!, tab: "settings" })}>
             {t("settings")}
@@ -80,7 +80,10 @@ export const RevocationPanel = ({
           label={t("notBefore")}
           fieldId="kc-not-before"
           labelIcon={
-            <HelpItem helpText={t("notBeforeHelp")} fieldLabelId="notBefore" />
+            <HelpItem
+              helpText={t("clients-help:notBefore")}
+              fieldLabelId="clients:notBefore"
+            />
           }
         >
           <InputGroup>
@@ -115,7 +118,7 @@ export const RevocationPanel = ({
           {!adminUrl && (
             <Tooltip
               reference={pushRevocationButtonRef}
-              content={t("notBeforeTooltip")}
+              content={t("clients-help:notBeforeTooltip")}
             />
           )}
           <Button

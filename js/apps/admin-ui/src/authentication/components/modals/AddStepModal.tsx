@@ -56,7 +56,7 @@ type AddStepModalProps = {
 };
 
 export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
 
   const [value, setValue] = useState<AuthenticationProviderRepresentation>();
   const [providers, setProviders] =
@@ -114,7 +114,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
           key="add"
           onClick={() => onSelect(value)}
         >
-          {t("add")}
+          {t("common:add")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -125,7 +125,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
             onSelect();
           }}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >
@@ -141,7 +141,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
             setMax(max);
           }}
           inputGroupName="search"
-          inputGroupPlaceholder={t("search")}
+          inputGroupPlaceholder={t("common:search")}
           inputGroupOnEnter={setSearch}
         >
           <AuthenticationProviderList

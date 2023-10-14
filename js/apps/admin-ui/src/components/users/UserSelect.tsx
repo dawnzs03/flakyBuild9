@@ -30,7 +30,7 @@ export const UserSelect = ({
   isRequired,
   variant = SelectVariant.typeaheadMulti,
 }: UserSelectProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const {
     control,
     getValues,
@@ -86,7 +86,7 @@ export const UserSelect = ({
       }
       fieldId={name!}
       validated={errors[name!] ? "error" : "default"}
-      helperTextInvalid={t("required")}
+      helperTextInvalid={t("common:required")}
     >
       <Controller
         name={name!}

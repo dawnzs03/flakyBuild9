@@ -20,7 +20,7 @@ type AuthorizationDataModalProps = {
 export const AuthorizationDataModal = ({
   data,
 }: AuthorizationDataModalProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const [show, toggle] = useToggle();
 
   return (
@@ -50,7 +50,7 @@ export const AuthorizationDataModal = ({
             key="cancel"
             onClick={toggle}
           >
-            {t("cancel")}
+            {t("common:cancel")}
           </Button>,
         ]}
       >

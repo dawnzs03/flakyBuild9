@@ -115,7 +115,7 @@ export default class CreateClientPage extends CommonPage {
 
   checkGeneralSettingsStepActive() {
     cy.get(".pf-c-wizard__nav-link")
-      .contains("General settings")
+      .contains("General Settings")
       .should("have.class", "pf-m-current");
 
     return this;

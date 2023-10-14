@@ -120,11 +120,11 @@ export default function AttributesGroupForm() {
             label={t("realm-settings:nameField")}
             fieldId="kc-name"
             isRequired
-            helperTextInvalid={t("required")}
+            helperTextInvalid={t("common:required")}
             validated={form.formState.errors.name ? "error" : "default"}
             labelIcon={
               <HelpItem
-                helpText={t("nameHintHelp")}
+                helpText={t("realm-settings:nameHint")}
                 fieldLabelId="realm-settings:nameField"
               />
             }
@@ -143,7 +143,7 @@ export default function AttributesGroupForm() {
             fieldId="kc-display-header"
             labelIcon={
               <HelpItem
-                helpText={t("displayHeaderHintHelp")}
+                helpText={t("realm-settings:displayHeaderHint")}
                 fieldLabelId="realm-settings:displayHeaderField"
               />
             }
@@ -158,7 +158,7 @@ export default function AttributesGroupForm() {
             fieldId="kc-display-description"
             labelIcon={
               <HelpItem
-                helpText={t("displayDescriptionHintHelp")}
+                helpText={t("realm-settings:displayDescriptionHint")}
                 fieldLabelId="realm-settings:displayDescriptionField"
               />
             }
@@ -181,7 +181,7 @@ export default function AttributesGroupForm() {
           </FormGroup>
           <ActionGroup>
             <Button variant="primary" type="submit">
-              {t("save")}
+              {t("common:save")}
             </Button>
             <Button
               variant="link"
@@ -192,7 +192,7 @@ export default function AttributesGroupForm() {
                 />
               )}
             >
-              {t("cancel")}
+              {t("common:cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

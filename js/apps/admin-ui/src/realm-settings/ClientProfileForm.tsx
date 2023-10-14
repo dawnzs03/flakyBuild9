@@ -55,7 +55,7 @@ const defaultValues: ClientProfileForm = {
 };
 
 export default function ClientProfileForm() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const navigate = useNavigate();
   const {
     handleSubmit,
@@ -228,7 +228,7 @@ export default function ClientProfileForm() {
             fieldId="kc-name"
             helperText={t("createClientProfileNameHelperText")}
             isRequired
-            helperTextInvalid={t("required")}
+            helperTextInvalid={t("common:required")}
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
@@ -240,7 +240,7 @@ export default function ClientProfileForm() {
               {...register("name", { required: true })}
             />
           </FormGroup>
-          <FormGroup label={t("description")} fieldId="kc-description">
+          <FormGroup label={t("common:description")} fieldId="kc-description">
             <KeycloakTextArea
               id="kc-description"
               data-testid="client-profile-description"
@@ -256,7 +256,7 @@ export default function ClientProfileForm() {
                 data-testid="saveCreateProfile"
                 isDisabled={!isDirty}
               >
-                {t("save")}
+                {t("common:save")}
               </Button>
             )}
             {editMode && !isGlobalProfile && (
@@ -282,7 +282,7 @@ export default function ClientProfileForm() {
                 )}
                 data-testid={"cancelCreateProfile"}
               >
-                {t("cancel")}
+                {t("common:cancel")}
               </Button>
             )}
           </ActionGroup>
@@ -293,7 +293,7 @@ export default function ClientProfileForm() {
                   <Text className="kc-executors" component={TextVariants.h1}>
                     {t("executors")}
                     <HelpItem
-                      helpText={t("executorsHelpText")}
+                      helpText={t("realm-settings:executorsHelpText")}
                       fieldLabelId="realm-settings:executors"
                     />
                   </Text>
@@ -388,7 +388,7 @@ export default function ClientProfileForm() {
                                               name: type.id,
                                             });
                                           }}
-                                          aria-label={t("remove")}
+                                          aria-label={t("common:remove")}
                                         />
                                       )}
                                     </Fragment>

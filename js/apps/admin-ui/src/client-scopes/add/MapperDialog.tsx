@@ -43,7 +43,7 @@ export type AddMapperDialogProps = AddMapperDialogModalProps & {
 };
 
 export const AddMapperDialog = (props: AddMapperDialogProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("client-scopes");
 
   const serverInfo = useServerInfo();
   const protocol = props.protocol;
@@ -82,7 +82,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
 
   const isBuiltIn = !!props.filter;
 
-  const header = [t("name"), t("description")];
+  const header = [t("common:name"), t("common:description")];
 
   return (
     <Modal
@@ -122,7 +122,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
                   props.toggleDialog();
                 }}
               >
-                {t("add")}
+                {t("common:add")}
               </Button>,
               <Button
                 id="modal-cancel"
@@ -133,7 +133,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
                   props.toggleDialog();
                 }}
               >
-                {t("cancel")}
+                {t("common:cancel")}
               </Button>,
             ]
           : []
@@ -187,22 +187,22 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           loader={rows}
           onSelect={setSelectedRows}
           canSelectAll
-          ariaLabelKey="addPredefinedMappers"
-          searchPlaceholderKey="searchForMapper"
+          ariaLabelKey="client-scopes:addPredefinedMappers"
+          searchPlaceholderKey="common:searchForMapper"
           columns={[
             {
               name: "id",
-              displayKey: "name",
+              displayKey: "common:name",
             },
             {
               name: "description",
-              displayKey: "description",
+              displayKey: "common:description",
             },
           ]}
           emptyState={
             <ListEmptyState
-              message={t("emptyMappers")}
-              instructions={t("emptyBuiltInMappersInstructions")}
+              message={t("common:emptyMappers")}
+              instructions={t("client-scopes:emptyBuiltInMappersInstructions")}
             />
           }
         />

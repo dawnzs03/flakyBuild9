@@ -29,7 +29,7 @@ export const ResetCredentialDialog = ({
   userId,
   onClose,
 }: ResetCredentialDialogProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const form = useForm<CredentialResetForm>({
     defaultValues: credResetFormDefaultValues,
   });
@@ -85,8 +85,8 @@ export const ResetCredentialDialog = ({
         <FormProvider {...form}>
           <RequiredActionMultiSelect
             name="actions"
-            label="resetAction"
-            help="resetActions"
+            label="resetActions"
+            help="clients-help:resetActions"
           />
           <LifespanField />
         </FormProvider>

@@ -61,7 +61,6 @@ public class KeysMetadataRepresentation {
         private String publicKey;
         private String certificate;
         private KeyUse use;
-        private Long validTo;
 
         public String getProviderId() {
             return providerId;
@@ -133,14 +132,6 @@ public class KeysMetadataRepresentation {
 
         public void setUse(KeyUse use) {
             this.use = use;
-        }
-
-        public Long getValidTo() {
-            return validTo;
-        }
-
-        public void setValidTo(Long validTo) {
-            this.validTo = validTo;
         }
     }
 }

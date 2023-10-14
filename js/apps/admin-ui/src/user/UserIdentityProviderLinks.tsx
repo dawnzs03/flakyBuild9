@@ -39,7 +39,7 @@ export const UserIdentityProviderLinks = ({
 
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
 
   const refresh = () => setKey(new Date().getTime());
 
@@ -100,7 +100,7 @@ export const UserIdentityProviderLinks = ({
         addAlert(t("users:idpUnlinkSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("mappingDeletedError", error);
+        addError("common:mappingDeletedError", error);
       }
     },
   });
@@ -203,14 +203,14 @@ export const UserIdentityProviderLinks = ({
             columns={[
               {
                 name: "identityProvider",
-                displayKey: "name",
+                displayKey: "common:name",
                 cellFormatters: [emptyFormatter()],
                 cellRenderer: idpLinkRenderer,
                 transforms: [cellWidth(20)],
               },
               {
                 name: "type",
-                displayKey: "type",
+                displayKey: "common:type",
                 cellFormatters: [emptyFormatter()],
                 cellRenderer: badgeRenderer1,
                 transforms: [cellWidth(10)],
@@ -256,13 +256,13 @@ export const UserIdentityProviderLinks = ({
             columns={[
               {
                 name: "alias",
-                displayKey: "name",
+                displayKey: "common:name",
                 cellFormatters: [emptyFormatter(), upperCaseFormatter()],
                 transforms: [cellWidth(20)],
               },
               {
                 name: "type",
-                displayKey: "type",
+                displayKey: "common:type",
                 cellFormatters: [emptyFormatter()],
                 cellRenderer: badgeRenderer2,
                 transforms: [cellWidth(60)],

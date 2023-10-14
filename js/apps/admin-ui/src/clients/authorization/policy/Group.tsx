@@ -30,7 +30,7 @@ export type GroupValue = {
 };
 
 export const Group = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const {
     control,
     register,
@@ -66,8 +66,8 @@ export const Group = () => {
         label={t("groupsClaim")}
         labelIcon={
           <HelpItem
-            helpText={t("groupsClaimHelp")}
-            fieldLabelId="groupsClaim"
+            helpText={t("clients-help:groupsClaim")}
+            fieldLabelId="clients:groupsClaim"
           />
         }
         fieldId="groups"
@@ -82,7 +82,10 @@ export const Group = () => {
       <FormGroup
         label={t("groups")}
         labelIcon={
-          <HelpItem helpText={t("policyGroupsHelp")} fieldLabelId="groups" />
+          <HelpItem
+            helpText={t("clients-help:policyGroups")}
+            fieldLabelId="clients:groups"
+          />
         }
         fieldId="groups"
         helperTextInvalid={t("requiredGroups")}
@@ -103,8 +106,8 @@ export const Group = () => {
                 <GroupPickerDialog
                   type="selectMany"
                   text={{
-                    title: "addGroupsToGroupPolicy",
-                    ok: "add",
+                    title: "clients:addGroupsToGroupPolicy",
+                    ok: "common:add",
                   }}
                   onConfirm={(groups) => {
                     field.onChange([

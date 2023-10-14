@@ -56,7 +56,7 @@ export const ClientSelect = ({
 
   const convert = (clients: ClientRepresentation[]) => [
     <SelectOption key="empty" value="">
-      {t("none")}
+      {t("common:none")}
     </SelectOption>,
     ...clients.map((option) => (
       <SelectOption key={option.id} value={option.clientId} />
@@ -75,7 +75,7 @@ export const ClientSelect = ({
       }
       fieldId={name!}
       validated={errors[name!] ? "error" : "default"}
-      helperTextInvalid={t("required")}
+      helperTextInvalid={t("common:required")}
     >
       <Controller
         name={name!}

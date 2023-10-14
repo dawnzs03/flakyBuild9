@@ -21,7 +21,7 @@ export const AddValidatorDialog = ({
   toggleDialog,
   onConfirm,
 }: AddValidatorDialogProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const [selectedValidator, setSelectedValidator] =
     useState<ComponentTypeRepresentation>();
 
@@ -50,7 +50,7 @@ export const AddValidatorDialog = ({
           type="submit"
           form="add-validator"
         >
-          {t("save")}
+          {t("common:save")}
         </Button>,
         <Button
           key="cancel"
@@ -58,7 +58,7 @@ export const AddValidatorDialog = ({
           variant="link"
           onClick={toggleDialog}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >

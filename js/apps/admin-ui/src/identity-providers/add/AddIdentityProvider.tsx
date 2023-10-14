@@ -24,7 +24,7 @@ import { toIdentityProviders } from "../routes/IdentityProviders";
 import { GeneralSettings } from "./GeneralSettings";
 
 export default function AddIdentityProvider() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const { providerId } = useParams<IdentityProviderCreateParams>();
   const form = useForm<IdentityProviderRepresentation>();
   const serverInfo = useServerInfo();
@@ -62,7 +62,7 @@ export default function AddIdentityProvider() {
         providerId,
         alias: providerId,
       });
-      addAlert(t("createIdentityProviderSuccess"), AlertVariant.success);
+      addAlert(t("createSuccess"), AlertVariant.success);
       navigate(
         toIdentityProvider({
           realm,
@@ -72,7 +72,7 @@ export default function AddIdentityProvider() {
         }),
       );
     } catch (error) {
-      addError("createError", error);
+      addError("identity-providers:createError", error);
     }
   };
 
@@ -92,10 +92,7 @@ export default function AddIdentityProvider() {
           <FormProvider {...form}>
             <GeneralSettings id={providerId} />
             {providerInfo && (
-              <DynamicComponents
-                stringify
-                properties={providerInfo.properties}
-              />
+              <DynamicComponents properties={providerInfo.properties} />
             )}
           </FormProvider>
           <ActionGroup>
@@ -105,7 +102,7 @@ export default function AddIdentityProvider() {
               type="submit"
               data-testid="createProvider"
             >
-              {t("add")}
+              {t("common:add")}
             </Button>
             <Button
               variant="link"
@@ -114,7 +111,7 @@ export default function AddIdentityProvider() {
                 <Link {...props} to={toIdentityProviders({ realm })} />
               )}
             >
-              {t("cancel")}
+              {t("common:cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

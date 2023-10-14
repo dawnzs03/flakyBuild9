@@ -30,7 +30,7 @@ const sortByPriority = (components: ComponentRepresentation[]) => {
 };
 
 export const KeysTab = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
 
   const { realm: realmName } = useRealm();
 

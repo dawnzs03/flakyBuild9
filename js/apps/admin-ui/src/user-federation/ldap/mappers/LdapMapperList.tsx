@@ -35,7 +35,7 @@ const MapperLink = ({ toDetail, ...mapper }: MapperLinkProps) => (
 
 export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -70,9 +70,9 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: t("deleteMappingTitle", { mapperId: selectedMapper?.id }),
-    messageKey: "deleteMappingConfirm",
-    continueButtonLabel: "delete",
+    titleKey: t("common:deleteMappingTitle", { mapperId: selectedMapper?.id }),
+    messageKey: "common:deleteMappingConfirm",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -80,10 +80,10 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
           id: selectedMapper!.id!,
         });
         refresh();
-        addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
+        addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
         setSelectedMapper(undefined);
       } catch (error) {
-        addError("mappingDeletedError", error);
+        addError("common:mappingDeletedError", error);
       }
     },
   });
@@ -95,7 +95,7 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
         key={key}
         loader={mappers}
         ariaLabelKey="ldapMappersList"
-        searchPlaceholderKey="searchForMapper"
+        searchPlaceholderKey="common:searchForMapper"
         toolbarItem={
           <ToolbarItem>
             <Button
@@ -103,13 +103,13 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
               variant="primary"
               component={(props) => <Link {...props} to={toCreate} />}
             >
-              {t("addMapper")}
+              {t("common:addMapper")}
             </Button>
           </ToolbarItem>
         }
         actions={[
           {
-            title: t("delete"),
+            title: t("common:delete"),
             onRowClick: (mapper) => {
               setSelectedMapper(mapper);
               toggleDeleteDialog();
@@ -127,9 +127,9 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
         ]}
         emptyState={
           <ListEmptyState
-            message={t("emptyMappers")}
-            instructions={t("emptyMappersInstructions")}
-            primaryActionText={t("emptyPrimaryAction")}
+            message={t("common:emptyMappers")}
+            instructions={t("common:emptyMappersInstructions")}
+            primaryActionText={t("common:emptyPrimaryAction")}
             onPrimaryAction={() => navigate(toCreate)}
           />
         }

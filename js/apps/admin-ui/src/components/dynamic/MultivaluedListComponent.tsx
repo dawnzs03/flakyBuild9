@@ -12,14 +12,6 @@ import { HelpItem } from "ui-shared";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
-function stringToMultiline(value?: string): string[] {
-  return typeof value === "string" && value.length > 0 ? value.split("##") : [];
-}
-
-function toStringValue(formValue: string[]): string {
-  return formValue.join("##");
-}
-
 export const MultiValuedListComponent = ({
   name,
   label,
@@ -27,16 +19,17 @@ export const MultiValuedListComponent = ({
   defaultValue,
   options,
   isDisabled = false,
-  stringify,
 }: ComponentProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
 
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
+      labelIcon={
+        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
+      }
       fieldId={name!}
     >
       <Controller
@@ -50,31 +43,26 @@ export const MultiValuedListComponent = ({
             isDisabled={isDisabled}
             chipGroupProps={{
               numChips: 3,
-              expandedText: t("hide"),
-              collapsedText: t("showRemaining"),
+              expandedText: t("common:hide"),
+              collapsedText: t("common:showRemaining"),
             }}
             variant={SelectVariant.typeaheadMulti}
             typeAheadAriaLabel="Select"
             onToggle={(isOpen) => setOpen(isOpen)}
-            selections={
-              stringify ? stringToMultiline(field.value) : field.value
-            }
+            selections={field.value}
             onSelect={(_, v) => {
               const option = v.toString();
-              const values = stringify
-                ? stringToMultiline(field.value)
-                : field.value;
-              let newValue;
-              if (values.includes(option)) {
-                newValue = values.filter((item: string) => item !== option);
+              if (field.value.includes(option)) {
+                field.onChange(
+                  field.value.filter((item: string) => item !== option),
+                );
               } else {
-                newValue = [...values, option];
+                field.onChange([...field.value, option]);
               }
-              field.onChange(stringify ? toStringValue(newValue) : newValue);
             }}
             onClear={(event) => {
               event.stopPropagation();
-              field.onChange(stringify ? "" : []);
+              field.onChange([]);
             }}
             isOpen={open}
             aria-label={t(label!)}

@@ -18,7 +18,7 @@ export const OpenIdConnectCompatibilityModes = ({
   reset,
   hasConfigureAccess,
 }: OpenIdConnectCompatibilityModesProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { control } = useFormContext();
   return (
     <FormAccess
@@ -32,8 +32,10 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText={t("excludeSessionStateFromAuthenticationResponseHelp")}
-            fieldLabelId="excludeSessionStateFromAuthenticationResponse"
+            helpText={t(
+              "clients-help:excludeSessionStateFromAuthenticationResponse",
+            )}
+            fieldLabelId="clients:excludeSessionStateFromAuthenticationResponse"
           />
         }
       >
@@ -46,8 +48,8 @@ export const OpenIdConnectCompatibilityModes = ({
           render={({ field }) => (
             <Switch
               id="excludeSessionStateFromAuthenticationResponse-switch"
-              label={t("on")}
-              labelOff={t("off")}
+              label={t("common:on")}
+              labelOff={t("common:off")}
               isChecked={field.value === "true"}
               onChange={(value) => field.onChange(value.toString())}
               aria-label={t("excludeSessionStateFromAuthenticationResponse")}
@@ -61,8 +63,8 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText={t("excludeIssuerFromAuthenticationResponseHelp")}
-            fieldLabelId="excludeIssuerFromAuthenticationResponse"
+            helpText={t("clients-help:excludeIssuerFromAuthenticationResponse")}
+            fieldLabelId="clients:excludeIssuerFromAuthenticationResponse"
           />
         }
       >
@@ -75,8 +77,8 @@ export const OpenIdConnectCompatibilityModes = ({
           render={({ field }) => (
             <Switch
               id="excludeIssuerFromAuthenticationResponse-switch"
-              label={t("on")}
-              labelOff={t("off")}
+              label={t("common:on")}
+              labelOff={t("common:off")}
               isChecked={field.value === "true"}
               onChange={(value) => field.onChange(value.toString())}
               aria-label={t("excludeIssuerFromAuthenticationResponse")}
@@ -90,8 +92,8 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText={t("useRefreshTokensHelp")}
-            fieldLabelId="useRefreshTokens"
+            helpText={t("clients-help:useRefreshTokens")}
+            fieldLabelId="clients:useRefreshTokens"
           />
         }
       >
@@ -104,8 +106,8 @@ export const OpenIdConnectCompatibilityModes = ({
           render={({ field }) => (
             <Switch
               id="useRefreshTokens"
-              label={t("on")}
-              labelOff={t("off")}
+              label={t("common:on")}
+              labelOff={t("common:off")}
               isChecked={field.value === "true"}
               onChange={(value) => field.onChange(value.toString())}
               aria-label={t("useRefreshTokens")}
@@ -119,8 +121,10 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText={t("useRefreshTokenForClientCredentialsGrantHelp")}
-            fieldLabelId="useRefreshTokenForClientCredentialsGrant"
+            helpText={t(
+              "clients-help:useRefreshTokenForClientCredentialsGrant",
+            )}
+            fieldLabelId="clients:useRefreshTokenForClientCredentialsGrant"
           />
         }
       >
@@ -133,8 +137,8 @@ export const OpenIdConnectCompatibilityModes = ({
           render={({ field }) => (
             <Switch
               id="useRefreshTokenForClientCredentialsGrant"
-              label={t("on")}
-              labelOff={t("off")}
+              label={t("common:on")}
+              labelOff={t("common:off")}
               isChecked={field.value === "true"}
               onChange={(value) => field.onChange(value.toString())}
               aria-label={t("useRefreshTokenForClientCredentialsGrant")}
@@ -148,8 +152,8 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText={t("useLowerCaseBearerTypeHelp")}
-            fieldLabelId="useLowerCaseBearerType"
+            helpText={t("clients-help:useLowerCaseBearerType")}
+            fieldLabelId="clients:useLowerCaseBearerType"
           />
         }
       >
@@ -162,8 +166,8 @@ export const OpenIdConnectCompatibilityModes = ({
           render={({ field }) => (
             <Switch
               id="useLowerCaseBearerType"
-              label={t("on")}
-              labelOff={t("off")}
+              label={t("common:on")}
+              labelOff={t("common:off")}
               isChecked={field.value === "true"}
               onChange={(value) => field.onChange(value.toString())}
               aria-label={t("useLowerCaseBearerType")}
@@ -177,14 +181,14 @@ export const OpenIdConnectCompatibilityModes = ({
           onClick={save}
           data-testid="OIDCCompatabilitySave"
         >
-          {t("save")}
+          {t("common:save")}
         </Button>
         <Button
           variant="link"
           onClick={reset}
           data-testid="OIDCCompatabilityRevert"
         >
-          {t("revert")}
+          {t("common:revert")}
         </Button>
       </ActionGroup>
     </FormAccess>

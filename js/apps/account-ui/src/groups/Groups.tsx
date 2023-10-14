@@ -53,10 +53,7 @@ const Groups = () => {
   return (
     <Page title={t("groups")} description={t("groupDescriptionLabel")}>
       <DataList id="groups-list" aria-label={t("groups")} isCompact>
-        <DataListItem
-          id="groups-list-header"
-          aria-label={t("groupsListHeader")}
-        >
+        <DataListItem id="groups-list-header" aria-labelledby="Columns names">
           <DataListItemRow>
             <DataListItemCells
               dataListCells={[
@@ -72,10 +69,7 @@ const Groups = () => {
             />
           </DataListItemRow>
         </DataListItem>
-        <DataListItem
-          id="groups-list-columns-names"
-          aria-label={t("groupsListColumnsNames")}
-        >
+        <DataListItem id="groups-list-header" aria-labelledby="Columns names">
           <DataListItemRow>
             <DataListItemCells
               dataListCells={[

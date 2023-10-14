@@ -41,7 +41,7 @@ export const RealmSettingsGeneralTab = ({
   realm,
   save,
 }: RealmSettingsGeneralTabProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const { realm: realmName } = useRealm();
   const form = useForm<FormFields>();
   const {
@@ -91,7 +91,7 @@ export const RealmSettingsGeneralTab = ({
             name="realm"
             control={control}
             rules={{
-              required: { value: true, message: t("required") },
+              required: { value: true, message: t("common:required") },
               pattern: {
                 value: /^[a-zA-Z0-9-_]+$/,
                 message: t("realm:invalidRealmName"),
@@ -122,7 +122,7 @@ export const RealmSettingsGeneralTab = ({
           fieldId="kc-frontend-url"
           labelIcon={
             <HelpItem
-              helpText={t("frontendUrlHelp")}
+              helpText={t("realm-settings-help:frontendUrl")}
               fieldLabelId="realm-settings:frontendUrl"
             />
           }
@@ -138,7 +138,7 @@ export const RealmSettingsGeneralTab = ({
           fieldId="kc-require-ssl"
           labelIcon={
             <HelpItem
-              helpText={t("requireSslHelp")}
+              helpText={t("realm-settings-help:requireSsl")}
               fieldLabelId="realm-settings:requireSsl"
             />
           }
@@ -174,12 +174,12 @@ export const RealmSettingsGeneralTab = ({
           />
         </FormGroup>
         <FormGroup
-          label={t("acrToLoAMapping")}
+          label={t("clients:acrToLoAMapping")}
           fieldId="acrToLoAMapping"
           labelIcon={
             <HelpItem
-              helpText={t("acrToLoAMappingHelp")}
-              fieldLabelId="acrToLoAMapping"
+              helpText={t("clients-help:acrToLoAMapping")}
+              fieldLabelId="clients:acrToLoAMapping"
             />
           }
         >
@@ -194,7 +194,7 @@ export const RealmSettingsGeneralTab = ({
           label={t("userManagedAccess")}
           labelIcon={
             <HelpItem
-              helpText={t("userManagedAccessHelp")}
+              helpText={t("realm-settings-help:userManagedAccess")}
               fieldLabelId="realm-settings:userManagedAccess"
             />
           }
@@ -208,8 +208,8 @@ export const RealmSettingsGeneralTab = ({
               <Switch
                 id="kc-user-managed-access"
                 data-testid="user-managed-access-switch"
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 isChecked={field.value}
                 onChange={field.onChange}
                 aria-label={t("userManagedAccess")}
@@ -223,7 +223,7 @@ export const RealmSettingsGeneralTab = ({
             label={t("userProfileEnabled")}
             labelIcon={
               <HelpItem
-                helpText={t("userProfileEnabledHelp")}
+                helpText={t("realm-settings-help:userProfileEnabled")}
                 fieldLabelId="realm-settings:userProfileEnabled"
               />
             }
@@ -241,8 +241,8 @@ export const RealmSettingsGeneralTab = ({
                 <Switch
                   id="kc-user-profile-enabled"
                   data-testid="user-profile-enabled-switch"
-                  label={t("on")}
-                  labelOff={t("off")}
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => field.onChange(value.toString())}
                   aria-label={t("userProfileEnabled")}
@@ -255,7 +255,7 @@ export const RealmSettingsGeneralTab = ({
           label={t("endpoints")}
           labelIcon={
             <HelpItem
-              helpText={t("endpointsHelp")}
+              helpText={t("realm-settings-help:endpoints")}
               fieldLabelId="realm-settings:endpoints"
             />
           }
@@ -288,14 +288,14 @@ export const RealmSettingsGeneralTab = ({
             data-testid="general-tab-save"
             isDisabled={!isDirty}
           >
-            {t("save")}
+            {t("common:save")}
           </Button>
           <Button
             data-testid="general-tab-revert"
             variant="link"
             onClick={setupForm}
           >
-            {t("revert")}
+            {t("common:revert")}
           </Button>
         </ActionGroup>
       </FormAccess>

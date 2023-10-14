@@ -31,7 +31,7 @@ import { adminClient } from "../../admin-client";
 import "./custom-provider-settings.css";
 
 export default function CustomProviderSettings() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
   const { id, providerId } = useParams<CustomUserFederationRouteParams>();
   const navigate = useNavigate();
   const form = useForm<ComponentRepresentation>({
@@ -66,7 +66,7 @@ export default function CustomProviderSettings() {
       if (fetchedComponent) {
         convertToFormValues(fetchedComponent, setValue);
       } else if (id) {
-        throw new Error(t("notFound"));
+        throw new Error(t("common:notFound"));
       }
     },
     [],
@@ -103,15 +103,9 @@ export default function CustomProviderSettings() {
         await adminClient.components.update({ id }, saveComponent);
       }
       reset({ ...component });
-      addAlert(
-        t(!id ? "createUserProviderSuccess" : "userProviderSaveSuccess"),
-        AlertVariant.success,
-      );
+      addAlert(t(!id ? "createSuccess" : "saveSuccess"), AlertVariant.success);
     } catch (error) {
-      addError(
-        `${!id ? "createUserProviderError" : "userProviderSaveError"}`,
-        error,
-      );
+      addError(`user-federation:${!id ? "createError" : "saveError"}`, error);
     }
   };
 
@@ -129,7 +123,7 @@ export default function CustomProviderSettings() {
             label={t("uiDisplayName")}
             labelIcon={
               <HelpItem
-                helpText={t("uiDisplayNameHelp")}
+                helpText={t("user-federation-help:uiDisplayNameHelp")}
                 fieldLabelId="user-federation:uiDisplayName"
               />
             }
@@ -160,7 +154,7 @@ export default function CustomProviderSettings() {
               type="submit"
               data-testid="custom-save"
             >
-              {t("save")}
+              {t("common:save")}
             </Button>
             <Button
               variant="link"
@@ -169,7 +163,7 @@ export default function CustomProviderSettings() {
               )}
               data-testid="custom-cancel"
             >
-              {t("cancel")}
+              {t("common:cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

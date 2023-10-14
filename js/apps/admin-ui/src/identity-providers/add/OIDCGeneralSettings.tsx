@@ -1,5 +1,5 @@
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
-import { useWatch, useFormContext } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
@@ -10,27 +10,24 @@ import { RedirectUrl } from "../component/RedirectUrl";
 import { TextField } from "../component/TextField";
 import type { IdentityProviderParams } from "../routes/IdentityProvider";
 
-export const OIDCGeneralSettings = () => {
-  const { t } = useTranslation();
+export const OIDCGeneralSettings = ({ id }: { id: string }) => {
+  const { t } = useTranslation("identity-providers");
   const { tab } = useParams<IdentityProviderParams>();
 
   const {
     register,
-    control,
     formState: { errors },
   } = useFormContext();
 
-  const alias = useWatch({ control, name: "alias" });
-
   return (
     <>
-      <RedirectUrl id={alias} />
+      <RedirectUrl id={id} />
 
       <FormGroup
         label={t("alias")}
         labelIcon={
           <HelpItem
-            helpText={t("aliasHelp")}
+            helpText={t("identity-providers-help:alias")}
             fieldLabelId="identity-providers:alias"
           />
         }
@@ -39,7 +36,7 @@ export const OIDCGeneralSettings = () => {
         validated={
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           isReadOnly={tab === "settings"}

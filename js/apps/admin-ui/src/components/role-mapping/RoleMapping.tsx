@@ -86,7 +86,7 @@ export const RoleMapping = ({
   isManager = true,
   save,
 }: RoleMappingProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(type);
   const { addAlert, addError } = useAlerts();
 
   const [key, setKey] = useState(0);
@@ -140,17 +140,17 @@ export const RoleMapping = ({
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "removeMappingTitle",
-    messageKey: t("removeMappingConfirm", { count: selected.length }),
-    continueButtonLabel: "remove",
+    titleKey: "clients:removeMappingTitle",
+    messageKey: t("clients:removeMappingConfirm", { count: selected.length }),
+    continueButtonLabel: "common:remove",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await Promise.all(deleteMapping(type, id, selected));
-        addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
+        addAlert(t("clients:clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clientScopeRemoveError", error);
+        addError("clients:clientScopeRemoveError", error);
       }
     },
   });
@@ -173,8 +173,8 @@ export const RoleMapping = ({
         loader={loader}
         canSelectAll
         onSelect={(rows) => setSelected(rows)}
-        searchPlaceholderKey="searchByName"
-        ariaLabelKey="clientScopeList"
+        searchPlaceholderKey="clients:searchByName"
+        ariaLabelKey="clients:clientScopeList"
         isRowDisabled={(value) =>
           (value.role as CompositeRole).isInherited || false
         }
@@ -182,7 +182,7 @@ export const RoleMapping = ({
           <>
             <ToolbarItem>
               <Checkbox
-                label={t("hideInheritedRoles")}
+                label={t("common:hideInheritedRoles")}
                 id="hideInheritedRoles"
                 data-testid="hideInheritedRoles"
                 isChecked={hide}
@@ -199,7 +199,7 @@ export const RoleMapping = ({
                     data-testid="assignRole"
                     onClick={() => setShowAssign(true)}
                   >
-                    {t("assignRole")}
+                    {t("common:assignRole")}
                   </Button>
                 </ToolbarItem>
                 <ToolbarItem>
@@ -209,7 +209,7 @@ export const RoleMapping = ({
                     onClick={toggleDeleteDialog}
                     isDisabled={selected.length === 0}
                   >
-                    {t("unAssignRole")}
+                    {t("common:unAssignRole")}
                   </Button>
                 </ToolbarItem>
               </>
@@ -220,7 +220,7 @@ export const RoleMapping = ({
           isManager
             ? [
                 {
-                  title: t("unAssignRole"),
+                  title: t("common:unAssignRole"),
                   onRowClick: async (role) => {
                     setSelected([role]);
                     toggleDeleteDialog();
@@ -233,26 +233,26 @@ export const RoleMapping = ({
         columns={[
           {
             name: "role.name",
-            displayKey: t("name"),
+            displayKey: t("common:name"),
             transforms: [cellWidth(30)],
             cellRenderer: ServiceRole,
           },
           {
             name: "role.isInherited",
-            displayKey: t("inherent"),
+            displayKey: t("common:inherent"),
             cellFormatters: [upperCaseFormatter(), emptyFormatter()],
           },
           {
             name: "role.description",
-            displayKey: t("description"),
+            displayKey: t("common:description"),
             cellFormatters: [emptyFormatter()],
           },
         ]}
         emptyState={
           <ListEmptyState
-            message={t(`noRoles-${type}`)}
-            instructions={t(`noRolesInstructions-${type}`)}
-            primaryActionText={t("assignRole")}
+            message={t("noRoles")}
+            instructions={t("noRolesInstructions")}
+            primaryActionText={t("common:assignRole")}
             onPrimaryAction={() => setShowAssign(true)}
           />
         }

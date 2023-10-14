@@ -1,6 +1,5 @@
 import type ComponentTypeRepresentation from "./componentTypeRepresentation.js";
 import type { ConfigPropertyRepresentation } from "./configPropertyRepresentation.js";
-import FeatureRepresentation from "./featureRepresentation.js";
 import type PasswordPolicyTypeRepresentation from "./passwordPolicyTypeRepresentation.js";
 import type ProfileInfoRepresentation from "./profileInfoRepresentation.js";
 import type ProtocolMapperRepresentation from "./protocolMapperRepresentation.js";
@@ -13,7 +12,6 @@ export interface ServerInfoRepresentation {
   systemInfo?: SystemInfoRepresentation;
   memoryInfo?: MemoryInfoRepresentation;
   profileInfo?: ProfileInfoRepresentation;
-  features?: FeatureRepresentation[];
   cryptoInfo?: CryptoInfoRepresentation;
   themes?: { [index: string]: ThemeInfoRepresentation[] };
   socialProviders?: { [index: string]: string }[];

@@ -42,7 +42,6 @@ export const OptionComponent = (attr: UserProfileAttribute) => {
                     field.onChange([option]);
                   }
                 }}
-                readOnly={attr.readOnly}
               />
             ))}
           </>

@@ -27,7 +27,7 @@ type DiscoverySettingsProps = {
 };
 
 const Fields = ({ readOnly }: DiscoverySettingsProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const [pkceMethodOpen, setPkceMethodOpen] = useState(false);
   const {
     register,
@@ -59,7 +59,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           type="url"
@@ -84,7 +84,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           type="url"
@@ -157,7 +157,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           label={t("pkceMethod")}
           labelIcon={
             <HelpItem
-              helpText={t("pkceMethodHelp")}
+              helpText={t("identity-providers-help:pkceMethod")}
               fieldLabelId="identity-providers:pkceMethod"
             />
           }
@@ -201,7 +201,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
 };
 
 export const DiscoverySettings = ({ readOnly }: DiscoverySettingsProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (

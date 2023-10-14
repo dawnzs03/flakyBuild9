@@ -45,7 +45,7 @@ type PermissionsTabProps = {
 };
 
 export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
   const navigate = useNavigate();
   const { realm } = useRealm();
   const [realmId, setRealmId] = useState("");
@@ -110,9 +110,9 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
   );
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "permissionsDisable",
-    messageKey: "permissionsDisableConfirm",
-    continueButtonLabel: "confirm",
+    titleKey: "common:permissionsDisable",
+    messageKey: "common:permissionsDisableConfirm",
+    continueButtonLabel: "common:confirm",
     onConfirm: async () => {
       const permission = await togglePermissionEnabled(false);
       setPermission(permission);
@@ -138,16 +138,16 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
               fieldId="permissionsEnabled"
               labelIcon={
                 <HelpItem
-                  helpText={t("permissionsEnabledHelp")}
-                  fieldLabelId="permissionsEnabled"
+                  helpText={t("clients-help:permissionsEnabled")}
+                  fieldLabelId="clients:permissionsEnabled"
                 />
               }
             >
               <Switch
                 id="permissionsEnabled"
                 data-testid="permissionSwitch"
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 isChecked={permission.enabled}
                 onChange={async (enabled) => {
                   if (enabled) {
@@ -168,7 +168,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
           <Card isFlat className="pf-u-mt-lg">
             <CardTitle>{t("permissionsList")}</CardTitle>
             <CardBody>
-              <Trans i18nKey="permissionsListIntro">
+              <Trans i18nKey="common:permissionsListIntro">
                 {" "}
                 <strong>
                   {{
@@ -219,7 +219,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                         <ActionsColumn
                           items={[
                             {
-                              title: t("edit"),
+                              title: t("common:edit"),
                               onClick() {
                                 navigate(
                                   toPermissionDetails({

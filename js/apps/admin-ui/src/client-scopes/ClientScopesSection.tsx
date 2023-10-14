@@ -54,7 +54,7 @@ type TypeSelectorProps = ClientScopeDefaultOptionalType & {
 };
 
 const TypeSelector = (scope: TypeSelectorProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("client-scopes");
   const { addAlert, addError } = useAlerts();
 
   return (
@@ -68,7 +68,7 @@ const TypeSelector = (scope: TypeSelectorProps) => {
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
           scope.refresh();
         } catch (error) {
-          addError("clientScopeError", error);
+          addError("client-scopes:clientScopeError", error);
         }
       }}
     />
@@ -89,7 +89,7 @@ const ClientScopeDetailLink = ({
 
 export default function ClientScopesSection() {
   const { realm } = useRealm();
-  const { t } = useTranslation();
+  const { t } = useTranslation("client-scopes");
   const { addAlert, addError } = useAlerts();
 
   const [kebabOpen, setKebabOpen] = useState(false);
@@ -153,8 +153,8 @@ export default function ClientScopesSection() {
       count: selectedScopes.length,
       name: selectedScopes[0]?.name,
     }),
-    messageKey: "deleteConfirmClientScopes",
-    continueButtonLabel: "delete",
+    messageKey: "client-scopes:deleteConfirm",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -169,10 +169,10 @@ export default function ClientScopesSection() {
           }
           await adminClient.clientScopes.del({ id: scope.id! });
         }
-        addAlert(t("deletedSuccessClientScope"), AlertVariant.success);
+        addAlert(t("deletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("deleteErrorClientScope", error);
+        addError("client-scopes:deleteError", error);
       }
     },
   });
@@ -182,16 +182,16 @@ export default function ClientScopesSection() {
       <DeleteConfirm />
       <ViewHeader
         titleKey="clientScopes"
-        subKey="clientScopeExplain"
+        subKey="client-scopes:clientScopeExplain"
         helpUrl={helpUrls.clientScopesUrl}
       />
       <PageSection variant="light" className="pf-u-p-0">
         <KeycloakDataTable
           key={key}
           loader={loader}
-          ariaLabelKey="clientScopeList"
+          ariaLabelKey="client-scopes:clientScopeList"
           searchPlaceholderKey={
-            searchType === "name" ? "searchForClientScope" : undefined
+            searchType === "name" ? "client-scopes:searchFor" : undefined
           }
           isSearching={searchType !== "name"}
           searchTypeComponent={
@@ -258,7 +258,7 @@ export default function ClientScopesSection() {
                         setKebabOpen(false);
                       }}
                     >
-                      {t("delete")}
+                      {t("common:delete")}
                     </DropdownItem>,
                   ]}
                 />
@@ -267,7 +267,7 @@ export default function ClientScopesSection() {
           }
           actions={[
             {
-              title: t("delete"),
+              title: t("common:delete"),
               onRowClick: (clientScope) => {
                 setSelectedScopes([clientScope]);
                 toggleDeleteDialog();
@@ -281,21 +281,21 @@ export default function ClientScopesSection() {
             },
             {
               name: "type",
-              displayKey: "assignedType",
+              displayKey: "client-scopes:assignedType",
               cellRenderer: (row) => (
                 <TypeSelector {...row} refresh={refresh} />
               ),
             },
             {
               name: "protocol",
-              displayKey: "protocol",
+              displayKey: "client-scopes:protocol",
               cellRenderer: (client) =>
                 getProtocolName(t, client.protocol ?? "openid-connect"),
               transforms: [cellWidth(15)],
             },
             {
               name: "attributes['gui.order']",
-              displayKey: "displayOrder",
+              displayKey: "client-scopes:displayOrder",
               cellFormatters: [emptyFormatter()],
               transforms: [cellWidth(15)],
             },

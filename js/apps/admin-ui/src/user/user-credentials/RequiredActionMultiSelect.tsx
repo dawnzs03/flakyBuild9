@@ -24,7 +24,7 @@ export const RequiredActionMultiSelect = ({
   label,
   help,
 }: RequiredActionMultiSelectProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
   const [requiredActions, setRequiredActions] = useState<
@@ -45,7 +45,7 @@ export const RequiredActionMultiSelect = ({
   return (
     <FormGroup
       label={t(label)}
-      labelIcon={<HelpItem helpText={t(help)} fieldLabelId="resetAction" />}
+      labelIcon={<HelpItem helpText={t(help)} fieldLabelId="resetActions" />}
       fieldId="actions"
     >
       <Controller
@@ -76,7 +76,7 @@ export const RequiredActionMultiSelect = ({
               event.stopPropagation();
               field.onChange([]);
             }}
-            typeAheadAriaLabel={t("resetAction")}
+            typeAheadAriaLabel={t("resetActions")}
           >
             {requiredActions.map(({ alias, name }) => (
               <SelectOption

@@ -25,7 +25,7 @@ const promptOptions = {
 };
 
 export const ExtendedNonDiscoverySettings = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const { control } = useFormContext();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -46,7 +46,6 @@ export const ExtendedNonDiscoverySettings = () => {
           label="backchannelLogout"
         />
         <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
-        <SwitchField field="config.disableNonce" label="disableNonce" />
         <TextField field="config.defaultScope" label="scopes" />
         <FormGroupField label="prompt">
           <Controller
@@ -88,7 +87,7 @@ export const ExtendedNonDiscoverySettings = () => {
           label={t("allowedClockSkew")}
           labelIcon={
             <HelpItem
-              helpText={t("allowedClockSkewHelp")}
+              helpText={"identity-providers-help:allowedClockSkew"}
               fieldLabelId="identity-providers:allowedClockSkew"
             />
           }

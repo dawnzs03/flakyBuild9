@@ -15,7 +15,7 @@ import { adminClient } from "../../../admin-client";
 import { useFetch } from "../../../utils/useFetch";
 
 export const Client = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const {
     control,
     getValues,
@@ -66,7 +66,10 @@ export const Client = () => {
     <FormGroup
       label={t("clients")}
       labelIcon={
-        <HelpItem helpText={t("policyClientHelp")} fieldLabelId="client" />
+        <HelpItem
+          helpText={t("clients-help:policyClient")}
+          fieldLabelId="clients:client"
+        />
       }
       fieldId="clients"
       helperTextInvalid={t("requiredClient")}

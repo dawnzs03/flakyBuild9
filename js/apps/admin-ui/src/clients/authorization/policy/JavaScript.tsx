@@ -6,14 +6,17 @@ import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { HelpItem } from "ui-shared";
 
 export const JavaScript = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { control } = useFormContext();
 
   return (
     <FormGroup
       label={t("code")}
       labelIcon={
-        <HelpItem helpText={t("policyCodeHelp")} fieldLabelId="code" />
+        <HelpItem
+          helpText={t("clients-help:policyCode")}
+          fieldLabelId="clients:code"
+        />
       }
       fieldId="code"
       isRequired

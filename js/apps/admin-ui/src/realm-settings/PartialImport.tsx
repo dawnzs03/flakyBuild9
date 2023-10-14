@@ -69,7 +69,7 @@ const INITIAL_RESOURCES: Readonly<ResourceChecked> = {
 };
 
 export const PartialImportDialog = (props: PartialImportProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const { realm } = useRealm();
 
   const [importedFile, setImportedFile] = useState<ImportedMultiRealm>();
@@ -309,7 +309,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
               props.toggleDialog();
             }}
           >
-            {t("cancel")}
+            {t("common:cancel")}
           </Button>,
         ]}
       >
@@ -350,20 +350,23 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                 <Text>{t("chooseResources")}:</Text>
                 <DataList aria-label={t("resourcesToImport")} isCompact>
                   {targetHasResource("users") &&
-                    resourceDataListItem("users", t("users"))}
+                    resourceDataListItem("users", t("common:users"))}
                   {targetHasResource("groups") &&
-                    resourceDataListItem("groups", t("groups"))}
+                    resourceDataListItem("groups", t("common:groups"))}
                   {targetHasResource("clients") &&
-                    resourceDataListItem("clients", t("clients"))}
+                    resourceDataListItem("clients", t("common:clients"))}
                   {targetHasResource("identityProviders") &&
                     resourceDataListItem(
                       "identityProviders",
-                      t("identityProviders"),
+                      t("common:identityProviders"),
                     )}
                   {targetHasRealmRoles() &&
-                    resourceDataListItem("realmRoles", t("realmRoles"))}
+                    resourceDataListItem("realmRoles", t("common:realmRoles"))}
                   {targetHasClientRoles() &&
-                    resourceDataListItem("clientRoles", t("clientRoles"))}
+                    resourceDataListItem(
+                      "clientRoles",
+                      t("common:clientRoles"),
+                    )}
                 </DataList>
               </StackItem>
               <StackItem>
@@ -434,12 +437,12 @@ export const PartialImportDialog = (props: PartialImportProps) => {
 
   const TypeRenderer = (importRecord: PartialImportResult) => {
     const typeMap = new Map([
-      ["CLIENT", t("clients")],
-      ["REALM_ROLE", t("realmRoles")],
-      ["USER", t("users")],
-      ["CLIENT_ROLE", t("clientRoles")],
-      ["IDP", t("identityProviders")],
-      ["GROUP", t("groups")],
+      ["CLIENT", t("common:clients")],
+      ["REALM_ROLE", t("common:realmRoles")],
+      ["USER", t("common:users")],
+      ["CLIENT_ROLE", t("common:clientRoles")],
+      ["IDP", t("common:identityProviders")],
+      ["GROUP", t("common:groups")],
     ]);
 
     return <span>{typeMap.get(importRecord.resourceType)}</span>;
@@ -462,7 +465,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
               props.toggleDialog();
             }}
           >
-            {t("close")}
+            {t("common:close")}
           </Button>,
         ]}
       >
@@ -474,21 +477,21 @@ export const PartialImportDialog = (props: PartialImportProps) => {
           columns={[
             {
               name: "action",
-              displayKey: "action",
+              displayKey: "common:action",
               cellRenderer: ActionLabel,
             },
             {
               name: "resourceType",
-              displayKey: "type",
+              displayKey: "common:type",
               cellRenderer: TypeRenderer,
             },
             {
               name: "resourceName",
-              displayKey: "name",
+              displayKey: "common:name",
             },
             {
               name: "id",
-              displayKey: "id",
+              displayKey: "common:id",
             },
           ]}
         />

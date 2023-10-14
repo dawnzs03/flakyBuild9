@@ -126,7 +126,7 @@ const NumberControl = ({ name, min, max }: NumberControlProps) => {
 };
 
 const FromTo = ({ name, ...rest }: NumberControlProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
 
   return (
     <FormGroup
@@ -134,7 +134,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
       fieldId={name}
       labelIcon={
         <HelpItem
-          helpText={t(`${name}Help`)}
+          helpText={t(`clients-help:${name}`)}
           fieldLabelId={`clients:${name}`}
         />
       }
@@ -143,7 +143,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
         <SplitItem>
           <NumberControl name={name} {...rest} />
         </SplitItem>
-        <SplitItem>{t("to")}</SplitItem>
+        <SplitItem>{t("common:to")}</SplitItem>
         <SplitItem>
           <NumberControl name={`${name}End`} {...rest} />
         </SplitItem>
@@ -153,7 +153,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
 };
 
 export const Time = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const {
     getValues,
     formState: { errors },
@@ -165,7 +165,10 @@ export const Time = () => {
         label={t("repeat")}
         fieldId="repeat"
         labelIcon={
-          <HelpItem helpText={t("repeatHelp")} fieldLabelId="repeat" />
+          <HelpItem
+            helpText={t("clients-help:repeat")}
+            fieldLabelId="clients:repeat"
+          />
         }
       >
         <Flex>
@@ -205,10 +208,13 @@ export const Time = () => {
         label={t("startTime")}
         fieldId="notBefore"
         labelIcon={
-          <HelpItem helpText={t("startTimeHelp")} fieldLabelId="startTime" />
+          <HelpItem
+            helpText={t("clients-help:startTime")}
+            fieldLabelId="clients:startTime"
+          />
         }
         isRequired
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
         validated={
           errors.notBefore ? ValidatedOptions.error : ValidatedOptions.default
         }
@@ -219,10 +225,13 @@ export const Time = () => {
         label={t("expireTime")}
         fieldId="notOnOrAfter"
         labelIcon={
-          <HelpItem helpText={t("expireTimeHelp")} fieldLabelId="expireTime" />
+          <HelpItem
+            helpText={t("clients-help:expireTime")}
+            fieldLabelId="clients:expireTime"
+          />
         }
         isRequired
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
         validated={
           errors.notOnOrAfter
             ? ValidatedOptions.error

@@ -52,7 +52,7 @@ export type AdvancedProps = {
 };
 
 export const AdvancedTab = ({ save, client }: AdvancedProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const openIdConnect = "openid-connect";
 
   const { setValue } = useFormContext();
@@ -92,7 +92,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("fineGrainOpenIdConnectConfigurationHelp")}
+                  {t("clients-help:fineGrainOpenIdConnectConfiguration")}
                 </Text>
                 <FineGrainOpenIdConnect
                   save={save}
@@ -128,7 +128,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("openIdConnectCompatibilityModesHelp")}
+                  {t("clients-help:openIdConnectCompatibilityModes")}
                 </Text>
                 <OpenIdConnectCompatibilityModes
                   save={() => save()}
@@ -150,7 +150,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("fineGrainSamlEndpointConfigHelp")}
+                  {t("clients-help:fineGrainSamlEndpointConfig")}
                 </Text>
                 <FineGrainSamlEndpointConfig
                   save={() => save()}
@@ -177,7 +177,10 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("advancedSettings" + toUpperCase(protocol || ""))}
+                  {t(
+                    "clients-help:advancedSettings" +
+                      toUpperCase(protocol || ""),
+                  )}
                 </Text>
                 <AdvancedSettings
                   protocol={protocol}
@@ -199,7 +202,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("authenticationOverridesHelp")}
+                  {t("clients-help:authenticationOverrides")}
                 </Text>
                 <AuthenticationOverrides
                   protocol={protocol}

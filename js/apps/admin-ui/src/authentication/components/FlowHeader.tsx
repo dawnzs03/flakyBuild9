@@ -10,13 +10,13 @@ import {
 import "./flow-header.css";
 
 export const FlowHeader = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
   return (
     <DataListItem aria-labelledby="headerName" id="header">
       <DataListItemRow>
         <DataListDragButton
           className="keycloak__authentication__header-drag-button"
-          aria-label={t("disabled")}
+          aria-label={t("common:disabled")}
         />
         <DataListItemCells
           className="keycloak__authentication__header"

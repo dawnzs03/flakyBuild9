@@ -48,9 +48,6 @@ public interface UserResource {
     @GET
     UserRepresentation toRepresentation();
 
-    @GET
-    UserRepresentation toRepresentation(@QueryParam("userProfileMetadata") boolean userProfileMetadata);
-
     @PUT
     void update(UserRepresentation userRepresentation);
 

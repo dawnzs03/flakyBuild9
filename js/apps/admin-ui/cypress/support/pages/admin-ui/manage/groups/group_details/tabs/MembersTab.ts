@@ -44,13 +44,13 @@ export default class MembersTab extends GroupDetailPage {
   }
 
   public leaveGroupSelectedUsers() {
-    this.clickToolbarAction("Leave");
+    this.clickToolbarAction("Leave group");
     return this;
   }
 
   public leaveGroupUserItem(username: string) {
     listingPage.clickRowDetails(username);
-    listingPage.clickDetailMenu("Leave");
+    listingPage.clickDetailMenu("Leave group");
     return this;
   }
 

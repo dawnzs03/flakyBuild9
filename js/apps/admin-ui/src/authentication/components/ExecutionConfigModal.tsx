@@ -38,7 +38,7 @@ type ExecutionConfigModalProps = {
 export const ExecutionConfigModal = ({
   execution,
 }: ExecutionConfigModalProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
   const { addAlert, addError } = useAlerts();
 
   const [show, setShow] = useState(false);
@@ -100,23 +100,24 @@ export const ExecutionConfigModal = ({
           alias: changedConfig.alias,
           config: changedConfig.config,
         };
-        const { id } =
-          await adminClient.authenticationManagement.createConfig(newConfig);
+        const { id } = await adminClient.authenticationManagement.createConfig(
+          newConfig,
+        );
         setConfig({ ...newConfig.config, id, alias: newConfig.alias });
       }
       addAlert(t("configSaveSuccess"), AlertVariant.success);
       setShow(false);
     } catch (error) {
-      addError("configSaveError", error);
+      addError("authentication:configSaveError", error);
     }
   };
 
   return (
     <>
-      <Tooltip content={t("settings")}>
+      <Tooltip content={t("common:settings")}>
         <Button
           variant="plain"
-          aria-label={t("settings")}
+          aria-label={t("common:settings")}
           onClick={() => setShow(true)}
         >
           <CogIcon />
@@ -133,15 +134,15 @@ export const ExecutionConfigModal = ({
             <FormGroup
               label={t("alias")}
               fieldId="alias"
-              helperTextInvalid={t("required")}
+              helperTextInvalid={t("common:required")}
               validated={
                 errors.alias ? ValidatedOptions.error : ValidatedOptions.default
               }
               isRequired
               labelIcon={
                 <HelpItem
-                  helpText={t("authenticationAliasHelp")}
-                  fieldLabelId="alias"
+                  helpText={t("authentication-help:alias")}
+                  fieldLabelId="authentication:alias"
                 />
               }
             >
@@ -165,7 +166,7 @@ export const ExecutionConfigModal = ({
             </FormProvider>
             <ActionGroup>
               <Button data-testid="save" variant="primary" type="submit">
-                {t("save")}
+                {t("common:save")}
               </Button>
               <Button
                 data-testid="cancel"
@@ -174,7 +175,7 @@ export const ExecutionConfigModal = ({
                   setShow(false);
                 }}
               >
-                {t("cancel")}
+                {t("common:cancel")}
               </Button>
               {config && (
                 <Button
@@ -189,7 +190,7 @@ export const ExecutionConfigModal = ({
                     setShow(false);
                   }}
                 >
-                  {t("clear")} <TrashIcon />
+                  {t("common:clear")} <TrashIcon />
                 </Button>
               )}
             </ActionGroup>

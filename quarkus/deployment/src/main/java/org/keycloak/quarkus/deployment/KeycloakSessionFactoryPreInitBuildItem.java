@@ -17,11 +17,11 @@
 
 package org.keycloak.quarkus.deployment;
 
-import io.quarkus.builder.item.EmptyBuildItem;
+import io.quarkus.builder.item.SimpleBuildItem;
 
 /**
  * A symbolic build item that can be consumed by other build steps when the {@link org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory}
  * is pre-initialized.
  */
-public final class KeycloakSessionFactoryPreInitBuildItem extends EmptyBuildItem {
+public final class KeycloakSessionFactoryPreInitBuildItem extends SimpleBuildItem {
 }
