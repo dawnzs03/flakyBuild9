@@ -17,8 +17,6 @@
 package org.apache.kafka.tiered.storage.utils;
 
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.record.FileLogInputStream;
-import org.apache.kafka.common.record.FileRecords;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.common.utils.Timer;
 import org.apache.kafka.common.utils.Utils;
@@ -69,14 +67,12 @@ public final class BrokerLocalStorage {
     public void waitForEarliestLocalOffset(TopicPartition topicPartition,
                                            Long offset) {
         Function<OffsetHolder, Optional<String>> relativePosFunc = offsetHolder -> {
-            Optional<String> result = Optional.empty();
-            if (offsetHolder.firstLogFileBaseOffset < offset &&
-                    !isOffsetPresentInFirstLocalSegment(topicPartition, offsetHolder.firstLogFileBaseOffset, offset)) {
-                result = Optional.of("smaller than");
+            if (offsetHolder.firstLogFileBaseOffset < offset) {
+                return Optional.of("smaller than");
             } else if (offsetHolder.firstLogFileBaseOffset > offset) {
-                result = Optional.of("ahead of");
+                return Optional.of("ahead of");
             }
-            return result;
+            return Optional.empty();
         };
         waitForOffset(topicPartition, offset, relativePosFunc);
     }
@@ -94,12 +90,10 @@ public final class BrokerLocalStorage {
     public void waitForAtLeastEarliestLocalOffset(TopicPartition topicPartition,
                                                   Long offset) {
         Function<OffsetHolder, Optional<String>> relativePosFunc = offsetHolder -> {
-            Optional<String> result = Optional.empty();
-            if (offsetHolder.firstLogFileBaseOffset < offset &&
-                    !isOffsetPresentInFirstLocalSegment(topicPartition, offsetHolder.firstLogFileBaseOffset, offset)) {
-                result = Optional.of("smaller than");
+            if (offsetHolder.firstLogFileBaseOffset < offset) {
+                return Optional.of("smaller than");
             }
-            return result;
+            return Optional.empty();
         };
         waitForOffset(topicPartition, offset, relativePosFunc);
     }
@@ -123,37 +117,6 @@ public final class BrokerLocalStorage {
                     Utils.join(offsetHolder.partitionFiles, System.lineSeparator()));
             throw new AssertionError(message);
         }
-    }
-
-    /**
-     * Check if the given offset is present in the first local segment of the given topic-partition.
-     * @param topicPartition The topic-partition to check.
-     * @param firstLogFileBaseOffset The base offset of the first local segment.
-     * @param offsetToSearch The offset to search.
-     * @return true if the offset is present in the first local segment, false otherwise.
-     */
-    private boolean isOffsetPresentInFirstLocalSegment(TopicPartition topicPartition,
-                                                       Long firstLogFileBaseOffset,
-                                                       Long offsetToSearch)  {
-        if (offsetToSearch < firstLogFileBaseOffset) {
-            return false;
-        }
-        if (offsetToSearch.equals(firstLogFileBaseOffset)) {
-            return true;
-        }
-        File partitionDir = new File(brokerStorageDirectory.getAbsolutePath(), topicPartition.toString());
-        File firstSegmentFile = new File(partitionDir.getAbsolutePath(),
-                LogFileUtils.filenamePrefixFromOffset(firstLogFileBaseOffset) + LogFileUtils.LOG_FILE_SUFFIX);
-        try (FileRecords fileRecords = FileRecords.open(firstSegmentFile, false)) {
-            for (FileLogInputStream.FileChannelRecordBatch batch : fileRecords.batches()) {
-                if (batch.baseOffset() <= offsetToSearch && batch.lastOffset() >= offsetToSearch) {
-                    return true;
-                }
-            }
-        } catch (final IOException ex) {
-            return false;
-        }
-        return false;
     }
 
     public void eraseStorage() throws IOException {

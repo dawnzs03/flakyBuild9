@@ -43,6 +43,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -594,6 +595,14 @@ public final class LocalTieredStorageTest {
         private static final byte[] PRODUCER_SNAPSHOT_FILE_BYTES = "pid".getBytes();
         private static final byte[] LEADER_EPOCH_CHECKPOINT_FILE_BYTES = "0\n2\n0 0\n2 12".getBytes();
 
+        private static final NumberFormat OFFSET_FORMAT = NumberFormat.getInstance();
+
+        static {
+            OFFSET_FORMAT.setMaximumIntegerDigits(20);
+            OFFSET_FORMAT.setMaximumFractionDigits(0);
+            OFFSET_FORMAT.setGroupingUsed(false);
+        }
+
         private final Path segmentPath = Paths.get("local-segments");
         private long baseOffset = 0;
 
@@ -612,7 +621,7 @@ public final class LocalTieredStorageTest {
         }
 
         LogSegmentData nextSegment(final byte[]... data) {
-            final String offset = LogFileUtils.filenamePrefixFromOffset(baseOffset);
+            final String offset = OFFSET_FORMAT.format(baseOffset);
 
             try {
                 final FileChannel channel = FileChannel.open(
