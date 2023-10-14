@@ -16,7 +16,7 @@ buildScan {
   String buildKiteUrl = System.getenv('BUILDKITE_BUILD_URL') ? System.getenv('BUILDKITE_BUILD_URL') : null
 
   // Automatically publish scans from Elasticsearch CI
-  if (jenkinsUrl?.host?.endsWith('elastic.co') || jenkinsUrl?.host?.endsWith('elastic.dev') || System.getenv('BUILDKITE') == 'true') {
+  if (jenkinsUrl?.host?.endsWith('elastic.co') || jenkinsUrl?.host?.endsWith('elastic.dev')) {
     publishAlways()
     buildScan.server = 'https://gradle-enterprise.elastic.co'
   }
@@ -121,16 +121,12 @@ buildScan {
       buildScanPublished { scan ->
         // Attach build scan link as build metadata
         // See: https://buildkite.com/docs/pipelines/build-meta-data
-        new ProcessBuilder('buildkite-agent', 'meta-data', 'set', "build-scan-${System.getenv('BUILDKITE_JOB_ID')}", "${scan.buildScanUri}")
-          .start()
-          .waitFor()
+        ['buildkite-agent', 'meta-data', 'set', "build-scan-${System.getenv('BUILDKITE_JOB_ID')}", "${scan.buildScanUri}"].execute()
 
         // Add a build annotation
         // See: https://buildkite.com/docs/agent/v3/cli-annotate
         def body = """<div class="mb3"><span class="p1 border rounded">${System.getenv('BUILDKITE_LABEL')}</span> :gradle: build ran: <a href="${scan.buildScanUri}"><code>gradle ${gradle.startParameter.taskNames.join(' ')}</code></a></div>"""
-        new ProcessBuilder('buildkite-agent', 'annotate', '--context', 'gradle-build-scans', '--append', '--style', 'info', body)
-          .start()
-          .waitFor()
+        ['buildkite-agent', 'annotate', '--context', 'gradle-build-scans', '--append', '--style', 'info', body].execute()
       }
     } else {
       tag 'LOCAL'

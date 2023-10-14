@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic;
 
 import org.elasticsearch.xpack.esql.expression.predicate.operator.AbstractBinaryOperatorTestCase;
 import org.elasticsearch.xpack.ql.expression.predicate.BinaryOperator;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Mul;
 import org.elasticsearch.xpack.ql.type.DataType;
 import org.elasticsearch.xpack.ql.type.DataTypes;
 import org.hamcrest.Matcher;
@@ -39,25 +40,6 @@ public abstract class AbstractArithmeticTestCase extends AbstractBinaryOperatorT
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    protected Matcher<Object> resultsMatcher(List<TypedData> typedData) {
-        Number lhs = (Number) typedData.get(0).data();
-        Number rhs = (Number) typedData.get(1).data();
-        if (typedData.stream().anyMatch(t -> t.type().equals(DataTypes.DOUBLE))) {
-            return equalTo(expectedValue(lhs.doubleValue(), rhs.doubleValue()));
-        }
-        if (typedData.stream().anyMatch(t -> t.type().equals(DataTypes.UNSIGNED_LONG))) {
-            return equalTo(expectedUnsignedLongValue(lhs.longValue(), rhs.longValue()));
-        }
-        if (typedData.stream().anyMatch(t -> t.type().equals(DataTypes.LONG))) {
-            return equalTo(expectedValue(lhs.longValue(), rhs.longValue()));
-        }
-        if (typedData.stream().anyMatch(t -> t.type().equals(DataTypes.INTEGER))) {
-            return equalTo(expectedValue(lhs.intValue(), rhs.intValue()));
-        }
-        throw new UnsupportedOperationException();
-    }
-
     protected abstract double expectedValue(double lhs, double rhs);
 
     protected abstract int expectedValue(int lhs, int rhs);
@@ -65,6 +47,11 @@ public abstract class AbstractArithmeticTestCase extends AbstractBinaryOperatorT
     protected abstract long expectedValue(long lhs, long rhs);
 
     protected abstract long expectedUnsignedLongValue(long lhs, long rhs);
+
+    @Override
+    protected final DataType expressionForSimpleDataType() {
+        return DataTypes.INTEGER;
+    }
 
     @Override
     protected final boolean supportsType(DataType type) {

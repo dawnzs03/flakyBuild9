@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
 import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstructorArg;
 
 /**
@@ -48,9 +49,6 @@ import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstr
  * </ul>
  */
 public class SearchApplication implements Writeable, ToXContentObject {
-
-    public static final String NO_TEMPLATE_STORED_WARNING = "Using default search application template which is subject to change. "
-        + "We recommend storing a template to avoid breaking changes.";
 
     private final String name;
     private final String[] indices;
@@ -85,7 +83,9 @@ public class SearchApplication implements Writeable, ToXContentObject {
 
         this.analyticsCollectionName = analyticsCollectionName;
         this.updatedAtMillis = updatedAtMillis;
-        this.searchApplicationTemplate = searchApplicationTemplate;
+        this.searchApplicationTemplate = searchApplicationTemplate != null
+            ? searchApplicationTemplate
+            : SearchApplicationTemplate.DEFAULT_TEMPLATE;
     }
 
     public SearchApplication(StreamInput in) throws IOException {
@@ -119,7 +119,7 @@ public class SearchApplication implements Writeable, ToXContentObject {
                 }
             }
             @SuppressWarnings("unchecked")
-            final String[] indices = (params[1] != null) ? ((List<String>) params[1]).toArray(String[]::new) : new String[0];
+            final String[] indices = ((List<String>) params[1]).toArray(String[]::new);
             final String analyticsCollectionName = (String) params[2];
             final Long maybeUpdatedAtMillis = (Long) params[3];
             long updatedAtMillis = (maybeUpdatedAtMillis != null ? maybeUpdatedAtMillis : System.currentTimeMillis());
@@ -139,7 +139,7 @@ public class SearchApplication implements Writeable, ToXContentObject {
 
     static {
         PARSER.declareStringOrNull(optionalConstructorArg(), NAME_FIELD);
-        PARSER.declareStringArray(optionalConstructorArg(), INDICES_FIELD);
+        PARSER.declareStringArray(constructorArg(), INDICES_FIELD);
         PARSER.declareStringOrNull(optionalConstructorArg(), ANALYTICS_COLLECTION_NAME_FIELD);
         PARSER.declareLong(optionalConstructorArg(), UPDATED_AT_MILLIS_FIELD);
         PARSER.declareObjectOrNull(optionalConstructorArg(), (p, c) -> SearchApplicationTemplate.parse(p), null, TEMPLATE_FIELD);
@@ -183,6 +183,7 @@ public class SearchApplication implements Writeable, ToXContentObject {
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject();
         builder.field(NAME_FIELD.getPreferredName(), name);
+        builder.field(INDICES_FIELD.getPreferredName(), indices);
         if (analyticsCollectionName != null) {
             builder.field(ANALYTICS_COLLECTION_NAME_FIELD.getPreferredName(), analyticsCollectionName);
         }
@@ -228,12 +229,8 @@ public class SearchApplication implements Writeable, ToXContentObject {
         return updatedAtMillis;
     }
 
-    public boolean hasStoredTemplate() {
-        return searchApplicationTemplate != null;
-    }
-
-    public SearchApplicationTemplate searchApplicationTemplateOrDefault() {
-        return hasStoredTemplate() ? searchApplicationTemplate : SearchApplicationTemplate.DEFAULT_TEMPLATE;
+    public @Nullable SearchApplicationTemplate searchApplicationTemplate() {
+        return searchApplicationTemplate;
     }
 
     @Override
@@ -242,6 +239,7 @@ public class SearchApplication implements Writeable, ToXContentObject {
         if (o == null || getClass() != o.getClass()) return false;
         SearchApplication app = (SearchApplication) o;
         return name.equals(app.name)
+            && Arrays.equals(indices, app.indices)
             && Objects.equals(analyticsCollectionName, app.analyticsCollectionName)
             && updatedAtMillis == app.updatedAtMillis()
             && Objects.equals(searchApplicationTemplate, app.searchApplicationTemplate);
@@ -249,7 +247,9 @@ public class SearchApplication implements Writeable, ToXContentObject {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, analyticsCollectionName, updatedAtMillis, searchApplicationTemplate);
+        int result = Objects.hash(name, analyticsCollectionName, updatedAtMillis, searchApplicationTemplate);
+        result = 31 * result + Arrays.hashCode(indices);
+        return result;
     }
 
     @Override

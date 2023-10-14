@@ -18,39 +18,44 @@ import org.elasticsearch.xpack.ql.tree.Location;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.type.DataType;
 import org.elasticsearch.xpack.ql.type.DataTypes;
-import org.hamcrest.Matcher;
 
 import java.util.List;
 import java.util.Locale;
 
 import static org.elasticsearch.compute.data.BlockUtils.toJavaObject;
-import static org.elasticsearch.xpack.ql.type.DataTypeConverter.commonType;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 public abstract class AbstractBinaryOperatorTestCase extends AbstractFunctionTestCase {
-
-    protected abstract Matcher<Object> resultsMatcher(List<TypedData> typedData);
-
-    /**
-     * Return a {@link Matcher} to validate the results of evaluating the function
-     *
-     * @param data a list of the parameters that were passed to the evaluator
-     * @return a matcher to validate correctness against the given data set
-     */
-    protected abstract Matcher<Object> resultMatcher(List<Object> data, DataType dataType);
+    @Override
+    protected final List<Object> simpleData() {
+        return List.of(1, randomValueOtherThanMany(v -> rhsOk(v) == false, () -> between(-1, 1)));
+    }
 
     protected boolean rhsOk(Object o) {
         return true;
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
+    protected final Expression expressionForSimpleData() {
+        return build(Source.EMPTY, field("lhs", DataTypes.INTEGER), field("rhs", DataTypes.INTEGER));
+    }
+
+    @Override
+    protected Expression build(Source source, List<Literal> args) {
         return build(source, args.get(0), args.get(1));
     }
 
     protected abstract BinaryOperator<?, ?, ?, ?> build(Source source, Expression lhs, Expression rhs);
+
+    @Override
+    protected final Expression constantFoldable(List<Object> data) {
+        return build(
+            Source.EMPTY,
+            List.of(new Literal(Source.EMPTY, data.get(0), DataTypes.INTEGER), new Literal(Source.EMPTY, data.get(1), DataTypes.INTEGER))
+        );
+    }
 
     protected abstract boolean supportsType(DataType type);
 
@@ -83,17 +88,9 @@ public abstract class AbstractBinaryOperatorTestCase extends AbstractFunctionTes
                     field("rhs", rhsType)
                 );
                 Object result = toJavaObject(evaluator(op).get().eval(row(List.of(lhs.value(), rhs.value()))), 0);
-                if (result == null) {
-                    assertCriticalWarnings(
-                        "Line -1:-1: evaluation of [" + op + "] failed, treating result as null. Only first 20 failures recorded.",
-                        "java.lang.ArithmeticException: " + commonType(lhsType, rhsType).typeName() + " overflow"
-                    );
-                } else {
-                    // The type's currently only used for distinguishing between LONG and UNSIGNED_LONG. UL requires both operands be of
-                    // the same type, so either left or right type can be provided below. But otherwise the common type can be used
-                    // instead.
-                    assertThat(op.toString(), result, resultMatcher(List.of(lhs.value(), rhs.value()), lhsType));
-                }
+                // The type's currently only used for distinguishing between LONG and UNSIGNED_LONG. UL requires both operands be of the
+                // same type, so either left or right type can be provided below. But otherwise the common type can be used instead.
+                assertThat(op.toString(), result, resultMatcher(List.of(lhs.value(), rhs.value()), lhsType));
             }
         }
     }

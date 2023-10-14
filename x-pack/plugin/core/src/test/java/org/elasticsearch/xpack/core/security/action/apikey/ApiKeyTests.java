@@ -11,6 +11,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.XContentTestUtils;
+import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
@@ -42,7 +43,7 @@ public class ApiKeyTests extends ESTestCase {
     public void testXContent() throws IOException {
         final String name = randomAlphaOfLengthBetween(4, 10);
         final String id = randomAlphaOfLength(20);
-        final ApiKey.Type type = randomFrom(ApiKey.Type.values());
+        final ApiKey.Type type = TcpTransport.isUntrustedRemoteClusterEnabled() ? randomFrom(ApiKey.Type.values()) : ApiKey.Type.REST;
         // between 1970 and 2065
         final Instant creation = Instant.ofEpochSecond(randomLongBetween(0, 3000000000L), randomLongBetween(0, 999999999));
         final Instant expiration = randomBoolean()
@@ -86,7 +87,9 @@ public class ApiKeyTests extends ESTestCase {
 
         assertThat(map.get("name"), equalTo(name));
         assertThat(map.get("id"), equalTo(id));
-        assertThat(map.get("type"), equalTo(type.value()));
+        if (TcpTransport.isUntrustedRemoteClusterEnabled()) {
+            assertThat(map.get("type"), equalTo(type.value()));
+        }
         assertThat(Long.valueOf(map.get("creation").toString()), equalTo(creation.toEpochMilli()));
         if (expiration != null) {
             assertThat(Long.valueOf(map.get("expiration").toString()), equalTo(expiration.toEpochMilli()));

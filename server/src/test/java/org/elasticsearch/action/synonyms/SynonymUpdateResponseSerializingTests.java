@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.Map;
 
 import static org.elasticsearch.synonyms.SynonymsManagementAPIService.UpdateSynonymsResultStatus.CREATED;
-import static org.elasticsearch.synonyms.SynonymsManagementAPIService.UpdateSynonymsResultStatus.DELETED;
 import static org.elasticsearch.synonyms.SynonymsManagementAPIService.UpdateSynonymsResultStatus.UPDATED;
 
 public class SynonymUpdateResponseSerializingTests extends AbstractWireSerializingTestCase<SynonymUpdateResponse> {
@@ -36,7 +35,7 @@ public class SynonymUpdateResponseSerializingTests extends AbstractWireSerializi
         Map<String, ReloadAnalyzersResponse.ReloadDetails> reloadedIndicesDetails = ReloadAnalyzersResponseTests
             .createRandomReloadDetails();
         ReloadAnalyzersResponse reloadAnalyzersResponse = new ReloadAnalyzersResponse(10, 10, 0, null, reloadedIndicesDetails);
-        return new SynonymUpdateResponse(new SynonymsReloadResult(randomFrom(CREATED, UPDATED, DELETED), reloadAnalyzersResponse));
+        return new SynonymUpdateResponse(new SynonymsReloadResult<>(randomFrom(CREATED, UPDATED), reloadAnalyzersResponse));
     }
 
     @Override
@@ -50,7 +49,7 @@ public class SynonymUpdateResponseSerializingTests extends AbstractWireSerializi
             new ReloadAnalyzersResponse.ReloadDetails("index", Collections.singleton("nodeId"), Collections.singleton("my_analyzer"))
         );
         ReloadAnalyzersResponse reloadAnalyzersResponse = new ReloadAnalyzersResponse(10, 5, 0, null, reloadedIndicesNodes);
-        SynonymUpdateResponse response = new SynonymUpdateResponse(new SynonymsReloadResult(CREATED, reloadAnalyzersResponse));
+        SynonymUpdateResponse response = new SynonymUpdateResponse(new SynonymsReloadResult<>(CREATED, reloadAnalyzersResponse));
 
         String output = Strings.toString(response);
         assertEquals(XContentHelper.stripWhitespace("""

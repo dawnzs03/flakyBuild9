@@ -36,7 +36,6 @@ import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.env.NodeMetadata;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.mapper.MapperParsingException;
 import org.elasticsearch.indices.IndexClosedException;
 import org.elasticsearch.indices.ShardLimitValidator;
@@ -400,7 +399,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
             .settings(
                 Settings.builder()
                     .put(metadata.getSettings())
-                    .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.MINIMUM_COMPATIBLE)
+                    .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT.minimumIndexCompatibilityVersion().id)
                     // this is invalid but should be archived
                     .put("index.similarity.BM25.type", "boolean")
                     // this one is not validated ahead of time and breaks allocation

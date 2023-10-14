@@ -8,8 +8,8 @@
 package org.elasticsearch.compute.lucene;
 
 import org.apache.lucene.index.SortedSetDocValues;
-import org.elasticsearch.compute.data.IntBlock;
 import org.elasticsearch.compute.data.IntVector;
+import org.elasticsearch.compute.data.LongBlock;
 
 import java.io.IOException;
 
@@ -22,9 +22,9 @@ public final class BlockOrdinalsReader {
         this.creationThread = Thread.currentThread();
     }
 
-    public IntBlock readOrdinals(IntVector docs) throws IOException {
+    public LongBlock readOrdinals(IntVector docs) throws IOException {
         final int positionCount = docs.getPositionCount();
-        IntBlock.Builder builder = IntBlock.newBlockBuilder(positionCount);
+        LongBlock.Builder builder = LongBlock.newBlockBuilder(positionCount);
         for (int p = 0; p < positionCount; p++) {
             int doc = docs.getInt(p);
             if (false == sortedSetDocValues.advanceExact(doc)) {
@@ -32,14 +32,13 @@ public final class BlockOrdinalsReader {
                 continue;
             }
             int count = sortedSetDocValues.docValueCount();
-            // TODO don't come this way if there are a zillion ords on the field
             if (count == 1) {
-                builder.appendInt(Math.toIntExact(sortedSetDocValues.nextOrd()));
+                builder.appendLong(sortedSetDocValues.nextOrd());
                 continue;
             }
             builder.beginPositionEntry();
             for (int i = 0; i < count; i++) {
-                builder.appendInt(Math.toIntExact(sortedSetDocValues.nextOrd()));
+                builder.appendLong(sortedSetDocValues.nextOrd());
             }
             builder.endPositionEntry();
         }

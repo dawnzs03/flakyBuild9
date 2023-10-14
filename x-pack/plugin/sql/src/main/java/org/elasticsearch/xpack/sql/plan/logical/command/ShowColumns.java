@@ -80,15 +80,15 @@ public class ShowColumns extends Command {
         idx = hasText(cat) && cat.equals(cluster) == false ? buildRemoteIndexName(cat, idx) : idx;
 
         boolean withFrozen = includeFrozen || session.configuration().includeFrozen();
-        session.indexResolver().resolveAsMergedMapping(idx, withFrozen, emptyMap(), listener.delegateFailureAndWrap((l, indexResult) -> {
+        session.indexResolver().resolveAsMergedMapping(idx, withFrozen, emptyMap(), ActionListener.wrap(indexResult -> {
             List<List<?>> rows = emptyList();
             if (indexResult.isValid()) {
                 rows = new ArrayList<>();
                 Version version = Version.fromId(session.configuration().version().id);
                 fillInRows(IndexCompatibility.compatible(indexResult, version).get().mapping(), null, rows);
             }
-            l.onResponse(of(session, rows));
-        }));
+            listener.onResponse(of(session, rows));
+        }, listener::onFailure));
     }
 
     static void fillInRows(Map<String, EsField> mapping, String prefix, List<List<?>> rows) {

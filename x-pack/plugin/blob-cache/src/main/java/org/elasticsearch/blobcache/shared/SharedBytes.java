@@ -14,6 +14,7 @@ import org.elasticsearch.blobcache.common.ByteBufferReference;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.core.IOUtils;
+import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
@@ -97,10 +98,10 @@ public class SharedBytes extends AbstractRefCounted {
             int mapCount = Math.toIntExact(fileSize / mapSize) + (lastMapSize == 0 ? 0 : 1);
             MappedByteBuffer[] mmaps = new MappedByteBuffer[mapCount];
             for (int i = 0; i < mapCount - 1; i++) {
-                mmaps[i] = fileChannel.map(FileChannel.MapMode.READ_ONLY, (long) mapSize * i, mapSize);
+                mmaps[i] = fileChannel.map(FileChannel.MapMode.READ_WRITE, (long) mapSize * i, mapSize);
             }
             mmaps[mapCount - 1] = fileChannel.map(
-                FileChannel.MapMode.READ_ONLY,
+                FileChannel.MapMode.READ_WRITE,
                 (long) mapSize * (mapCount - 1),
                 lastMapSize == 0 ? mapSize : lastMapSize
             );
@@ -110,6 +111,7 @@ public class SharedBytes extends AbstractRefCounted {
                     mmaps[i / regionsPerMmap].slice(Math.toIntExact((i % regionsPerMmap) * regionSize), Math.toIntExact(regionSize))
                 );
             }
+            fileChannel.close();
         } else {
             for (int i = 0; i < numRegions; i++) {
                 ios[i] = new IO(i, null);
@@ -152,6 +154,7 @@ public class SharedBytes extends AbstractRefCounted {
      * @param length number of bytes to copy
      * @param progressUpdater callback to invoke with the number of copied bytes as they are copied
      * @param buf bytebuffer to use for writing
+     * @param cacheFile object that describes the cached file, only used in logging and exception throwing as context information
      * @throws IOException on failure
      */
     public static void copyToCacheFileAligned(
@@ -161,12 +164,13 @@ public class SharedBytes extends AbstractRefCounted {
         long relativePos,
         long length,
         LongConsumer progressUpdater,
-        ByteBuffer buf
+        ByteBuffer buf,
+        final Object cacheFile
     ) throws IOException {
         long bytesCopied = 0L;
         long remaining = length;
         while (remaining > 0L) {
-            final int bytesRead = BlobCacheUtils.readSafe(input, buf, relativePos, remaining);
+            final int bytesRead = BlobCacheUtils.readSafe(input, buf, relativePos, remaining, cacheFile);
             if (buf.hasRemaining()) {
                 break;
             }
@@ -204,6 +208,7 @@ public class SharedBytes extends AbstractRefCounted {
      * @param relativePos position in {@code byteBufferReference}
      * @param length number of bytes to read
      * @param byteBufferReference buffer reference
+     * @param cacheFile cache file reference used for exception messages only
      * @return number of bytes read
      * @throws IOException on failure
      */
@@ -212,7 +217,8 @@ public class SharedBytes extends AbstractRefCounted {
         long channelPos,
         long relativePos,
         long length,
-        final ByteBufferReference byteBufferReference
+        final ByteBufferReference byteBufferReference,
+        Object cacheFile
     ) throws IOException {
         if (length == 0L) {
             return 0;
@@ -223,7 +229,7 @@ public class SharedBytes extends AbstractRefCounted {
             try {
                 bytesRead = fc.read(dup, channelPos);
                 if (bytesRead == -1) {
-                    BlobCacheUtils.throwEOF(channelPos, dup.remaining());
+                    BlobCacheUtils.throwEOF(channelPos, dup.remaining(), cacheFile);
                 }
             } finally {
                 byteBufferReference.release();
@@ -246,24 +252,26 @@ public class SharedBytes extends AbstractRefCounted {
 
     public IO getFileChannel(int sharedBytesPos) {
         assert fileChannel != null;
-        return ios[sharedBytesPos];
+        var res = ios[sharedBytesPos];
+        incRef();
+        return res;
     }
 
-    public final class IO {
+    long getPhysicalOffset(long chunkPosition) {
+        long physicalOffset = chunkPosition * regionSize;
+        assert physicalOffset <= numRegions * regionSize;
+        return physicalOffset;
+    }
+
+    public final class IO implements Releasable {
 
         private final long pageStart;
 
         private final MappedByteBuffer mappedByteBuffer;
 
         private IO(final int sharedBytesPos, MappedByteBuffer mappedByteBuffer) {
-            long physicalOffset = sharedBytesPos * regionSize;
-            assert physicalOffset <= numRegions * regionSize;
-            this.pageStart = physicalOffset;
+            pageStart = getPhysicalOffset(sharedBytesPos);
             this.mappedByteBuffer = mappedByteBuffer;
-        }
-
-        public long pageStart() {
-            return pageStart;
         }
 
         @SuppressForbidden(reason = "Use positional reads on purpose")
@@ -288,7 +296,14 @@ public class SharedBytes extends AbstractRefCounted {
             assert position % PAGE_SIZE == 0;
             assert src.remaining() % PAGE_SIZE == 0;
             checkOffsets(position, src.remaining());
-            int bytesWritten = fileChannel.write(src, position);
+            final int bytesWritten;
+            if (mmap) {
+                bytesWritten = src.remaining();
+                mappedByteBuffer.put(Math.toIntExact(position - pageStart), src, src.position(), bytesWritten);
+                src.position(src.position() + bytesWritten);
+            } else {
+                bytesWritten = fileChannel.write(src, position);
+            }
             writeBytes.accept(bytesWritten);
             return bytesWritten;
         }
@@ -300,6 +315,18 @@ public class SharedBytes extends AbstractRefCounted {
                 throw new IllegalArgumentException("bad access");
             }
         }
+
+        @Override
+        public void close() {
+            decRef();
+        }
     }
 
+    public static ByteSizeValue pageAligned(ByteSizeValue val) {
+        final long remainder = val.getBytes() % PAGE_SIZE;
+        if (remainder != 0L) {
+            return ByteSizeValue.ofBytes(val.getBytes() + PAGE_SIZE - remainder);
+        }
+        return val;
+    }
 }

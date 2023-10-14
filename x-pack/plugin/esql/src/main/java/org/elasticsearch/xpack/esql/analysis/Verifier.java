@@ -7,23 +7,20 @@
 
 package org.elasticsearch.xpack.esql.analysis;
 
+import org.elasticsearch.xpack.esql.expression.MetadataAttribute;
 import org.elasticsearch.xpack.esql.expression.function.UnsupportedAttribute;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Neg;
 import org.elasticsearch.xpack.esql.plan.logical.Dissect;
 import org.elasticsearch.xpack.esql.plan.logical.Eval;
 import org.elasticsearch.xpack.esql.plan.logical.Grok;
 import org.elasticsearch.xpack.esql.plan.logical.RegexExtract;
-import org.elasticsearch.xpack.esql.plan.logical.Row;
 import org.elasticsearch.xpack.esql.stats.FeatureMetric;
 import org.elasticsearch.xpack.esql.stats.Metrics;
-import org.elasticsearch.xpack.esql.type.EsqlDataTypes;
 import org.elasticsearch.xpack.ql.capabilities.Unresolvable;
 import org.elasticsearch.xpack.ql.common.Failure;
 import org.elasticsearch.xpack.ql.expression.Alias;
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.expression.FieldAttribute;
 import org.elasticsearch.xpack.ql.expression.Literal;
-import org.elasticsearch.xpack.ql.expression.MetadataAttribute;
 import org.elasticsearch.xpack.ql.expression.ReferenceAttribute;
 import org.elasticsearch.xpack.ql.expression.TypeResolutions;
 import org.elasticsearch.xpack.ql.expression.function.aggregate.AggregateFunction;
@@ -66,12 +63,6 @@ public class Verifier {
         this.metrics = metrics;
     }
 
-    /**
-     * Verify that a {@link LogicalPlan} can be executed.
-     *
-     * @param plan The logical plan to be verified
-     * @return a collection of verification failures; empty if and only if the plan is valid
-     */
     Collection<Failure> verify(LogicalPlan plan) {
         Set<Failure> failures = new LinkedHashSet<>();
 
@@ -156,24 +147,22 @@ public class Verifier {
                         );
                     }
                 });
-            } else if (p instanceof RegexExtract re) {
+            }
+            if (p instanceof RegexExtract re) {
                 Expression expr = re.input();
                 DataType type = expr.dataType();
-                if (EsqlDataTypes.isString(type) == false) {
+                if (type != DataTypes.KEYWORD) {
                     failures.add(
                         fail(
                             expr,
-                            "{} only supports KEYWORD or TEXT values, found expression [{}] type [{}]",
+                            "{} only supports KEYWORD values, found expression [{}] type [{}]",
                             re.getClass().getSimpleName(),
                             expr.sourceText(),
                             type
                         )
                     );
                 }
-            } else if (p instanceof Row row) {
-                failures.addAll(validateRow(row));
             }
-
             p.forEachExpression(BinaryOperator.class, bo -> {
                 Failure f = validateUnsignedLongOperator(bo);
                 if (f != null) {
@@ -182,12 +171,6 @@ public class Verifier {
             });
             p.forEachExpression(BinaryComparison.class, bc -> {
                 Failure f = validateBinaryComparison(bc);
-                if (f != null) {
-                    failures.add(f);
-                }
-            });
-            p.forEachExpression(Neg.class, neg -> {
-                Failure f = validateUnsignedLongNegation(neg);
                 if (f != null) {
                     failures.add(f);
                 }
@@ -224,16 +207,6 @@ public class Verifier {
         for (int i = b.nextSetBit(0); i >= 0; i = b.nextSetBit(i + 1)) {
             metrics.inc(FeatureMetric.values()[i]);
         }
-    }
-
-    private static Collection<Failure> validateRow(Row row) {
-        List<Failure> failures = new ArrayList<>(row.fields().size());
-        row.fields().forEach(a -> {
-            if (EsqlDataTypes.isRepresentable(a.dataType()) == false) {
-                failures.add(fail(a, "cannot use [{}] directly in a row assignment", a.child().sourceText()));
-            }
-        });
-        return failures;
     }
 
     /**
@@ -284,14 +257,13 @@ public class Verifier {
         return null;
     }
 
-    /** Ensure that UNSIGNED_LONG types are not implicitly converted when used in arithmetic binary operator, as this cannot be done since:
-     *  - unsigned longs are passed through the engine as longs, so/and
-     *  - negative values cannot be represented (i.e. range [Long.MIN_VALUE, "abs"(Long.MIN_VALUE) + Long.MAX_VALUE] won't fit on 64 bits);
-     *  - a conversion to double isn't possible, since upper range UL values can no longer be distinguished
-     *  ex: (double) 18446744073709551615 == (double) 18446744073709551614
-     *  - the implicit ESQL's Cast doesn't currently catch Exception and nullify the result.
-     *  Let the user handle the operation explicitly.
-     */
+    // Ensure that UNSIGNED_LONG types are not implicitly converted when used in arithmetic binary operator, as this cannot be done since:
+    // - unsigned longs are passed through the engine as longs, so/and
+    // - negative values cannot be represented (i.e. range [Long.MIN_VALUE, "abs"(Long.MIN_VALUE) + Long.MAX_VALUE] won't fit on 64 bits);
+    // - a conversion to double isn't possible, since upper range UL values can no longer be distinguished
+    // ex: (double) 18446744073709551615 == (double) 18446744073709551614
+    // - the implicit ESQL's Cast doesn't currently catch Exception and nullify the result.
+    // Let the user handle the operation explicitly.
     public static Failure validateUnsignedLongOperator(BinaryOperator<?, ?, ?, ?> bo) {
         DataType leftType = bo.left().dataType();
         DataType rightType = bo.right().dataType();
@@ -304,22 +276,6 @@ public class Verifier {
                 rightType.typeName(),
                 DataTypes.UNSIGNED_LONG.typeName(),
                 DataTypes.UNSIGNED_LONG.typeName()
-            );
-        }
-        return null;
-    }
-
-    /**
-     * Negating an unsigned long is invalid.
-     */
-    private static Failure validateUnsignedLongNegation(Neg neg) {
-        DataType childExpressionType = neg.field().dataType();
-        if (childExpressionType.equals(DataTypes.UNSIGNED_LONG)) {
-            return fail(
-                neg,
-                "negation unsupported for arguments of type [{}] in expression [{}]",
-                childExpressionType.typeName(),
-                neg.sourceText()
             );
         }
         return null;

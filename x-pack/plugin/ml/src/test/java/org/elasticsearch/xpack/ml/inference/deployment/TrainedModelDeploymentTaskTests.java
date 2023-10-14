@@ -59,9 +59,7 @@ public class TrainedModelDeploymentTaskTests extends ESTestCase {
                 randomInt(5),
                 randomInt(5),
                 randomBoolean() ? null : ByteSizeValue.ofBytes(randomLongBetween(1, Long.MAX_VALUE)),
-                Priority.NORMAL,
-                randomNonNegativeLong(),
-                randomNonNegativeLong()
+                Priority.NORMAL
             ),
             nodeService,
             licenseState,
@@ -95,9 +93,7 @@ public class TrainedModelDeploymentTaskTests extends ESTestCase {
             randomIntBetween(1, 32),
             randomInt(5),
             randomBoolean() ? null : ByteSizeValue.ofBytes(randomLongBetween(1, Long.MAX_VALUE)),
-            randomFrom(Priority.values()),
-            randomNonNegativeLong(),
-            randomNonNegativeLong()
+            randomFrom(Priority.values())
         );
 
         TrainedModelDeploymentTask task = new TrainedModelDeploymentTask(

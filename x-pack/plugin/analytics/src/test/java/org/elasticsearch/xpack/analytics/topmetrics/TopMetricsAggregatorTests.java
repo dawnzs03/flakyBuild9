@@ -19,6 +19,7 @@ import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.ConstantScoreQuery;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
@@ -369,10 +370,11 @@ public class TopMetricsAggregatorTests extends AggregatorTestCase {
             }
 
             try (DirectoryReader indexReader = DirectoryReader.open(directory)) {
+                IndexSearcher indexSearcher = newIndexSearcher(indexReader);
                 TopMetricsAggregationBuilder builder = simpleBuilder(new FieldSortBuilder("s").order(SortOrder.ASC));
                 try (
                     AggregationContext context = createAggregationContext(
-                        indexReader,
+                        indexSearcher,
                         createIndexSettings(),
                         new MatchAllDocsQuery(),
                         breaker,
@@ -573,8 +575,9 @@ public class TopMetricsAggregatorTests extends AggregatorTestCase {
             }
 
             try (DirectoryReader indexReader = DirectoryReader.open(directory)) {
+                IndexSearcher indexSearcher = newIndexSearcher(indexReader);
                 InternalAggregation agg = searchAndReduce(
-                    indexReader,
+                    indexSearcher,
                     new AggTestConfig(builder, fields).withShouldBeCached(shouldBeCached).withQuery(query)
                 );
                 verifyOutputFieldNames(builder, agg);

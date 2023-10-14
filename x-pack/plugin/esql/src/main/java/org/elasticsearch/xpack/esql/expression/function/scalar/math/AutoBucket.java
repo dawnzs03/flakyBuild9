@@ -12,23 +12,16 @@ import org.elasticsearch.common.Rounding;
 import org.elasticsearch.compute.operator.EvalOperator;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.mapper.DateFieldMapper;
-import org.elasticsearch.xpack.esql.EsqlUnsupportedOperationException;
-import org.elasticsearch.xpack.esql.evaluator.mapper.EvaluatorMapper;
 import org.elasticsearch.xpack.esql.expression.function.scalar.date.DateTrunc;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Div;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Mul;
+import org.elasticsearch.xpack.esql.planner.Mappable;
 import org.elasticsearch.xpack.ql.expression.Expression;
-import org.elasticsearch.xpack.ql.expression.Literal;
-import org.elasticsearch.xpack.ql.expression.TypeResolutions;
 import org.elasticsearch.xpack.ql.expression.function.scalar.ScalarFunction;
 import org.elasticsearch.xpack.ql.expression.gen.script.ScriptTemplate;
 import org.elasticsearch.xpack.ql.tree.NodeInfo;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.type.DataType;
-import org.elasticsearch.xpack.ql.type.DataTypes;
 
 import java.util.List;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -36,11 +29,10 @@ import static org.elasticsearch.xpack.ql.expression.TypeResolutions.ParamOrdinal
 import static org.elasticsearch.xpack.ql.expression.TypeResolutions.ParamOrdinal.FOURTH;
 import static org.elasticsearch.xpack.ql.expression.TypeResolutions.ParamOrdinal.SECOND;
 import static org.elasticsearch.xpack.ql.expression.TypeResolutions.ParamOrdinal.THIRD;
+import static org.elasticsearch.xpack.ql.expression.TypeResolutions.isDate;
 import static org.elasticsearch.xpack.ql.expression.TypeResolutions.isFoldable;
 import static org.elasticsearch.xpack.ql.expression.TypeResolutions.isInteger;
-import static org.elasticsearch.xpack.ql.expression.TypeResolutions.isNumeric;
 import static org.elasticsearch.xpack.ql.expression.TypeResolutions.isString;
-import static org.elasticsearch.xpack.ql.expression.TypeResolutions.isType;
 
 /**
  * Buckets dates into a given number of buckets.
@@ -53,7 +45,7 @@ import static org.elasticsearch.xpack.ql.expression.TypeResolutions.isType;
  *     in the above case we'll pick month long buckets, yielding 12 buckets.
  * </p>
  */
-public class AutoBucket extends ScalarFunction implements EvaluatorMapper {
+public class AutoBucket extends ScalarFunction implements Mappable {
     // TODO maybe we should just cover the whole of representable dates here - like ten years, 100 years, 1000 years, all the way up.
     // That way you never end up with more than the target number of buckets.
     private static final Rounding LARGEST_HUMAN_DATE_ROUNDING = Rounding.builder(Rounding.DateTimeUnit.YEAR_OF_CENTURY).build();
@@ -97,7 +89,7 @@ public class AutoBucket extends ScalarFunction implements EvaluatorMapper {
 
     @Override
     public Object fold() {
-        return EvaluatorMapper.super.fold();
+        return Mappable.super.fold();
     }
 
     @Override
@@ -105,24 +97,9 @@ public class AutoBucket extends ScalarFunction implements EvaluatorMapper {
         Function<Expression, Supplier<EvalOperator.ExpressionEvaluator>> toEvaluator
     ) {
         int b = ((Number) buckets.fold()).intValue();
-
-        if (field.dataType() == DataTypes.DATETIME) {
-            long f = DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.parseMillis(((BytesRef) from.fold()).utf8ToString());
-            long t = DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.parseMillis(((BytesRef) to.fold()).utf8ToString());
-            return DateTrunc.evaluator(toEvaluator.apply(field), new DateRoundingPicker(b, f, t).pickRounding().prepareForUnknown());
-        }
-        if (field.dataType().isNumeric()) {
-            double f = ((Number) from.fold()).doubleValue();
-            double t = ((Number) to.fold()).doubleValue();
-
-            // We could make this more efficient, either by generating the evaluators with byte code or hand rolling this one.
-            Literal rounding = new Literal(source(), pickRounding(b, f, t), DataTypes.DOUBLE);
-            Div div = new Div(source(), field, rounding);
-            Floor floor = new Floor(source(), div);
-            Mul mul = new Mul(source(), floor, rounding);
-            return toEvaluator.apply(mul);
-        }
-        throw EsqlUnsupportedOperationException.unsupportedDataType(field.dataType());
+        long f = DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.parseMillis(((BytesRef) from.fold()).utf8ToString());
+        long t = DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.parseMillis(((BytesRef) to.fold()).utf8ToString());
+        return DateTrunc.evaluator(toEvaluator.apply(field), new DateRoundingPicker(b, f, t).pickRounding().prepareForUnknown());
     }
 
     private record DateRoundingPicker(int buckets, long from, long to) {
@@ -156,30 +133,18 @@ public class AutoBucket extends ScalarFunction implements EvaluatorMapper {
         }
     }
 
-    private double pickRounding(int buckets, double from, double to) {
-        double precise = (to - from) / buckets;
-        double nextPowerOfTen = Math.pow(10, Math.ceil(Math.log10(precise)));
-        double halfPower = nextPowerOfTen / 2;
-        return precise < halfPower ? halfPower : nextPowerOfTen;
-    }
-
     @Override
     protected TypeResolution resolveType() {
         if (childrenResolved() == false) {
             return new TypeResolution("Unresolved children");
         }
 
-        if (field.dataType() == DataTypes.DATETIME) {
-            return resolveType((e, o) -> isString(e, sourceText(), o));
+        TypeResolution resolution = isDate(field, sourceText(), FIRST);
+        if (resolution.unresolved()) {
+            return resolution;
         }
-        if (field.dataType().isNumeric()) {
-            return resolveType((e, o) -> isNumeric(e, sourceText(), o));
-        }
-        return isType(field, e -> false, sourceText(), FIRST, "datetime", "numeric");
-    }
 
-    private TypeResolution resolveType(BiFunction<Expression, TypeResolutions.ParamOrdinal, TypeResolution> checkThirdAndForth) {
-        TypeResolution resolution = isInteger(buckets, sourceText(), SECOND);
+        resolution = isInteger(buckets, sourceText(), SECOND);
         if (resolution.unresolved()) {
             return resolution;
         }
@@ -188,16 +153,16 @@ public class AutoBucket extends ScalarFunction implements EvaluatorMapper {
             return resolution;
         }
 
-        resolution = checkThirdAndForth.apply(from, THIRD);
+        resolution = isString(from, sourceText(), THIRD);
         if (resolution.unresolved()) {
             return resolution;
         }
-        resolution = isFoldable(from, sourceText(), THIRD);
+        resolution = isFoldable(from, sourceText(), SECOND);
         if (resolution.unresolved()) {
             return resolution;
         }
 
-        resolution = checkThirdAndForth.apply(to, FOURTH);
+        resolution = isString(to, sourceText(), FOURTH);
         if (resolution.unresolved()) {
             return resolution;
         }
@@ -206,15 +171,12 @@ public class AutoBucket extends ScalarFunction implements EvaluatorMapper {
 
     @Override
     public DataType dataType() {
-        if (field.dataType().isNumeric()) {
-            return DataTypes.DOUBLE;
-        }
         return field.dataType();
     }
 
     @Override
     public ScriptTemplate asScript() {
-        throw new EsqlUnsupportedOperationException("functions do not support scripting");
+        throw new UnsupportedOperationException();
     }
 
     @Override

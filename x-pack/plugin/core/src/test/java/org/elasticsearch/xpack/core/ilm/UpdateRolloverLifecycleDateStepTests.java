@@ -6,6 +6,7 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.indices.rollover.RolloverInfo;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -14,7 +15,6 @@ import org.elasticsearch.cluster.metadata.DataStream;
 import org.elasticsearch.cluster.metadata.DataStreamTestHelper;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 
 import java.util.Collections;
@@ -61,7 +61,7 @@ public class UpdateRolloverLifecycleDateStepTests extends AbstractStepTestCase<U
         long creationDate = randomLongBetween(0, 1000000);
         long rolloverTime = randomValueOtherThan(creationDate, () -> randomNonNegativeLong());
         IndexMetadata newIndexMetadata = IndexMetadata.builder(randomAlphaOfLength(11))
-            .settings(settings(IndexVersion.current()))
+            .settings(settings(Version.CURRENT))
             .creationDate(creationDate)
             .putAlias(AliasMetadata.builder(alias))
             .numberOfShards(randomIntBetween(1, 5))
@@ -69,7 +69,7 @@ public class UpdateRolloverLifecycleDateStepTests extends AbstractStepTestCase<U
             .build();
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(10))
             .putRolloverInfo(new RolloverInfo(alias, Collections.emptyList(), rolloverTime))
-            .settings(settings(IndexVersion.current()).put(RolloverAction.LIFECYCLE_ROLLOVER_ALIAS, alias))
+            .settings(settings(Version.CURRENT).put(RolloverAction.LIFECYCLE_ROLLOVER_ALIAS, alias))
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
@@ -89,13 +89,13 @@ public class UpdateRolloverLifecycleDateStepTests extends AbstractStepTestCase<U
         String dataStreamName = "test-datastream";
         IndexMetadata originalIndexMeta = IndexMetadata.builder(DataStream.getDefaultBackingIndexName(dataStreamName, 1))
             .putRolloverInfo(new RolloverInfo(dataStreamName, Collections.emptyList(), rolloverTime))
-            .settings(settings(IndexVersion.current()))
+            .settings(settings(Version.CURRENT))
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
 
         IndexMetadata rolledIndexMeta = IndexMetadata.builder(DataStream.getDefaultBackingIndexName(dataStreamName, 2))
-            .settings(settings(IndexVersion.current()))
+            .settings(settings(Version.CURRENT))
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
@@ -121,7 +121,7 @@ public class UpdateRolloverLifecycleDateStepTests extends AbstractStepTestCase<U
         String alias = randomAlphaOfLength(3);
         long creationDate = randomLongBetween(0, 1000000);
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(11))
-            .settings(settings(IndexVersion.current()).put(RolloverAction.LIFECYCLE_ROLLOVER_ALIAS, alias))
+            .settings(settings(Version.CURRENT).put(RolloverAction.LIFECYCLE_ROLLOVER_ALIAS, alias))
             .creationDate(creationDate)
             .putAlias(AliasMetadata.builder(alias))
             .numberOfShards(randomIntBetween(1, 5))
@@ -152,7 +152,7 @@ public class UpdateRolloverLifecycleDateStepTests extends AbstractStepTestCase<U
     public void testPerformActionWithNoRolloverAliasSetting() {
         long creationDate = randomLongBetween(0, 1000000);
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(11))
-            .settings(settings(IndexVersion.current()))
+            .settings(settings(Version.CURRENT))
             .creationDate(creationDate)
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
@@ -179,7 +179,7 @@ public class UpdateRolloverLifecycleDateStepTests extends AbstractStepTestCase<U
 
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(10))
             .settings(
-                settings(IndexVersion.current()).put(RolloverAction.LIFECYCLE_ROLLOVER_ALIAS, alias)
+                settings(Version.CURRENT).put(RolloverAction.LIFECYCLE_ROLLOVER_ALIAS, alias)
                     .put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, true)
             )
             .numberOfShards(randomIntBetween(1, 5))

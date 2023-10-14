@@ -118,7 +118,9 @@ public class TransportGetTransformStatsAction extends TransportTasksAction<Trans
             task.getCheckpointingInfo(
                 transformCheckpointService,
                 ActionListener.wrap(
-                    checkpointingInfo -> listener.onResponse(new Response(Collections.singletonList(deriveStats(task, checkpointingInfo)))),
+                    checkpointingInfo -> listener.onResponse(
+                        new Response(Collections.singletonList(deriveStats(task, checkpointingInfo)), 1L)
+                    ),
                     e -> {
                         logger.warn("Failed to retrieve checkpointing info for transform [" + task.getTransformId() + "]", e);
                         listener.onResponse(
@@ -133,7 +135,7 @@ public class TransportGetTransformStatsAction extends TransportTasksAction<Trans
                 )
             );
         } else {
-            listener.onResponse(new Response(Collections.emptyList()));
+            listener.onResponse(new Response(Collections.emptyList(), 0L));
         }
     }
 
@@ -202,12 +204,12 @@ public class TransportGetTransformStatsAction extends TransportTasksAction<Trans
                     request.setNodes(transformNodeAssignments.getExecutorNodes().toArray(new String[0]));
                     super.doExecute(task, request, doExecuteListener);
                 } else {
-                    doExecuteListener.onResponse(new Response(Collections.emptyList()));
+                    doExecuteListener.onResponse(new Response(Collections.emptyList(), 0L));
                 }
             }, e -> {
                 // If the index to search, or the individual config is not there, just return empty
                 if (e instanceof ResourceNotFoundException) {
-                    finalListener.onResponse(new Response(Collections.emptyList()));
+                    finalListener.onResponse(new Response(Collections.emptyList(), 0L));
                 } else {
                     finalListener.onFailure(e);
                 }

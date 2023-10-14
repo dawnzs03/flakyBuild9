@@ -51,30 +51,19 @@ public class PutTrainedModelVocabularyAction extends ActionType<AcknowledgedResp
         }
 
         public static Request parseRequest(String modelId, XContentParser parser) {
-            return PARSER.apply(parser, null).build(modelId, false);
+            return PARSER.apply(parser, null).build(modelId);
         }
 
         private final String modelId;
         private final List<String> vocabulary;
         private final List<String> merges;
         private final List<Double> scores;
-        /**
-         * An internal flag for indicating whether the vocabulary can be overwritten
-         */
-        private final boolean allowOverwriting;
 
-        public Request(
-            String modelId,
-            List<String> vocabulary,
-            @Nullable List<String> merges,
-            @Nullable List<Double> scores,
-            boolean allowOverwriting
-        ) {
+        public Request(String modelId, List<String> vocabulary, @Nullable List<String> merges, @Nullable List<Double> scores) {
             this.modelId = ExceptionsHelper.requireNonNull(modelId, TrainedModelConfig.MODEL_ID);
             this.vocabulary = ExceptionsHelper.requireNonNull(vocabulary, VOCABULARY);
             this.merges = Optional.ofNullable(merges).orElse(List.of());
             this.scores = Optional.ofNullable(scores).orElse(List.of());
-            this.allowOverwriting = allowOverwriting;
         }
 
         public Request(StreamInput in) throws IOException {
@@ -90,11 +79,6 @@ public class PutTrainedModelVocabularyAction extends ActionType<AcknowledgedResp
                 this.scores = in.readList(StreamInput::readDouble);
             } else {
                 this.scores = List.of();
-            }
-            if (in.getTransportVersion().onOrAfter(TransportVersion.V_8_500_043)) {
-                this.allowOverwriting = in.readBoolean();
-            } else {
-                this.allowOverwriting = false;
             }
         }
 
@@ -119,13 +103,12 @@ public class PutTrainedModelVocabularyAction extends ActionType<AcknowledgedResp
             return Objects.equals(modelId, request.modelId)
                 && Objects.equals(vocabulary, request.vocabulary)
                 && Objects.equals(scores, request.scores)
-                && Objects.equals(merges, request.merges)
-                && allowOverwriting == request.allowOverwriting;
+                && Objects.equals(merges, request.merges);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(modelId, vocabulary, merges, scores, allowOverwriting);
+            return Objects.hash(modelId, vocabulary, merges, scores);
         }
 
         @Override
@@ -138,9 +121,6 @@ public class PutTrainedModelVocabularyAction extends ActionType<AcknowledgedResp
             }
             if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_500_010)) {
                 out.writeCollection(scores, StreamOutput::writeDouble);
-            }
-            if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_500_043)) {
-                out.writeBoolean(allowOverwriting);
             }
         }
 
@@ -158,10 +138,6 @@ public class PutTrainedModelVocabularyAction extends ActionType<AcknowledgedResp
 
         public List<Double> getScores() {
             return scores;
-        }
-
-        public boolean isOverwritingAllowed() {
-            return allowOverwriting;
         }
 
         public static class Builder {
@@ -184,8 +160,8 @@ public class PutTrainedModelVocabularyAction extends ActionType<AcknowledgedResp
                 return this;
             }
 
-            public Request build(String modelId, boolean allowOverwriting) {
-                return new Request(modelId, vocabulary, merges, scores, allowOverwriting);
+            public Request build(String modelId) {
+                return new Request(modelId, vocabulary, merges, scores);
             }
         }
     }

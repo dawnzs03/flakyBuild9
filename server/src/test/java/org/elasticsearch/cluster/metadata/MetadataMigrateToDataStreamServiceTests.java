@@ -8,6 +8,7 @@
 
 package org.elasticsearch.cluster.metadata;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -15,7 +16,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.MapperServiceTestCase;
 import org.elasticsearch.indices.EmptySystemIndices;
@@ -61,7 +61,7 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
                 Metadata.builder()
                     .put(
                         IndexMetadata.builder("foo")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(filteredAlias)
                             .numberOfShards(1)
                             .numberOfReplicas(0)
@@ -90,7 +90,7 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
                 Metadata.builder()
                     .put(
                         IndexMetadata.builder("foo")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(aliasWithRouting)
                             .numberOfShards(1)
                             .numberOfReplicas(0)
@@ -119,28 +119,28 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
                 Metadata.builder()
                     .put(
                         IndexMetadata.builder("foo1")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(alias1)
                             .numberOfShards(1)
                             .numberOfReplicas(0)
                     )
                     .put(
                         IndexMetadata.builder("foo2")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(alias1)
                             .numberOfShards(1)
                             .numberOfReplicas(0)
                     )
                     .put(
                         IndexMetadata.builder("foo3")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(alias1)
                             .numberOfShards(1)
                             .numberOfReplicas(0)
                     )
                     .put(
                         IndexMetadata.builder("foo4")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(alias1)
                             .numberOfShards(1)
                             .numberOfReplicas(0)
@@ -170,28 +170,28 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
                 Metadata.builder()
                     .put(
                         IndexMetadata.builder("foo1")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(alias1)
                             .numberOfShards(1)
                             .numberOfReplicas(0)
                     )
                     .put(
                         IndexMetadata.builder("foo2")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(alias1)
                             .numberOfShards(1)
                             .numberOfReplicas(0)
                     )
                     .put(
                         IndexMetadata.builder("foo3")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(alias1)
                             .numberOfShards(1)
                             .numberOfReplicas(0)
                     )
                     .put(
                         IndexMetadata.builder("foo4")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(AliasMetadata.builder(aliasName).writeIndex(true))
                             .numberOfShards(1)
                             .numberOfReplicas(0)
@@ -213,14 +213,14 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
                 Metadata.builder()
                     .put(
                         IndexMetadata.builder("foo1")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(alias1)
                             .numberOfShards(1)
                             .numberOfReplicas(0)
                     )
                     .put(
                         IndexMetadata.builder("foo2")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(alias1)
                             .putAlias(alias2)
                             .numberOfShards(1)
@@ -228,7 +228,7 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
                     )
                     .put(
                         IndexMetadata.builder("foo3")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(alias1)
                             .putAlias(alias2)
                             .numberOfShards(1)
@@ -236,7 +236,7 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
                     )
                     .put(
                         IndexMetadata.builder("foo4")
-                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                             .putAlias(alias1)
                             .numberOfShards(1)
                             .numberOfReplicas(0)
@@ -259,14 +259,14 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
         String dataStreamName = "foo";
         AliasMetadata alias = AliasMetadata.builder(dataStreamName).build();
         IndexMetadata foo1 = IndexMetadata.builder("foo1")
-            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
             .putAlias(AliasMetadata.builder(dataStreamName).writeIndex(true).build())
             .numberOfShards(1)
             .numberOfReplicas(0)
             .putMapping(generateMapping("@timestamp", "date"))
             .build();
         IndexMetadata foo2 = IndexMetadata.builder("foo2")
-            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
             .putAlias(alias)
             .numberOfShards(1)
             .numberOfReplicas(0)
@@ -321,14 +321,14 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
         String dataStreamName = "foo";
         AliasMetadata alias = AliasMetadata.builder(dataStreamName).build();
         IndexMetadata foo1 = IndexMetadata.builder("foo1")
-            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
             .putAlias(AliasMetadata.builder(dataStreamName).writeIndex(true).build())
             .numberOfShards(1)
             .numberOfReplicas(0)
             .putMapping(generateMapping("@timestamp", "date"))
             .build();
         IndexMetadata foo2 = IndexMetadata.builder("foo2")
-            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
             .putAlias(alias)
             .numberOfShards(1)
             .numberOfReplicas(0)
@@ -383,14 +383,14 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
         String dataStreamName = "foo";
         AliasMetadata alias = AliasMetadata.builder(dataStreamName).build();
         IndexMetadata foo1 = IndexMetadata.builder("foo1")
-            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
             .putAlias(alias)
             .numberOfShards(1)
             .numberOfReplicas(0)
             .putMapping(generateMapping("@timestamp", "date"))
             .build();
         IndexMetadata foo2 = IndexMetadata.builder("foo2")
-            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
             .putAlias(alias)
             .numberOfShards(1)
             .numberOfReplicas(0)

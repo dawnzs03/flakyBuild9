@@ -74,32 +74,30 @@ public class SparseFileTracker {
         if (length < 0) {
             throw new IllegalArgumentException("Length [" + length + "] must be equal to or greater than 0 for [" + description + "]");
         }
-        this.initialLength = ranges.isEmpty() ? 0 : addInitialRanges(length, ranges);
-    }
-
-    private long addInitialRanges(long length, SortedSet<ByteRange> ranges) {
         long initialLength = 0;
-        synchronized (mutex) {
-            Range previous = null;
-            for (ByteRange next : ranges) {
-                if (next.isEmpty()) {
-                    throw new IllegalArgumentException("Range " + next + " cannot be empty");
+        if (ranges.isEmpty() == false) {
+            synchronized (mutex) {
+                Range previous = null;
+                for (ByteRange next : ranges) {
+                    if (next.length() == 0L) {
+                        throw new IllegalArgumentException("Range " + next + " cannot be empty");
+                    }
+                    if (length < next.end()) {
+                        throw new IllegalArgumentException("Range " + next + " is exceeding maximum length [" + length + ']');
+                    }
+                    final Range range = new Range(next);
+                    if (previous != null && range.start <= previous.end) {
+                        throw new IllegalArgumentException("Range " + range + " is overlapping a previous range " + previous);
+                    }
+                    final boolean added = this.ranges.add(range);
+                    assert added : range + " already exist in " + this.ranges;
+                    previous = range;
+                    initialLength += range.end - range.start;
                 }
-                if (length < next.end()) {
-                    throw new IllegalArgumentException("Range " + next + " is exceeding maximum length [" + length + ']');
-                }
-                final Range range = new Range(next);
-                if (previous != null && range.start <= previous.end) {
-                    throw new IllegalArgumentException("Range " + range + " is overlapping a previous range " + previous);
-                }
-                final boolean added = this.ranges.add(range);
-                assert added : range + " already exist in " + this.ranges;
-                previous = range;
-                initialLength += range.end - range.start;
+                assert invariant();
             }
-            assert invariant();
         }
-        return initialLength;
+        this.initialLength = initialLength;
     }
 
     public long getLength() {
@@ -418,9 +416,12 @@ public class SparseFileTracker {
     }
 
     private void onGapSuccess(final Range gapRange) {
+        final ProgressListenableActionFuture completionListener;
+
         synchronized (mutex) {
             assert invariant();
             assert assertPendingRangeExists(gapRange);
+            completionListener = gapRange.completionListener;
             ranges.remove(gapRange);
 
             final SortedSet<Range> prevRanges = ranges.headSet(gapRange);
@@ -459,7 +460,7 @@ public class SparseFileTracker {
             assert invariant();
         }
 
-        gapRange.completionListener.onResponse(gapRange.end);
+        completionListener.onResponse(gapRange.end);
     }
 
     private void maybeUpdateCompletePointer(Range gapRange) {
@@ -470,24 +471,32 @@ public class SparseFileTracker {
         }
     }
 
-    private boolean assertGapRangePending(Range gapRange) {
+    private void onGapProgress(final Range gapRange, long value) {
+        final ProgressListenableActionFuture completionListener;
+
         synchronized (mutex) {
             assert invariant();
             assert assertPendingRangeExists(gapRange);
+            completionListener = gapRange.completionListener;
+            assert invariant();
         }
-        return true;
+
+        completionListener.onProgress(value);
     }
 
     private void onGapFailure(final Range gapRange, Exception e) {
+        final ProgressListenableActionFuture completionListener;
+
         synchronized (mutex) {
             assert invariant();
             assert assertPendingRangeExists(gapRange);
+            completionListener = gapRange.completionListener;
             final boolean removed = ranges.remove(gapRange);
             assert removed : gapRange + " not found";
             assert invariant();
         }
 
-        gapRange.completionListener.onFailure(e);
+        completionListener.onFailure(e);
     }
 
     private boolean invariant() {
@@ -556,8 +565,7 @@ public class SparseFileTracker {
         }
 
         public void onProgress(long value) {
-            assert assertGapRangePending(range);
-            range.completionListener.onProgress(value);
+            onGapProgress(range, value);
         }
 
         public void onFailure(Exception e) {

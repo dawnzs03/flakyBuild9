@@ -385,26 +385,23 @@ public class Realms extends AbstractLifecycleComponent implements Iterable<Realm
         final Set<String> realmTypes = realms.stream().map(Realm::type).collect(Collectors.toUnmodifiableSet());
         // Add native realm first so that file realm will be added before it
         if (false == disabledBasicRealmTypes.contains(NativeRealmSettings.TYPE) && false == realmTypes.contains(NativeRealmSettings.TYPE)) {
-            boolean enabled = settings.getAsBoolean(NativeRealmSettings.NATIVE_USERS_ENABLED, true);
             ensureRealmNameIsAvailable(realms, NativeRealmSettings.DEFAULT_NAME);
             var nativeRealmId = new RealmConfig.RealmIdentifier(NativeRealmSettings.TYPE, NativeRealmSettings.DEFAULT_NAME);
             var realmConfig = new RealmConfig(
                 nativeRealmId,
-                buildSettingsforDefaultRealm(settings, nativeRealmId, Integer.MIN_VALUE, enabled),
+                ensureOrderSetting(settings, nativeRealmId, Integer.MIN_VALUE),
                 env,
                 threadContext
             );
             realmConfigs.add(realmConfig);
-            if (enabled) {
-                realms.add(0, factories.get(NativeRealmSettings.TYPE).create(realmConfig));
-            }
+            realms.add(0, factories.get(NativeRealmSettings.TYPE).create(realmConfig));
         }
         if (false == disabledBasicRealmTypes.contains(FileRealmSettings.TYPE) && false == realmTypes.contains(FileRealmSettings.TYPE)) {
             ensureRealmNameIsAvailable(realms, FileRealmSettings.DEFAULT_NAME);
             var fileRealmId = new RealmConfig.RealmIdentifier(FileRealmSettings.TYPE, FileRealmSettings.DEFAULT_NAME);
             var realmConfig = new RealmConfig(
                 fileRealmId,
-                buildSettingsforDefaultRealm(settings, fileRealmId, Integer.MIN_VALUE, true),
+                ensureOrderSetting(settings, fileRealmId, Integer.MIN_VALUE),
                 env,
                 threadContext
             );
@@ -436,18 +433,9 @@ public class Realms extends AbstractLifecycleComponent implements Iterable<Realm
         }
     }
 
-    private static Settings buildSettingsforDefaultRealm(
-        Settings settings,
-        RealmConfig.RealmIdentifier realmIdentifier,
-        int order,
-        boolean enabled
-    ) {
-        final String prefix = RealmSettings.realmSettingPrefix(realmIdentifier);
-        final Settings.Builder builder = Settings.builder().put(settings).put(prefix + "order", order);
-        if (enabled == false) {
-            builder.put(prefix + "enabled", false);
-        }
-        return builder.build();
+    private static Settings ensureOrderSetting(Settings settings, RealmConfig.RealmIdentifier realmIdentifier, int order) {
+        String orderSettingKey = RealmSettings.realmSettingPrefix(realmIdentifier) + "order";
+        return Settings.builder().put(settings).put(orderSettingKey, order).build();
     }
 
     private static void checkUniqueOrders(Map<Integer, Set<String>> orderToRealmName) {

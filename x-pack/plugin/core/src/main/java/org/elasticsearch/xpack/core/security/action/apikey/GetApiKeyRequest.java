@@ -25,15 +25,12 @@ import static org.elasticsearch.action.ValidateActions.addValidationError;
  */
 public final class GetApiKeyRequest extends ActionRequest {
 
-    static TransportVersion API_KEY_ACTIVE_ONLY_PARAM_TRANSPORT_VERSION = TransportVersion.V_8_500_054;
-
     private final String realmName;
     private final String userName;
     private final String apiKeyId;
     private final String apiKeyName;
     private final boolean ownedByAuthenticatedUser;
     private final boolean withLimitedBy;
-    private final boolean activeOnly;
 
     public GetApiKeyRequest(StreamInput in) throws IOException {
         super(in);
@@ -51,11 +48,6 @@ public final class GetApiKeyRequest extends ActionRequest {
         } else {
             withLimitedBy = false;
         }
-        if (in.getTransportVersion().onOrAfter(API_KEY_ACTIVE_ONLY_PARAM_TRANSPORT_VERSION)) {
-            activeOnly = in.readBoolean();
-        } else {
-            activeOnly = false;
-        }
     }
 
     private GetApiKeyRequest(
@@ -64,8 +56,7 @@ public final class GetApiKeyRequest extends ActionRequest {
         @Nullable String apiKeyId,
         @Nullable String apiKeyName,
         boolean ownedByAuthenticatedUser,
-        boolean withLimitedBy,
-        boolean activeOnly
+        boolean withLimitedBy
     ) {
         this.realmName = textOrNull(realmName);
         this.userName = textOrNull(userName);
@@ -73,7 +64,6 @@ public final class GetApiKeyRequest extends ActionRequest {
         this.apiKeyName = textOrNull(apiKeyName);
         this.ownedByAuthenticatedUser = ownedByAuthenticatedUser;
         this.withLimitedBy = withLimitedBy;
-        this.activeOnly = activeOnly;
     }
 
     private static String textOrNull(@Nullable String arg) {
@@ -102,10 +92,6 @@ public final class GetApiKeyRequest extends ActionRequest {
 
     public boolean withLimitedBy() {
         return withLimitedBy;
-    }
-
-    public boolean activeOnly() {
-        return activeOnly;
     }
 
     @Override
@@ -146,9 +132,6 @@ public final class GetApiKeyRequest extends ActionRequest {
         if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_5_0)) {
             out.writeBoolean(withLimitedBy);
         }
-        if (out.getTransportVersion().onOrAfter(API_KEY_ACTIVE_ONLY_PARAM_TRANSPORT_VERSION)) {
-            out.writeBoolean(activeOnly);
-        }
     }
 
     @Override
@@ -165,13 +148,12 @@ public final class GetApiKeyRequest extends ActionRequest {
             && Objects.equals(userName, that.userName)
             && Objects.equals(apiKeyId, that.apiKeyId)
             && Objects.equals(apiKeyName, that.apiKeyName)
-            && withLimitedBy == that.withLimitedBy
-            && activeOnly == that.activeOnly;
+            && withLimitedBy == that.withLimitedBy;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(realmName, userName, apiKeyId, apiKeyName, ownedByAuthenticatedUser, withLimitedBy, activeOnly);
+        return Objects.hash(realmName, userName, apiKeyId, apiKeyName, ownedByAuthenticatedUser, withLimitedBy);
     }
 
     public static Builder builder() {
@@ -185,7 +167,6 @@ public final class GetApiKeyRequest extends ActionRequest {
         private String apiKeyName = null;
         private boolean ownedByAuthenticatedUser = false;
         private boolean withLimitedBy = false;
-        private boolean activeOnly = false;
 
         public Builder realmName(String realmName) {
             this.realmName = realmName;
@@ -225,13 +206,8 @@ public final class GetApiKeyRequest extends ActionRequest {
             return this;
         }
 
-        public Builder activeOnly(boolean activeOnly) {
-            this.activeOnly = activeOnly;
-            return this;
-        }
-
         public GetApiKeyRequest build() {
-            return new GetApiKeyRequest(realmName, userName, apiKeyId, apiKeyName, ownedByAuthenticatedUser, withLimitedBy, activeOnly);
+            return new GetApiKeyRequest(realmName, userName, apiKeyId, apiKeyName, ownedByAuthenticatedUser, withLimitedBy);
         }
     }
 }

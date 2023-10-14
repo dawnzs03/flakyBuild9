@@ -30,10 +30,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 /**
  * Base class for function tests.
- * @deprecated extends from {@link AbstractFunctionTestCase} instead
- * and {@link AbstractFunctionTestCase#errorsForCasesWithoutExamples}.
  */
-@Deprecated
 public abstract class AbstractScalarFunctionTestCase extends AbstractFunctionTestCase {
     /**
      * Describe supported arguments. Build each argument with
@@ -70,28 +67,28 @@ public abstract class AbstractScalarFunctionTestCase extends AbstractFunctionTes
     /**
      * All string types (keyword, text, match_only_text, etc). For passing to {@link #required} or {@link #optional}.
      */
-    protected static DataType[] strings() {
+    protected final DataType[] strings() {
         return EsqlDataTypes.types().stream().filter(DataTypes::isString).toArray(DataType[]::new);
     }
 
     /**
      * All integer types (long, int, short, byte). For passing to {@link #required} or {@link #optional}.
      */
-    protected static DataType[] integers() {
+    protected final DataType[] integers() {
         return EsqlDataTypes.types().stream().filter(DataType::isInteger).toArray(DataType[]::new);
     }
 
     /**
      * All rational types (double, float, whatever). For passing to {@link #required} or {@link #optional}.
      */
-    protected static DataType[] rationals() {
+    protected final DataType[] rationals() {
         return EsqlDataTypes.types().stream().filter(DataType::isRational).toArray(DataType[]::new);
     }
 
     /**
      * All numeric types (integers and rationals.) For passing to {@link #required} or {@link #optional}.
      */
-    protected static DataType[] numerics() {
+    protected final DataType[] numerics() {
         return EsqlDataTypes.types().stream().filter(DataType::isNumeric).toArray(DataType[]::new);
     }
 
@@ -106,11 +103,20 @@ public abstract class AbstractScalarFunctionTestCase extends AbstractFunctionTes
 
     protected record ArgumentSpec(boolean optional, Set<DataType> validTypes) {}
 
+    @Override
+    protected final DataType expressionForSimpleDataType() {
+        return expectedType(expressionForSimpleData().children().stream().map(e -> e.dataType()).toList());
+    }
+
+    public final void testSimpleResolveTypeValid() {
+        assertResolveTypeValid(expressionForSimpleData(), expressionForSimpleDataType());
+    }
+
     public final void testResolveType() {
         List<ArgumentSpec> specs = argSpec();
         for (int mutArg = 0; mutArg < specs.size(); mutArg++) {
             for (DataType mutArgType : EsqlDataTypes.types()) {
-                List<Expression> args = new ArrayList<>(specs.size());
+                List<Literal> args = new ArrayList<>(specs.size());
                 for (int arg = 0; arg < specs.size(); arg++) {
                     if (mutArg == arg) {
                         args.add(new Literal(new Source(Location.EMPTY, "arg" + arg), "", mutArgType));
@@ -134,7 +140,7 @@ public abstract class AbstractScalarFunctionTestCase extends AbstractFunctionTes
         }
     }
 
-    private void assertResolution(List<ArgumentSpec> specs, List<Expression> args, int mutArg, DataType mutArgType, boolean shouldBeValid) {
+    private void assertResolution(List<ArgumentSpec> specs, List<Literal> args, int mutArg, DataType mutArgType, boolean shouldBeValid) {
         Expression exp = build(new Source(Location.EMPTY, "exp"), args);
         logger.info("checking {} is {}", exp.nodeString(), shouldBeValid ? "valid" : "invalid");
         if (shouldBeValid) {

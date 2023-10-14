@@ -91,13 +91,8 @@ public class FieldCapabilitiesResponse extends ActionResponse implements Chunked
     /**
      * Get the concrete list of indices that failed
      */
-    public int getFailedIndicesCount() {
-        int count = 0;
-        for (FieldCapabilitiesFailure fieldCapabilitiesFailure : this.failures) {
-            int length = fieldCapabilitiesFailure.getIndices().length;
-            count += length;
-        }
-        return count;
+    public String[] getFailedIndices() {
+        return this.failures.stream().map(FieldCapabilitiesFailure::getIndices).flatMap(s -> Arrays.stream(s)).toArray(String[]::new);
     }
 
     /**
@@ -166,12 +161,12 @@ public class FieldCapabilitiesResponse extends ActionResponse implements Chunked
             Iterators.single(
                 (b, p) -> b.startObject().array(INDICES_FIELD.getPreferredName(), indices).startObject(FIELDS_FIELD.getPreferredName())
             ),
-            Iterators.map(responseMap.entrySet().iterator(), r -> (b, p) -> b.xContentValuesMap(r.getKey(), r.getValue())),
+            responseMap.entrySet().stream().map(r -> (ToXContent) (b, p) -> b.xContentValuesMap(r.getKey(), r.getValue())).iterator(),
             this.failures.size() > 0
                 ? Iterators.concat(
                     Iterators.single(
                         (ToXContent) (b, p) -> b.endObject()
-                            .field(FAILED_INDICES_FIELD.getPreferredName(), getFailedIndicesCount())
+                            .field(FAILED_INDICES_FIELD.getPreferredName(), getFailedIndices().length)
                             .field(FAILURES_FIELD.getPreferredName())
                             .startArray()
                     ),

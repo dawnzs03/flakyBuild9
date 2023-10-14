@@ -43,6 +43,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.persistent.PersistentTasksCustomMetadata;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.tasks.RemovedTaskListener;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskCancelledException;
 import org.elasticsearch.tasks.TaskId;
@@ -605,13 +606,18 @@ public class TasksIT extends ESIntegTestCase {
             for (TransportService transportService : internalCluster().getInstances(TransportService.class)) {
                 ((MockTaskManager) transportService.getTaskManager()).addListener(new MockTaskManagerListener() {
                     @Override
-                    public void waitForTaskCompletion(Task task) {}
+                    public void waitForTaskCompletion(Task task) {
+                        waitForWaitingToStart.countDown();
+                    }
 
                     @Override
                     public void onTaskRegistered(Task task) {}
 
                     @Override
-                    public void onTaskUnregistered(Task task) {
+                    public void onTaskUnregistered(Task task) {}
+
+                    @Override
+                    public void subscribeForRemovedTasks(RemovedTaskListener removedTaskListener) {
                         waitForWaitingToStart.countDown();
                     }
                 });
@@ -861,7 +867,6 @@ public class TasksIT extends ESIntegTestCase {
                 new TaskInfo(
                     new TaskId("fake", 1),
                     "test",
-                    "fake",
                     "test",
                     "",
                     null,

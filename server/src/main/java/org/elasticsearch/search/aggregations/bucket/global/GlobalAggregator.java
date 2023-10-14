@@ -31,9 +31,7 @@ public class GlobalAggregator extends BucketsAggregator implements SingleBucketA
         throws IOException {
 
         super(name, subFactories, context, null, CardinalityUpperBound.ONE, metadata);
-        weight = context.searcher()
-            .rewrite(context.filterQuery(new MatchAllDocsQuery()))
-            .createWeight(context.searcher(), scoreMode(), 1.0f);
+        weight = context.filterQuery(new MatchAllDocsQuery()).createWeight(context.searcher(), scoreMode(), 1.0f);
     }
 
     @Override

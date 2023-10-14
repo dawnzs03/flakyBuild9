@@ -8,12 +8,9 @@
 package org.elasticsearch.compute.aggregation.blockhash;
 
 import org.elasticsearch.common.util.BigArrays;
-import org.elasticsearch.common.util.BitArray;
 import org.elasticsearch.common.util.BytesRefHash;
 import org.elasticsearch.common.util.LongHash;
-import org.elasticsearch.common.util.LongLongHash;
 import org.elasticsearch.compute.aggregation.GroupingAggregatorFunction;
-import org.elasticsearch.compute.aggregation.SeenGroupIds;
 import org.elasticsearch.compute.data.Block;
 import org.elasticsearch.compute.data.ElementType;
 import org.elasticsearch.compute.data.IntVector;
@@ -30,7 +27,7 @@ import java.util.List;
  * @see LongHash
  * @see BytesRefHash
  */
-public abstract sealed class BlockHash implements Releasable, SeenGroupIds //
+public abstract sealed class BlockHash implements Releasable //
     permits BooleanBlockHash, BytesRefBlockHash, DoubleBlockHash, IntBlockHash, LongBlockHash,//
     PackedValuesBlockHash, BytesRefLongBlockHash, LongLongBlockHash {
 
@@ -53,10 +50,6 @@ public abstract sealed class BlockHash implements Releasable, SeenGroupIds //
      * know if there actually were any {@code true} or {@code false} values received.
      */
     public abstract IntVector nonEmpty();
-
-    // TODO merge with nonEmpty
-    @Override
-    public abstract BitArray seenGroupIds(BigArrays bigArrays);
 
     /**
      * Creates a specialized hash table that maps one or more {@link Block}s to ids.
@@ -97,25 +90,10 @@ public abstract sealed class BlockHash implements Releasable, SeenGroupIds //
         };
     }
 
-    /**
-     * Convert the result of calling {@link LongHash} or {@link LongLongHash}
-     * or {@link BytesRefHash} or similar to a group ordinal. These hashes
-     * return negative numbers if the value that was added has already been
-     * seen. We don't use that and convert it back to the positive ord.
-     */
     public static long hashOrdToGroup(long ord) {
         if (ord < 0) { // already seen
             return -1 - ord;
         }
         return ord;
-    }
-
-    /**
-     * Convert the result of calling {@link LongHash} or {@link LongLongHash}
-     * or {@link BytesRefHash} or similar to a group ordinal, reserving {@code 0}
-     * for null.
-     */
-    public static long hashOrdToGroupNullReserved(long ord) {
-        return hashOrdToGroup(ord) + 1;
     }
 }

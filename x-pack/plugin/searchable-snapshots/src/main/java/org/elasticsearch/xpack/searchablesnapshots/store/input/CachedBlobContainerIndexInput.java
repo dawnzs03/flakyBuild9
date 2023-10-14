@@ -20,8 +20,8 @@ import org.elasticsearch.xpack.searchablesnapshots.store.SearchableSnapshotDirec
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -117,7 +117,8 @@ public class CachedBlobContainerIndexInput extends MetadataCachingIndexInput {
         assert rangeToRead.isSubRangeOf(rangeToWrite) : rangeToRead + " vs " + rangeToWrite;
         assert rangeToRead.length() == b.remaining() : b.remaining() + " vs " + rangeToRead;
 
-        final int bytesRead = populateAndRead(b, position, cacheFile, rangeToWrite).get();
+        final Future<Integer> populateCacheFuture = populateAndRead(b, position, length, cacheFile, rangeToWrite);
+        final int bytesRead = populateCacheFuture.get();
         assert bytesRead == length : bytesRead + " vs " + length;
     }
 
@@ -189,7 +190,7 @@ public class CachedBlobContainerIndexInput extends MetadataCachingIndexInput {
                     if (isCancelled.get()) {
                         return -1L;
                     }
-                    final int bytesRead = readSafe(input, copyBuffer, range.start(), remainingBytes);
+                    final int bytesRead = readSafe(input, copyBuffer, range.start(), remainingBytes, cacheFileReference);
                     // The range to prewarm in cache
                     final long readStart = range.start() + totalBytesRead;
                     final ByteRange rangeToWrite = ByteRange.of(readStart, readStart + bytesRead);
@@ -243,11 +244,9 @@ public class CachedBlobContainerIndexInput extends MetadataCachingIndexInput {
         return true;
     }
 
-    private void ensureContext(Predicate<IOContext> predicate) throws IOException {
-        if (predicate.test(context) == false) {
-            assert false : "this method should not be used with this context " + context;
-            throw new IOException("Cannot read the index input using context [context=" + context + ", input=" + this + ']');
-        }
+    @Override
+    public CachedBlobContainerIndexInput clone() {
+        return (CachedBlobContainerIndexInput) super.clone();
     }
 
     @Override
@@ -265,7 +264,7 @@ public class CachedBlobContainerIndexInput extends MetadataCachingIndexInput {
             fileInfo,
             context,
             stats,
-            sliceOffset,
+            this.offset + sliceOffset,
             sliceCompoundFileOffset,
             sliceLength,
             cacheFileReference,

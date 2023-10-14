@@ -23,7 +23,6 @@ import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequestOptions;
-import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.List;
@@ -154,10 +153,7 @@ public class MasterHistoryService {
                                 logger.warn("Exception in master history request to master node", e);
                                 remoteHistoryOrException = new RemoteHistoryOrException(e, currentTimeMillisSupplier.getAsLong());
                             }
-                        }, () -> Releasables.close(releasable)),
-                            MasterHistoryAction.Response::new,
-                            TransportResponseHandler.TRANSPORT_WORKER
-                        )
+                        }, () -> Releasables.close(releasable)), MasterHistoryAction.Response::new)
                     );
                 }
 

@@ -93,7 +93,6 @@ import org.elasticsearch.xpack.core.action.XPackInfoFeatureAction;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureAction;
 import org.elasticsearch.xpack.core.ml.MachineLearningField;
 import org.elasticsearch.xpack.core.ml.MlConfigIndex;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 import org.elasticsearch.xpack.core.ml.MlMetaIndex;
 import org.elasticsearch.xpack.core.ml.MlMetadata;
 import org.elasticsearch.xpack.core.ml.MlStatsIndex;
@@ -582,29 +581,6 @@ public class MachineLearning extends Plugin
     public static final String PRE_V_8_5_ALLOCATED_PROCESSORS_NODE_ATTR = "ml.allocated_processors";
 
     public static final String ALLOCATED_PROCESSORS_NODE_ATTR = "ml.allocated_processors_double";
-
-    /**
-     * For the NLP model assignment planner.
-     * The {@link #ALLOCATED_PROCESSORS_NODE_ATTR} attribute may be
-     * measured in hyper-threaded or virtual cores when the user
-     * would like the planner to consider logical cores.
-     *
-     * ALLOCATED_PROCESSORS_NODE_ATTR is divided by this setting,
-     * the default value of 1 means the attribute is unchanged, a value
-     * of 2 accounts for hyper-threaded cores with 2 threads per core.
-     * Increasing this setting above 1 reduces the number of model
-     * allocations that can be deployed on a node.
-     */
-    public static final Setting<Integer> ALLOCATED_PROCESSORS_SCALE = Setting.intSetting(
-        "xpack.ml.allocated_processors_scale",
-        1,
-        1,
-        Property.Dynamic,
-        Property.NodeScope
-    );
-
-    public static final String ML_CONFIG_VERSION_NODE_ATTR = MlConfigVersion.ML_CONFIG_VERSION_NODE_ATTR;
-
     public static final Setting<Integer> CONCURRENT_JOB_ALLOCATIONS = Setting.intSetting(
         "xpack.ml.node_concurrent_job_allocations",
         2,
@@ -782,7 +758,6 @@ public class MachineLearning extends Plugin
     @Override
     public List<Setting<?>> getSettings() {
         return List.of(
-            ALLOCATED_PROCESSORS_SCALE,
             MachineLearningField.AUTODETECT_PROCESS,
             PROCESS_CONNECT_TIMEOUT,
             CONCURRENT_JOB_ALLOCATIONS,
@@ -811,10 +786,9 @@ public class MachineLearning extends Plugin
         String jvmSizeAttrName = "node.attr." + MAX_JVM_SIZE_NODE_ATTR;
         String deprecatedAllocatedProcessorsAttrName = "node.attr." + PRE_V_8_5_ALLOCATED_PROCESSORS_NODE_ATTR;
         String allocatedProcessorsAttrName = "node.attr." + ALLOCATED_PROCESSORS_NODE_ATTR;
-        String mlConfigVersionAttrName = "node.attr." + ML_CONFIG_VERSION_NODE_ATTR;
 
         if (enabled == false) {
-            disallowMlNodeAttributes(maxOpenJobsPerNodeNodeAttrName, machineMemoryAttrName, jvmSizeAttrName, mlConfigVersionAttrName);
+            disallowMlNodeAttributes(maxOpenJobsPerNodeNodeAttrName, machineMemoryAttrName, jvmSizeAttrName);
             return Settings.EMPTY;
         }
 
@@ -843,7 +817,6 @@ public class MachineLearning extends Plugin
                 allocatedProcessorsAttrName
             );
         }
-        addMlNodeAttribute(additionalSettings, mlConfigVersionAttrName, MlConfigVersion.CURRENT.toString());
         return additionalSettings.build();
     }
 
@@ -912,9 +885,8 @@ public class MachineLearning extends Plugin
         IndicesService indicesService
     ) {
         if (enabled == false) {
-            // Holders for @link(MachineLearningFeatureSetUsage) which needs access to job manager and ML extension,
-            // both empty if ML is disabled
-            return List.of(new JobManagerHolder(), new MachineLearningExtensionHolder());
+            // special holder for @link(MachineLearningFeatureSetUsage) which needs access to job manager, empty if ML is disabled
+            return List.of(new JobManagerHolder());
         }
 
         machineLearningExtension.get().configure(environment.settings());
@@ -1275,8 +1247,7 @@ public class MachineLearning extends Plugin
             trainedModelAssignmentService,
             trainedModelAllocationClusterServiceSetOnce.get(),
             deploymentManager.get(),
-            nodeAvailabilityZoneMapper,
-            new MachineLearningExtensionHolder(machineLearningExtension.get())
+            nodeAvailabilityZoneMapper
         );
     }
 

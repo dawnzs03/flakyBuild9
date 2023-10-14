@@ -16,7 +16,6 @@ import org.elasticsearch.rest.action.RestCancellableNodeClient;
 import org.elasticsearch.rest.action.RestChunkedToXContentListener;
 import org.elasticsearch.xpack.application.EnterpriseSearch;
 import org.elasticsearch.xpack.application.EnterpriseSearchBaseRestHandler;
-import org.elasticsearch.xpack.application.utils.LicenseUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -27,7 +26,7 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 @ServerlessScope(Scope.PUBLIC)
 public class RestQuerySearchApplicationAction extends EnterpriseSearchBaseRestHandler {
     public RestQuerySearchApplicationAction(XPackLicenseState licenseState) {
-        super(licenseState, LicenseUtils.Product.SEARCH_APPLICATION);
+        super(licenseState);
     }
 
     public static final String ENDPOINT_PATH = "/" + EnterpriseSearch.SEARCH_APPLICATION_API_ENDPOINT + "/{name}" + "/_search";

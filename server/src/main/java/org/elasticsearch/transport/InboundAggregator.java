@@ -40,7 +40,7 @@ public class InboundAggregator implements Releasable {
         Function<String, RequestHandlerRegistry<TransportRequest>> registryFunction,
         boolean ignoreDeserializationErrors
     ) {
-        this(circuitBreaker, actionName -> {
+        this(circuitBreaker, (Predicate<String>) actionName -> {
             final RequestHandlerRegistry<TransportRequest> reg = registryFunction.apply(actionName);
             if (reg == null) {
                 assert ignoreDeserializationErrors : actionName;

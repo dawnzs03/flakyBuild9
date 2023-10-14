@@ -7,47 +7,63 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.multivalue;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.xpack.esql.expression.function.scalar.AbstractScalarFunctionTestCase;
 import org.elasticsearch.xpack.ql.expression.Expression;
+import org.elasticsearch.xpack.ql.expression.Literal;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.type.DataType;
 import org.elasticsearch.xpack.ql.type.DataTypes;
+import org.hamcrest.Matcher;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.elasticsearch.compute.data.BlockUtils.toJavaObject;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 
 public class MvConcatTests extends AbstractScalarFunctionTestCase {
-    public MvConcatTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
-    }
-
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        return parameterSuppliersFromTypedData(List.of(new TestCaseSupplier("mv_concat basic test", () -> {
-            return new TestCase(
-                List.of(
-                    new TypedData(List.of(new BytesRef("foo"), new BytesRef("bar"), new BytesRef("baz")), DataTypes.KEYWORD, "field"),
-                    new TypedData(new BytesRef(", "), DataTypes.KEYWORD, "delim")
-                ),
-                "MvConcat[field=Attribute[channel=0], delim=Attribute[channel=1]]",
-                DataTypes.KEYWORD,
-                equalTo(new BytesRef("foo, bar, baz"))
-            );
-        })));
+    @Override
+    protected Expression build(Source source, List<Literal> args) {
+        return new MvConcat(source, args.get(0), args.get(1));
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
-        return new MvConcat(source, args.get(0), args.get(1));
+    protected List<Object> simpleData() {
+        return List.of(List.of(new BytesRef("foo"), new BytesRef("bar"), new BytesRef("baz")), new BytesRef(", "));
+    }
+
+    @Override
+    protected Expression expressionForSimpleData() {
+        return new MvConcat(Source.EMPTY, field("field", DataTypes.KEYWORD), field("delim", DataTypes.KEYWORD));
+    }
+
+    @Override
+    protected Matcher<Object> resultMatcher(List<Object> data, DataType dataType) {
+        List<?> field = (List<?>) data.get(0);
+        BytesRef delim = (BytesRef) data.get(1);
+        if (field == null || delim == null) {
+            return nullValue();
+        }
+        return equalTo(
+            new BytesRef(field.stream().map(v -> ((BytesRef) v).utf8ToString()).collect(Collectors.joining(delim.utf8ToString())))
+        );
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "MvConcat[field=Attribute[channel=0], delim=Attribute[channel=1]]";
+    }
+
+    @Override
+    protected Expression constantFoldable(List<Object> data) {
+        return new MvConcat(
+            Source.EMPTY,
+            new Literal(Source.EMPTY, data.get(0), DataTypes.KEYWORD),
+            new Literal(Source.EMPTY, data.get(1), DataTypes.KEYWORD)
+        );
     }
 
     @Override
@@ -61,11 +77,10 @@ public class MvConcatTests extends AbstractScalarFunctionTestCase {
     }
 
     public void testNull() {
-        // TODO: add these into the test parameters
         BytesRef foo = new BytesRef("foo");
         BytesRef bar = new BytesRef("bar");
         BytesRef delim = new BytesRef(";");
-        Expression expression = buildFieldExpression(testCase);
+        Expression expression = expressionForSimpleData();
 
         assertThat(toJavaObject(evaluator(expression).get().eval(row(Arrays.asList(Arrays.asList(foo, bar), null))), 0), nullValue());
         assertThat(toJavaObject(evaluator(expression).get().eval(row(Arrays.asList(foo, null))), 0), nullValue());

@@ -165,91 +165,25 @@ emp_no:integer | last_name:keyword | x:keyword | z:keyword
 10010 | Piveteau  | P | a
 ;
 
-ltrim
-from employees | sort emp_no | limit 10 | eval name = concat("  ", first_name, "  ") | eval name = ltrim(name) | eval name = concat("'", name, "'") | keep emp_no, name;
-
-emp_no:integer | name:keyword
-10001          | 'Georgi  '
-10002          | 'Bezalel  ' 
-10003          | 'Parto  '
-10004          | 'Chirstian  '
-10005          | 'Kyoichi  '
-10006          | 'Anneke  '
-10007          | 'Tzvetan  '
-10008          | 'Saniya  '
-10009          | 'Sumant  '
-10010          | 'Duangkaew  '
-;
-
-ltrimRow
-// tag::ltrim[]
-ROW message = "   some text  ",  color = " red "
-| EVAL message = LTRIM(message)
-| EVAL color = LTRIM(color)
-| EVAL message = CONCAT("'", message, "'")
-| EVAL color = CONCAT("'", color, "'")
-// end::ltrim[]
-;
-
-// tag::ltrim-result[]
-message:keyword | color:keyword
-'some text  ' | 'red '
-// end::ltrim-result[]
-;
-
-rtrim
-from employees | sort emp_no | limit 10 | eval name = concat("  ", first_name, "  ") | eval name = rtrim(name) | eval name = concat("'", name, "'") | keep emp_no, name;
-
-emp_no:integer | name:keyword
-10001          | '  Georgi'
-10002          | '  Bezalel'
-10003          | '  Parto'
-10004          | '  Chirstian'
-10005          | '  Kyoichi'
-10006          | '  Anneke'
-10007          | '  Tzvetan'
-10008          | '  Saniya'
-10009          | '  Sumant'
-10010          | '  Duangkaew'
-;
-
-rtrimRow
-// tag::rtrim[]
-ROW message = "   some text  ",  color = " red "
-| EVAL message = RTRIM(message)
-| EVAL color = RTRIM(color)
-| EVAL message = CONCAT("'", message, "'")
-| EVAL color = CONCAT("'", color, "'")
-// end::rtrim[]
-;
-
-// tag::rtrim-result[]
-message:keyword | color:keyword
-'   some text' | ' red'
-// end::rtrim-result[]
-;
-
 trim
-from employees | sort emp_no | limit 10 | eval name = concat("      ", first_name, "     ") | eval name = trim(name) | eval name = concat("'", name, "'") | keep emp_no, name;
+from employees | sort emp_no | limit 10 | eval name = concat("      ", first_name) | eval name = trim(first_name) | keep emp_no, name;
 
 emp_no:integer | name:keyword
-10001          | 'Georgi'
-10002          | 'Bezalel'
-10003          | 'Parto'
-10004          | 'Chirstian'
-10005          | 'Kyoichi'
-10006          | 'Anneke'
-10007          | 'Tzvetan'
-10008          | 'Saniya'
-10009          | 'Sumant'
-10010          | 'Duangkaew'
+10001 | Georgi
+10002 | Bezalel
+10003 | Parto
+10004 | Chirstian
+10005 | Kyoichi
+10006 | Anneke
+10007 | Tzvetan
+10008 | Saniya
+10009 | Sumant
+10010 | Duangkaew
 ;
 
 trimRow
 // tag::trim[]
-ROW message = "   some text  ",  color = " red "
-| EVAL message = TRIM(message)
-| EVAL color = TRIM(color)
+ROW message = "   some text  ",  color = " red "| EVAL message = TRIM(message)| EVAL color = TRIM(color)
 // end::trim[]
 ;
 
@@ -298,52 +232,6 @@ from employees | where job_positions in ("Internship", first_name) | keep emp_no
 emp_no:integer |job_positions:keyword
 10048          |Internship
 10077          |Internship
-;
-
-in3VLNoNull
-// filtering for SVs, since IN uses EQUALS evaluators, that turn MVs into NULL
-from employees | where mv_count(job_positions) <= 1 | where emp_no >= 10024 | limit 3 | keep emp_no, job_positions | eval is_in = job_positions in ("Accountant", "Internship");
-
-emp_no:integer |job_positions:keyword |is_in:boolean
-10024          |Junior Developer      |false
-10025          |Accountant            |true
-10026          |Reporting Analyst     |false
-;
-
-in3VLWithNull
-from employees | where mv_count(job_positions) <= 1 | where emp_no >= 10024 | limit 3 | keep emp_no, job_positions | eval is_in = job_positions in ("Accountant", "Internship", null);
-
-emp_no:integer |job_positions:keyword |is_in:boolean
-10024          |Junior Developer      |null
-10025          |Accountant            |true
-10026          |Reporting Analyst     |null
-;
-
-in3VLWithComputedNull
-from employees | where mv_count(job_positions) <= 1 | where emp_no >= 10024 | limit 3 | keep emp_no, job_positions | eval nil = concat("", null) | eval is_in = job_positions in ("Accountant", "Internship", nil);
-
-emp_no:integer |job_positions:keyword |nil:keyword |is_in:boolean
-10024          |Junior Developer      |null        |null
-10025          |Accountant            |null        |true
-10026          |Reporting Analyst     |null        |null
-;
-
-in3VLWithNullAsValue
-from employees | where mv_count(job_positions) <= 1 | where emp_no >= 10024 | limit 3 | keep emp_no, job_positions | eval is_in = null in ("Accountant", "Internship", null);
-
-emp_no:integer |job_positions:keyword |is_in:boolean
-10024          |Junior Developer      |null
-10025          |Accountant            |null
-10026          |Reporting Analyst     |null
-;
-
-in3VLWithComputedNullAsValue
-from employees | where mv_count(job_positions) <= 1 | where emp_no >= 10024 | limit 3 | keep emp_no, job_positions | eval nil = concat("", null) | eval is_in = nil in ("Accountant", "Internship", null);
-
-emp_no:integer |job_positions:keyword |nil:keyword |is_in:boolean
-10024          |Junior Developer      |null        |null
-10025          |Accountant            |null        |null
-10026          |Reporting Analyst     |null        |null
 ;
 
 split
@@ -465,7 +353,6 @@ emp_no:integer |job_positions:keyword
 10018          |Junior Developer
 10019          |Purchase Manager
 10020          |Tech Lead
-10021          |Support Engineer
 ;
 
 equalToMultivalue
@@ -679,44 +566,4 @@ l1:keyword                    | l2:keyword
 epsilon/Gateway instances     | null
 epsilon/Gateway instances     | null
 null                          | null
-;
-
-
-grok
-from hosts | where host == "epsilon" | grok host_group "%{WORD:l1} %{WORD:l2}"| sort l1 |  keep l1, l2;
-
-l1:keyword  | l2:keyword  
-Gateway     | instances   
-Gateway     | instances   
-null        | null
-;
-
-
-dissect
-from hosts | where host == "epsilon" | dissect host_group "%{l1} %{l2}"| sort l1 |  keep l1, l2;
-
-l1:keyword  | l2:keyword  
-Gateway     | instances   
-Gateway     | instances   
-null        | null
-;
-
-left
-// tag::left[]
-FROM employees
-| KEEP last_name
-| EVAL left = LEFT(last_name, 3)
-| SORT last_name ASC
-| LIMIT 5
-// end::left[]
-;
-
-// tag::left-result[]
-last_name:keyword | left:keyword
-Awdeh             |Awd
-Azuma             |Azu
-Baek              |Bae
-Bamford           |Bam
-Bernatsky         |Ber
-// end::left-result[]
 ;

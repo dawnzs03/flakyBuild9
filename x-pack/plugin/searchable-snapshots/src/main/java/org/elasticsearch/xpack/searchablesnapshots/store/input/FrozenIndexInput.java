@@ -91,7 +91,7 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
             headerBlobCacheByteRange,
             footerBlobCacheByteRange
         );
-        this.cacheFile = cacheFile.copy();
+        this.cacheFile = cacheFile;
     }
 
     @Override
@@ -99,15 +99,9 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
         final long position = getAbsolutePosition();
         final int length = b.remaining();
         if (cacheFile.tryRead(b, position)) {
-            // fast-path succeeded, increment stats and return
             stats.addCachedBytesRead(length);
             return;
         }
-        readWithoutBlobCacheSlow(b, position, length);
-    }
-
-    // slow path for readWithoutBlobCache, extracted to a separate method to make the fast-path inline better
-    private void readWithoutBlobCacheSlow(ByteBuffer b, long position, int length) throws Exception {
         // Semaphore that, when all permits are acquired, ensures that async callbacks (such as those used by readCacheFile) are not
         // accessing the byte buffer anymore that was passed to readWithoutBlobCache
         // In particular, it's important to acquire all permits before adapting the ByteBuffer's offset
@@ -134,7 +128,7 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
                     length,
                     cacheFile
                 );
-                final int read = SharedBytes.readCacheFile(channel, pos, relativePos, len, byteBufferReference);
+                final int read = SharedBytes.readCacheFile(channel, pos, relativePos, len, byteBufferReference, cacheFile);
                 stats.addCachedBytesRead(read);
                 return read;
             }, (channel, channelPos, relativePos, len, progressUpdater) -> {
@@ -156,7 +150,8 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
                         relativePos,
                         len,
                         progressUpdater,
-                        writeBuffer.get().clear()
+                        writeBuffer.get().clear(),
+                        cacheFile
                     );
                     final long endTimeNanos = stats.currentTimeNanos();
                     stats.addCachedBytesWritten(len, endTimeNanos - startTimeNanos);
@@ -167,6 +162,11 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
         } finally {
             byteBufferReference.finish(0);
         }
+    }
+
+    @Override
+    public FrozenIndexInput clone() {
+        return (FrozenIndexInput) super.clone();
     }
 
     @Override
@@ -184,7 +184,7 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
             fileInfo,
             context,
             stats,
-            sliceOffset,
+            this.offset + sliceOffset,
             sliceCompoundFileOffset,
             sliceLength,
             cacheFileReference,

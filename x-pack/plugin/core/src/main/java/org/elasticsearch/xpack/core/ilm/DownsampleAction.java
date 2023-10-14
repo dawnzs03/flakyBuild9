@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.downsample.DownsampleConfig;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
@@ -15,7 +14,6 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
@@ -29,13 +27,11 @@ import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
-import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstructorArg;
 
 /**
- * A {@link LifecycleAction} which calls {@link org.elasticsearch.action.downsample.DownsampleAction} on an index
+ * A {@link LifecycleAction} which calls {@link org.elasticsearch.xpack.core.downsample.DownsampleAction} on an index
  */
 public class DownsampleAction implements LifecycleAction {
 
@@ -43,13 +39,12 @@ public class DownsampleAction implements LifecycleAction {
     public static final String DOWNSAMPLED_INDEX_PREFIX = "downsample-";
     public static final String CONDITIONAL_TIME_SERIES_CHECK_KEY = BranchingStep.NAME + "-on-timeseries-check";
     public static final String CONDITIONAL_DATASTREAM_CHECK_KEY = BranchingStep.NAME + "-on-datastream-check";
-    public static final TimeValue DEFAULT_WAIT_TIMEOUT = new TimeValue(1, TimeUnit.DAYS);
+    public static final String GENERATE_DOWNSAMPLE_STEP_NAME = "generate-downsampled-index-name";
     private static final ParseField FIXED_INTERVAL_FIELD = new ParseField(DownsampleConfig.FIXED_INTERVAL);
-    private static final ParseField WAIT_TIMEOUT_FIELD = new ParseField("wait_timeout");
 
     private static final ConstructingObjectParser<DownsampleAction, Void> PARSER = new ConstructingObjectParser<>(
         NAME,
-        a -> new DownsampleAction((DateHistogramInterval) a[0], (TimeValue) a[1])
+        a -> new DownsampleAction((DateHistogramInterval) a[0])
     );
 
     static {
@@ -59,53 +54,34 @@ public class DownsampleAction implements LifecycleAction {
             FIXED_INTERVAL_FIELD,
             ObjectParser.ValueType.STRING
         );
-        PARSER.declareField(
-            optionalConstructorArg(),
-            p -> TimeValue.parseTimeValue(p.textOrNull(), WAIT_TIMEOUT_FIELD.getPreferredName()),
-            WAIT_TIMEOUT_FIELD,
-            ObjectParser.ValueType.STRING
-        );
     }
 
     private final DateHistogramInterval fixedInterval;
-    private final TimeValue waitTimeout;
 
     public static DownsampleAction parse(XContentParser parser) {
         return PARSER.apply(parser, null);
     }
 
-    public DownsampleAction(final DateHistogramInterval fixedInterval, final TimeValue waitTimeout) {
+    public DownsampleAction(DateHistogramInterval fixedInterval) {
         if (fixedInterval == null) {
             throw new IllegalArgumentException("Parameter [" + FIXED_INTERVAL_FIELD.getPreferredName() + "] is required.");
         }
         this.fixedInterval = fixedInterval;
-        this.waitTimeout = waitTimeout == null ? DEFAULT_WAIT_TIMEOUT : waitTimeout;
     }
 
     public DownsampleAction(StreamInput in) throws IOException {
-        this(
-            new DateHistogramInterval(in),
-            in.getTransportVersion().onOrAfter(TransportVersion.V_8_500_054)
-                ? TimeValue.parseTimeValue(in.readString(), WAIT_TIMEOUT_FIELD.getPreferredName())
-                : DEFAULT_WAIT_TIMEOUT
-        );
+        this(new DateHistogramInterval(in));
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         fixedInterval.writeTo(out);
-        if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_500_054)) {
-            out.writeString(waitTimeout.getStringRep());
-        } else {
-            out.writeString(DEFAULT_WAIT_TIMEOUT.getStringRep());
-        }
     }
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject();
         builder.field(FIXED_INTERVAL_FIELD.getPreferredName(), fixedInterval.toString());
-        builder.field(WAIT_TIMEOUT_FIELD.getPreferredName(), waitTimeout.getStringRep());
         builder.endObject();
         return builder;
     }
@@ -117,10 +93,6 @@ public class DownsampleAction implements LifecycleAction {
 
     public DateHistogramInterval fixedInterval() {
         return fixedInterval;
-    }
-
-    public TimeValue waitTimeout() {
-        return waitTimeout;
     }
 
     @Override
@@ -135,11 +107,10 @@ public class DownsampleAction implements LifecycleAction {
         StepKey waitForNoFollowerStepKey = new StepKey(phase, NAME, WaitForNoFollowersStep.NAME);
         StepKey readOnlyKey = new StepKey(phase, NAME, ReadOnlyStep.NAME);
         StepKey cleanupDownsampleIndexKey = new StepKey(phase, NAME, CleanupTargetIndexStep.NAME);
-        StepKey generateDownsampleIndexNameKey = new StepKey(phase, NAME, DownsamplePrepareLifeCycleStateStep.NAME);
+        StepKey generateDownsampleIndexNameKey = new StepKey(phase, NAME, GENERATE_DOWNSAMPLE_STEP_NAME);
         StepKey downsampleKey = new StepKey(phase, NAME, DownsampleStep.NAME);
         StepKey waitForDownsampleIndexKey = new StepKey(phase, NAME, WaitForIndexColorStep.NAME);
         StepKey copyMetadataKey = new StepKey(phase, NAME, CopyExecutionStateStep.NAME);
-        StepKey copyIndexLifecycleKey = new StepKey(phase, NAME, CopySettingsStep.NAME);
         StepKey dataStreamCheckBranchingKey = new StepKey(phase, NAME, CONDITIONAL_DATASTREAM_CHECK_KEY);
         StepKey replaceDataStreamIndexKey = new StepKey(phase, NAME, ReplaceDataStreamBackingIndexStep.NAME);
         StepKey deleteIndexKey = new StepKey(phase, NAME, DeleteStep.NAME);
@@ -164,24 +135,35 @@ public class DownsampleAction implements LifecycleAction {
         WaitForNoFollowersStep waitForNoFollowersStep = new WaitForNoFollowersStep(waitForNoFollowerStepKey, readOnlyKey, client);
 
         // Mark source index as read-only
-        ReadOnlyStep readOnlyStep = new ReadOnlyStep(readOnlyKey, generateDownsampleIndexNameKey, client);
+        ReadOnlyStep readOnlyStep = new ReadOnlyStep(readOnlyKey, cleanupDownsampleIndexKey, client);
 
-        // Before the downsample action was retry-able, we used to generate a unique downsample index name and delete the previous index in
-        // case a failure occurred. The downsample action can now retry execution in case of failure and start where it left off, so no
-        // unique name needs to be generated and the target index is now predictable and generated in the downsample step.
-        // (This noop step exists so deployments that are in this step (that has been converted to a noop) when the Elasticsearch
-        // upgrade was performed resume the ILM execution and complete the downsample action after upgrade.)
-        NoopStep cleanupDownsampleIndexStep = new NoopStep(cleanupDownsampleIndexKey, downsampleKey);
+        // We generate a unique downsample index name, but we also retry if the allocation of the downsample index
+        // is not possible, so we want to delete the "previously generated" downsample index (this is a no-op if it's
+        // the first run of the action, and we haven't generated a downsample index name)
+        CleanupTargetIndexStep cleanupDownsampleIndexStep = new CleanupTargetIndexStep(
+            cleanupDownsampleIndexKey,
+            generateDownsampleIndexNameKey,
+            client,
+            (indexMetadata) -> IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_NAME.get(indexMetadata.getSettings()),
+            (indexMetadata) -> indexMetadata.getLifecycleExecutionState().downsampleIndexName()
+        );
 
-        // Prepare the lifecycleState by generating the name of the target index, that subsequest steps will use.
-        DownsamplePrepareLifeCycleStateStep generateDownsampleIndexNameStep = new DownsamplePrepareLifeCycleStateStep(
+        // Generate a unique downsample index name and store it in the ILM execution state
+        GenerateUniqueIndexNameStep generateDownsampleIndexNameStep = new GenerateUniqueIndexNameStep(
             generateDownsampleIndexNameKey,
             downsampleKey,
-            fixedInterval
+            DOWNSAMPLED_INDEX_PREFIX,
+            (downsampleIndexName, lifecycleStateBuilder) -> lifecycleStateBuilder.setDownsampleIndexName(downsampleIndexName)
         );
 
         // Here is where the actual downsample action takes place
-        DownsampleStep downsampleStep = new DownsampleStep(downsampleKey, waitForDownsampleIndexKey, client, fixedInterval, waitTimeout);
+        DownsampleStep downsampleStep = new DownsampleStep(
+            downsampleKey,
+            waitForDownsampleIndexKey,
+            cleanupDownsampleIndexKey,
+            client,
+            fixedInterval
+        );
 
         // Wait until the downsampled index is recovered. We again wait until the configured threshold is breached and
         // if the downsampled index has not successfully recovered until then, we rewind to the "cleanup-downsample-index"
@@ -199,16 +181,9 @@ public class DownsampleAction implements LifecycleAction {
 
         CopyExecutionStateStep copyExecutionStateStep = new CopyExecutionStateStep(
             copyMetadataKey,
-            copyIndexLifecycleKey,
-            (indexName, lifecycleState) -> lifecycleState.downsampleIndexName(),
-            nextStepKey
-        );
-
-        CopySettingsStep copyLifecycleSettingsStep = new CopySettingsStep(
-            copyIndexLifecycleKey,
             dataStreamCheckBranchingKey,
             (indexName, lifecycleState) -> lifecycleState.downsampleIndexName(),
-            LifecycleSettings.LIFECYCLE_NAME_SETTING.getKey()
+            nextStepKey
         );
 
         // By the time we get to this step we have 2 indices, the source and the downsampled one. We now need to choose an index
@@ -251,7 +226,6 @@ public class DownsampleAction implements LifecycleAction {
             downsampleStep,
             downsampleAllocatedStep,
             copyExecutionStateStep,
-            copyLifecycleSettingsStep,
             isDataStreamBranchingStep,
             replaceDataStreamBackingIndex,
             deleteSourceIndexStep,

@@ -66,22 +66,18 @@ public class WatcherIndexTemplateRegistry extends IndexTemplateRegistry {
         return ilmManagementEnabled ? TEMPLATES_WATCH_HISTORY : TEMPLATES_WATCH_HISTORY_NO_ILM;
     }
 
-    private static final LifecyclePolicyConfig LIFECYCLE_POLICIES = new LifecyclePolicyConfig(
-        "watch-history-ilm-policy-16",
-        "/watch-history-ilm-policy.json"
+    private static final List<LifecyclePolicy> LIFECYCLE_POLICIES = List.of(
+        new LifecyclePolicyConfig("watch-history-ilm-policy-16", "/watch-history-ilm-policy.json").load(
+            LifecyclePolicyConfig.DEFAULT_X_CONTENT_REGISTRY
+        )
     );
-
-    @Override
-    protected List<LifecyclePolicyConfig> getLifecycleConfigs() {
-        return List.of(LIFECYCLE_POLICIES);
-    }
 
     /**
      * If Watcher is configured not to use ILM, we don't return a policy.
      */
     @Override
-    protected List<LifecyclePolicy> getLifecyclePolicies() {
-        return Watcher.USE_ILM_INDEX_MANAGEMENT.get(settings) == false ? Collections.emptyList() : lifecyclePolicies;
+    protected List<LifecyclePolicy> getPolicyConfigs() {
+        return Watcher.USE_ILM_INDEX_MANAGEMENT.get(settings) == false ? Collections.emptyList() : LIFECYCLE_POLICIES;
     }
 
     @Override

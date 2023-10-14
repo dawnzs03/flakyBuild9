@@ -91,7 +91,7 @@ public class TransportGetComponentTemplateAction extends TransportMasterNodeRead
 
             }
         }
-        if (request.includeDefaults()) {
+        if (request.includeDefaults() && DataStreamLifecycle.isFeatureEnabled()) {
             listener.onResponse(
                 new GetComponentTemplateAction.Response(
                     results,

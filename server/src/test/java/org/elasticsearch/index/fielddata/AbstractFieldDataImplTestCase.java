@@ -9,7 +9,6 @@
 package org.elasticsearch.index.fielddata;
 
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
@@ -61,13 +60,6 @@ public abstract class AbstractFieldDataImplTestCase extends AbstractFieldDataTes
         return 1;
     }
 
-    protected IndexSearcher newIndexSearcher(IndexReader indexReader) {
-        // IndexReader can't randomly wrapped with these field data tests.
-        // Sometimes ParallelCompositeReader is used and its getCoreCacheHelper() method sometimes returns null,
-        // and IndicesFieldDataCache can't handle this.
-        return newSearcher(indexReader, false);
-    }
-
     public void testDeletedDocs() throws Exception {
         add2SingleValuedDocumentsAndDeleteOneOfThem();
         IndexFieldData<?> indexFieldData = getForField("value");
@@ -107,7 +99,7 @@ public abstract class AbstractFieldDataImplTestCase extends AbstractFieldDataTes
             assertValues(bytesValues, 1, one());
             assertValues(bytesValues, 2, three());
 
-            IndexSearcher searcher = newIndexSearcher(readerContext.reader());
+            IndexSearcher searcher = new IndexSearcher(readerContext.reader());
             TopFieldDocs topDocs;
             SortField sortField = indexFieldData.sortField(null, MultiValueMode.MIN, null, false);
             topDocs = searcher.search(new MatchAllDocsQuery(), 10, new Sort(sortField));
@@ -125,9 +117,6 @@ public abstract class AbstractFieldDataImplTestCase extends AbstractFieldDataTes
             assertThat(topDocs.scoreDocs[0].doc, equalTo(2));
             assertThat(topDocs.scoreDocs[1].doc, equalTo(0));
             assertThat(topDocs.scoreDocs[2].doc, equalTo(1));
-            // No need to close the index reader here, because it gets closed on test teardown.
-            // (This test uses refreshReader(...) which sets topLevelReader in super class and
-            // that gets closed.
         }
     }
 
@@ -187,7 +176,7 @@ public abstract class AbstractFieldDataImplTestCase extends AbstractFieldDataTes
             assertValues(bytesValues, 1, one());
             assertValues(bytesValues, 2, three());
 
-            IndexSearcher searcher = newIndexSearcher(DirectoryReader.open(writer));
+            IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(writer));
             SortField sortField = indexFieldData.sortField(null, MultiValueMode.MIN, null, false);
             TopFieldDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10, new Sort(sortField));
             assertThat(topDocs.totalHits.value, equalTo(3L));
@@ -202,7 +191,6 @@ public abstract class AbstractFieldDataImplTestCase extends AbstractFieldDataTes
             assertThat(topDocs.scoreDocs[0].doc, equalTo(0));
             assertThat(topDocs.scoreDocs[1].doc, equalTo(2));
             assertThat(topDocs.scoreDocs[2].doc, equalTo(1));
-            searcher.getIndexReader().close();
         }
     }
 
@@ -252,7 +240,7 @@ public abstract class AbstractFieldDataImplTestCase extends AbstractFieldDataTes
         fillExtendedMvSet();
         IndexFieldData<?> indexFieldData = getForField("value");
 
-        IndexSearcher searcher = newIndexSearcher(DirectoryReader.open(writer));
+        IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(writer));
         SortField sortField = indexFieldData.sortField(null, MultiValueMode.MIN, null, false);
         TopFieldDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10, new Sort(sortField));
         assertThat(topDocs.totalHits.value, equalTo(8L));
@@ -294,7 +282,6 @@ public abstract class AbstractFieldDataImplTestCase extends AbstractFieldDataTes
         assertThat(((FieldDoc) topDocs.scoreDocs[6]).fields[0], equalTo(null));
         assertThat(topDocs.scoreDocs[7].doc, equalTo(5));
         assertThat(((FieldDoc) topDocs.scoreDocs[7]).fields[0], equalTo(null));
-        searcher.getIndexReader().close();
     }
 
     protected abstract void fillExtendedMvSet() throws Exception;

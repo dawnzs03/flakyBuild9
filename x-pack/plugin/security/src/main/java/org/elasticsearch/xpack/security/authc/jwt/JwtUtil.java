@@ -33,7 +33,6 @@ import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.SuppressLoggerChecks;
 import org.elasticsearch.common.hash.MessageDigests;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.settings.SettingsException;
@@ -55,10 +54,6 @@ import java.security.MessageDigest;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Supplier;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -142,8 +137,7 @@ public class JwtUtil {
     public static void validateClientAuthentication(
         final JwtRealmSettings.ClientAuthenticationType type,
         final SecureString expectedSecret,
-        final SecureString actualSecret,
-        final String tokenPrincipal
+        final SecureString actualSecret
     ) throws Exception {
         switch (type) {
             case SHARED_SECRET:
@@ -152,18 +146,14 @@ public class JwtUtil {
                 } else if (expectedSecret.equals(actualSecret) == false) {
                     throw new Exception("Rejected client. Authentication type is [" + type + "] and secret did not match.");
                 }
-                LOGGER.trace("Accepted client for token [{}]. Authentication type is [{}] and secret matched.", tokenPrincipal, type);
+                LOGGER.trace("Accepted client. Authentication type is [{}] and secret matched.", type);
                 break;
             case NONE:
             default:
                 if (Strings.hasText(actualSecret)) {
-                    LOGGER.trace(
-                        "Accepted client for token [{}]. Authentication type [{}]. Secret is present but ignored.",
-                        tokenPrincipal,
-                        type
-                    );
+                    LOGGER.debug("Accepted client. Authentication type [{}]. Secret is present but ignored.", type);
                 } else {
-                    LOGGER.trace("Accepted client for token [{}]. Authentication type [{}].", tokenPrincipal, type);
+                    LOGGER.trace("Accepted client. Authentication type [{}].", type);
                 }
                 break;
         }
@@ -347,45 +337,5 @@ public class JwtUtil {
         final MessageDigest messageDigest = MessageDigests.sha256();
         messageDigest.update(charSequence.toString().getBytes(StandardCharsets.UTF_8));
         return messageDigest.digest();
-    }
-
-    /**
-     * Helper class to consolidate multiple trace level statements to a single trace statement with lazy evaluation.
-     * If trace level is not enabled, then no work is performed. This class is not threadsafe and is not intended for a long lifecycle.
-     */
-    public static class TraceBuffer implements AutoCloseable {
-        private final Logger logger;
-        private final List<Object> params = new ArrayList<>();
-        private final StringBuilder builder = new StringBuilder();
-        boolean closed = false;
-
-        public TraceBuffer(Logger logger) {
-            this.logger = logger;
-        }
-
-        public void append(String s, Object... args) {
-            assert closed == false;
-            if (logger.isTraceEnabled()) {
-                builder.append(s).append(" ");
-                List<Object> resolved = Arrays.stream(args).map(x -> (x instanceof Supplier) ? ((Supplier<?>) x).get() : x).toList();
-                params.addAll(resolved);
-            }
-        }
-
-        @SuppressLoggerChecks(reason = "builds the tracer dynamically")
-        public void flush() {
-            assert closed == false;
-            if (logger.isTraceEnabled() && builder.isEmpty() == false) {
-                logger.trace(builder.toString(), params.toArray());
-                params.clear();
-                builder.setLength(0); // does not guarantee contents available for GC, don't overly reuse a single instance of this class
-            }
-        }
-
-        @Override
-        public void close() {
-            flush();
-            closed = true;
-        }
     }
 }

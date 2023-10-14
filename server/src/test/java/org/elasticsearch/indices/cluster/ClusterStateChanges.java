@@ -99,6 +99,7 @@ import org.elasticsearch.test.gateway.TestGatewayAllocator;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.tracing.Tracer;
 import org.elasticsearch.transport.Transport;
+import org.elasticsearch.transport.TransportResponse;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 
@@ -530,7 +531,7 @@ public class ClusterStateChanges {
         }
     }
 
-    private ActionListener<Void> createTestListener() {
+    private ActionListener<TransportResponse.Empty> createTestListener() {
         return ActionListener.running(() -> { throw new AssertionError("task should not complete"); });
     }
 }

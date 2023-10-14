@@ -19,6 +19,7 @@ import org.elasticsearch.test.index.IndexVersionUtils;
 
 import java.util.Collections;
 
+import static org.elasticsearch.test.VersionUtils.randomIndexCompatibleVersion;
 import static org.hamcrest.Matchers.equalTo;
 
 public class IndexMetadataVerifierTests extends ESTestCase {
@@ -102,7 +103,7 @@ public class IndexMetadataVerifierTests extends ESTestCase {
         IndexVersion indexCreated = IndexVersion.fromId(randomIntBetween(1000099, minCompat.id() - 1));
         final IndexMetadata metadata = newIndexMeta(
             "foo",
-            Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, indexCreated).build()
+            Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, indexCreated.id()).build()
         );
         String message = expectThrows(
             IllegalStateException.class,
@@ -128,7 +129,10 @@ public class IndexMetadataVerifierTests extends ESTestCase {
         );
 
         indexCreated = IndexVersionUtils.randomVersionBetween(random(), minCompat, IndexVersion.current());
-        IndexMetadata goodMeta = newIndexMeta("foo", Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, indexCreated).build());
+        IndexMetadata goodMeta = newIndexMeta(
+            "foo",
+            Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, indexCreated.id()).build()
+        );
         service.verifyIndexMetadata(goodMeta, IndexVersion.MINIMUM_COMPATIBLE);
     }
 
@@ -152,7 +156,7 @@ public class IndexMetadataVerifierTests extends ESTestCase {
     }
 
     private static IndexMetadata.Builder newIndexMetaBuilder(String name, Settings indexSettings) {
-        final Settings settings = indexSettings(IndexVersionUtils.randomCompatibleVersion(random()), between(1, 5), between(0, 5)).put(
+        final Settings settings = indexSettings(randomIndexCompatibleVersion(random()), between(1, 5), between(0, 5)).put(
             IndexMetadata.SETTING_CREATION_DATE,
             randomNonNegativeLong()
         ).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID(random())).put(indexSettings).build();

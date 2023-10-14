@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.deprecation;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexModule;
@@ -46,7 +47,7 @@ public class IndexDeprecationChecksTests extends ESTestCase {
     }
 
     public void testTranslogRetentionSettings() {
-        Settings.Builder settings = settings(IndexVersion.current());
+        Settings.Builder settings = settings(Version.CURRENT);
         settings.put(IndexSettings.INDEX_TRANSLOG_RETENTION_AGE_SETTING.getKey(), randomPositiveTimeValue());
         settings.put(IndexSettings.INDEX_TRANSLOG_RETENTION_SIZE_SETTING.getKey(), between(1, 1024) + "b");
         IndexMetadata indexMetadata = IndexMetadata.builder("test").settings(settings).numberOfShards(1).numberOfReplicas(0).build();
@@ -73,7 +74,7 @@ public class IndexDeprecationChecksTests extends ESTestCase {
     }
 
     public void testDefaultTranslogRetentionSettings() {
-        Settings.Builder settings = settings(IndexVersion.current());
+        Settings.Builder settings = settings(Version.CURRENT);
         if (randomBoolean()) {
             settings.put(IndexSettings.INDEX_TRANSLOG_RETENTION_AGE_SETTING.getKey(), randomPositiveTimeValue());
             settings.put(IndexSettings.INDEX_TRANSLOG_RETENTION_SIZE_SETTING.getKey(), between(1, 1024) + "b");
@@ -85,7 +86,7 @@ public class IndexDeprecationChecksTests extends ESTestCase {
     }
 
     public void testIndexDataPathSetting() {
-        Settings.Builder settings = settings(IndexVersion.current());
+        Settings.Builder settings = settings(Version.CURRENT);
         settings.put(IndexMetadata.INDEX_DATA_PATH_SETTING.getKey(), createTempDir());
         IndexMetadata indexMetadata = IndexMetadata.builder("test").settings(settings).numberOfShards(1).numberOfReplicas(0).build();
         List<DeprecationIssue> issues = DeprecationChecks.filterChecks(INDEX_SETTINGS_CHECKS, c -> c.apply(indexMetadata));
@@ -107,7 +108,7 @@ public class IndexDeprecationChecksTests extends ESTestCase {
     }
 
     public void testSimpleFSSetting() {
-        Settings.Builder settings = settings(IndexVersion.current());
+        Settings.Builder settings = settings(Version.CURRENT);
         settings.put(IndexModule.INDEX_STORE_TYPE_SETTING.getKey(), "simplefs");
         IndexMetadata indexMetadata = IndexMetadata.builder("test").settings(settings).numberOfShards(1).numberOfReplicas(0).build();
         List<DeprecationIssue> issues = DeprecationChecks.filterChecks(INDEX_SETTINGS_CHECKS, c -> c.apply(indexMetadata));
@@ -129,7 +130,7 @@ public class IndexDeprecationChecksTests extends ESTestCase {
     }
 
     public void testFrozenIndex() {
-        Settings.Builder settings = settings(IndexVersion.current());
+        Settings.Builder settings = settings(Version.CURRENT);
         settings.put(FrozenEngine.INDEX_FROZEN.getKey(), true);
         IndexMetadata indexMetadata = IndexMetadata.builder("test").settings(settings).numberOfShards(1).numberOfReplicas(0).build();
         List<DeprecationIssue> issues = DeprecationChecks.filterChecks(INDEX_SETTINGS_CHECKS, c -> c.apply(indexMetadata));
@@ -159,7 +160,7 @@ public class IndexDeprecationChecksTests extends ESTestCase {
             + "} }";
 
         IndexMetadata simpleIndex = IndexMetadata.builder(randomAlphaOfLengthBetween(5, 10))
-            .settings(settings(IndexVersion.V_7_0_0))
+            .settings(settings(Version.V_7_0_0))
             .numberOfShards(1)
             .numberOfReplicas(1)
             .putMapping(simpleMapping)

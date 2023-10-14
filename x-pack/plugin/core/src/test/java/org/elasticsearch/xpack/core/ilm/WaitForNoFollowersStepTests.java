@@ -8,6 +8,7 @@
 package org.elasticsearch.xpack.core.ilm;
 
 import org.apache.lucene.util.SetOnce;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsRequest;
@@ -17,7 +18,6 @@ import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.seqno.RetentionLease;
 import org.elasticsearch.index.seqno.RetentionLeaseStats;
 import org.elasticsearch.index.seqno.RetentionLeases;
@@ -74,7 +74,7 @@ public class WaitForNoFollowersStepTests extends AbstractStepTestCase<WaitForNoF
 
         int numberOfShards = randomIntBetween(1, 100);
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(IndexVersion.current()))
+            .settings(settings(Version.CURRENT))
             .numberOfShards(numberOfShards)
             .numberOfReplicas(randomIntBetween(1, 10))
             .build();
@@ -108,7 +108,7 @@ public class WaitForNoFollowersStepTests extends AbstractStepTestCase<WaitForNoF
 
         int numberOfShards = randomIntBetween(1, 100);
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(IndexVersion.current()))
+            .settings(settings(Version.CURRENT))
             .numberOfShards(numberOfShards)
             .numberOfReplicas(randomIntBetween(1, 10))
             .build();
@@ -142,7 +142,7 @@ public class WaitForNoFollowersStepTests extends AbstractStepTestCase<WaitForNoF
 
         int numberOfShards = randomIntBetween(1, 100);
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(IndexVersion.current()))
+            .settings(settings(Version.CURRENT))
             .numberOfShards(numberOfShards)
             .numberOfReplicas(randomIntBetween(1, 10))
             .build();
@@ -179,7 +179,7 @@ public class WaitForNoFollowersStepTests extends AbstractStepTestCase<WaitForNoF
 
         int numberOfShards = randomIntBetween(1, 100);
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(IndexVersion.current()))
+            .settings(settings(Version.CURRENT))
             .numberOfShards(numberOfShards)
             .numberOfReplicas(randomIntBetween(1, 10))
             .build();
@@ -217,7 +217,7 @@ public class WaitForNoFollowersStepTests extends AbstractStepTestCase<WaitForNoF
 
         int numberOfShards = randomIntBetween(1, 100);
         IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(IndexVersion.current()))
+            .settings(settings(Version.CURRENT))
             .numberOfShards(numberOfShards)
             .numberOfReplicas(randomIntBetween(1, 10))
             .build();

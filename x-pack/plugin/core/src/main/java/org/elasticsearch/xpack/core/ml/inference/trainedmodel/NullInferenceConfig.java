@@ -7,9 +7,9 @@
 package org.elasticsearch.xpack.core.ml.inference.trainedmodel;
 
 import org.elasticsearch.TransportVersion;
+import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 
 import java.io.IOException;
 
@@ -30,8 +30,8 @@ public class NullInferenceConfig implements InferenceConfig {
     }
 
     @Override
-    public MlConfigVersion getMinimalSupportedMlConfigVersion() {
-        return MlConfigVersion.CURRENT;
+    public Version getMinimalSupportedNodeVersion() {
+        return Version.CURRENT;
     }
 
     @Override

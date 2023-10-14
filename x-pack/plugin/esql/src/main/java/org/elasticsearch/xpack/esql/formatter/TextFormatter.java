@@ -7,14 +7,8 @@
 
 package org.elasticsearch.xpack.esql.formatter;
 
-import org.elasticsearch.common.collect.Iterators;
-import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.xpack.esql.action.EsqlQueryResponse;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -56,70 +50,76 @@ public class TextFormatter {
     /**
      * Format the provided {@linkplain EsqlQueryResponse} optionally including the header lines.
      */
-    public Iterator<CheckedConsumer<Writer, IOException>> format(boolean includeHeader) {
-        return Iterators.concat(
-            // The header lines
-            includeHeader && response.columns().size() > 0 ? Iterators.single(this::formatHeader) : Collections.emptyIterator(),
-            // Now format the results.
-            formatResults()
-        );
+    public String format(boolean includeHeader) {
+        StringBuilder sb = new StringBuilder(estimateSize(response.values().size() + 2));
+
+        // The header lines
+        if (includeHeader && response.columns().size() > 0) {
+            formatHeader(sb);
+        }
+        // Now format the results.
+        formatResults(sb);
+
+        return sb.toString();
     }
 
-    private void formatHeader(Writer writer) throws IOException {
+    private void formatHeader(StringBuilder sb) {
         for (int i = 0; i < width.length; i++) {
             if (i > 0) {
-                writer.append('|');
+                sb.append('|');
             }
 
             String name = response.columns().get(i).name();
             // left padding
             int leftPadding = (width[i] - name.length()) / 2;
-            writePadding(leftPadding, writer);
-            writer.append(name);
+            sb.append(" ".repeat(Math.max(0, leftPadding)));
+            sb.append(name);
             // right padding
-            writePadding(width[i] - name.length() - leftPadding, writer);
+            sb.append(" ".repeat(Math.max(0, width[i] - name.length() - leftPadding)));
         }
-        writer.append('\n');
+        sb.append('\n');
 
         for (int i = 0; i < width.length; i++) {
             if (i > 0) {
-                writer.append('+');
+                sb.append('+');
             }
-            writer.append("-".repeat(Math.max(0, width[i]))); // emdash creates issues
+            sb.append("-".repeat(Math.max(0, width[i]))); // emdash creates issues
         }
-        writer.append('\n');
+        sb.append('\n');
     }
 
-    private Iterator<CheckedConsumer<Writer, IOException>> formatResults() {
-        return Iterators.map(response.values().iterator(), row -> writer -> {
+    private void formatResults(StringBuilder sb) {
+        for (var row : response.values()) {
             for (int i = 0; i < width.length; i++) {
                 if (i > 0) {
-                    writer.append('|');
+                    sb.append('|');
                 }
                 String string = FORMATTER.apply(row.get(i));
                 if (string.length() <= width[i]) {
                     // Pad
-                    writer.append(string);
-                    writePadding(width[i] - string.length(), writer);
+                    sb.append(string);
+                    sb.append(" ".repeat(Math.max(0, width[i] - string.length())));
                 } else {
                     // Trim
-                    writer.append(string, 0, width[i] - 1);
-                    writer.append('~');
+                    sb.append(string, 0, width[i] - 1);
+                    sb.append('~');
                 }
             }
-            writer.append('\n');
-        });
+            sb.append('\n');
+        }
     }
 
-    private static final String PADDING_64 = " ".repeat(64);
-
-    private static void writePadding(int padding, Writer writer) throws IOException {
-        while (padding > PADDING_64.length()) {
-            writer.append(PADDING_64);
-            padding -= PADDING_64.length();
+    /**
+     * Pick a good estimate of the buffer size needed to contain the rows.
+     */
+    int estimateSize(int rows) {
+        /* Each column has either a '|' or a '\n' after it
+         * so initialize size to number of columns then add
+         * up the actual widths of each column. */
+        int rowWidthEstimate = width.length;
+        for (int w : width) {
+            rowWidthEstimate += w;
         }
-        if (padding > 0) {
-            writer.append(PADDING_64, 0, padding);
-        }
+        return rowWidthEstimate * rows;
     }
 }

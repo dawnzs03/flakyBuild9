@@ -184,7 +184,7 @@ public class IndicesStatsResponse extends ChunkedBroadcastResponse {
             return Iterators.concat(Iterators.single(((builder, p) -> {
                 commonStats(builder, p);
                 return builder.startObject(Fields.INDICES);
-            })), Iterators.map(getIndices().values().iterator(), indexStats -> (builder, p) -> {
+            })), getIndices().values().stream().<ToXContent>map(indexStats -> (builder, p) -> {
                 builder.startObject(indexStats.getIndex());
                 builder.field("uuid", indexStats.getUuid());
                 if (indexStats.getHealth() != null) {
@@ -215,7 +215,7 @@ public class IndicesStatsResponse extends ChunkedBroadcastResponse {
                     builder.endObject();
                 }
                 return builder.endObject();
-            }), Iterators.single((b, p) -> b.endObject()));
+            }).iterator(), Iterators.single((b, p) -> b.endObject()));
         }
         return Iterators.single((b, p) -> {
             commonStats(b, p);

@@ -20,7 +20,6 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.TransportRequestOptions;
-import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
@@ -78,7 +77,7 @@ public class FrozenCacheInfoAction extends ActionType<FrozenCacheInfoResponse> {
                     nodeRequest,
                     task,
                     TransportRequestOptions.EMPTY,
-                    new ActionListenerResponseHandler<>(listener, FrozenCacheInfoResponse::new, TransportResponseHandler.TRANSPORT_WORKER)
+                    new ActionListenerResponseHandler<>(listener, FrozenCacheInfoResponse::new)
                 );
             } else {
                 listener.onResponse(new FrozenCacheInfoResponse(false));

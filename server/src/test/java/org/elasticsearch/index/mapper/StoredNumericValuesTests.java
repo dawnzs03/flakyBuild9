@@ -64,7 +64,7 @@ public class StoredNumericValuesTests extends MapperServiceTestCase {
 
         withLuceneIndex(mapperService, iw -> iw.addDocument(doc.rootDoc()), ir -> {
 
-            IndexSearcher searcher = newSearcher(ir);
+            IndexSearcher searcher = new IndexSearcher(ir);
 
             Set<String> fieldNames = Sets.newHashSet(
                 "field1",

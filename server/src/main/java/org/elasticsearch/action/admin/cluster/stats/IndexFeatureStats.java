@@ -92,9 +92,4 @@ public class IndexFeatureStats implements ToXContentObject, Writeable {
     protected void doXContent(XContentBuilder builder, Params params) throws IOException {
 
     }
-
-    @Override
-    public String toString() {
-        return "IndexFeatureStats{" + "name='" + name + '\'' + ", count=" + count + ", indexCount=" + indexCount + '}';
-    }
 }

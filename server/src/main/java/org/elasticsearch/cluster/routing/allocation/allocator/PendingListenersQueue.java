@@ -29,8 +29,13 @@ public class PendingListenersQueue {
 
     private record PendingListener(long index, ActionListener<Void> listener) {}
 
+    private final ThreadPool threadPool;
     private final Queue<PendingListener> pendingListeners = new LinkedList<>();
     private volatile long completedIndex = -1;
+
+    public PendingListenersQueue(ThreadPool threadPool) {
+        this.threadPool = threadPool;
+    }
 
     public void add(long index, ActionListener<Void> listener) {
         synchronized (pendingListeners) {
@@ -61,11 +66,13 @@ public class PendingListenersQueue {
     private void executeListeners(long convergedIndex, boolean isMaster) {
         var listeners = pollListeners(convergedIndex);
         if (listeners.isEmpty() == false) {
-            if (isMaster) {
-                ActionListener.onResponse(listeners, null);
-            } else {
-                ActionListener.onFailure(listeners, new NotMasterException("no longer master"));
-            }
+            threadPool.generic().execute(() -> {
+                if (isMaster) {
+                    ActionListener.onResponse(listeners, null);
+                } else {
+                    ActionListener.onFailure(listeners, new NotMasterException("no longer master"));
+                }
+            });
         }
     }
 

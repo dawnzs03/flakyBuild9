@@ -13,10 +13,8 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefBuilder;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.BigArrays;
-import org.elasticsearch.common.util.BitArray;
 import org.elasticsearch.common.util.BytesRefHash;
 import org.elasticsearch.compute.aggregation.GroupingAggregatorFunction;
-import org.elasticsearch.compute.aggregation.SeenGroupIds;
 import org.elasticsearch.compute.data.Block;
 import org.elasticsearch.compute.data.ElementType;
 import org.elasticsearch.compute.data.IntVector;
@@ -85,7 +83,7 @@ final class PackedValuesBlockHash extends BlockHash {
 
         int position;
         int count;
-        int bufferedGroup;
+        long bufferedGroup;
 
         AddWork(Page page, GroupingAggregatorFunction.AddInput addInput, int batchSize) {
             super(emitBatchSize, addInput);
@@ -122,9 +120,13 @@ final class PackedValuesBlockHash extends BlockHash {
                 bytes.setLength(nullTrackingBytes);
                 addPosition(0);
                 switch (count) {
-                    case 0 -> throw new IllegalStateException("didn't find any values");
+                    case 0 -> {
+                        logger.trace("appending null");
+                        ords.appendNull();  // TODO https://github.com/elastic/elasticsearch-internal/issues/1327
+                        addedValue(position);
+                    }
                     case 1 -> {
-                        ords.appendInt(bufferedGroup);
+                        ords.appendLong(bufferedGroup);
                         addedValue(position);
                     }
                     default -> ords.endPositionEntry();
@@ -171,18 +173,24 @@ final class PackedValuesBlockHash extends BlockHash {
         }
 
         private void addBytes() {
-            int group = Math.toIntExact(hashOrdToGroup(bytesRefHash.add(bytes.get())));
+            for (int i = 0; i < nullTrackingBytes; i++) {
+                if (bytes.bytes()[i] != 0) {
+                    // TODO https://github.com/elastic/elasticsearch-internal/issues/1327
+                    return;
+                }
+            }
+            long group = hashOrdToGroup(bytesRefHash.add(bytes.get()));
             switch (count) {
                 case 0 -> bufferedGroup = group;
                 case 1 -> {
                     ords.beginPositionEntry();
-                    ords.appendInt(bufferedGroup);
+                    ords.appendLong(bufferedGroup);
                     addedValueInMultivaluePosition(position);
-                    ords.appendInt(group);
+                    ords.appendLong(group);
                     addedValueInMultivaluePosition(position);
                 }
                 default -> {
-                    ords.appendInt(group);
+                    ords.appendLong(group);
                     addedValueInMultivaluePosition(position);
                 }
             }
@@ -205,30 +213,23 @@ final class PackedValuesBlockHash extends BlockHash {
         }
 
         BytesRef values[] = new BytesRef[(int) Math.min(100, bytesRefHash.size())];
-        BytesRef nulls[] = new BytesRef[values.length];
         for (int offset = 0; offset < values.length; offset++) {
             values[offset] = new BytesRef();
-            nulls[offset] = new BytesRef();
-            nulls[offset].length = nullTrackingBytes;
         }
         int offset = 0;
         for (int i = 0; i < bytesRefHash.size(); i++) {
             values[offset] = bytesRefHash.get(i, values[offset]);
-
-            // Reference the null bytes in the nulls array and values in the values
-            nulls[offset].bytes = values[offset].bytes;
-            nulls[offset].offset = values[offset].offset;
+            // TODO restore nulls. for now we're skipping them
             values[offset].offset += nullTrackingBytes;
             values[offset].length -= nullTrackingBytes;
-
             offset++;
             if (offset == values.length) {
-                readKeys(decoders, builders, nulls, values, offset);
+                readKeys(decoders, builders, values, offset);
                 offset = 0;
             }
         }
         if (offset > 0) {
-            readKeys(decoders, builders, nulls, values, offset);
+            readKeys(decoders, builders, values, offset);
         }
 
         Block[] keyBlocks = new Block[groups.size()];
@@ -238,27 +239,15 @@ final class PackedValuesBlockHash extends BlockHash {
         return keyBlocks;
     }
 
-    private void readKeys(BatchEncoder.Decoder[] decoders, Block.Builder[] builders, BytesRef[] nulls, BytesRef[] values, int count) {
+    private void readKeys(BatchEncoder.Decoder[] decoders, Block.Builder[] builders, BytesRef[] values, int count) {
         for (int g = 0; g < builders.length; g++) {
-            int nullByte = g / 8;
-            int nullShift = g % 8;
-            byte nullTest = (byte) (1 << nullShift);
-            BatchEncoder.IsNull isNull = offset -> {
-                BytesRef n = nulls[offset];
-                return (n.bytes[n.offset + nullByte] & nullTest) != 0;
-            };
-            decoders[g].decode(builders[g], isNull, values, count);
+            decoders[g].decode(builders[g], values, count);
         }
     }
 
     @Override
     public IntVector nonEmpty() {
         return IntVector.range(0, Math.toIntExact(bytesRefHash.size()));
-    }
-
-    @Override
-    public BitArray seenGroupIds(BigArrays bigArrays) {
-        return new SeenGroupIds.Range(0, Math.toIntExact(bytesRefHash.size())).seenGroupIds(bigArrays);
     }
 
     @Override

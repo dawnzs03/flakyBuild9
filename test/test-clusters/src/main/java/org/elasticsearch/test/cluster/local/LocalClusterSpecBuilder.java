@@ -51,16 +51,14 @@ public interface LocalClusterSpecBuilder<T extends ElasticsearchCluster> extends
     LocalClusterSpecBuilder<T> node(int index, Consumer<? super LocalNodeSpecBuilder> config);
 
     /**
-     * Register a user using the default test role, as an operator
+     * Register a user using the default test role.
      */
     LocalClusterSpecBuilder<T> user(String username, String password);
 
     /**
      * Register a user using the given role.
-     * @param operator If true, configure the user as an operator.
-     *                 <em>Note</em>: This does <strong>not</strong> automatically enable operator privileges on the cluster
      */
-    LocalClusterSpecBuilder<T> user(String username, String password, String role, boolean operator);
+    LocalClusterSpecBuilder<T> user(String username, String password, String role);
 
     /**
      * Register a roles file with cluster via the supplied {@link Resource}.

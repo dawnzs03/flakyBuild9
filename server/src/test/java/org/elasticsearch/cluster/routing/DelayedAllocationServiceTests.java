@@ -8,6 +8,7 @@
 
 package org.elasticsearch.cluster.routing;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterName;
@@ -23,7 +24,6 @@ import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.test.NodeRoles;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -76,7 +76,7 @@ public class DelayedAllocationServiceTests extends ESAllocationTestCase {
         Metadata metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder("test")
-                    .settings(settings(IndexVersion.current()).put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), "0"))
+                    .settings(settings(Version.CURRENT).put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), "0"))
                     .numberOfShards(1)
                     .numberOfReplicas(1)
             )
@@ -122,9 +122,7 @@ public class DelayedAllocationServiceTests extends ESAllocationTestCase {
         Metadata metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder("test")
-                    .settings(
-                        settings(IndexVersion.current()).put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), delaySetting)
-                    )
+                    .settings(settings(Version.CURRENT).put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), delaySetting))
                     .numberOfShards(1)
                     .numberOfReplicas(1)
             )
@@ -230,10 +228,7 @@ public class DelayedAllocationServiceTests extends ESAllocationTestCase {
             .put(
                 IndexMetadata.builder("short_delay")
                     .settings(
-                        settings(IndexVersion.current()).put(
-                            UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(),
-                            shortDelaySetting
-                        )
+                        settings(Version.CURRENT).put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), shortDelaySetting)
                     )
                     .numberOfShards(1)
                     .numberOfReplicas(1)
@@ -241,10 +236,7 @@ public class DelayedAllocationServiceTests extends ESAllocationTestCase {
             .put(
                 IndexMetadata.builder("long_delay")
                     .settings(
-                        settings(IndexVersion.current()).put(
-                            UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(),
-                            longDelaySetting
-                        )
+                        settings(Version.CURRENT).put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), longDelaySetting)
                     )
                     .numberOfShards(1)
                     .numberOfReplicas(1)
@@ -426,19 +418,14 @@ public class DelayedAllocationServiceTests extends ESAllocationTestCase {
         Metadata metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder("foo")
-                    .settings(
-                        settings(IndexVersion.current()).put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), delaySetting)
-                    )
+                    .settings(settings(Version.CURRENT).put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), delaySetting))
                     .numberOfShards(1)
                     .numberOfReplicas(1)
             )
             .put(
                 IndexMetadata.builder("bar")
                     .settings(
-                        settings(IndexVersion.current()).put(
-                            UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(),
-                            shorterDelaySetting
-                        )
+                        settings(Version.CURRENT).put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), shorterDelaySetting)
                     )
                     .numberOfShards(1)
                     .numberOfReplicas(1)

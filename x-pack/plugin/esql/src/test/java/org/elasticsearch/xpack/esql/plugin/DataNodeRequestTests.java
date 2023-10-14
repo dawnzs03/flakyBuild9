@@ -39,7 +39,6 @@ import org.elasticsearch.xpack.ql.type.EsField;
 import java.io.IOException;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static org.elasticsearch.xpack.esql.EsqlTestUtils.emptyPolicyResolution;
@@ -178,7 +177,6 @@ public class DataNodeRequestTests extends AbstractWireSerializingTestCase<DataNo
     static PhysicalPlan mapAndMaybeOptimize(LogicalPlan logicalPlan) {
         var configuration = new EsqlConfiguration(
             ZoneOffset.UTC,
-            Locale.US,
             null,
             null,
             new QueryPragmas(Settings.EMPTY),

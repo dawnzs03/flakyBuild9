@@ -11,8 +11,8 @@ import org.elasticsearch.compute.data.Block;
 import org.elasticsearch.compute.data.Page;
 import org.elasticsearch.compute.data.Vector;
 import org.elasticsearch.compute.operator.EvalOperator;
-import org.elasticsearch.xpack.esql.evaluator.mapper.EvaluatorMapper;
 import org.elasticsearch.xpack.esql.expression.function.scalar.UnaryScalarFunction;
+import org.elasticsearch.xpack.esql.planner.Mappable;
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.tree.Source;
 
@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 /**
  * Base class for functions that reduce multivalued fields into single valued fields.
  */
-public abstract class AbstractMultivalueFunction extends UnaryScalarFunction implements EvaluatorMapper {
+public abstract class AbstractMultivalueFunction extends UnaryScalarFunction implements Mappable {
     protected AbstractMultivalueFunction(Source source, Expression field) {
         super(source, field);
     }
@@ -43,7 +43,7 @@ public abstract class AbstractMultivalueFunction extends UnaryScalarFunction imp
 
     @Override
     public final Object fold() {
-        return EvaluatorMapper.super.fold();
+        return Mappable.super.fold();
     }
 
     @Override
@@ -53,13 +53,19 @@ public abstract class AbstractMultivalueFunction extends UnaryScalarFunction imp
         return evaluator(toEvaluator.apply(field()));
     }
 
-    /**
-     * Base evaluator that can handle both nulls- and no-nulls-containing blocks.
-     */
-    public abstract static class AbstractEvaluator extends AbstractNullableEvaluator {
+    public abstract static class AbstractEvaluator implements EvalOperator.ExpressionEvaluator {
+        private final EvalOperator.ExpressionEvaluator field;
+
         protected AbstractEvaluator(EvalOperator.ExpressionEvaluator field) {
-            super(field);
+            this.field = field;
         }
+
+        protected abstract String name();
+
+        /**
+         * Called when evaluating a {@link Block} that contains null values.
+         */
+        protected abstract Block evalNullable(Block fieldVal);
 
         /**
          * Called when evaluating a {@link Block} that does not contain null values.
@@ -69,6 +75,14 @@ public abstract class AbstractMultivalueFunction extends UnaryScalarFunction imp
          * generally faster than building it via a {@link Block.Builder}.
          */
         protected abstract Vector evalNotNullable(Block fieldVal);
+
+        /**
+         * Called to evaluate single valued fields when the target block has null
+         * values.
+         */
+        protected Block evalSingleValuedNullable(Block fieldVal) {
+            return fieldVal;
+        }
 
         /**
          * Called to evaluate single valued fields when the target block does not
@@ -91,38 +105,6 @@ public abstract class AbstractMultivalueFunction extends UnaryScalarFunction imp
                 return evalNullable(fieldVal);
             }
             return evalNotNullable(fieldVal).asBlock();
-        }
-    }
-
-    /**
-     * Base evaluator that can handle evaluator-checked exceptions; i.e. for expressions that can be evaluated to null.
-     */
-    public abstract static class AbstractNullableEvaluator implements EvalOperator.ExpressionEvaluator {
-        protected final EvalOperator.ExpressionEvaluator field;
-
-        protected AbstractNullableEvaluator(EvalOperator.ExpressionEvaluator field) {
-            this.field = field;
-        }
-
-        protected abstract String name();
-
-        /**
-         * Called when evaluating a {@link Block} that contains null values.
-         */
-        protected abstract Block evalNullable(Block fieldVal);
-
-        /**
-         * Called to evaluate single valued fields when the target block has null
-         * values.
-         */
-        protected Block evalSingleValuedNullable(Block fieldVal) {
-            return fieldVal;
-        }
-
-        @Override
-        public Block eval(Page page) {
-            Block fieldVal = field.eval(page);
-            return fieldVal.mayHaveMultivaluedFields() ? evalNullable(fieldVal) : evalSingleValuedNullable(fieldVal);
         }
 
         @Override

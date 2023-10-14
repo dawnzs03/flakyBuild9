@@ -29,6 +29,7 @@ import org.elasticsearch.snapshots.SnapshotInProgressException;
 import org.elasticsearch.snapshots.SnapshotInfoTestUtils;
 import org.elasticsearch.test.ClusterServiceUtils;
 import org.elasticsearch.test.ESTestCase;
+import org.elasticsearch.test.VersionUtils;
 import org.elasticsearch.test.index.IndexVersionUtils;
 import org.junit.Before;
 
@@ -144,7 +145,7 @@ public class MetadataDeleteIndexServiceTests extends ESTestCase {
         String alias = randomAlphaOfLength(5);
 
         IndexMetadata idxMetadata = IndexMetadata.builder(index)
-            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersionUtils.randomVersion(random())))
+            .settings(Settings.builder().put("index.version.created", VersionUtils.randomVersion(random())))
             .putAlias(AliasMetadata.builder(alias).writeIndex(true).build())
             .numberOfShards(1)
             .numberOfReplicas(1)
@@ -233,7 +234,7 @@ public class MetadataDeleteIndexServiceTests extends ESTestCase {
 
     private ClusterState clusterState(String index) {
         IndexMetadata indexMetadata = IndexMetadata.builder(index)
-            .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersionUtils.randomVersion(random())))
+            .settings(Settings.builder().put("index.version.created", VersionUtils.randomVersion(random())))
             .numberOfShards(1)
             .numberOfReplicas(1)
             .build();

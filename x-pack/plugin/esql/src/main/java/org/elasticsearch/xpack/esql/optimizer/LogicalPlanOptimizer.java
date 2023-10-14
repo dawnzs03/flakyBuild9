@@ -24,7 +24,6 @@ import org.elasticsearch.xpack.esql.type.EsqlDataTypes;
 import org.elasticsearch.xpack.ql.expression.Alias;
 import org.elasticsearch.xpack.ql.expression.Attribute;
 import org.elasticsearch.xpack.ql.expression.AttributeMap;
-import org.elasticsearch.xpack.ql.expression.AttributeSet;
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.expression.ExpressionSet;
 import org.elasticsearch.xpack.ql.expression.Expressions;
@@ -34,7 +33,6 @@ import org.elasticsearch.xpack.ql.expression.Order;
 import org.elasticsearch.xpack.ql.expression.ReferenceAttribute;
 import org.elasticsearch.xpack.ql.expression.function.aggregate.AggregateFunction;
 import org.elasticsearch.xpack.ql.expression.predicate.Predicates;
-import org.elasticsearch.xpack.ql.expression.predicate.logical.Or;
 import org.elasticsearch.xpack.ql.optimizer.OptimizerRules;
 import org.elasticsearch.xpack.ql.optimizer.OptimizerRules.BinaryComparisonSimplification;
 import org.elasticsearch.xpack.ql.optimizer.OptimizerRules.BooleanFunctionEqualsElimination;
@@ -50,10 +48,8 @@ import org.elasticsearch.xpack.ql.plan.logical.LogicalPlan;
 import org.elasticsearch.xpack.ql.plan.logical.OrderBy;
 import org.elasticsearch.xpack.ql.plan.logical.Project;
 import org.elasticsearch.xpack.ql.plan.logical.UnaryPlan;
-import org.elasticsearch.xpack.ql.rule.Rule;
 import org.elasticsearch.xpack.ql.rule.RuleExecutor;
 import org.elasticsearch.xpack.ql.util.CollectionUtils;
-import org.elasticsearch.xpack.ql.util.Holder;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -66,9 +62,8 @@ import java.util.function.Predicate;
 import static java.util.Arrays.asList;
 import static org.elasticsearch.xpack.esql.expression.NamedExpressions.mergeOutputExpressions;
 import static org.elasticsearch.xpack.ql.expression.Expressions.asAttributes;
+import static org.elasticsearch.xpack.ql.expression.Literal.FALSE;
 import static org.elasticsearch.xpack.ql.optimizer.OptimizerRules.FoldNull;
-import static org.elasticsearch.xpack.ql.optimizer.OptimizerRules.PropagateEquals;
-import static org.elasticsearch.xpack.ql.optimizer.OptimizerRules.PropagateNullable;
 import static org.elasticsearch.xpack.ql.optimizer.OptimizerRules.ReplaceRegexMatch;
 import static org.elasticsearch.xpack.ql.optimizer.OptimizerRules.TransformDirection;
 
@@ -84,7 +79,7 @@ public class LogicalPlanOptimizer extends RuleExecutor<LogicalPlan> {
     }
 
     protected static List<Batch<LogicalPlan>> rules() {
-        var substitutions = new Batch<>("Substitutions", Limiter.ONCE, new SubstituteSurrogates(), new ReplaceRegexMatch());
+        var substitutions = new Batch<>("Substitutions", Limiter.ONCE, new SubstituteSurrogates());
 
         var operators = new Batch<>(
             "Operator Optimization",
@@ -93,22 +88,18 @@ public class LogicalPlanOptimizer extends RuleExecutor<LogicalPlan> {
             new PropagateEmptyRelation(),
             new ConvertStringToByteRef(),
             new FoldNull(),
-            new SplitInWithFoldableValue(),
+            new FoldNullInIn(),
             new ConstantFolding(),
-            new PropagateEvalFoldables(),
             // boolean
             new BooleanSimplification(),
             new LiteralsOnTheRight(),
             new BinaryComparisonSimplification(),
-            // needs to occur before BinaryComparison combinations (see class)
-            new PropagateEquals(),
-            new PropagateNullable(),
             new BooleanFunctionEqualsElimination(),
+            new ReplaceRegexMatch(),
             new CombineDisjunctionsToIn(),
             new SimplifyComparisonsArithmetics(EsqlDataTypes::areCompatible),
             // prune/elimination
             new PruneFilters(),
-            new PruneColumns(),
             new PruneLiteralsInOrderBy(),
             new PushDownAndCombineLimits(),
             new PushDownAndCombineFilters(),
@@ -141,7 +132,7 @@ public class LogicalPlanOptimizer extends RuleExecutor<LogicalPlan> {
             // existing aggregate and their respective attributes
             Map<AggregateFunction, Attribute> aggFuncToAttr = new HashMap<>();
             // surrogate functions eval
-            List<Alias> transientEval = new ArrayList<>();
+            List<NamedExpression> transientEval = new ArrayList<>();
             boolean changed = false;
 
             // first pass to check existing aggregates (to avoid duplication and alias waste)
@@ -303,36 +294,25 @@ public class LogicalPlanOptimizer extends RuleExecutor<LogicalPlan> {
         }
     }
 
-    //
-    // Replace any reference attribute with its source, if it does not affect the result.
-    // This avoids ulterior look-ups between attributes and its source across nodes.
-    //
-    static class PropagateEvalFoldables extends Rule<LogicalPlan, LogicalPlan> {
+    static class FoldNullInIn extends OptimizerRules.OptimizerExpressionRule<In> {
+
+        FoldNullInIn() {
+            super(TransformDirection.UP);
+        }
 
         @Override
-        public LogicalPlan apply(LogicalPlan plan) {
-            var collectRefs = new AttributeMap<Expression>();
-            // collect aliases
-            plan.forEachExpressionUp(Alias.class, a -> {
-                var c = a.child();
-                if (c.foldable()) {
-                    collectRefs.put(a.toAttribute(), c);
+        protected Expression rule(In in) {
+            List<Expression> newList = new ArrayList<>(in.list());
+            // In folds itself if value() is `null`
+            newList.removeIf(Expressions::isNull);
+            if (in.list().size() != newList.size()) {
+                if (newList.size() == 0) {
+                    return FALSE;
                 }
-            });
-            if (collectRefs.isEmpty()) {
-                return plan;
+                newList.add(in.value());
+                return in.replaceChildren(newList);
             }
-            java.util.function.Function<ReferenceAttribute, Expression> replaceReference = r -> collectRefs.resolve(r, r);
-
-            plan = plan.transformUp(p -> {
-                // Apply the replacement inside Filter and Eval (which shouldn't make a difference)
-                if (p instanceof Filter || p instanceof Eval) {
-                    p = p.transformExpressionsOnly(ReferenceAttribute.class, replaceReference);
-                }
-                return p;
-            });
-
-            return plan;
+            return in;
         }
     }
 
@@ -384,35 +364,6 @@ public class LogicalPlanOptimizer extends RuleExecutor<LogicalPlan> {
                 }
             }
             return null;
-        }
-    }
-
-    // 3 in (field, 4, 5) --> 3 in (field) or 3 in (4, 5)
-    public static class SplitInWithFoldableValue extends OptimizerRules.OptimizerExpressionRule<In> {
-
-        SplitInWithFoldableValue() {
-            super(TransformDirection.UP);
-        }
-
-        @Override
-        protected Expression rule(In in) {
-            if (in.value().foldable()) {
-                List<Expression> foldables = new ArrayList<>(in.list().size());
-                List<Expression> nonFoldables = new ArrayList<>(in.list().size());
-                in.list().forEach(e -> {
-                    if (e.foldable() && Expressions.isNull(e) == false) { // keep `null`s, needed for the 3VL
-                        foldables.add(e);
-                    } else {
-                        nonFoldables.add(e);
-                    }
-                });
-                if (foldables.size() > 0 && nonFoldables.size() > 0) {
-                    In withFoldables = new In(in.source(), in.value(), foldables);
-                    In withoutFoldables = new In(in.source(), in.value(), nonFoldables);
-                    return new Or(in.source(), withFoldables, withoutFoldables);
-                }
-            }
-            return in;
         }
     }
 
@@ -512,16 +463,22 @@ public class LogicalPlanOptimizer extends RuleExecutor<LogicalPlan> {
                 );
             } else if (child instanceof Eval eval) {
                 // Don't push if Filter (still) contains references of Eval's fields.
-                var attributes = new AttributeSet(Expressions.asAttributes(eval.fields()));
-                plan = maybePushDownPastUnary(filter, eval, attributes::contains);
+                List<Attribute> attributes = new ArrayList<>(eval.fields().size());
+                for (NamedExpression ne : eval.fields()) {
+                    attributes.add(ne.toAttribute());
+                }
+                plan = maybePushDownPastUnary(filter, eval, e -> e instanceof Attribute && attributes.contains(e));
             } else if (child instanceof RegexExtract re) {
                 // Push down filters that do not rely on attributes created by RegexExtract
-                var attributes = new AttributeSet(Expressions.asAttributes(re.extractedFields()));
-                plan = maybePushDownPastUnary(filter, re, attributes::contains);
+                List<Attribute> attributes = new ArrayList<>(re.extractedFields().size());
+                for (Attribute ne : re.extractedFields()) {
+                    attributes.add(ne.toAttribute());
+                }
+                plan = maybePushDownPastUnary(filter, re, e -> e instanceof Attribute && attributes.contains(e));
             } else if (child instanceof Enrich enrich) {
                 // Push down filters that do not rely on attributes created by Enrich
-                var attributes = new AttributeSet(Expressions.asAttributes(enrich.enrichFields()));
-                plan = maybePushDownPastUnary(filter, enrich, attributes::contains);
+                List<NamedExpression> attributes = new ArrayList<>(enrich.enrichFields());
+                plan = maybePushDownPastUnary(filter, enrich, e -> attributes.contains(e));
             } else if (child instanceof Project) {
                 return pushDownPastProject(filter);
             } else if (child instanceof OrderBy orderBy) {
@@ -640,90 +597,6 @@ public class LogicalPlanOptimizer extends RuleExecutor<LogicalPlan> {
         }
     }
 
-    /**
-     * Remove unused columns created in the plan, in fields inside eval or aggregations inside stats.
-     */
-    static class PruneColumns extends Rule<LogicalPlan, LogicalPlan> {
-
-        @Override
-        public LogicalPlan apply(LogicalPlan plan) {
-            var used = new AttributeSet();
-            // don't remove Evals without any Project/Aggregate (which might not occur as the last node in the plan)
-            var seenProjection = new Holder<>(Boolean.FALSE);
-
-            // start top-to-bottom
-            // and track used references
-            var pl = plan.transformDown(p -> {
-                // skip nodes that simply pass the input through
-                if (p instanceof Limit) {
-                    return p;
-                }
-
-                // remember used
-                boolean recheck;
-                // analyze the unused items against dedicated 'producer' nodes such as Eval and Aggregate
-                // perform a loop to retry checking if the current node is completely eliminated
-                do {
-                    recheck = false;
-                    if (p instanceof Aggregate aggregate) {
-                        var remaining = seenProjection.get() ? removeUnused(aggregate.aggregates(), used) : null;
-                        // no aggregates, no need
-                        if (remaining != null) {
-                            if (remaining.isEmpty()) {
-                                recheck = true;
-                                p = aggregate.child();
-                            } else {
-                                p = new Aggregate(aggregate.source(), aggregate.child(), aggregate.groupings(), remaining);
-                            }
-                        }
-
-                        seenProjection.set(Boolean.TRUE);
-                    } else if (p instanceof Eval eval) {
-                        var remaining = seenProjection.get() ? removeUnused(eval.fields(), used) : null;
-                        // no fields, no eval
-                        if (remaining != null) {
-                            if (remaining.isEmpty()) {
-                                p = eval.child();
-                                recheck = true;
-                            } else {
-                                p = new Eval(eval.source(), eval.child(), remaining);
-                            }
-                        }
-                    } else if (p instanceof Project) {
-                        seenProjection.set(Boolean.TRUE);
-                    }
-                } while (recheck);
-
-                used.addAll(p.references());
-
-                // preserve the state before going to the next node
-                return p;
-            });
-
-            return pl;
-        }
-
-        /**
-         * Prunes attributes from the list not found in the given set.
-         * Returns null if no changed occurred.
-         */
-        private static <N extends NamedExpression> List<N> removeUnused(List<N> named, AttributeSet used) {
-            var clone = new ArrayList<>(named);
-            var it = clone.listIterator(clone.size());
-
-            // due to Eval, go in reverse
-            while (it.hasPrevious()) {
-                N prev = it.previous();
-                if (used.contains(prev.toAttribute()) == false) {
-                    it.remove();
-                } else {
-                    used.addAll(prev.references());
-                }
-            }
-            return clone.size() != named.size() ? clone : null;
-        }
-    }
-
     static class PruneOrderByBeforeStats extends OptimizerRules.OptimizerRule<Aggregate> {
 
         @Override
@@ -757,10 +630,11 @@ public class LogicalPlanOptimizer extends RuleExecutor<LogicalPlan> {
 
         @Override
         protected LogicalPlan rule(OrderBy plan) {
-            var referencedAttributes = new ExpressionSet<Order>();
+            var referencedAttributes = new ExpressionSet<Attribute>();
             var order = new ArrayList<Order>();
             for (Order o : plan.order()) {
-                if (referencedAttributes.add(o)) {
+                Attribute a = (Attribute) o.child();
+                if (referencedAttributes.add(a)) {
                     order.add(o);
                 }
             }
@@ -782,7 +656,7 @@ public class LogicalPlanOptimizer extends RuleExecutor<LogicalPlan> {
 
             return project.replaceChild(expressionsWithResolvedAliases.replaceChild(project.child()));
         } else {
-            throw new EsqlIllegalArgumentException("Expected child to be instance of Project");
+            throw new UnsupportedOperationException("Expected child to be instance of Project");
         }
     }
 

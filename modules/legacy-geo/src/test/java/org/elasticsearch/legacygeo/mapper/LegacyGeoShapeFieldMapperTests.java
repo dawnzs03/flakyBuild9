@@ -60,12 +60,6 @@ public class LegacyGeoShapeFieldMapperTests extends MapperTestCase {
     }
 
     @Override
-    public void testSupportsParsingObject() throws IOException {
-        super.testSupportsParsingObject();
-        assertWarnings("Parameter [strategy] is deprecated and will be removed in a future version");
-    }
-
-    @Override
     protected void minimalMapping(XContentBuilder b) throws IOException {
         b.field("type", "geo_shape").field("strategy", "recursive");
     }

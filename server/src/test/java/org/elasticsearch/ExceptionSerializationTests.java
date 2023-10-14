@@ -67,7 +67,6 @@ import org.elasticsearch.indices.recovery.RecoverFilesRecoveryException;
 import org.elasticsearch.ingest.IngestProcessorException;
 import org.elasticsearch.repositories.RepositoryConflictException;
 import org.elasticsearch.repositories.RepositoryException;
-import org.elasticsearch.rest.ApiNotAvailableException;
 import org.elasticsearch.rest.RestResponseTests;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.action.admin.indices.AliasesNotFoundException;
@@ -831,7 +830,6 @@ public class ExceptionSerializationTests extends ESTestCase {
         ids.put(168, DocumentParsingException.class);
         ids.put(169, HttpHeadersValidationException.class);
         ids.put(170, ElasticsearchRoleRestrictionException.class);
-        ids.put(171, ApiNotAvailableException.class);
 
         Map<Class<? extends ElasticsearchException>, Integer> reverse = new HashMap<>();
         for (Map.Entry<Integer, Class<? extends ElasticsearchException>> entry : ids.entrySet()) {

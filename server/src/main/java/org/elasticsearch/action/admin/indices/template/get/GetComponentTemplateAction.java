@@ -142,10 +142,6 @@ public class GetComponentTemplateAction extends ActionType<GetComponentTemplateA
             return componentTemplates;
         }
 
-        public RolloverConfiguration getRolloverConfiguration() {
-            return rolloverConfiguration;
-        }
-
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             out.writeMap(componentTemplates, StreamOutput::writeString, (o, v) -> v.writeTo(o));

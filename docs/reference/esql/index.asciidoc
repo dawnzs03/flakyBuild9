@@ -6,9 +6,6 @@
 
 [partintro]
 --
-
-preview::[]
-
 The {es} Query Language ({esql}) is a query language that enables the iterative
 exploration of data.
 
@@ -38,15 +35,15 @@ The result of a query is the table produced by the final processing command.
 [discrete]
 ==== The {esql} API
 
-Use the `_query` endpoint to run an {esql} query:
+Use the `_esql` endpoint to run an {esql} query:
 
 [source,console]
 ----
-POST /_query
+POST /_esql
 {
   "query": """
     FROM library
-    | EVAL year = DATE_TRUNC(1 YEARS, release_date)
+    | EVAL year = DATE_TRUNC(release_date, 1 YEARS)
     | STATS MAX(page_count) BY year
     | SORT year
     | LIMIT 5
@@ -79,11 +76,11 @@ CSV, or TSV, use the `format` parameter:
 
 [source,console]
 ----
-POST /_query?format=txt
+POST /_esql?format=txt
 {
   "query": """
     FROM library
-    | EVAL year = DATE_TRUNC(1 YEARS, release_date)
+    | EVAL year = DATE_TRUNC(release_date, 1 YEARS)
     | STATS MAX(page_count) BY year
     | SORT year
     | LIMIT 5
@@ -111,14 +108,11 @@ with the time filter.
 - `alias`
 - `boolean`
 - `date`
-- `double` (`float`, `half_float`, `scaled_float` are represented as `double`)
 - `ip`
-- `keyword` family including `keyword`, `constant_keyword`, and `wildcard`
-- `int` (`short` and `byte` are represented as `int`)
+- `keyword` family (`keyword`, `constant_keyword`, and `wildcard`)
+- `double`/`float`/`half_float` (represented as `double`)
 - `long`
-- `null`
-- `text`
-- `unsigned_long`
+- `int`/`short`/`byte` (represented as `int`)
 - `version`
 --
 
@@ -135,8 +129,6 @@ include::esql-functions.asciidoc[]
 include::aggregation-functions.asciidoc[]
 
 include::multivalued-fields.asciidoc[]
-
-include::task-management.asciidoc[]
 
 :esql-tests!:
 :esql-specs!:

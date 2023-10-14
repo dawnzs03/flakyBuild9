@@ -9,6 +9,7 @@
 package org.elasticsearch.index.query;
 
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.MappingLookup;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
@@ -28,6 +29,7 @@ public class SearchExecutionContextHelper {
             0,
             0,
             indexSettings,
+            ClusterSettings.createBuiltInClusterSettings(),
             null,
             null,
             null,

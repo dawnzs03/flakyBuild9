@@ -27,9 +27,6 @@ public final class MvSumDoubleEvaluator extends AbstractMultivalueFunction.Abstr
     return "MvSum";
   }
 
-  /**
-   * Evaluate blocks containing at least one multivalued field.
-   */
   @Override
   public Block evalNullable(Block fieldVal) {
     DoubleBlock v = (DoubleBlock) fieldVal;
@@ -54,9 +51,6 @@ public final class MvSumDoubleEvaluator extends AbstractMultivalueFunction.Abstr
     return builder.build();
   }
 
-  /**
-   * Evaluate blocks containing at least one multivalued field.
-   */
   @Override
   public Vector evalNotNullable(Block fieldVal) {
     DoubleBlock v = (DoubleBlock) fieldVal;

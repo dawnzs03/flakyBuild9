@@ -7,9 +7,6 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.string;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.xpack.esql.expression.function.scalar.AbstractScalarFunctionTestCase;
 import org.elasticsearch.xpack.ql.expression.Expression;
@@ -20,7 +17,6 @@ import org.elasticsearch.xpack.ql.type.DataTypes;
 import org.hamcrest.Matcher;
 
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -29,22 +25,14 @@ import static org.elasticsearch.compute.data.BlockUtils.toJavaObject;
 import static org.hamcrest.Matchers.equalTo;
 
 public class ConcatTests extends AbstractScalarFunctionTestCase {
-    public ConcatTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
+    @Override
+    protected List<Object> simpleData() {
+        return List.of(new BytesRef(randomAlphaOfLength(3)), new BytesRef(randomAlphaOfLength(3)));
     }
 
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        return parameterSuppliersFromTypedData(List.of(new TestCaseSupplier("concat basic test", () -> {
-            BytesRef first = new BytesRef(randomAlphaOfLength(3));
-            BytesRef second = new BytesRef(randomAlphaOfLength(3));
-            return new TestCase(
-                List.of(new TypedData(first, DataTypes.KEYWORD, "first"), new TypedData(second, DataTypes.KEYWORD, "second")),
-                "ConcatEvaluator[values=[Attribute[channel=0], Attribute[channel=1]]]",
-                DataTypes.KEYWORD,
-                equalTo(new BytesRef(first.utf8ToString() + second.utf8ToString()))
-            );
-        })));
+    @Override
+    protected Expression expressionForSimpleData() {
+        return new Concat(Source.EMPTY, field("first", DataTypes.KEYWORD), List.of(field("second", DataTypes.KEYWORD)));
     }
 
     @Override
@@ -52,8 +40,23 @@ public class ConcatTests extends AbstractScalarFunctionTestCase {
         return DataTypes.KEYWORD;
     }
 
-    private Matcher<Object> resultsMatcher(List<TypedData> simpleData) {
-        return equalTo(new BytesRef(simpleData.stream().map(o -> ((BytesRef) o.data()).utf8ToString()).collect(Collectors.joining())));
+    @Override
+    protected Matcher<Object> resultMatcher(List<Object> simpleData, DataType dataType) {
+        return equalTo(new BytesRef(simpleData.stream().map(o -> ((BytesRef) o).utf8ToString()).collect(Collectors.joining())));
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "ConcatEvaluator[values=[Attribute[channel=0], Attribute[channel=1]]]";
+    }
+
+    @Override
+    protected Expression constantFoldable(List<Object> simpleData) {
+        return new Concat(
+            Source.EMPTY,
+            new Literal(Source.EMPTY, simpleData.get(0), DataTypes.KEYWORD),
+            List.of(new Literal(Source.EMPTY, simpleData.get(1), DataTypes.KEYWORD))
+        );
     }
 
     @Override
@@ -75,7 +78,7 @@ public class ConcatTests extends AbstractScalarFunctionTestCase {
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
+    protected Expression build(Source source, List<Literal> args) {
         return new Concat(source, args.get(0), args.subList(1, args.size()));
     }
 

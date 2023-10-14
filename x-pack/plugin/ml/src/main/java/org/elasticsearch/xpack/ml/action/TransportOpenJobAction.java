@@ -313,8 +313,7 @@ public class TransportOpenJobAction extends TransportMasterNodeAction<OpenJobAct
             client,
             clusterState,
             masterNodeTimeout,
-            mappingsUpdatedListener,
-            MlConfigIndex.CONFIG_INDEX_MAPPINGS_VERSION
+            mappingsUpdatedListener
         );
     }
 

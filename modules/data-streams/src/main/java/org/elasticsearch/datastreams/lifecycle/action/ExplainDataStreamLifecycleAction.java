@@ -67,11 +67,6 @@ public class ExplainDataStreamLifecycleAction extends ActionType<ExplainDataStre
             return null;
         }
 
-        @Override
-        public boolean includeDataStreams() {
-            return true;
-        }
-
         public Request(StreamInput in) throws IOException {
             super(in);
             this.names = in.readOptionalStringArray();
@@ -188,15 +183,19 @@ public class ExplainDataStreamLifecycleAction extends ActionType<ExplainDataStre
 
         @Override
         public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params outerParams) {
+            final Iterator<? extends ToXContent> indicesIterator = indices.stream()
+                .map(explainIndexDataLifecycle -> (ToXContent) (builder, params) -> {
+                    builder.field(explainIndexDataLifecycle.getIndex());
+                    explainIndexDataLifecycle.toXContent(builder, params, rolloverConfiguration);
+                    return builder;
+                })
+                .iterator();
+
             return Iterators.concat(Iterators.single((builder, params) -> {
                 builder.startObject();
                 builder.startObject(INDICES_FIELD.getPreferredName());
                 return builder;
-            }), Iterators.map(indices.iterator(), explainIndexDataLifecycle -> (builder, params) -> {
-                builder.field(explainIndexDataLifecycle.getIndex());
-                explainIndexDataLifecycle.toXContent(builder, params, rolloverConfiguration);
-                return builder;
-            }), Iterators.single((builder, params) -> {
+            }), indicesIterator, Iterators.single((ToXContent) (builder, params) -> {
                 builder.endObject();
                 builder.endObject();
                 return builder;

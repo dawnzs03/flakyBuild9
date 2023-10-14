@@ -10,7 +10,7 @@ package org.elasticsearch.xpack.esql.expression.function.scalar.multivalue;
 import org.elasticsearch.compute.ann.MvEvaluator;
 import org.elasticsearch.compute.operator.EvalOperator;
 import org.elasticsearch.search.aggregations.metrics.CompensatedSum;
-import org.elasticsearch.xpack.esql.EsqlUnsupportedOperationException;
+import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Add;
 import org.elasticsearch.xpack.esql.planner.LocalExecutionPlanner;
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.tree.NodeInfo;
@@ -52,7 +52,7 @@ public class MvAvg extends AbstractMultivalueFunction {
                 ? () -> new MvAvgUnsignedLongEvaluator(fieldEval.get())
                 : () -> new MvAvgLongEvaluator(fieldEval.get());
             case NULL -> () -> EvalOperator.CONSTANT_NULL;
-            default -> throw EsqlUnsupportedOperationException.unsupportedDataType(field().dataType());
+            default -> throw new UnsupportedOperationException("unsupported type [" + field().dataType() + "]");
         };
     }
 
@@ -78,8 +78,12 @@ public class MvAvg extends AbstractMultivalueFunction {
     }
 
     @MvEvaluator(extraName = "Int", finish = "finish", single = "single")
-    static void process(CompensatedSum sum, int v) {
-        sum.add(v);
+    static int process(int current, int v) {
+        return current + v;
+    }
+
+    static double finish(int sum, int valueCount) {
+        return ((double) sum) / valueCount;
     }
 
     static double single(int value) {
@@ -87,17 +91,25 @@ public class MvAvg extends AbstractMultivalueFunction {
     }
 
     @MvEvaluator(extraName = "Long", finish = "finish", single = "single")
-    static void process(CompensatedSum sum, long v) {
-        sum.add(v);
+    static long process(long current, long v) {
+        return current + v;
+    }
+
+    static double finish(long sum, int valueCount) {
+        return ((double) sum) / valueCount;
     }
 
     static double single(long value) {
         return value;
     }
 
-    @MvEvaluator(extraName = "UnsignedLong", finish = "finish", single = "singleUnsignedLong")
-    static void processUnsignedLong(CompensatedSum sum, long v) {
-        sum.add(unsignedLongToDouble(v));
+    @MvEvaluator(extraName = "UnsignedLong", finish = "finishUnsignedLong", single = "singleUnsignedLong")
+    static long processUnsignedLong(long current, long v) {
+        return Add.processUnsignedLongs(current, v);
+    }
+
+    public static double finishUnsignedLong(long sum, int valueCount) {
+        return unsignedLongToDouble(sum) / valueCount;
     }
 
     static double singleUnsignedLong(long value) {

@@ -32,7 +32,6 @@ import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
@@ -198,11 +197,7 @@ public class TransportResyncReplicationAction extends TransportWriteAction<
             new ConcreteShardRequest<>(request, primaryAllocationId, primaryTerm),
             parentTask,
             transportOptions,
-            new ActionListenerResponseHandler<>(
-                listener,
-                TransportResyncReplicationAction.this::newResponseInstance,
-                TransportResponseHandler.TRANSPORT_WORKER
-            ) {
+            new ActionListenerResponseHandler<>(listener, TransportResyncReplicationAction.this::newResponseInstance) {
 
                 @Override
                 public void handleResponse(ResyncReplicationResponse response) {

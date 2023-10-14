@@ -14,8 +14,9 @@ import org.elasticsearch.compute.aggregation.GroupingAggregatorFunction;
 import org.elasticsearch.compute.aggregation.blockhash.BlockHash;
 import org.elasticsearch.compute.data.Block;
 import org.elasticsearch.compute.data.ElementType;
-import org.elasticsearch.compute.data.IntBlock;
 import org.elasticsearch.compute.data.IntVector;
+import org.elasticsearch.compute.data.LongBlock;
+import org.elasticsearch.compute.data.LongVector;
 import org.elasticsearch.compute.data.Page;
 import org.elasticsearch.core.Releasables;
 
@@ -67,10 +68,10 @@ public class HashAggregationOperator implements Operator {
         this.aggregators = new ArrayList<>(aggregators.size());
         boolean success = false;
         try {
-            this.blockHash = blockHash.get();
             for (GroupingAggregator.Factory a : aggregators) {
                 this.aggregators.add(a.apply(driverContext));
             }
+            this.blockHash = blockHash.get();
             success = true;
         } finally {
             if (success == false) {
@@ -91,24 +92,19 @@ public class HashAggregationOperator implements Operator {
 
         GroupingAggregatorFunction.AddInput[] prepared = new GroupingAggregatorFunction.AddInput[aggregators.size()];
         for (int i = 0; i < prepared.length; i++) {
-            prepared[i] = aggregators.get(i).prepareProcessPage(blockHash, page);
+            prepared[i] = aggregators.get(i).prepareProcessPage(page);
         }
 
         blockHash.add(wrapPage(page), new GroupingAggregatorFunction.AddInput() {
             @Override
-            public void add(int positionOffset, IntBlock groupIds) {
-                IntVector groupIdsVector = groupIds.asVector();
-                if (groupIdsVector != null) {
-                    add(positionOffset, groupIdsVector);
-                } else {
-                    for (GroupingAggregatorFunction.AddInput p : prepared) {
-                        p.add(positionOffset, groupIds);
-                    }
+            public void add(int positionOffset, LongBlock groupIds) {
+                for (GroupingAggregatorFunction.AddInput p : prepared) {
+                    p.add(positionOffset, groupIds);
                 }
             }
 
             @Override
-            public void add(int positionOffset, IntVector groupIds) {
+            public void add(int positionOffset, LongVector groupIds) {
                 for (GroupingAggregatorFunction.AddInput p : prepared) {
                     p.add(positionOffset, groupIds);
                 }

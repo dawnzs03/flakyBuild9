@@ -153,7 +153,7 @@ public class MultiTermsAggregationBuilder extends AbstractAggregationBuilder<Mul
     }
 
     @Override
-    public boolean supportsParallelCollection() {
+    public boolean supportsConcurrentExecution() {
         return false;
     }
 

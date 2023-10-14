@@ -23,8 +23,6 @@ import org.elasticsearch.compute.operator.OrdinalsGroupingOperator;
 import org.elasticsearch.index.mapper.NestedLookup;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.index.search.NestedHelper;
-import org.elasticsearch.logging.LogManager;
-import org.elasticsearch.logging.Logger;
 import org.elasticsearch.search.internal.AliasFilter;
 import org.elasticsearch.search.internal.SearchContext;
 import org.elasticsearch.search.sort.SortBuilder;
@@ -46,7 +44,6 @@ import static org.elasticsearch.common.lucene.search.Queries.newNonNestedFilter;
 import static org.elasticsearch.compute.lucene.LuceneSourceOperator.NO_LIMIT;
 
 public class EsPhysicalOperationProviders extends AbstractPhysicalOperationProviders {
-    private static final Logger logger = LogManager.getLogger(EsPhysicalOperationProviders.class);
 
     private final List<SearchContext> searchContexts;
 
@@ -84,6 +81,7 @@ public class EsPhysicalOperationProviders extends AbstractPhysicalOperationProvi
 
     @Override
     public final PhysicalOperation sourcePhysicalOperation(EsQueryExec esQueryExec, LocalExecutionPlannerContext context) {
+
         LuceneOperator.LuceneOperatorFactory operatorFactory = null;
         Function<SearchContext, Query> querySupplier = searchContext -> {
             SearchExecutionContext ctx = searchContext.getSearchExecutionContext();
@@ -110,9 +108,6 @@ public class EsPhysicalOperationProviders extends AbstractPhysicalOperationProvi
 
         List<FieldSort> sorts = esQueryExec.sorts();
         List<SortBuilder<?>> fieldSorts = null;
-        assert esQueryExec.estimatedRowSize() != null : "estimated row size not initialized";
-        int rowEstimatedSize = esQueryExec.estimatedRowSize();
-        int limit = esQueryExec.limit() != null ? (Integer) esQueryExec.limit().fold() : NO_LIMIT;
         if (sorts != null && sorts.isEmpty() == false) {
             fieldSorts = new ArrayList<>(sorts.size());
             for (FieldSort sort : sorts) {
@@ -123,8 +118,8 @@ public class EsPhysicalOperationProviders extends AbstractPhysicalOperationProvi
                 querySupplier,
                 context.dataPartitioning(),
                 context.taskConcurrency(),
-                context.pageSize(rowEstimatedSize),
-                limit,
+                context.pageSize(),
+                esQueryExec.limit() != null ? (Integer) esQueryExec.limit().fold() : NO_LIMIT,
                 fieldSorts
             );
         } else {
@@ -133,8 +128,8 @@ public class EsPhysicalOperationProviders extends AbstractPhysicalOperationProvi
                 querySupplier,
                 context.dataPartitioning(),
                 context.taskConcurrency(),
-                context.pageSize(rowEstimatedSize),
-                limit
+                context.pageSize(),
+                esQueryExec.limit() != null ? (Integer) esQueryExec.limit().fold() : NO_LIMIT
             );
         }
         Layout.Builder layout = new Layout.Builder();
@@ -172,7 +167,7 @@ public class EsPhysicalOperationProviders extends AbstractPhysicalOperationProvi
             docChannel,
             attrSource.name(),
             aggregatorFactories,
-            context.pageSize(aggregateExec.estimatedRowSize()),
+            context.pageSize(),
             context.bigArrays()
         );
     }

@@ -25,7 +25,6 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.test.ESTestCase;
@@ -97,11 +96,7 @@ public class SecurityActionFilterTests extends ESTestCase {
         ClusterState state = mock(ClusterState.class);
         DiscoveryNodes nodes = DiscoveryNodes.builder()
             .add(DiscoveryNodeUtils.create("id1"))
-            .add(
-                DiscoveryNodeUtils.builder("id2")
-                    .version(Version.CURRENT.minimumCompatibilityVersion(), IndexVersion.MINIMUM_COMPATIBLE, IndexVersion.current())
-                    .build()
-            )
+            .add(DiscoveryNodeUtils.builder("id2").version(Version.CURRENT.minimumCompatibilityVersion()).build())
             .build();
         when(state.nodes()).thenReturn(nodes);
 

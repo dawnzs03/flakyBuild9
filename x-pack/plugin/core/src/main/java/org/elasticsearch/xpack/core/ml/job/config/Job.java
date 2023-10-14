@@ -7,6 +7,7 @@
 package org.elasticsearch.xpack.core.ml.job.config;
 
 import org.elasticsearch.ResourceAlreadyExistsException;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.cluster.SimpleDiffable;
 import org.elasticsearch.common.Strings;
@@ -24,7 +25,6 @@ import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.common.time.TimeUtils;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 import org.elasticsearch.xpack.core.ml.datafeed.DatafeedConfig;
 import org.elasticsearch.xpack.core.ml.job.messages.Messages;
 import org.elasticsearch.xpack.core.ml.job.persistence.AnomalyDetectorsIndexFields;
@@ -187,7 +187,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
      * Will be null for versions before 5.5.
      */
     @Nullable
-    private final MlConfigVersion jobVersion;
+    private final Version jobVersion;
 
     private final List<String> groups;
     private final String description;
@@ -205,7 +205,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
     private final Long resultsRetentionDays;
     private final Map<String, Object> customSettings;
     private final String modelSnapshotId;
-    private final MlConfigVersion modelSnapshotMinVersion;
+    private final Version modelSnapshotMinVersion;
     private final String resultsIndexName;
     private final boolean deleting;
     private final boolean allowLazyOpen;
@@ -215,7 +215,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
     private Job(
         String jobId,
         String jobType,
-        MlConfigVersion jobVersion,
+        Version jobVersion,
         List<String> groups,
         String description,
         Date createTime,
@@ -231,7 +231,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
         Long resultsRetentionDays,
         Map<String, Object> customSettings,
         String modelSnapshotId,
-        MlConfigVersion modelSnapshotMinVersion,
+        Version modelSnapshotMinVersion,
         String resultsIndexName,
         boolean deleting,
         boolean allowLazyOpen,
@@ -277,7 +277,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
     public Job(StreamInput in) throws IOException {
         jobId = in.readString();
         jobType = in.readString();
-        jobVersion = in.readBoolean() ? MlConfigVersion.readVersion(in) : null;
+        jobVersion = in.readBoolean() ? Version.readVersion(in) : null;
         groups = in.readImmutableList(StreamInput::readString);
         description = in.readOptionalString();
         createTime = new Date(in.readVLong());
@@ -295,7 +295,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
         customSettings = readCustomSettings == null ? null : Collections.unmodifiableMap(readCustomSettings);
         modelSnapshotId = in.readOptionalString();
         if (in.readBoolean()) {
-            modelSnapshotMinVersion = MlConfigVersion.readVersion(in);
+            modelSnapshotMinVersion = Version.readVersion(in);
         } else {
             modelSnapshotMinVersion = null;
         }
@@ -346,7 +346,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
         return jobType;
     }
 
-    public MlConfigVersion getJobVersion() {
+    public Version getJobVersion() {
         return jobVersion;
     }
 
@@ -477,7 +477,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
         return modelSnapshotId;
     }
 
-    public MlConfigVersion getModelSnapshotMinVersion() {
+    public Version getModelSnapshotMinVersion() {
         return modelSnapshotMinVersion;
     }
 
@@ -551,7 +551,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
         out.writeString(jobType);
         if (jobVersion != null) {
             out.writeBoolean(true);
-            MlConfigVersion.writeVersion(jobVersion, out);
+            Version.writeVersion(jobVersion, out);
         } else {
             out.writeBoolean(false);
         }
@@ -577,7 +577,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
         out.writeOptionalString(modelSnapshotId);
         if (modelSnapshotMinVersion != null) {
             out.writeBoolean(true);
-            MlConfigVersion.writeVersion(modelSnapshotMinVersion, out);
+            Version.writeVersion(modelSnapshotMinVersion, out);
         } else {
             out.writeBoolean(false);
         }
@@ -756,11 +756,11 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
     }
 
     /**
-     * Returns the job types that are compatible with a node with {@code mlConfigVersion}
-     * @param mlConfigVersion the version ML configuration in use
+     * Returns the job types that are compatible with a node running on {@code nodeVersion}
+     * @param nodeVersion the version of the node
      * @return the compatible job types
      */
-    public static Set<String> getCompatibleJobTypes(MlConfigVersion mlConfigVersion) {
+    public static Set<String> getCompatibleJobTypes(Version nodeVersion) {
         Set<String> compatibleTypes = new HashSet<>();
         compatibleTypes.add(ANOMALY_DETECTOR_JOB_TYPE);
         return compatibleTypes;
@@ -770,7 +770,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
 
         private String id;
         private String jobType = ANOMALY_DETECTOR_JOB_TYPE;
-        private MlConfigVersion jobVersion;
+        private Version jobVersion;
         private List<String> groups = Collections.emptyList();
         private String description;
         private AnalysisConfig analysisConfig;
@@ -786,7 +786,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
         private Long resultsRetentionDays;
         private Map<String, Object> customSettings;
         private String modelSnapshotId;
-        private MlConfigVersion modelSnapshotMinVersion;
+        private Version modelSnapshotMinVersion;
         private String resultsIndexName;
         private boolean deleting;
         private boolean allowLazyOpen;
@@ -829,7 +829,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
         public Builder(StreamInput in) throws IOException {
             id = in.readOptionalString();
             jobType = in.readString();
-            jobVersion = in.readBoolean() ? MlConfigVersion.readVersion(in) : null;
+            jobVersion = in.readBoolean() ? Version.readVersion(in) : null;
             groups = in.readStringList();
             description = in.readOptionalString();
             createTime = in.readBoolean() ? new Date(in.readVLong()) : null;
@@ -846,7 +846,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
             customSettings = in.readMap();
             modelSnapshotId = in.readOptionalString();
             if (in.readBoolean()) {
-                modelSnapshotMinVersion = MlConfigVersion.readVersion(in);
+                modelSnapshotMinVersion = Version.readVersion(in);
             } else {
                 modelSnapshotMinVersion = null;
             }
@@ -866,12 +866,12 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
             return id;
         }
 
-        public void setJobVersion(MlConfigVersion jobVersion) {
+        public void setJobVersion(Version jobVersion) {
             this.jobVersion = jobVersion;
         }
 
         private void setJobVersion(String jobVersion) {
-            this.jobVersion = MlConfigVersion.fromString(jobVersion);
+            this.jobVersion = Version.fromString(jobVersion);
         }
 
         private void setJobType(String jobType) {
@@ -964,13 +964,13 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
             return this;
         }
 
-        public Builder setModelSnapshotMinVersion(MlConfigVersion modelSnapshotMinVersion) {
+        public Builder setModelSnapshotMinVersion(Version modelSnapshotMinVersion) {
             this.modelSnapshotMinVersion = modelSnapshotMinVersion;
             return this;
         }
 
         Builder setModelSnapshotMinVersion(String modelSnapshotMinVersion) {
-            this.modelSnapshotMinVersion = MlConfigVersion.fromString(modelSnapshotMinVersion);
+            this.modelSnapshotMinVersion = Version.fromString(modelSnapshotMinVersion);
             return this;
         }
 
@@ -1042,7 +1042,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
             out.writeString(jobType);
             if (jobVersion != null) {
                 out.writeBoolean(true);
-                MlConfigVersion.writeVersion(jobVersion, out);
+                Version.writeVersion(jobVersion, out);
             } else {
                 out.writeBoolean(false);
             }
@@ -1074,7 +1074,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
             out.writeOptionalString(modelSnapshotId);
             if (modelSnapshotMinVersion != null) {
                 out.writeBoolean(true);
-                MlConfigVersion.writeVersion(modelSnapshotMinVersion, out);
+                Version.writeVersion(modelSnapshotMinVersion, out);
             } else {
                 out.writeBoolean(false);
             }
@@ -1321,7 +1321,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
          */
         public Job build(@SuppressWarnings("HiddenField") Date createTime) {
             setCreateTime(createTime);
-            setJobVersion(MlConfigVersion.CURRENT);
+            setJobVersion(Version.CURRENT);
             return build();
         }
 

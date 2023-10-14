@@ -22,7 +22,6 @@ import org.elasticsearch.persistent.PersistentTasksCustomMetadata;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.core.rollup.RollupField;
 import org.elasticsearch.xpack.core.rollup.action.GetRollupJobsAction;
@@ -79,11 +78,7 @@ public class TransportGetRollupJobAction extends TransportTasksAction<
                     nodes.getMasterNode(),
                     actionName,
                     request,
-                    new ActionListenerResponseHandler<>(
-                        listener,
-                        GetRollupJobsAction.Response::new,
-                        TransportResponseHandler.TRANSPORT_WORKER
-                    )
+                    new ActionListenerResponseHandler<>(listener, GetRollupJobsAction.Response::new)
                 );
             }
         }

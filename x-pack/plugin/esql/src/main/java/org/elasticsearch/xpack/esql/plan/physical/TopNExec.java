@@ -15,31 +15,25 @@ import org.elasticsearch.xpack.ql.tree.Source;
 import java.util.List;
 import java.util.Objects;
 
-public class TopNExec extends UnaryExec implements EstimatesRowSize {
+public class TopNExec extends UnaryExec {
+
     private final Expression limit;
     private final List<Order> order;
 
-    /**
-     * Estimate of the number of bytes that'll be loaded per position before
-     * the stream of pages is consumed.
-     */
-    private final Integer estimatedRowSize;
-
-    public TopNExec(Source source, PhysicalPlan child, List<Order> order, Expression limit, Integer estimatedRowSize) {
+    public TopNExec(Source source, PhysicalPlan child, List<Order> order, Expression limit) {
         super(source, child);
         this.order = order;
         this.limit = limit;
-        this.estimatedRowSize = estimatedRowSize;
     }
 
     @Override
     protected NodeInfo<TopNExec> info() {
-        return NodeInfo.create(this, TopNExec::new, child(), order, limit, estimatedRowSize);
+        return NodeInfo.create(this, TopNExec::new, child(), order, limit);
     }
 
     @Override
     public TopNExec replaceChild(PhysicalPlan newChild) {
-        return new TopNExec(source(), newChild, order, limit, estimatedRowSize);
+        return new TopNExec(source(), newChild, order, limit);
     }
 
     public Expression limit() {
@@ -50,23 +44,9 @@ public class TopNExec extends UnaryExec implements EstimatesRowSize {
         return order;
     }
 
-    /**
-     * Estimate of the number of bytes that'll be loaded per position before
-     * the stream of pages is consumed.
-     */
-    public Integer estimatedRowSize() {
-        return estimatedRowSize;
-    }
-
-    @Override
-    public PhysicalPlan estimateRowSize(State state) {
-        int size = state.consumeAllFields(true);
-        return Objects.equals(this.estimatedRowSize, size) ? this : new TopNExec(source(), child(), order, limit, size);
-    }
-
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), order, limit, estimatedRowSize);
+        return Objects.hash(super.hashCode(), order, limit);
     }
 
     @Override
@@ -74,9 +54,7 @@ public class TopNExec extends UnaryExec implements EstimatesRowSize {
         boolean equals = super.equals(obj);
         if (equals) {
             var other = (TopNExec) obj;
-            equals = Objects.equals(order, other.order)
-                && Objects.equals(limit, other.limit)
-                && Objects.equals(estimatedRowSize, other.estimatedRowSize);
+            equals = Objects.equals(order, other.order) && Objects.equals(limit, other.limit);
         }
         return equals;
     }

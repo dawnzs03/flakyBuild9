@@ -8,6 +8,7 @@
 package org.elasticsearch.compute.aggregation;
 
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.common.util.BitArray;
 import org.elasticsearch.common.util.$Type$Array;
 import org.elasticsearch.compute.data.Block;
 import org.elasticsearch.compute.data.BooleanBlock;
@@ -22,56 +23,81 @@ $endif$
 import org.elasticsearch.core.Releasables;
 
 /**
- * Aggregator state for an array of $type$s. It is created in a mode where it
- * won't track the {@code groupId}s that are sent to it and it is the
- * responsibility of the caller to only fetch values for {@code groupId}s
- * that it has sent using the {@code selected} parameter when building the
- * results. This is fine when there are no {@code null} values in the input
- * data. But once there are null values in the input data it is
- * <strong>much</strong> more convenient to only send non-null values and
- * the tracking built into the grouping code can't track that. In that case
- * call {@link #enableGroupIdTracking} to transition the state into a mode
- * where it'll track which {@code groupIds} have been written.
- * <p>
+ * Aggregator state for an array of $type$s.
  * This class is generated. Do not edit it.
- * </p>
  */
-final class $Type$ArrayState extends AbstractArrayState implements GroupingAggregatorState {
+final class $Type$ArrayState implements GroupingAggregatorState {
+    private final BigArrays bigArrays;
     private final $type$ init;
 
     private $Type$Array values;
+    /**
+     * Total number of groups {@code <=} values.length.
+     */
+    private int largestIndex;
+    private BitArray nonNulls;
 
     $Type$ArrayState(BigArrays bigArrays, $type$ init) {
-        super(bigArrays);
+        this.bigArrays = bigArrays;
         this.values = bigArrays.new$Type$Array(1, false);
         this.values.set(0, init);
         this.init = init;
     }
 
-    $type$ get(int groupId) {
-        return values.get(groupId);
+    $type$ get(int index) {
+        return values.get(index);
     }
 
-    $type$ getOrDefault(int groupId) {
-        return groupId < values.size() ? values.get(groupId) : init;
+    $type$ getOrDefault(int index) {
+        return index <= largestIndex ? values.get(index) : init;
     }
 
-    void set(int groupId, $type$ value) {
-        ensureCapacity(groupId);
-        values.set(groupId, value);
-        trackGroupId(groupId);
+    void set($type$ value, int index) {
+        if (index > largestIndex) {
+            ensureCapacity(index);
+            largestIndex = index;
+        }
+        values.set(index, value);
+        if (nonNulls != null) {
+            nonNulls.set(index);
+        }
     }
 
 $if(long)$
-    void increment(int groupId, long value) {
-        ensureCapacity(groupId);
-        values.increment(groupId, value);
-        trackGroupId(groupId);
+    void increment(long value, int index) {
+        if (index > largestIndex) {
+            ensureCapacity(index);
+            largestIndex = index;
+        }
+        values.increment(index, value);
+        if (nonNulls != null) {
+            nonNulls.set(index);
+        }
     }
 $endif$
 
+    void putNull(int index) {
+        if (index > largestIndex) {
+            ensureCapacity(index);
+            largestIndex = index;
+        }
+        if (nonNulls == null) {
+            nonNulls = new BitArray(index + 1, bigArrays);
+            for (int i = 0; i < index; i++) {
+                nonNulls.set(i);
+            }
+        } else {
+            // Do nothing. Null is represented by the default value of false for get(int),
+            // and any present value trumps a null value in our aggregations.
+        }
+    }
+
+    boolean hasValue(int index) {
+        return nonNulls == null || nonNulls.get(index);
+    }
+
     Block toValuesBlock(org.elasticsearch.compute.data.IntVector selected) {
-        if (false == trackingGroupIds()) {
+        if (nonNulls == null) {
             $Type$Vector.Builder builder = $Type$Vector.newVectorBuilder(selected.getPositionCount());
             for (int i = 0; i < selected.getPositionCount(); i++) {
                 builder.append$Type$(values.get(selected.getInt(i)));
@@ -90,10 +116,10 @@ $endif$
         return builder.build();
     }
 
-    private void ensureCapacity(int groupId) {
-        if (groupId >= values.size()) {
+    private void ensureCapacity(int position) {
+        if (position >= values.size()) {
             long prevSize = values.size();
-            values = bigArrays.grow(values, groupId + 1);
+            values = bigArrays.grow(values, position + 1);
             values.fill(prevSize, values.size(), init);
         }
     }
@@ -103,22 +129,18 @@ $endif$
     public void toIntermediate(Block[] blocks, int offset, IntVector selected) {
         assert blocks.length >= offset + 2;
         var valuesBuilder = $Type$Block.newBlockBuilder(selected.getPositionCount());
-        var hasValueBuilder = BooleanBlock.newBlockBuilder(selected.getPositionCount());
+        var nullsBuilder = BooleanBlock.newBlockBuilder(selected.getPositionCount());
         for (int i = 0; i < selected.getPositionCount(); i++) {
             int group = selected.getInt(i);
-            if (group < values.size()) {
-                valuesBuilder.append$Type$(values.get(group));
-            } else {
-                valuesBuilder.append$Type$(0); // TODO can we just use null?
-            }
-            hasValueBuilder.appendBoolean(hasValue(group));
+            valuesBuilder.append$Type$(values.get(group));
+            nullsBuilder.appendBoolean(hasValue(group));
         }
         blocks[offset + 0] = valuesBuilder.build();
-        blocks[offset + 1] = hasValueBuilder.build();
+        blocks[offset + 1] = nullsBuilder.build();
     }
 
     @Override
     public void close() {
-        Releasables.close(values, super::close);
+        Releasables.close(values, nonNulls);
     }
 }

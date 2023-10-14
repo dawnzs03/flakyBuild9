@@ -65,7 +65,8 @@ public class NodesInfoResponse extends BaseNodesResponse<NodeInfo> implements To
 
             builder.field("version", nodeInfo.getVersion());
             builder.field("transport_version", nodeInfo.getTransportVersion().id());
-            builder.field("build_flavor", nodeInfo.getBuild().flavor());
+            // flavor no longer exists, but we keep it here for backcompat
+            builder.field("build_flavor", "default");
             builder.field("build_type", nodeInfo.getBuild().type().displayName());
             builder.field("build_hash", nodeInfo.getBuild().hash());
             if (nodeInfo.getTotalIndexingBuffer() != null) {

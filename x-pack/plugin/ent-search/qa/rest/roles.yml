@@ -25,12 +25,3 @@ user:
     ]
       privileges: [ "read" ]
 
-unprivileged:
-  indices:
-    - names: [
-      # indices and search applications
-      "test-*",
-      "another-test-search-application"
-    ]
-      privileges: [ "manage", "write", "read" ]
-

@@ -71,10 +71,6 @@ public class Types {
     static final ClassName LONG_CONSTANT_VECTOR = ClassName.get(DATA_PACKAGE, "ConstantLongVector");
     static final ClassName DOUBLE_CONSTANT_VECTOR = ClassName.get(DATA_PACKAGE, "ConstantDoubleVector");
 
-    static final ClassName INT_ARRAY_STATE = ClassName.get(AGGREGATION_PACKAGE, "IntArrayState");
-    static final ClassName LONG_ARRAY_STATE = ClassName.get(AGGREGATION_PACKAGE, "LongArrayState");
-    static final ClassName DOUBLE_ARRAY_STATE = ClassName.get(AGGREGATION_PACKAGE, "DoubleArrayState");
-
     static final ClassName AGGREGATOR_FUNCTION = ClassName.get(AGGREGATION_PACKAGE, "AggregatorFunction");
     static final ClassName AGGREGATOR_FUNCTION_SUPPLIER = ClassName.get(AGGREGATION_PACKAGE, "AggregatorFunctionSupplier");
     static final ClassName GROUPING_AGGREGATOR_FUNCTION = ClassName.get(AGGREGATION_PACKAGE, "GroupingAggregatorFunction");
@@ -83,7 +79,6 @@ public class Types {
         "GroupingAggregatorFunction",
         "AddInput"
     );
-    static final ClassName SEEN_GROUP_IDS = ClassName.get(AGGREGATION_PACKAGE, "SeenGroupIds");
 
     static final ClassName INTERMEDIATE_STATE_DESC = ClassName.get(AGGREGATION_PACKAGE, "IntermediateStateDesc");
     static final TypeName LIST_AGG_FUNC_DESC = ParameterizedTypeName.get(ClassName.get(List.class), INTERMEDIATE_STATE_DESC);
@@ -93,11 +88,6 @@ public class Types {
         "org.elasticsearch.xpack.esql.expression.function.scalar.multivalue",
         "AbstractMultivalueFunction",
         "AbstractEvaluator"
-    );
-    static final ClassName ABSTRACT_NULLABLE_MULTIVALUE_FUNCTION_EVALUATOR = ClassName.get(
-        "org.elasticsearch.xpack.esql.expression.function.scalar.multivalue",
-        "AbstractMultivalueFunction",
-        "AbstractNullableEvaluator"
     );
     static final ClassName ABSTRACT_CONVERT_FUNCTION_EVALUATOR = ClassName.get(
         "org.elasticsearch.xpack.esql.expression.function.scalar.convert",

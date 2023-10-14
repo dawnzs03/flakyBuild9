@@ -9,9 +9,7 @@ package org.elasticsearch.xpack.esql.expression.function.scalar.math;
 
 import org.elasticsearch.compute.ann.Evaluator;
 import org.elasticsearch.compute.operator.EvalOperator;
-import org.elasticsearch.xpack.esql.EsqlUnsupportedOperationException;
-import org.elasticsearch.xpack.esql.evaluator.mapper.EvaluatorMapper;
-import org.elasticsearch.xpack.esql.expression.function.Named;
+import org.elasticsearch.xpack.esql.planner.Mappable;
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.expression.function.OptionalArgument;
 import org.elasticsearch.xpack.ql.expression.function.scalar.ScalarFunction;
@@ -32,12 +30,12 @@ import static org.elasticsearch.xpack.ql.expression.TypeResolutions.ParamOrdinal
 import static org.elasticsearch.xpack.ql.expression.TypeResolutions.ParamOrdinal.SECOND;
 import static org.elasticsearch.xpack.ql.expression.TypeResolutions.isNumeric;
 
-public class Pow extends ScalarFunction implements OptionalArgument, EvaluatorMapper {
+public class Pow extends ScalarFunction implements OptionalArgument, Mappable {
 
     private final Expression base, exponent;
     private final DataType dataType;
 
-    public Pow(Source source, @Named("base") Expression base, @Named("exponent") Expression exponent) {
+    public Pow(Source source, Expression base, Expression exponent) {
         super(source, Arrays.asList(base, exponent));
         this.base = base;
         this.exponent = exponent;
@@ -65,7 +63,7 @@ public class Pow extends ScalarFunction implements OptionalArgument, EvaluatorMa
 
     @Override
     public Object fold() {
-        return EvaluatorMapper.super.fold();
+        return Mappable.super.fold();
     }
 
     @Evaluator(extraName = "Double", warnExceptions = { ArithmeticException.class })
@@ -162,7 +160,7 @@ public class Pow extends ScalarFunction implements OptionalArgument, EvaluatorMa
 
     @Override
     public ScriptTemplate asScript() {
-        throw new EsqlUnsupportedOperationException("functions do not support scripting");
+        throw new UnsupportedOperationException("functions do not support scripting");
     }
 
     @Override

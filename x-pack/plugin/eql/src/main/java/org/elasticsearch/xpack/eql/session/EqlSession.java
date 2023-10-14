@@ -26,6 +26,7 @@ import org.elasticsearch.xpack.ql.expression.function.FunctionRegistry;
 import org.elasticsearch.xpack.ql.index.IndexResolver;
 import org.elasticsearch.xpack.ql.plan.logical.LogicalPlan;
 
+import static org.elasticsearch.action.ActionListener.wrap;
 import static org.elasticsearch.xpack.ql.util.ActionListeners.map;
 
 public class EqlSession {
@@ -82,7 +83,7 @@ public class EqlSession {
     }
 
     public void eql(String eql, ParserParams params, ActionListener<Results> listener) {
-        eqlExecutable(eql, params, listener.delegateFailureAndWrap((l, e) -> e.execute(this, map(l, Results::fromPayload))));
+        eqlExecutable(eql, params, wrap(e -> e.execute(this, map(listener, Results::fromPayload)), listener::onFailure));
     }
 
     public void eqlExecutable(String eql, ParserParams params, ActionListener<PhysicalPlan> listener) {

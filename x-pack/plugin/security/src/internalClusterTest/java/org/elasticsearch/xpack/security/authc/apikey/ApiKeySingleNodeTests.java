@@ -32,6 +32,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.test.SecuritySingleNodeTestCase;
 import org.elasticsearch.test.TestSecurityClient;
 import org.elasticsearch.test.XContentTestUtils;
+import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.security.action.Grant;
@@ -81,9 +82,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.elasticsearch.action.support.WriteRequest.RefreshPolicy.IMMEDIATE;
-import static org.elasticsearch.action.support.WriteRequest.RefreshPolicy.NONE;
-import static org.elasticsearch.action.support.WriteRequest.RefreshPolicy.WAIT_UNTIL;
 import static org.elasticsearch.test.SecuritySettingsSource.ES_TEST_ROOT_USER;
 import static org.elasticsearch.test.SecuritySettingsSourceField.TEST_PASSWORD;
 import static org.elasticsearch.xpack.core.security.authc.support.UsernamePasswordToken.basicAuthHeaderValue;
@@ -117,12 +115,14 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
     }
 
     public void testQueryWithExpiredKeys() throws InterruptedException {
-        CreateApiKeyRequest request1 = new CreateApiKeyRequest("expired-shortly", null, TimeValue.timeValueMillis(1), null);
-        request1.setRefreshPolicy(randomFrom(IMMEDIATE, WAIT_UNTIL));
-        final String id1 = client().execute(CreateApiKeyAction.INSTANCE, request1).actionGet().getId();
-        CreateApiKeyRequest request2 = new CreateApiKeyRequest("long-lived", null, TimeValue.timeValueDays(1), null);
-        request2.setRefreshPolicy(randomFrom(IMMEDIATE, WAIT_UNTIL));
-        final String id2 = client().execute(CreateApiKeyAction.INSTANCE, request2).actionGet().getId();
+        final String id1 = client().execute(
+            CreateApiKeyAction.INSTANCE,
+            new CreateApiKeyRequest("expired-shortly", null, TimeValue.timeValueMillis(1), null)
+        ).actionGet().getId();
+        final String id2 = client().execute(
+            CreateApiKeyAction.INSTANCE,
+            new CreateApiKeyRequest("long-lived", null, TimeValue.timeValueDays(1), null)
+        ).actionGet().getId();
         Thread.sleep(10); // just to be 100% sure that the 1st key is expired when we search for it
 
         final QueryApiKeyRequest queryApiKeyRequest = new QueryApiKeyRequest(
@@ -150,7 +150,6 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
         grantApiKeyRequest.getGrant().setType("password");
         grantApiKeyRequest.getGrant().setUsername(username);
         grantApiKeyRequest.getGrant().setPassword(password);
-        grantApiKeyRequest.setRefreshPolicy(randomFrom(IMMEDIATE, WAIT_UNTIL, NONE));
         grantApiKeyRequest.getApiKeyRequest().setName(randomAlphaOfLength(8));
         grantApiKeyRequest.getApiKeyRequest()
             .setRoleDescriptors(
@@ -214,11 +213,9 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
             createServiceAccountTokenRequest
         ).actionGet();
 
-        CreateApiKeyRequest createApiKeyRequest = new CreateApiKeyRequest(randomAlphaOfLength(8), null, null);
-        createApiKeyRequest.setRefreshPolicy(randomFrom(IMMEDIATE, WAIT_UNTIL, NONE));
         final CreateApiKeyResponse createApiKeyResponse = client().filterWithHeader(
             Map.of("Authorization", "Bearer " + createServiceAccountTokenResponse.getValue())
-        ).execute(CreateApiKeyAction.INSTANCE, createApiKeyRequest).actionGet();
+        ).execute(CreateApiKeyAction.INSTANCE, new CreateApiKeyRequest(randomAlphaOfLength(8), null, null)).actionGet();
 
         final Map<String, Object> apiKeyDocument = getApiKeyDocument(createApiKeyResponse.getId());
 
@@ -240,14 +237,16 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
     }
 
     public void testGetApiKeyWorksForTheApiKeyItself() {
-        CreateApiKeyRequest createApiKeyRequest = new CreateApiKeyRequest(
-            randomAlphaOfLength(10),
-            List.of(new RoleDescriptor("x", new String[] { "manage_own_api_key", "manage_token" }, null, null, null, null, null, null)),
-            null,
-            null
-        );
-        createApiKeyRequest.setRefreshPolicy(randomFrom(WAIT_UNTIL, IMMEDIATE));
-        final CreateApiKeyResponse createApiKeyResponse = client().execute(CreateApiKeyAction.INSTANCE, createApiKeyRequest).actionGet();
+        final String apiKeyName = randomAlphaOfLength(10);
+        final CreateApiKeyResponse createApiKeyResponse = client().execute(
+            CreateApiKeyAction.INSTANCE,
+            new CreateApiKeyRequest(
+                apiKeyName,
+                List.of(new RoleDescriptor("x", new String[] { "manage_own_api_key", "manage_token" }, null, null, null, null, null, null)),
+                null,
+                null
+            )
+        ).actionGet();
 
         final String apiKeyId = createApiKeyResponse.getId();
         final String base64ApiKeyKeyValue = Base64.getEncoder()
@@ -361,7 +360,6 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
         ).createTokenWithClientCredentialsGrant();
         final GrantApiKeyRequest grantApiKeyRequest3 = new GrantApiKeyRequest();
         grantApiKeyRequest3.getApiKeyRequest().setName("granted-api-key-must-not-have-chained-runas");
-        grantApiKeyRequest3.setRefreshPolicy(randomFrom(NONE, WAIT_UNTIL, IMMEDIATE));
         grantApiKeyRequest3.getGrant().setType("access_token");
         grantApiKeyRequest3.getGrant().setAccessToken(new SecureString(oAuth2Token3.accessToken().toCharArray()));
         grantApiKeyRequest3.getGrant().setRunAsUsername("user2");
@@ -385,7 +383,6 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
         securityClient.putRole(new RoleDescriptor("user1_role", new String[] { "manage_token" }, null, new String[] { "user2" }));
         final GrantApiKeyRequest grantApiKeyRequest4 = new GrantApiKeyRequest();
         grantApiKeyRequest4.getApiKeyRequest().setName("granted-api-key-will-check-token-run-as-privilege");
-        grantApiKeyRequest4.setRefreshPolicy(randomFrom(NONE, WAIT_UNTIL, IMMEDIATE));
         grantApiKeyRequest4.getGrant().setType("access_token");
         grantApiKeyRequest4.getGrant().setAccessToken(new SecureString(oAuth2Token4.accessToken().toCharArray()));
         final ElasticsearchStatusException e4 = expectThrows(
@@ -403,14 +400,10 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
     }
 
     public void testInvalidateApiKeyWillRecordTimestamp() {
-        CreateApiKeyRequest createApiKeyRequest = new CreateApiKeyRequest(
-            randomAlphaOfLengthBetween(3, 8),
-            null,
-            TimeValue.timeValueMillis(randomLongBetween(1, 1000)),
-            null
-        );
-        createApiKeyRequest.setRefreshPolicy(randomFrom(WAIT_UNTIL, IMMEDIATE));
-        final String apiKeyId = client().execute(CreateApiKeyAction.INSTANCE, createApiKeyRequest).actionGet().getId();
+        final String apiKeyId = client().execute(
+            CreateApiKeyAction.INSTANCE,
+            new CreateApiKeyRequest(randomAlphaOfLengthBetween(3, 8), null, TimeValue.timeValueMillis(randomLongBetween(1, 1000)), null)
+        ).actionGet().getId();
         assertThat(getApiKeyDocument(apiKeyId).get("invalidation_time"), nullValue());
 
         final long start = Instant.now().toEpochMilli();
@@ -434,11 +427,12 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
     }
 
     public void testCreateCrossClusterApiKey() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
+
         final var request = CreateCrossClusterApiKeyRequest.withNameAndAccess(randomAlphaOfLengthBetween(3, 8), """
             {
               "search": [ {"names": ["logs"]} ]
             }""");
-        request.setRefreshPolicy(randomFrom(IMMEDIATE, WAIT_UNTIL));
 
         final PlainActionFuture<CreateApiKeyResponse> future = new PlainActionFuture<>();
         client().execute(CreateCrossClusterApiKeyAction.INSTANCE, request, future);
@@ -525,6 +519,8 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
     }
 
     public void testUpdateCrossClusterApiKey() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
+
         final RoleDescriptor originalRoleDescriptor = new RoleDescriptor(
             "cross_cluster",
             new String[] { "cross_cluster_search" },
@@ -539,7 +535,6 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
             {
               "search": [ {"names": ["logs"]} ]
             }""");
-        createApiKeyRequest.setRefreshPolicy(randomFrom(WAIT_UNTIL, IMMEDIATE));
         final CreateApiKeyResponse createApiKeyResponse = client().execute(CreateCrossClusterApiKeyAction.INSTANCE, createApiKeyRequest)
             .actionGet();
         final String apiKeyId = createApiKeyResponse.getId();
@@ -627,6 +622,8 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
     // Cross-cluster API keys cannot be created by an API key even if it has manage_security privilege
     // This is intentional until we solve the issue of derived API key ownership
     public void testCannotCreateDerivedCrossClusterApiKey() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
+
         final CreateApiKeyResponse createAdminKeyResponse = new CreateApiKeyRequestBuilder(client()).setName("admin-key")
             .setRoleDescriptors(
                 randomFrom(
@@ -634,7 +631,6 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
                     null
                 )
             )
-            .setRefreshPolicy(randomFrom(NONE, WAIT_UNTIL, IMMEDIATE))
             .execute()
             .actionGet();
         final String encoded = Base64.getEncoder()
@@ -646,7 +642,6 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
             {
               "search": [ {"names": ["logs"]} ]
             }""");
-        request.setRefreshPolicy(randomFrom(NONE, WAIT_UNTIL, IMMEDIATE));
 
         final PlainActionFuture<CreateApiKeyResponse> future = new PlainActionFuture<>();
         client().filterWithHeader(Map.of("Authorization", "ApiKey " + encoded))
@@ -664,7 +659,6 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
         final GrantApiKeyRequest grantApiKeyRequest = new GrantApiKeyRequest();
         // randomly use either password or access token grant
         grantApiKeyRequest.getApiKeyRequest().setName("granted-api-key-for-" + username + "-runas-" + runAsUsername);
-        grantApiKeyRequest.setRefreshPolicy(randomFrom(WAIT_UNTIL, IMMEDIATE));
         if (randomBoolean()) {
             grantApiKeyRequest.getApiKeyRequest()
                 .setRoleDescriptors(List.of(new RoleDescriptor(randomAlphaOfLengthBetween(3, 8), new String[] { "monitor" }, null, null)));

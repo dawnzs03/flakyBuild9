@@ -8,6 +8,7 @@
 
 package org.elasticsearch.benchmark.routing.allocation;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -27,7 +28,6 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.health.HealthIndicatorResult;
 import org.elasticsearch.health.node.HealthInfo;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.tasks.TaskManager;
@@ -121,7 +121,7 @@ public class ShardsAvailabilityHealthIndicatorBenchmark {
             IndexMetadata indexMetadata = IndexMetadata.builder("test_" + i)
                 .settings(
                     Settings.builder()
-                        .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
+                        .put("index.version.created", Version.CURRENT)
                         .put(DataTier.TIER_PREFERENCE_SETTING.getKey(), "data_warm")
                         .put(INDEX_ROUTING_REQUIRE_GROUP_SETTING.getKey() + "data", "warm")
                 )

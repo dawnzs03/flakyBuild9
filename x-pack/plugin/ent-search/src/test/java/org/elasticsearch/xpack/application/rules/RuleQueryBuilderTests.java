@@ -41,7 +41,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.elasticsearch.xpack.application.rules.QueryRuleCriteriaType.EXACT;
 import static org.hamcrest.CoreMatchers.instanceOf;
 
 public class RuleQueryBuilderTests extends AbstractQueryTestCase<RuleQueryBuilder> {
@@ -141,7 +140,7 @@ public class RuleQueryBuilderTests extends AbstractQueryTestCase<RuleQueryBuilde
                 new QueryRule(
                     "my_rule1",
                     QueryRule.QueryRuleType.PINNED,
-                    List.of(new QueryRuleCriteria(EXACT, "query_string", List.of("elastic"))),
+                    List.of(new QueryRuleCriteria(QueryRuleCriteria.CriteriaType.EXACT, "query_string", "elastic")),
                     Map.of("ids", List.of("id1", "id2"))
                 )
             );

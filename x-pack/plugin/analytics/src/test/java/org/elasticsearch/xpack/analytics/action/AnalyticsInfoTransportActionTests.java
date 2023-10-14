@@ -17,7 +17,6 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.core.XPackFeatureSet;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureResponse;
@@ -65,7 +64,7 @@ public class AnalyticsInfoTransportActionTests extends ESTestCase {
         AnalyticsUsageTransportAction usageAction = new AnalyticsUsageTransportAction(
             mock(TransportService.class),
             clusterService,
-            mock(ThreadPool.class),
+            null,
             mock(ActionFilters.class),
             null,
             client
@@ -91,7 +90,7 @@ public class AnalyticsInfoTransportActionTests extends ESTestCase {
         AnalyticsUsageTransportAction usageAction = new AnalyticsUsageTransportAction(
             mock(TransportService.class),
             clusterService,
-            mock(ThreadPool.class),
+            null,
             mock(ActionFilters.class),
             null,
             client

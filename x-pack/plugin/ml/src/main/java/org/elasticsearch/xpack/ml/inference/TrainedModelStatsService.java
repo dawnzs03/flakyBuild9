@@ -262,8 +262,7 @@ public class TrainedModelStatsService {
                     client,
                     clusterState,
                     MasterNodeRequest.DEFAULT_MASTER_NODE_TIMEOUT,
-                    listener,
-                    MlStatsIndex.STATS_INDEX_MAPPINGS_VERSION
+                    listener
                 ),
                 listener::onFailure
             )

@@ -49,7 +49,6 @@ import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.xpack.core.ClientHelper.ML_ORIGIN;
 import static org.elasticsearch.xpack.core.ml.MlTasks.MODEL_IMPORT_TASK_ACTION;
 import static org.elasticsearch.xpack.core.ml.MlTasks.MODEL_IMPORT_TASK_TYPE;
-import static org.elasticsearch.xpack.core.ml.MlTasks.downloadModelTaskDescription;
 
 public class TransportLoadTrainedModelPackage extends TransportMasterNodeAction<Request, AcknowledgedResponse> {
 
@@ -191,9 +190,9 @@ public class TransportLoadTrainedModelPackage extends TransportMasterNodeAction<
 
             @Override
             public CancellableTask createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers) {
-                return new CancellableTask(id, type, action, downloadModelTaskDescription(request.getModelId()), parentTaskId, headers);
+                return new CancellableTask(id, type, action, getDescription(), parentTaskId, headers);
             }
-        }, false);
+        });
     }
 
     private static void recordError(Client client, String modelId, AtomicReference<Exception> exceptionRef, Exception e) {

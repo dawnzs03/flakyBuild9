@@ -7,7 +7,6 @@
 
 package org.elasticsearch.compute.aggregation.blockhash;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
 import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
 
 import org.elasticsearch.common.util.MockBigArrays;
@@ -19,7 +18,6 @@ import org.elasticsearch.compute.operator.HashAggregationOperator;
 import org.elasticsearch.compute.operator.MultivalueDedupeTests;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.test.ListMatcher;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -28,8 +26,6 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.elasticsearch.test.ListMatcher.matchesList;
-import static org.elasticsearch.test.MapMatcher.assertMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
@@ -73,11 +69,11 @@ public class BlockHashRandomizedTests extends ESTestCase {
     private final List<ElementType> allowedTypes;
 
     public BlockHashRandomizedTests(
-        @Name("forcePackedHash") boolean forcePackedHash,
-        @Name("groups") int groups,
-        @Name("maxValuesPerPosition") int maxValuesPerPosition,
-        @Name("dups") int dups,
-        @Name("allowedTypes") List<ElementType> allowedTypes
+        boolean forcePackedHash,
+        int groups,
+        int maxValuesPerPosition,
+        int dups,
+        List<ElementType> allowedTypes
     ) {
         this.forcePackedHash = forcePackedHash;
         this.groups = groups;
@@ -94,15 +90,7 @@ public class BlockHashRandomizedTests extends ESTestCase {
         int positionCount = 100;
         int emitBatchSize = 100;
         try (BlockHash blockHash = newBlockHash(emitBatchSize, types)) {
-            /*
-             * Only the long/long, long/bytes_ref, and bytes_ref/long implementations don't collect nulls.
-             */
-            Oracle oracle = new Oracle(
-                forcePackedHash
-                    || false == (types.equals(List.of(ElementType.LONG, ElementType.LONG))
-                        || types.equals(List.of(ElementType.LONG, ElementType.BYTES_REF))
-                        || types.equals(List.of(ElementType.BYTES_REF, ElementType.LONG)))
-            );
+            Oracle oracle = new Oracle();
 
             for (int p = 0; p < pageCount; p++) {
                 for (int g = 0; g < blocks.length; g++) {
@@ -121,7 +109,7 @@ public class BlockHashRandomizedTests extends ESTestCase {
                 int[] batchCount = new int[1];
                 // PackedValuesBlockHash always chunks but the normal single value ones don't
                 boolean usingSingle = forcePackedHash == false && types.size() == 1;
-                BlockHashTests.hash(false, blockHash, ordsAndKeys -> {
+                BlockHashTests.hash(blockHash, ordsAndKeys -> {
                     if (usingSingle == false) {
                         assertThat(ordsAndKeys.ords().getTotalValueCount(), lessThanOrEqualTo(emitBatchSize));
                     }
@@ -148,15 +136,7 @@ public class BlockHashRandomizedTests extends ESTestCase {
                 assertTrue(contained);
             }
 
-            if (false == keys.equals(oracle.keys)) {
-                List<List<Object>> keyList = new ArrayList<>();
-                keyList.addAll(keys);
-                ListMatcher keyMatcher = matchesList();
-                for (List<Object> k : oracle.keys) {
-                    keyMatcher = keyMatcher.item(k);
-                }
-                assertMap(keyList, keyMatcher);
-            }
+            assertThat(keys, equalTo(oracle.keys));
         }
     }
 
@@ -200,12 +180,6 @@ public class BlockHashRandomizedTests extends ESTestCase {
     private static class Oracle {
         private final NavigableSet<List<Object>> keys = new TreeSet<>(new KeyComparator());
 
-        private final boolean collectsNull;
-
-        private Oracle(boolean collectsNull) {
-            this.collectsNull = collectsNull;
-        }
-
         void add(BasicBlockTests.RandomBlock[] randomBlocks) {
             for (int p = 0; p < randomBlocks[0].block().getPositionCount(); p++) {
                 add(randomBlocks, p, List.of());
@@ -220,11 +194,6 @@ public class BlockHashRandomizedTests extends ESTestCase {
             BasicBlockTests.RandomBlock block = randomBlocks[key.size()];
             List<Object> values = block.values().get(p);
             if (values == null) {
-                if (collectsNull) {
-                    List<Object> newKey = new ArrayList<>(key);
-                    newKey.add(null);
-                    add(randomBlocks, p, newKey);
-                }
                 return;
             }
             for (Object v : values) {

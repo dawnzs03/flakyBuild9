@@ -74,20 +74,6 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
         createAndPopulateIndex("test");
     }
 
-    public void testProjectConstant() {
-        EsqlQueryResponse results = run("from test | eval x = 1 | keep x");
-        assertThat(results.columns(), equalTo(List.of(new ColumnInfo("x", "integer"))));
-        assertThat(results.values().size(), equalTo(40));
-        assertThat(results.values().get(0).get(0), equalTo(1));
-    }
-
-    public void testStatsOverConstant() {
-        EsqlQueryResponse results = run("from test | eval x = 1 | stats x = count(x)");
-        assertThat(results.columns(), equalTo(List.of(new ColumnInfo("x", "long"))));
-        assertThat(results.values().size(), equalTo(1));
-        assertThat(results.values().get(0).get(0), equalTo(40L));
-    }
-
     public void testRow() {
         long value = randomLongBetween(0, Long.MAX_VALUE);
         EsqlQueryResponse response = run("row " + value);
@@ -193,12 +179,13 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
         assertEquals(expectedValues, actualValues);
     }
 
+    @AwaitsFix(bugUrl = "https://github.com/elastic/elasticsearch-internal/issues/1306")
     public void testFromGroupingByNumericFieldWithNulls() {
         for (int i = 0; i < 5; i++) {
             client().prepareBulk()
                 .add(new IndexRequest("test").id("no_count_old_" + i).source("data", between(1, 2), "data_d", 1d))
                 .add(new IndexRequest("test").id("no_count_new_" + i).source("data", 99, "data_d", 1d))
-                .add(new IndexRequest("test").id("no_data_" + i).source("count", 12, "count_d", 12d))
+                .add(new IndexRequest("test").id("no_data_" + i).source("count", between(0, 100), "count_d", between(0, 100)))
                 .get();
             if (randomBoolean()) {
                 client().admin().indices().prepareRefresh("test").get();
@@ -207,17 +194,36 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
         client().admin().indices().prepareRefresh("test").get();
         EsqlQueryResponse results = run("from test | stats avg(count) by data | sort data");
         logger.info(results);
+        Assert.assertEquals(2, results.columns().size());
+        Assert.assertEquals(3, results.values().size());
 
-        assertThat(results.columns(), hasSize(2));
+        // assert column metadata
         assertEquals("avg(count)", results.columns().get(0).name());
         assertEquals("double", results.columns().get(0).type());
         assertEquals("data", results.columns().get(1).name());
         assertEquals("long", results.columns().get(1).type());
 
-        record Group(Long data, Double avg) {}
-        List<Group> expectedGroups = List.of(new Group(1L, 42.0), new Group(2L, 44.0), new Group(99L, null), new Group(null, 12.0));
-        List<Group> actualGroups = results.values().stream().map(l -> new Group((Long) l.get(1), (Double) l.get(0))).toList();
-        assertThat(actualGroups, equalTo(expectedGroups));
+        record Group(Long data, Double avg) {
+
+        }
+
+        List<Group> expectedGroups = List.of(new Group(1L, 42.0), new Group(2L, 44.0), new Group(99L, null));
+
+        // assert column values
+        List<Group> actualGroups = results.values()
+            .stream()
+            .map(l -> new Group((Long) l.get(1), (Double) l.get(0)))
+            .sorted(comparing(c -> c.data))
+            .toList();
+        assertEquals(expectedGroups, actualGroups);
+        for (int i = 0; i < 5; i++) { /// TODO indices are automatically cleaned up. why delete?
+            client().prepareBulk()
+                .add(new DeleteRequest("test").id("no_color_" + i))
+                .add(new DeleteRequest("test").id("no_count_red_" + i))
+                .add(new DeleteRequest("test").id("no_count_yellow_" + i))
+                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+                .get();
+        }
     }
 
     public void testFromStatsGroupingByKeyword() {
@@ -243,6 +249,7 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
         assertThat(actualGroups, equalTo(expectedGroups));
     }
 
+    @AwaitsFix(bugUrl = "https://github.com/elastic/elasticsearch-internal/issues/1306")
     public void testFromStatsGroupingByKeywordWithNulls() {
         for (int i = 0; i < 5; i++) {
             client().prepareBulk()
@@ -392,7 +399,7 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
     }
 
     public void testFromStatsProjectGroupWithAlias() {
-        String query = "from test | stats avg_count = avg(count) by data | eval d2 = data | rename data as d | keep d, d2";
+        String query = "from test | stats avg_count = avg(count) by data | eval d2 = data | rename d = data | keep d, d2";
         EsqlQueryResponse results = run(query);
         logger.info(results);
         assertThat(results.columns().stream().map(ColumnInfo::name).toList(), contains("d", "d2"));
@@ -409,7 +416,7 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
     }
 
     public void testFromStatsProjectAggWithAlias() {
-        EsqlQueryResponse results = run("from test | stats a = avg(count) by data | rename a as b | keep b");
+        EsqlQueryResponse results = run("from test | stats a = avg(count) by data | rename b = a | keep b");
         logger.info(results);
         assertThat(results.columns().stream().map(ColumnInfo::name).toList(), contains("b"));
         assertThat(results.columns().stream().map(ColumnInfo::type).toList(), contains("double"));
@@ -417,7 +424,7 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
     }
 
     public void testFromProjectStatsGroupByAlias() {
-        EsqlQueryResponse results = run("from test | rename data as d | keep d, count | stats avg(count) by d");
+        EsqlQueryResponse results = run("from test | rename d = data | keep d, count | stats avg(count) by d");
         logger.info(results);
         assertThat(results.columns().stream().map(ColumnInfo::name).toList(), contains("avg(count)", "d"));
         assertThat(results.columns().stream().map(ColumnInfo::type).toList(), contains("double", "long"));
@@ -425,7 +432,7 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
     }
 
     public void testFromProjectStatsAggregateAlias() {
-        EsqlQueryResponse results = run("from test | rename count as c | keep c, data | stats avg(c) by data");
+        EsqlQueryResponse results = run("from test | rename c = count | keep c, data | stats avg(c) by data");
         logger.info(results);
         assertThat(results.columns().stream().map(ColumnInfo::name).toList(), contains("avg(c)", "data"));
         assertThat(results.columns().stream().map(ColumnInfo::type).toList(), contains("double", "long"));
@@ -560,7 +567,7 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
     }
 
     public void testProjectRename() {
-        EsqlQueryResponse results = run("from test | eval y = count | rename count as x | keep x, y");
+        EsqlQueryResponse results = run("from test | eval y = count | rename x = count | keep x, y");
         logger.info(results);
         Assert.assertEquals(40, results.values().size());
         assertThat(results.columns(), contains(new ColumnInfo("x", "long"), new ColumnInfo("y", "long")));
@@ -571,7 +578,7 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
     }
 
     public void testProjectRenameEval() {
-        EsqlQueryResponse results = run("from test | eval y = count | rename count as x | keep x, y | eval x2 = x + 1 | eval y2 = y + 2");
+        EsqlQueryResponse results = run("from test | eval y = count | rename x = count | keep x, y | eval x2 = x + 1 | eval y2 = y + 2");
         logger.info(results);
         Assert.assertEquals(40, results.values().size());
         assertThat(
@@ -587,7 +594,7 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
     }
 
     public void testProjectRenameEvalProject() {
-        EsqlQueryResponse results = run("from test | eval y = count | rename count as x | keep x, y | eval z = x + y | keep x, y, z");
+        EsqlQueryResponse results = run("from test | eval y = count | rename x = count | keep x, y | eval z = x + y | keep x, y, z");
         logger.info(results);
         Assert.assertEquals(40, results.values().size());
         assertThat(results.columns(), contains(new ColumnInfo("x", "long"), new ColumnInfo("y", "long"), new ColumnInfo("z", "long")));
@@ -599,7 +606,7 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
     }
 
     public void testProjectOverride() {
-        EsqlQueryResponse results = run("from test | eval cnt = count | rename count as data | keep cnt, data");
+        EsqlQueryResponse results = run("from test | eval cnt = count | rename data = count | keep cnt, data");
         logger.info(results);
         Assert.assertEquals(40, results.values().size());
         assertThat(results.columns(), contains(new ColumnInfo("cnt", "long"), new ColumnInfo("data", "long")));

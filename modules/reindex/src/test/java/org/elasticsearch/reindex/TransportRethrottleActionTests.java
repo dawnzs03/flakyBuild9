@@ -103,7 +103,6 @@ public class TransportRethrottleActionTests extends ESTestCase {
                     "test",
                     "test",
                     "test",
-                    "test",
                     status,
                     0,
                     0,
@@ -137,7 +136,6 @@ public class TransportRethrottleActionTests extends ESTestCase {
             tasks.add(
                 new TaskInfo(
                     new TaskId("test", 123),
-                    "test",
                     "test",
                     "test",
                     "test",

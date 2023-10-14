@@ -146,7 +146,7 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
             PeerRecoveryTargetService.Actions.HANDOFF_PRIMARY_CONTEXT,
             new RecoveryHandoffPrimaryContextRequest(recoveryId, shardId, primaryContext),
             standardTimeoutRequestOptions,
-            new ActionListenerResponseHandler<>(listener.map(r -> null), in -> TransportResponse.Empty.INSTANCE, threadPool.generic())
+            new ActionListenerResponseHandler<>(listener.map(r -> null), in -> TransportResponse.Empty.INSTANCE, ThreadPool.Names.GENERIC)
         );
     }
 
@@ -348,7 +348,7 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
                         new ActionListenerResponseHandler<>(
                             ActionListener.runBefore(listener, request::decRef),
                             reader,
-                            threadPool.generic()
+                            ThreadPool.Names.GENERIC
                         )
                     );
                 } else {

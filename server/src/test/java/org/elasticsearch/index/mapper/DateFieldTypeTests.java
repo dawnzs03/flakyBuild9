@@ -18,17 +18,19 @@ import org.apache.lucene.index.MultiReader;
 import org.apache.lucene.index.SortedNumericDocValues;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexOrDocValuesQuery;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.IndexSortSortedNumericDocValuesRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.time.DateFormatters;
 import org.elasticsearch.common.time.DateMathParser;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.fielddata.IndexNumericFieldData;
 import org.elasticsearch.index.fielddata.LeafNumericFieldData;
 import org.elasticsearch.index.fielddata.plain.SortedNumericIndexFieldData;
@@ -168,7 +170,7 @@ public class DateFieldTypeTests extends FieldTypeTestCase {
     }
 
     public void testTermQuery() {
-        Settings indexSettings = indexSettings(IndexVersion.current(), 1, 1).build();
+        Settings indexSettings = indexSettings(Version.CURRENT, 1, 1).build();
         SearchExecutionContext context = SearchExecutionContextHelper.createSimple(
             new IndexSettings(IndexMetadata.builder("foo").settings(indexSettings).build(), indexSettings),
             parserConfig(),
@@ -203,11 +205,12 @@ public class DateFieldTypeTests extends FieldTypeTestCase {
     }
 
     public void testRangeQuery() throws IOException {
-        Settings indexSettings = indexSettings(IndexVersion.current(), 1, 1).build();
+        Settings indexSettings = indexSettings(Version.CURRENT, 1, 1).build();
         SearchExecutionContext context = new SearchExecutionContext(
             0,
             0,
             new IndexSettings(IndexMetadata.builder("foo").settings(indexSettings).build(), indexSettings),
+            ClusterSettings.createBuiltInClusterSettings(),
             null,
             null,
             null,
@@ -234,13 +237,16 @@ public class DateFieldTypeTests extends FieldTypeTestCase {
             LongPoint.newRangeQuery("field", instant1, instant2),
             SortedNumericDocValuesField.newSlowRangeQuery("field", instant1, instant2)
         );
-        assertEquals(expected, ft.rangeQuery(date1, date2, true, true, null, null, null, context).rewrite(newSearcher(new MultiReader())));
+        assertEquals(
+            expected,
+            ft.rangeQuery(date1, date2, true, true, null, null, null, context).rewrite(new IndexSearcher(new MultiReader()))
+        );
 
         MappedFieldType ft2 = new DateFieldType("field", false);
         Query expected2 = SortedNumericDocValuesField.newSlowRangeQuery("field", instant1, instant2);
         assertEquals(
             expected2,
-            ft2.rangeQuery(date1, date2, true, true, null, null, null, context).rewrite(newSearcher(new MultiReader()))
+            ft2.rangeQuery(date1, date2, true, true, null, null, null, context).rewrite(new IndexSearcher(new MultiReader()))
         );
 
         instant1 = nowInMillis;
@@ -275,7 +281,7 @@ public class DateFieldTypeTests extends FieldTypeTestCase {
     }
 
     public void testRangeQueryWithIndexSort() {
-        Settings settings = indexSettings(IndexVersion.current(), 1, 1).put("index.sort.field", "field").build();
+        Settings settings = indexSettings(Version.CURRENT, 1, 1).put("index.sort.field", "field").build();
 
         IndexMetadata indexMetadata = new IndexMetadata.Builder("index").settings(settings).build();
         IndexSettings indexSettings = new IndexSettings(indexMetadata, settings);

@@ -7,9 +7,6 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.date;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.xpack.esql.EsqlTestUtils;
 import org.elasticsearch.xpack.esql.expression.function.scalar.AbstractScalarFunctionTestCase;
@@ -18,35 +15,17 @@ import org.elasticsearch.xpack.ql.expression.Literal;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.type.DataType;
 import org.elasticsearch.xpack.ql.type.DataTypes;
+import org.hamcrest.Matcher;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 public class DateExtractTests extends AbstractScalarFunctionTestCase {
-    public DateExtractTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
-    }
-
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        return parameterSuppliersFromTypedData(List.of(new TestCaseSupplier("Date Extract Year", () -> {
-            return new TestCase(
-                List.of(
-                    new TypedData(1687944333000L, DataTypes.DATETIME, "date"),
-                    new TypedData(new BytesRef("YEAR"), DataTypes.KEYWORD, "field")
-                ),
-                "DateExtractEvaluator[value=Attribute[channel=0], chronoField=Attribute[channel=1], zone=Z]",
-                DataTypes.LONG,
-                equalTo(2023L)
-            );
-        })));
-    }
 
     public void testAllChronoFields() {
         long epochMilli = 1687944333123L;
@@ -68,7 +47,37 @@ public class DateExtractTests extends AbstractScalarFunctionTestCase {
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
+    protected List<Object> simpleData() {
+        return List.of(1687944333000L, new BytesRef("YEAR"));
+    }
+
+    @Override
+    protected Expression expressionForSimpleData() {
+        return new DateExtract(Source.EMPTY, field("date", DataTypes.DATETIME), field("field", DataTypes.KEYWORD), EsqlTestUtils.TEST_CFG);
+    }
+
+    @Override
+    protected Matcher<Object> resultMatcher(List<Object> data, DataType dataType) {
+        return equalTo(2023L);
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "DateExtractEvaluator[value=Attribute[channel=0], chronoField=Attribute[channel=1], zone=Z]";
+    }
+
+    @Override
+    protected Expression constantFoldable(List<Object> data) {
+        return new DateExtract(
+            Source.EMPTY,
+            new Literal(Source.EMPTY, data.get(0), DataTypes.DATETIME),
+            new Literal(Source.EMPTY, data.get(1), DataTypes.KEYWORD),
+            EsqlTestUtils.TEST_CFG
+        );
+    }
+
+    @Override
+    protected Expression build(Source source, List<Literal> args) {
         return new DateExtract(source, args.get(0), args.get(1), EsqlTestUtils.TEST_CFG);
     }
 

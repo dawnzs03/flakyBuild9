@@ -82,11 +82,6 @@ public abstract class RangeFieldMapperTests extends MapperTestCase {
     }
 
     @Override
-    protected final Object getSampleObjectForDocument() {
-        return getSampleValueForDocument();
-    }
-
-    @Override
     protected Object getSampleValueForQuery() {
         return rangeValue();
     }

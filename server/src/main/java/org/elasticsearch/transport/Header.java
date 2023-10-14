@@ -49,7 +49,11 @@ public class Header {
         return requestId;
     }
 
-    public boolean isRequest() {
+    byte getStatus() {
+        return status;
+    }
+
+    boolean isRequest() {
         return TransportStatus.isRequest(status);
     }
 
@@ -61,7 +65,7 @@ public class Header {
         return TransportStatus.isError(status);
     }
 
-    public boolean isHandshake() {
+    boolean isHandshake() {
         return TransportStatus.isHandshake(status);
     }
 
@@ -75,11 +79,6 @@ public class Header {
 
     public Compression.Scheme getCompressionScheme() {
         return compressionScheme;
-    }
-
-    public Map<String, String> getRequestHeaders() {
-        var allHeaders = getHeaders();
-        return allHeaders == null ? null : allHeaders.v1();
     }
 
     boolean needsToReadVariableHeader() {

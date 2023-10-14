@@ -49,7 +49,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -73,7 +72,6 @@ public class PublicationTransportHandler {
     public static final String PUBLISH_STATE_ACTION_NAME = "internal:cluster/coordination/publish_state";
 
     private final TransportService transportService;
-    private final Executor clusterCoordinationExecutor;
     private final NamedWriteableRegistry namedWriteableRegistry;
     private final Function<PublishRequest, PublishWithJoinResponse> handlePublishRequest;
 
@@ -99,7 +97,6 @@ public class PublicationTransportHandler {
         Function<PublishRequest, PublishWithJoinResponse> handlePublishRequest
     ) {
         this.transportService = transportService;
-        this.clusterCoordinationExecutor = transportService.getThreadPool().executor(ThreadPool.Names.CLUSTER_COORDINATION);
         this.namedWriteableRegistry = namedWriteableRegistry;
         this.handlePublishRequest = handlePublishRequest;
 
@@ -501,7 +498,7 @@ public class PublicationTransportHandler {
                 new BytesTransportRequest(bytes, connection.getTransportVersion()),
                 task,
                 STATE_REQUEST_OPTIONS,
-                new CleanableResponseHandler<>(listener, PublishWithJoinResponse::new, clusterCoordinationExecutor, bytes::decRef)
+                new CleanableResponseHandler<>(listener, PublishWithJoinResponse::new, ThreadPool.Names.CLUSTER_COORDINATION, bytes::decRef)
             );
         }
 

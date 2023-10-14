@@ -7,6 +7,7 @@
  */
 package org.elasticsearch.index.seqno;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
@@ -15,7 +16,7 @@ import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.InternalTestCluster;
-import org.elasticsearch.test.index.IndexVersionUtils;
+import org.elasticsearch.test.VersionUtils;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -47,7 +48,10 @@ public class PeerRecoveryRetentionLeaseCreationIT extends ESIntegTestCase {
                 Settings.builder()
                     .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                     .put(IndexSettings.INDEX_SOFT_DELETES_SETTING.getKey(), true)
-                    .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersionUtils.randomCompatibleVersion(random()))
+                    .put(
+                        IndexMetadata.SETTING_VERSION_CREATED,
+                        VersionUtils.randomVersionBetween(random(), Version.CURRENT.minimumIndexCompatibilityVersion(), Version.CURRENT)
+                    )
             )
         );
         ensureGreen(INDEX_NAME);

@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.searchablesnapshots.allocation;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
@@ -215,7 +216,7 @@ public class SearchableSnapshotAllocatorTests extends ESAllocationTestCase {
                 IndexMetadata.builder(shardId.getIndexName())
                     .settings(
                         extraSettings.apply(
-                            settings(IndexVersion.current()).put(
+                            settings(Version.CURRENT).put(
                                 ExistingShardsAllocator.EXISTING_SHARDS_ALLOCATOR_SETTING.getKey(),
                                 SearchableSnapshotAllocator.ALLOCATOR_NAME
                             ).put(IndexModule.INDEX_STORE_TYPE_SETTING.getKey(), SearchableSnapshotsSettings.SEARCHABLE_SNAPSHOT_STORE_TYPE)

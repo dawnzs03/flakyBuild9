@@ -118,11 +118,6 @@ public class PutQueryRulesetAction extends ActionType<PutQueryRulesetAction.Resp
             return new PutQueryRulesetAction.Request(QueryRuleset.fromXContent(id, parser));
         }
 
-        @Override
-        public String toString() {
-            return Strings.toString(this);
-        }
-
     }
 
     public static class Response extends ActionResponse implements StatusToXContentObject {

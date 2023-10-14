@@ -74,11 +74,6 @@ public class GeoPointFieldMapperTests extends MapperTestCase {
         return stringEncode(1.3, 1.2);
     }
 
-    @Override
-    protected Object getSampleObjectForDocument() {
-        return Map.of("lat", 41.12, "lon", -71.34);
-    }
-
     public final void testExistsQueryDocValuesDisabled() throws IOException {
         MapperService mapperService = createMapperService(fieldMapping(b -> {
             minimalMapping(b);

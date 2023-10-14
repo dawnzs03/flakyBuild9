@@ -80,7 +80,6 @@ public class TrainedModelAssignmentClusterService implements ClusterStateListene
     private volatile int maxOpenJobs;
     protected volatile int maxLazyMLNodes;
     protected volatile long maxMLNodeSize;
-    protected volatile int allocatedProcessorsScale;
 
     public TrainedModelAssignmentClusterService(
         Settings settings,
@@ -100,7 +99,6 @@ public class TrainedModelAssignmentClusterService implements ClusterStateListene
         this.maxOpenJobs = MachineLearning.MAX_OPEN_JOBS_PER_NODE.get(settings);
         this.maxLazyMLNodes = MachineLearning.MAX_LAZY_ML_NODES.get(settings);
         this.maxMLNodeSize = MachineLearning.MAX_ML_NODE_SIZE.get(settings).getBytes();
-        this.allocatedProcessorsScale = MachineLearning.ALLOCATED_PROCESSORS_SCALE.get(settings);
         // Only nodes that can possibly be master nodes really need this service running
         if (DiscoveryNode.isMasterNode(settings)) {
             clusterService.addListener(this);
@@ -111,8 +109,6 @@ public class TrainedModelAssignmentClusterService implements ClusterStateListene
             clusterService.getClusterSettings().addSettingsUpdateConsumer(MachineLearning.MAX_OPEN_JOBS_PER_NODE, this::setMaxOpenJobs);
             clusterService.getClusterSettings().addSettingsUpdateConsumer(MachineLearning.MAX_LAZY_ML_NODES, this::setMaxLazyMLNodes);
             clusterService.getClusterSettings().addSettingsUpdateConsumer(MachineLearning.MAX_ML_NODE_SIZE, this::setMaxMLNodeSize);
-            clusterService.getClusterSettings()
-                .addSettingsUpdateConsumer(MachineLearning.ALLOCATED_PROCESSORS_SCALE, this::setAllocatedProcessorsScale);
         }
     }
 
@@ -134,10 +130,6 @@ public class TrainedModelAssignmentClusterService implements ClusterStateListene
 
     private void setMaxMLNodeSize(ByteSizeValue value) {
         this.maxMLNodeSize = value.getBytes();
-    }
-
-    private void setAllocatedProcessorsScale(int scale) {
-        this.allocatedProcessorsScale = scale;
     }
 
     @SuppressForbidden(reason = "legacy usage of unbatched task") // TODO add support for batching here
@@ -494,8 +486,7 @@ public class TrainedModelAssignmentClusterService implements ClusterStateListene
             TrainedModelAssignmentMetadata.fromState(currentState),
             nodeLoads,
             nodeAvailabilityZoneMapper.buildMlNodesByAvailabilityZone(currentState),
-            modelToAdd,
-            allocatedProcessorsScale
+            modelToAdd
         );
         TrainedModelAssignmentMetadata.Builder rebalanced = rebalancer.rebalance();
         if (modelToAdd.isPresent()) {

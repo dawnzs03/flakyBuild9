@@ -53,7 +53,6 @@ booleanExpression
     | left=booleanExpression operator=AND right=booleanExpression                #logicalBinary
     | left=booleanExpression operator=OR right=booleanExpression                 #logicalBinary
     | valueExpression (NOT)? IN LP valueExpression (COMMA valueExpression)* RP   #logicalIn
-    | valueExpression IS NOT? NULL                                               #isNull
     ;
 
 regexBooleanExpression
@@ -172,7 +171,7 @@ renameCommand
     ;
 
 renameClause:
-    oldName=sourceIdentifier AS newName=sourceIdentifier
+    newName=sourceIdentifier ASSIGN oldName=sourceIdentifier
     ;
 
 dissectCommand
@@ -205,11 +204,11 @@ numericValue
     ;
 
 decimalValue
-    : (PLUS | MINUS)? DECIMAL_LITERAL
+    : DECIMAL_LITERAL
     ;
 
 integerValue
-    : (PLUS | MINUS)? INTEGER_LITERAL
+    : INTEGER_LITERAL
     ;
 
 string
@@ -238,5 +237,6 @@ enrichCommand
     ;
 
 enrichWithClause
+
     : (newName=sourceIdentifier ASSIGN)? enrichField=sourceIdentifier
     ;

@@ -37,6 +37,7 @@ import org.elasticsearch.test.ClusterServiceUtils;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.MockLogAppender;
 import org.elasticsearch.test.TransportVersionUtils;
+import org.elasticsearch.test.VersionUtils;
 import org.elasticsearch.test.index.IndexVersionUtils;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -77,7 +78,7 @@ public class NodeJoinExecutorTests extends ESTestCase {
         Settings.builder().build();
         Metadata.Builder metaBuilder = Metadata.builder();
         IndexMetadata indexMetadata = IndexMetadata.builder("test")
-            .settings(settings(IndexVersion.current()))
+            .settings(settings(Version.CURRENT))
             .numberOfShards(1)
             .numberOfReplicas(1)
             .build();
@@ -99,7 +100,7 @@ public class NodeJoinExecutorTests extends ESTestCase {
         Settings.builder().build();
         Metadata.Builder metaBuilder = Metadata.builder();
         IndexMetadata indexMetadata = IndexMetadata.builder("test")
-            .settings(settings(IndexVersion.fromId(6080099))) // latest V6 released version
+            .settings(settings(Version.fromString("6.8.0"))) // latest V6 released version
             .numberOfShards(1)
             .numberOfReplicas(1)
             .build();
@@ -114,14 +115,8 @@ public class NodeJoinExecutorTests extends ESTestCase {
     public void testPreventJoinClusterWithUnsupportedNodeVersions() {
         DiscoveryNodes.Builder builder = DiscoveryNodes.builder();
         final Version version = randomCompatibleVersion(random(), Version.CURRENT);
-        builder.add(
-            DiscoveryNodeUtils.builder(UUIDs.base64UUID()).version(version, IndexVersion.MINIMUM_COMPATIBLE, IndexVersion.current()).build()
-        );
-        builder.add(
-            DiscoveryNodeUtils.builder(UUIDs.base64UUID())
-                .version(randomCompatibleVersion(random(), version), IndexVersion.MINIMUM_COMPATIBLE, IndexVersion.current())
-                .build()
-        );
+        builder.add(DiscoveryNodeUtils.builder(UUIDs.base64UUID()).version(version).build());
+        builder.add(DiscoveryNodeUtils.builder(UUIDs.base64UUID()).version(randomCompatibleVersion(random(), version)).build());
         DiscoveryNodes nodes = builder.build();
 
         final Version maxNodeVersion = nodes.getMaxNodeVersion();
@@ -200,19 +195,23 @@ public class NodeJoinExecutorTests extends ESTestCase {
     public static Settings.Builder randomCompatibleVersionSettings() {
         Settings.Builder builder = Settings.builder();
         if (randomBoolean()) {
-            IndexVersion createdVersion = IndexVersionUtils.randomCompatibleVersion(random());
+            Version createdVersion = getRandomCompatibleVersion();
             builder.put(IndexMetadata.SETTING_VERSION_CREATED, createdVersion);
             if (randomBoolean()) {
                 builder.put(
                     IndexMetadata.SETTING_VERSION_COMPATIBILITY,
-                    IndexVersionUtils.randomVersionBetween(random(), createdVersion, IndexVersion.current())
+                    VersionUtils.randomVersionBetween(random(), createdVersion, Version.CURRENT)
                 );
             }
         } else {
             builder.put(IndexMetadata.SETTING_VERSION_CREATED, randomFrom(Version.fromString("5.0.0"), Version.fromString("6.0.0")));
-            builder.put(IndexMetadata.SETTING_VERSION_COMPATIBILITY, IndexVersionUtils.randomCompatibleVersion(random()).id());
+            builder.put(IndexMetadata.SETTING_VERSION_COMPATIBILITY, getRandomCompatibleVersion());
         }
         return builder;
+    }
+
+    private static Version getRandomCompatibleVersion() {
+        return VersionUtils.randomVersionBetween(random(), Version.CURRENT.minimumIndexCompatibilityVersion(), Version.CURRENT);
     }
 
     private static final JoinReason TEST_REASON = new JoinReason("test", null);

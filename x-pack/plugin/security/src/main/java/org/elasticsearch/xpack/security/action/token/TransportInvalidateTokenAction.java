@@ -39,7 +39,7 @@ public final class TransportInvalidateTokenAction extends HandledTransportAction
             listener::onFailure
         );
         if (Strings.hasText(request.getUserName()) || Strings.hasText(request.getRealmName())) {
-            tokenService.invalidateActiveTokens(request.getRealmName(), request.getUserName(), null, invalidateListener);
+            tokenService.invalidateActiveTokensForRealmAndUser(request.getRealmName(), request.getUserName(), invalidateListener);
         } else if (request.getTokenType() == InvalidateTokenRequest.Type.ACCESS_TOKEN) {
             tokenService.invalidateAccessToken(request.getTokenString(), invalidateListener);
         } else {

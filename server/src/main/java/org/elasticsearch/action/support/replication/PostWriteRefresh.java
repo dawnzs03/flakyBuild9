@@ -26,18 +26,14 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportService;
 
-import java.util.concurrent.Executor;
-
 public class PostWriteRefresh {
 
     public static final String POST_WRITE_REFRESH_ORIGIN = "post_write_refresh";
     public static final String FORCED_REFRESH_AFTER_INDEX = "refresh_flag_index";
     private final TransportService transportService;
-    private final Executor refreshExecutor;
 
     public PostWriteRefresh(final TransportService transportService) {
         this.transportService = transportService;
-        this.refreshExecutor = transportService.getThreadPool().executor(ThreadPool.Names.REFRESH);
     }
 
     public void refreshShard(
@@ -154,7 +150,11 @@ public class PostWriteRefresh {
             TransportUnpromotableShardRefreshAction.NAME,
             unpromotableReplicaRequest,
             TransportRequestOptions.timeout(postWriteRefreshTimeout),
-            new ActionListenerResponseHandler<>(listener.safeMap(r -> wasForced), in -> ActionResponse.Empty.INSTANCE, refreshExecutor)
+            new ActionListenerResponseHandler<>(
+                listener.safeMap(r -> wasForced),
+                in -> ActionResponse.Empty.INSTANCE,
+                ThreadPool.Names.REFRESH
+            )
         );
     }
 

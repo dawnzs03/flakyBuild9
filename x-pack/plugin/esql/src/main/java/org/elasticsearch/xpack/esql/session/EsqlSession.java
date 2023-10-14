@@ -25,7 +25,6 @@ import org.elasticsearch.xpack.esql.optimizer.PhysicalOptimizerContext;
 import org.elasticsearch.xpack.esql.optimizer.PhysicalPlanOptimizer;
 import org.elasticsearch.xpack.esql.parser.EsqlParser;
 import org.elasticsearch.xpack.esql.parser.TypedParamValue;
-import org.elasticsearch.xpack.esql.plan.physical.EstimatesRowSize;
 import org.elasticsearch.xpack.esql.plan.physical.FragmentExec;
 import org.elasticsearch.xpack.esql.plan.physical.PhysicalPlan;
 import org.elasticsearch.xpack.esql.planner.Mapper;
@@ -93,22 +92,19 @@ public class EsqlSession {
 
     public void execute(EsqlQueryRequest request, ActionListener<PhysicalPlan> listener) {
         LOGGER.debug("ESQL query:\n{}", request.query());
-        optimizedPhysicalPlan(
-            parse(request.query(), request.params()),
-            listener.map(plan -> EstimatesRowSize.estimateRowSize(0, plan.transformUp(FragmentExec.class, f -> {
-                QueryBuilder filter = request.filter();
-                if (filter != null) {
-                    var fragmentFilter = f.esFilter();
-                    // TODO: have an ESFilter and push down to EsQueryExec / EsSource
-                    // This is an ugly hack to push the filter parameter to Lucene
-                    // TODO: filter integration testing
-                    filter = fragmentFilter != null ? boolQuery().filter(fragmentFilter).must(filter) : filter;
-                    LOGGER.debug("Fold filter {} to EsQueryExec", filter);
-                    f = new FragmentExec(f.source(), f.fragment(), filter, f.estimatedRowSize());
-                }
-                return f;
-            })))
-        );
+        optimizedPhysicalPlan(parse(request.query(), request.params()), listener.map(plan -> plan.transformUp(FragmentExec.class, f -> {
+            QueryBuilder filter = request.filter();
+            if (filter != null) {
+                var fragmentFilter = f.esFilter();
+                // TODO: have an ESFilter and push down to EsQueryExec / EsSource
+                // This is an ugly hack to push the filter parameter to Lucene
+                // TODO: filter integration testing
+                filter = fragmentFilter != null ? boolQuery().filter(fragmentFilter).must(filter) : filter;
+                LOGGER.debug("Fold filter {} to EsQueryExec", filter);
+                f = new FragmentExec(f.source(), f.fragment(), filter);
+            }
+            return f;
+        })));
     }
 
     private LogicalPlan parse(String query, List<TypedParamValue> params) {
@@ -136,12 +132,12 @@ public class EsqlSession {
         Set<String> policyNames = new HashSet<>(preAnalysis.policyNames);
         EnrichResolution resolution = new EnrichResolution(ConcurrentCollections.newConcurrentSet(), enrichPolicyResolver.allPolicyNames());
         AtomicReference<IndexResolution> resolvedIndex = new AtomicReference<>();
-        ActionListener<Void> groupedListener = listener.delegateFailureAndWrap((l, unused) -> {
+        ActionListener<Void> groupedListener = ActionListener.wrap(unused -> {
             assert resolution.resolvedPolicies().size() == policyNames.size()
                 : resolution.resolvedPolicies().size() + " != " + policyNames.size();
             assert resolvedIndex.get() != null : "index wasn't resolved";
-            l.onResponse(action.apply(resolvedIndex.get(), resolution));
-        });
+            listener.onResponse(action.apply(resolvedIndex.get(), resolution));
+        }, listener::onFailure);
         try (RefCountingListener refs = new RefCountingListener(groupedListener)) {
             preAnalyzeIndices(parsed, refs.acquire(resolvedIndex::set));
             for (String policyName : policyNames) {

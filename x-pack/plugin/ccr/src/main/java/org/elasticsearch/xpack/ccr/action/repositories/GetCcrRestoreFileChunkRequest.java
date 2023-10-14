@@ -19,7 +19,7 @@ import org.elasticsearch.transport.RemoteClusterAwareRequest;
 
 import java.io.IOException;
 
-import static org.elasticsearch.xpack.ccr.Ccr.TRANSPORT_VERSION_ACTION_WITH_SHARD_ID;
+import static org.elasticsearch.transport.RemoteClusterPortSettings.TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY_CCR;
 
 public class GetCcrRestoreFileChunkRequest extends ActionRequest implements RemoteClusterAwareRequest, IndicesRequest {
 
@@ -49,7 +49,7 @@ public class GetCcrRestoreFileChunkRequest extends ActionRequest implements Remo
         sessionUUID = in.readString();
         fileName = in.readString();
         size = in.readVInt();
-        if (in.getTransportVersion().onOrAfter(TRANSPORT_VERSION_ACTION_WITH_SHARD_ID)) {
+        if (in.getTransportVersion().onOrAfter(TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY_CCR)) {
             shardId = new ShardId(in);
         } else {
             shardId = null;
@@ -62,7 +62,7 @@ public class GetCcrRestoreFileChunkRequest extends ActionRequest implements Remo
         out.writeString(sessionUUID);
         out.writeString(fileName);
         out.writeVInt(size);
-        if (out.getTransportVersion().onOrAfter(TRANSPORT_VERSION_ACTION_WITH_SHARD_ID)) {
+        if (out.getTransportVersion().onOrAfter(TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY_CCR)) {
             shardId.writeTo(out);
         }
     }

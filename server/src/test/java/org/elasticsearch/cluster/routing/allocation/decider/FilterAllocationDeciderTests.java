@@ -7,6 +7,7 @@
  */
 package org.elasticsearch.cluster.routing.allocation.decider;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -29,7 +30,6 @@ import org.elasticsearch.cluster.routing.allocation.decider.Decision.Type;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.snapshots.EmptySnapshotsInfoService;
 import org.elasticsearch.test.gateway.TestGatewayAllocator;
@@ -178,11 +178,11 @@ public class FilterAllocationDeciderTests extends ESAllocationTestCase {
     private ClusterState createInitialClusterState(AllocationService service, Settings idxSettings, Settings clusterSettings) {
         Metadata.Builder metadata = Metadata.builder();
         metadata.persistentSettings(clusterSettings);
-        final Settings.Builder indexSettings = settings(IndexVersion.current()).put(idxSettings);
+        final Settings.Builder indexSettings = settings(Version.CURRENT).put(idxSettings);
         final IndexMetadata sourceIndex;
         // put a fake closed source index
         sourceIndex = IndexMetadata.builder("sourceIndex")
-            .settings(settings(IndexVersion.current()))
+            .settings(settings(Version.CURRENT))
             .numberOfShards(2)
             .numberOfReplicas(0)
             .putInSyncAllocationIds(0, Collections.singleton("aid0"))
@@ -237,7 +237,7 @@ public class FilterAllocationDeciderTests extends ESAllocationTestCase {
         );
 
         IndexMetadata.builder("test")
-            .settings(settings(IndexVersion.current()).putNull(filterSetting.getKey() + "name"))
+            .settings(settings(Version.CURRENT).putNull(filterSetting.getKey() + "name"))
             .numberOfShards(2)
             .numberOfReplicas(0)
             .build();
@@ -295,7 +295,7 @@ public class FilterAllocationDeciderTests extends ESAllocationTestCase {
     public void testGetForcedInitialShardAllocationToNodes() {
         var index = IndexMetadata.builder("index")
             .settings(
-                indexSettings(IndexVersion.current(), 1, 0).put("index.routing.allocation.initial_recovery._id", "node-1")
+                indexSettings(Version.CURRENT, 1, 0).put("index.routing.allocation.initial_recovery._id", "node-1")
                     .put(IndexMetadata.SETTING_INDEX_UUID, "uuid")
             )
             .build();

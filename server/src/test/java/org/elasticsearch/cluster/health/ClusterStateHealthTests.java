@@ -7,6 +7,7 @@
  */
 package org.elasticsearch.cluster.health;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthAction;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -35,7 +36,6 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.util.set.Sets;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.TaskId;
@@ -180,7 +180,7 @@ public class ClusterStateHealthTests extends ESTestCase {
             int numberOfShards = randomInt(3) + 1;
             int numberOfReplicas = randomInt(4);
             IndexMetadata indexMetadata = IndexMetadata.builder("test_" + Integer.toString(i))
-                .settings(settings(IndexVersion.current()))
+                .settings(settings(Version.CURRENT))
                 .numberOfShards(numberOfShards)
                 .numberOfReplicas(numberOfReplicas)
                 .build();
@@ -319,7 +319,7 @@ public class ClusterStateHealthTests extends ESTestCase {
         final int numberOfReplicas = randomIntBetween(1, numberOfShards);
         // initial index creation and new routing table info
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(IndexVersion.current()).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
+            .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
             .numberOfShards(numberOfShards)
             .numberOfReplicas(numberOfReplicas)
             .build();
@@ -344,7 +344,7 @@ public class ClusterStateHealthTests extends ESTestCase {
         final int numberOfReplicas = randomIntBetween(1, numberOfShards);
         // initial index creation and new routing table info
         IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(IndexVersion.current()).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
+            .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
             .numberOfShards(numberOfShards)
             .numberOfReplicas(numberOfReplicas)
             .state(IndexMetadata.State.OPEN)

@@ -16,7 +16,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.TestCustomMetadata;
 import org.elasticsearch.xcontent.ToXContent;
@@ -107,7 +106,7 @@ public class ToAndFromJsonMetadataTests extends ESTestCase {
             )
             .put(
                 IndexMetadata.builder("test12")
-                    .settings(settings(IndexVersion.current()).put("setting1", "value1").put("setting2", "value2"))
+                    .settings(settings(Version.CURRENT).put("setting1", "value1").put("setting2", "value2"))
                     .creationDate(2L)
                     .numberOfShards(1)
                     .numberOfReplicas(2)
@@ -291,7 +290,7 @@ public class ToAndFromJsonMetadataTests extends ESTestCase {
             .put(
                 IndexMetadata.builder("index")
                     .state(IndexMetadata.State.OPEN)
-                    .settings(Settings.builder().put(SETTING_VERSION_CREATED, IndexVersion.current()))
+                    .settings(Settings.builder().put(SETTING_VERSION_CREATED, Version.CURRENT.id))
                     .putMapping(
                         new MappingMetadata(
                             "type",
@@ -850,12 +849,12 @@ public class ToAndFromJsonMetadataTests extends ESTestCase {
                     .addVotingConfigExclusion(new CoordinationMetadata.VotingConfigExclusion("exlucdedNodeId", "excludedNodeName"))
                     .build()
             )
-            .persistentSettings(Settings.builder().put(SETTING_VERSION_CREATED, IndexVersion.current()).build())
-            .transientSettings(Settings.builder().put(SETTING_VERSION_CREATED, IndexVersion.current()).build())
+            .persistentSettings(Settings.builder().put(SETTING_VERSION_CREATED, Version.CURRENT.id).build())
+            .transientSettings(Settings.builder().put(SETTING_VERSION_CREATED, Version.CURRENT.id).build())
             .put(
                 IndexMetadata.builder("index")
                     .state(IndexMetadata.State.OPEN)
-                    .settings(Settings.builder().put(SETTING_VERSION_CREATED, IndexVersion.current()))
+                    .settings(Settings.builder().put(SETTING_VERSION_CREATED, Version.CURRENT.id))
                     .putMapping(new MappingMetadata("type", new HashMap<>() {
                         {
                             put("type1", new HashMap<String, Object>() {
@@ -880,7 +879,7 @@ public class ToAndFromJsonMetadataTests extends ESTestCase {
                 IndexTemplateMetadata.builder("template")
                     .patterns(List.of("pattern1", "pattern2"))
                     .order(0)
-                    .settings(Settings.builder().put(SETTING_VERSION_CREATED, IndexVersion.current()))
+                    .settings(Settings.builder().put(SETTING_VERSION_CREATED, Version.CURRENT.id))
                     .putMapping("type", "{ \"key1\": {} }")
                     .build()
             )

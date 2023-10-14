@@ -54,7 +54,6 @@ import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.ReceiveTimeoutTransportException;
 import org.elasticsearch.transport.TransportRequestOptions;
-import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -175,7 +174,7 @@ public class RepositoryAnalyzeAction extends ActionType<RepositoryAnalyzeAction.
                     request,
                     task,
                     TransportRequestOptions.EMPTY,
-                    new ActionListenerResponseHandler<>(listener, Response::new, TransportResponseHandler.TRANSPORT_WORKER)
+                    new ActionListenerResponseHandler<>(listener, Response::new)
                 );
             }
         }
@@ -556,7 +555,7 @@ public class RepositoryAnalyzeAction extends ActionType<RepositoryAnalyzeAction.
                             logger.debug(() -> "failed [" + request + "] on [" + node + "]", exp);
                             fail(exp);
                         }
-                    }, ref), BlobAnalyzeAction.Response::new, TransportResponseHandler.TRANSPORT_WORKER)
+                    }, ref), BlobAnalyzeAction.Response::new)
                 );
             } else {
                 ref.close();
@@ -586,7 +585,7 @@ public class RepositoryAnalyzeAction extends ActionType<RepositoryAnalyzeAction.
                             logger.debug(() -> "failed [" + request + "] on [" + node + "]", exp);
                             fail(exp);
                         }
-                    }, ref), in -> ActionResponse.Empty.INSTANCE, TransportResponseHandler.TRANSPORT_WORKER)
+                    }, ref), in -> ActionResponse.Empty.INSTANCE)
                 );
             } else {
                 ref.close();

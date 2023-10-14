@@ -32,9 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.elasticsearch.xpack.application.rules.QueryRule.QueryRuleType;
-import static org.elasticsearch.xpack.application.rules.QueryRuleCriteriaType.EXACT;
-import static org.elasticsearch.xpack.application.rules.QueryRuleCriteriaType.FUZZY;
-import static org.elasticsearch.xpack.application.rules.QueryRuleCriteriaType.GTE;
+import static org.elasticsearch.xpack.application.rules.QueryRuleCriteria.CriteriaType;
 import static org.elasticsearch.xpack.application.rules.QueryRulesIndexService.QUERY_RULES_CONCRETE_INDEX_NAME;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -71,7 +69,7 @@ public class QueryRulesIndexServiceTests extends ESSingleNodeTestCase {
             final QueryRule myQueryRule1 = new QueryRule(
                 "my_rule1",
                 QueryRuleType.PINNED,
-                List.of(new QueryRuleCriteria(EXACT, "query_string", List.of("foo"))),
+                List.of(new QueryRuleCriteria(CriteriaType.EXACT, "query_string", "foo")),
                 Map.of("ids", List.of("id1", "id2"))
             );
             final QueryRuleset myQueryRuleset = new QueryRuleset("my_ruleset", Collections.singletonList(myQueryRule1));
@@ -86,13 +84,13 @@ public class QueryRulesIndexServiceTests extends ESSingleNodeTestCase {
         final QueryRule myQueryRule1 = new QueryRule(
             "my_rule1",
             QueryRuleType.PINNED,
-            List.of(new QueryRuleCriteria(EXACT, "query_string", List.of("foo"))),
+            List.of(new QueryRuleCriteria(CriteriaType.EXACT, "query_string", "foo")),
             Map.of("docs", List.of(Map.of("_index", "my_index1", "_id", "id1"), Map.of("_index", "my_index2", "_id", "id2")))
         );
         final QueryRule myQueryRule2 = new QueryRule(
             "my_rule2",
             QueryRuleType.PINNED,
-            List.of(new QueryRuleCriteria(EXACT, "query_string", List.of("bar"))),
+            List.of(new QueryRuleCriteria(CriteriaType.EXACT, "query_string", "bar")),
             Map.of("docs", List.of(Map.of("_index", "my_index1", "_id", "id3"), Map.of("_index", "my_index2", "_id", "id4")))
         );
         final QueryRuleset myQueryRuleset = new QueryRuleset("my_ruleset", List.of(myQueryRule1, myQueryRule2));
@@ -110,19 +108,13 @@ public class QueryRulesIndexServiceTests extends ESSingleNodeTestCase {
                 new QueryRule(
                     "my_rule_" + i,
                     QueryRuleType.PINNED,
-                    List.of(
-                        new QueryRuleCriteria(EXACT, "query_string", List.of("foo" + i)),
-                        new QueryRuleCriteria(GTE, "query_string", List.of(i))
-                    ),
+                    List.of(new QueryRuleCriteria(CriteriaType.EXACT, "query_string", "foo" + i)),
                     Map.of("ids", List.of("id1", "id2"))
                 ),
                 new QueryRule(
                     "my_rule_" + i + "_" + (i + 1),
                     QueryRuleType.PINNED,
-                    List.of(
-                        new QueryRuleCriteria(FUZZY, "query_string", List.of("bar" + i)),
-                        new QueryRuleCriteria(GTE, "user.age", List.of(i))
-                    ),
+                    List.of(new QueryRuleCriteria(CriteriaType.EXACT, "query_string", "bar" + i)),
                     Map.of("ids", List.of("id3", "id4"))
                 )
             );
@@ -155,14 +147,8 @@ public class QueryRulesIndexServiceTests extends ESSingleNodeTestCase {
 
             for (int i = 0; i < 5; i++) {
                 int index = i + 5;
-                QueryRulesetListItem ruleset = rulesets.get(i);
-                String rulesetId = ruleset.rulesetId();
+                String rulesetId = rulesets.get(i).rulesetId();
                 assertThat(rulesetId, equalTo("my_ruleset_" + index));
-                Map<QueryRuleCriteriaType, Integer> criteriaTypeCountMap = ruleset.criteriaTypeToCountMap();
-                assertThat(criteriaTypeCountMap.size(), equalTo(3));
-                assertThat(criteriaTypeCountMap.get(EXACT), equalTo(1));
-                assertThat(criteriaTypeCountMap.get(FUZZY), equalTo(1));
-                assertThat(criteriaTypeCountMap.get(GTE), equalTo(2));
             }
         }
     }
@@ -172,13 +158,13 @@ public class QueryRulesIndexServiceTests extends ESSingleNodeTestCase {
             final QueryRule myQueryRule1 = new QueryRule(
                 "my_rule1",
                 QueryRuleType.PINNED,
-                List.of(new QueryRuleCriteria(EXACT, "query_string", List.of("foo"))),
+                List.of(new QueryRuleCriteria(CriteriaType.EXACT, "query_string", "foo")),
                 Map.of("ids", List.of("id1", "id2"))
             );
             final QueryRule myQueryRule2 = new QueryRule(
                 "my_rule2",
                 QueryRuleType.PINNED,
-                List.of(new QueryRuleCriteria(EXACT, "query_string", List.of("bar"))),
+                List.of(new QueryRuleCriteria(CriteriaType.EXACT, "query_string", "bar")),
                 Map.of("ids", List.of("id3", "id4"))
             );
             final QueryRuleset myQueryRuleset = new QueryRuleset("my_ruleset", List.of(myQueryRule1, myQueryRule2));

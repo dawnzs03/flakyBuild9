@@ -8,13 +8,13 @@
 package org.elasticsearch.xpack.ml.action;
 
 import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.Version;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.persistent.PersistentTasksCustomMetadata;
 import org.elasticsearch.search.SearchModule;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 import org.elasticsearch.xpack.core.ml.action.StartDatafeedAction;
 import org.elasticsearch.xpack.core.ml.datafeed.DatafeedConfig;
 import org.elasticsearch.xpack.core.ml.datafeed.DatafeedConfigTests;
@@ -112,13 +112,13 @@ public class TransportStartDatafeedActionTests extends ESTestCase {
     }
 
     public void testRemoteClusterVersionCheck() {
-        Map<String, MlConfigVersion> clusterVersions = Map.of(
+        Map<String, Version> clusterVersions = Map.of(
             "modern_cluster_1",
-            MlConfigVersion.CURRENT,
+            Version.CURRENT,
             "modern_cluster_2",
-            MlConfigVersion.CURRENT,
+            Version.CURRENT,
             "old_cluster_1",
-            MlConfigVersion.V_7_0_0
+            Version.V_7_0_0
         );
 
         Map<String, Object> field = Map.of("runtime_field_foo", Map.of("type", "keyword", "script", ""));
@@ -128,7 +128,7 @@ public class TransportStartDatafeedActionTests extends ESTestCase {
         ).build();
         ElasticsearchStatusException ex = expectThrows(
             ElasticsearchStatusException.class,
-            () -> TransportStartDatafeedAction.checkRemoteConfigVersions(
+            () -> TransportStartDatafeedAction.checkRemoteClusterVersions(
                 config,
                 Arrays.asList("old_cluster_1", "modern_cluster_2"),
                 clusterVersions::get
@@ -143,7 +143,7 @@ public class TransportStartDatafeedActionTests extends ESTestCase {
         );
 
         // The rest should not throw
-        TransportStartDatafeedAction.checkRemoteConfigVersions(
+        TransportStartDatafeedAction.checkRemoteClusterVersions(
             config,
             Arrays.asList("modern_cluster_1", "modern_cluster_2"),
             clusterVersions::get
@@ -153,7 +153,7 @@ public class TransportStartDatafeedActionTests extends ESTestCase {
             .setIndices(Collections.singletonList("bar"))
             .setJobId("foo")
             .build();
-        TransportStartDatafeedAction.checkRemoteConfigVersions(
+        TransportStartDatafeedAction.checkRemoteClusterVersions(
             configWithoutRuntimeMappings,
             Arrays.asList("old_cluster_1", "modern_cluster_2"),
             clusterVersions::get

@@ -8,10 +8,10 @@
 
 package org.elasticsearch.search.geo;
 
-import org.elasticsearch.index.IndexVersion;
+import org.elasticsearch.Version;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.TestGeoShapeFieldMapperPlugin;
-import org.elasticsearch.test.index.IndexVersionUtils;
+import org.elasticsearch.test.VersionUtils;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 
@@ -40,7 +40,7 @@ public class GeoBoundingBoxQueryGeoPointIT extends GeoBoundingBoxQueryIntegTestC
     }
 
     @Override
-    public IndexVersion randomSupportedVersion() {
-        return IndexVersionUtils.randomCompatibleVersion(random());
+    public Version randomSupportedVersion() throws IOException {
+        return VersionUtils.randomIndexCompatibleVersion(random());
     }
 }

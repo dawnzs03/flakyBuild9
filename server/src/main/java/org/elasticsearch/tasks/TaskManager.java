@@ -72,7 +72,9 @@ public class TaskManager implements ClusterStateApplier {
 
     private final Map<Long, Task> tasks = ConcurrentCollections.newConcurrentMapWithAggressiveConcurrency();
 
-    private final CancellableTasksTracker<CancellableTaskHolder> cancellableTasks = new CancellableTasksTracker<>();
+    private final CancellableTasksTracker<CancellableTaskHolder> cancellableTasks = new CancellableTasksTracker<>(
+        new CancellableTaskHolder[0]
+    );
 
     private final AtomicLong taskIdGenerator = new AtomicLong();
 

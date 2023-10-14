@@ -14,8 +14,6 @@ import org.elasticsearch.xpack.ql.QlIllegalArgumentException;
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.expression.Expressions;
 import org.elasticsearch.xpack.ql.expression.FieldAttribute;
-import org.elasticsearch.xpack.ql.expression.MetadataAttribute;
-import org.elasticsearch.xpack.ql.expression.TypedAttribute;
 import org.elasticsearch.xpack.ql.expression.function.scalar.ScalarFunction;
 import org.elasticsearch.xpack.ql.expression.function.scalar.string.StartsWith;
 import org.elasticsearch.xpack.ql.expression.predicate.Range;
@@ -129,31 +127,25 @@ public final class ExpressionTranslators {
         }
 
         public static Query doTranslate(RegexMatch e, TranslatorHandler handler) {
-            Query q;
-            Expression field = e.field();
+            Query q = null;
+            String targetFieldName = null;
 
-            if (field instanceof FieldAttribute fa) {
-                q = translateField(e, handler.nameOf(fa.exactAttribute()));
-            } else if (field instanceof MetadataAttribute ma) {
-                q = translateField(e, handler.nameOf(ma));
+            if (e.field() instanceof FieldAttribute) {
+                targetFieldName = handler.nameOf(((FieldAttribute) e.field()).exactAttribute());
+                if (e instanceof Like l) {
+                    q = new WildcardQuery(e.source(), targetFieldName, l.pattern().asLuceneWildcard(), l.caseInsensitive());
+                }
+                if (e instanceof WildcardLike l) {
+                    q = new WildcardQuery(e.source(), targetFieldName, l.pattern().asLuceneWildcard(), l.caseInsensitive());
+                }
+                if (e instanceof RLike rl) {
+                    q = new RegexQuery(e.source(), targetFieldName, rl.pattern().asJavaRegex(), rl.caseInsensitive());
+                }
             } else {
                 q = new ScriptQuery(e.source(), e.asScript());
             }
 
-            return wrapIfNested(q, field);
-        }
-
-        private static Query translateField(RegexMatch e, String targetFieldName) {
-            if (e instanceof Like l) {
-                return new WildcardQuery(e.source(), targetFieldName, l.pattern().asLuceneWildcard(), l.caseInsensitive());
-            }
-            if (e instanceof WildcardLike l) {
-                return new WildcardQuery(e.source(), targetFieldName, l.pattern().asLuceneWildcard(), l.caseInsensitive());
-            }
-            if (e instanceof RLike rl) {
-                return new RegexQuery(e.source(), targetFieldName, rl.pattern().asJavaRegex(), rl.caseInsensitive());
-            }
-            return null;
+            return wrapIfNested(q, e.field());
         }
     }
 
@@ -283,9 +275,9 @@ public final class ExpressionTranslators {
         }
 
         static Query translate(BinaryComparison bc, TranslatorHandler handler) {
-            TypedAttribute attribute = checkIsPushableAttribute(bc.left());
+            FieldAttribute field = checkIsFieldAttribute(bc.left());
             Source source = bc.source();
-            String name = handler.nameOf(attribute);
+            String name = handler.nameOf(field);
             Object value = valueOf(bc.right());
             String format = null;
             boolean isDateLiteralComparison = false;
@@ -306,9 +298,9 @@ public final class ExpressionTranslators {
                 }
                 format = formatter.pattern();
                 isDateLiteralComparison = true;
-            } else if (attribute.dataType() == IP && value instanceof BytesRef bytesRef) {
+            } else if (field.dataType() == IP && value instanceof BytesRef bytesRef) {
                 value = DocValueFormat.IP.format(bytesRef);
-            } else if (attribute.dataType() == VERSION) {
+            } else if (field.dataType() == VERSION) {
                 // VersionStringFieldMapper#indexedValueForSearch() only accepts as input String or BytesRef with the String (i.e. not
                 // encoded) representation of the version as it'll do the encoding itself.
                 if (value instanceof BytesRef bytesRef) {
@@ -316,12 +308,12 @@ public final class ExpressionTranslators {
                 } else if (value instanceof Version version) {
                     value = version.toString();
                 }
-            } else if (attribute.dataType() == UNSIGNED_LONG && value instanceof Long ul) {
+            } else if (field.dataType() == UNSIGNED_LONG && value instanceof Long ul) {
                 value = unsignedLongAsNumber(ul);
             }
 
             ZoneId zoneId = null;
-            if (DataTypes.isDateTime(attribute.dataType())) {
+            if (DataTypes.isDateTime(field.dataType())) {
                 zoneId = bc.zoneId();
             }
             if (bc instanceof GreaterThan) {
@@ -337,7 +329,9 @@ public final class ExpressionTranslators {
                 return new RangeQuery(source, name, null, false, value, true, format, zoneId);
             }
             if (bc instanceof Equals || bc instanceof NullEquals || bc instanceof NotEquals) {
-                name = pushableAttributeName(attribute);
+                // equality should always be against an exact match
+                // (which is important for strings)
+                name = field.exactAttribute().name();
 
                 Query query;
                 if (isDateLiteralComparison) {
@@ -421,14 +415,14 @@ public final class ExpressionTranslators {
         }
 
         private static Query translate(In in, TranslatorHandler handler) {
-            TypedAttribute attribute = checkIsPushableAttribute(in.value());
+            FieldAttribute field = checkIsFieldAttribute(in.value());
 
             Set<Object> terms = new LinkedHashSet<>();
             List<Query> queries = new ArrayList<>();
 
             for (Expression rhs : in.list()) {
                 if (DataTypes.isNull(rhs.dataType()) == false) {
-                    if (needsTypeSpecificValueHandling(attribute.dataType())) {
+                    if (needsTypeSpecificValueHandling(field.dataType())) {
                         // delegates to BinaryComparisons translator to ensure consistent handling of date and time values
                         Query query = BinaryComparisons.translate(new Equals(in.source(), in.value(), rhs, in.zoneId()), handler);
 
@@ -444,7 +438,7 @@ public final class ExpressionTranslators {
             }
 
             if (terms.isEmpty() == false) {
-                String fieldName = pushableAttributeName(attribute);
+                String fieldName = field.exactAttribute().name();
                 queries.add(new TermsQuery(in.source(), fieldName, terms));
             }
 

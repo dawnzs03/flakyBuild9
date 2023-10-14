@@ -9,6 +9,7 @@
 package org.elasticsearch.action.admin.indices.shrink;
 
 import org.apache.lucene.index.IndexWriter;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexClusterStateUpdateRequest;
 import org.elasticsearch.action.support.ActiveShardCount;
@@ -31,7 +32,6 @@ import org.elasticsearch.cluster.routing.allocation.decider.AllocationDeciders;
 import org.elasticsearch.cluster.routing.allocation.decider.MaxRetryAllocationDecider;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.index.store.StoreStats;
 import org.elasticsearch.snapshots.EmptySnapshotsInfoService;
@@ -52,7 +52,7 @@ public class TransportResizeActionTests extends ESTestCase {
     private ClusterState createClusterState(String name, int numShards, int numReplicas, int numRoutingShards, Settings settings) {
         Metadata.Builder metaBuilder = Metadata.builder();
         IndexMetadata indexMetadata = IndexMetadata.builder(name)
-            .settings(settings(IndexVersion.current()).put(settings))
+            .settings(settings(Version.CURRENT).put(settings))
             .numberOfShards(numShards)
             .numberOfReplicas(numReplicas)
             .setRoutingNumShards(numRoutingShards)

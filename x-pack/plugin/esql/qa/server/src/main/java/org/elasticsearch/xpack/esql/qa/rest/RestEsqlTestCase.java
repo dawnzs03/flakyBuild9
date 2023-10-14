@@ -234,7 +234,6 @@ public class RestEsqlTestCase extends ESRestTestCase {
         assertEquals("keyword0,0\r\n", actual);
     }
 
-    @AwaitsFix(bugUrl = "https://github.com/elastic/elasticsearch/issues/98719")
     public void testWarningHeadersOnFailedConversions() throws IOException {
         int count = randomFrom(10, 40, 60);
         bulkLoadTestData(count);
@@ -267,28 +266,27 @@ public class RestEsqlTestCase extends ESRestTestCase {
     }
 
     public void testMetadataFieldsOnMultipleIndices() throws IOException {
-        var request = new Request("POST", "/" + testIndexName() + "-1/_doc/id-1");
+        var request = new Request("POST", "/" + testIndexName() + "-1/_doc/1");
         request.addParameter("refresh", "true");
         request.setJsonEntity("{\"a\": 1}");
         assertEquals(201, client().performRequest(request).getStatusLine().getStatusCode());
-        request = new Request("POST", "/" + testIndexName() + "-1/_doc/id-1");
+        request = new Request("POST", "/" + testIndexName() + "-1/_doc/1");
         request.addParameter("refresh", "true");
         request.setJsonEntity("{\"a\": 2}");
         assertEquals(200, client().performRequest(request).getStatusLine().getStatusCode());
-        request = new Request("POST", "/" + testIndexName() + "-2/_doc/id-2");
+        request = new Request("POST", "/" + testIndexName() + "-2/_doc");
         request.addParameter("refresh", "true");
         request.setJsonEntity("{\"a\": 3}");
         assertEquals(201, client().performRequest(request).getStatusLine().getStatusCode());
 
-        var query = fromIndex() + "* [metadata _index, _version, _id] | sort _version";
+        var query = fromIndex() + "* [metadata _index, _version] | sort _version";
         Map<String, Object> result = runEsql(new RequestObjectBuilder().query(query).build());
         var columns = List.of(
             Map.of("name", "a", "type", "long"),
             Map.of("name", "_index", "type", "keyword"),
-            Map.of("name", "_version", "type", "long"),
-            Map.of("name", "_id", "type", "keyword")
+            Map.of("name", "_version", "type", "long")
         );
-        var values = List.of(List.of(3, testIndexName() + "-2", 1, "id-2"), List.of(2, testIndexName() + "-1", 2, "id-1"));
+        var values = List.of(List.of(3, testIndexName() + "-2", 1), List.of(2, testIndexName() + "-1", 2));
 
         assertMap(result, matchesMap().entry("columns", columns).entry("values", values));
     }
@@ -376,7 +374,7 @@ public class RestEsqlTestCase extends ESRestTestCase {
     }
 
     private static Request prepareRequest() {
-        Request request = new Request("POST", "/_query");
+        Request request = new Request("POST", "/_esql");
         request.addParameter("error_trace", "true");   // Helps with debugging in case something crazy happens on the server.
         request.addParameter("pretty", "true");        // Improves error reporting readability
         return request;

@@ -27,7 +27,6 @@ import org.elasticsearch.index.merge.MergeStats;
 import org.elasticsearch.index.recovery.RecoveryStats;
 import org.elasticsearch.index.refresh.RefreshStats;
 import org.elasticsearch.index.search.stats.SearchStats;
-import org.elasticsearch.index.shard.DenseVectorStats;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.IndexingStats;
@@ -47,7 +46,6 @@ import java.util.Objects;
 public class CommonStats implements Writeable, ToXContentFragment {
 
     private static final TransportVersion VERSION_SUPPORTING_NODE_MAPPINGS = TransportVersion.V_8_5_0;
-    private static final TransportVersion VERSION_SUPPORTING_DENSE_VECTOR_STATS = TransportVersion.V_8_500_058;
 
     @Nullable
     public DocsStats docs;
@@ -106,9 +104,6 @@ public class CommonStats implements Writeable, ToXContentFragment {
     @Nullable
     public NodeMappingStats nodeMappings;
 
-    @Nullable
-    public DenseVectorStats denseVectorStats;
-
     public CommonStats() {
         this(CommonStatsFlags.NONE);
     }
@@ -137,7 +132,6 @@ public class CommonStats implements Writeable, ToXContentFragment {
                 case Bulk -> bulk = new BulkStats();
                 case Shards -> shards = new ShardCountStats();
                 case Mappings -> nodeMappings = new NodeMappingStats();
-                case DenseVector -> denseVectorStats = new DenseVectorStats();
                 default -> throw new IllegalStateException("Unknown Flag: " + flag);
             }
         }
@@ -180,7 +174,6 @@ public class CommonStats implements Writeable, ToXContentFragment {
                     case Shards ->
                         // Setting to 1 because the single IndexShard passed to this method implies 1 shard
                         stats.shards = new ShardCountStats(1);
-                    case DenseVector -> stats.denseVectorStats = indexShard.denseVectorStats();
                     default -> throw new IllegalStateException("Unknown or invalid flag for shard-level stats: " + flag);
                 }
             } catch (AlreadyClosedException e) {
@@ -215,9 +208,6 @@ public class CommonStats implements Writeable, ToXContentFragment {
         if (in.getTransportVersion().onOrAfter(VERSION_SUPPORTING_NODE_MAPPINGS)) {
             nodeMappings = in.readOptionalWriteable(NodeMappingStats::new);
         }
-        if (in.getTransportVersion().onOrAfter(VERSION_SUPPORTING_DENSE_VECTOR_STATS)) {
-            denseVectorStats = in.readOptionalWriteable(DenseVectorStats::new);
-        }
     }
 
     @Override
@@ -245,9 +235,6 @@ public class CommonStats implements Writeable, ToXContentFragment {
         if (out.getTransportVersion().onOrAfter(VERSION_SUPPORTING_NODE_MAPPINGS)) {
             out.writeOptionalWriteable(nodeMappings);
         }
-        if (out.getTransportVersion().onOrAfter(VERSION_SUPPORTING_DENSE_VECTOR_STATS)) {
-            out.writeOptionalWriteable(denseVectorStats);
-        }
     }
 
     @Override
@@ -273,8 +260,7 @@ public class CommonStats implements Writeable, ToXContentFragment {
             && Objects.equals(recoveryStats, that.recoveryStats)
             && Objects.equals(bulk, that.bulk)
             && Objects.equals(shards, that.shards)
-            && Objects.equals(nodeMappings, that.nodeMappings)
-            && Objects.equals(denseVectorStats, that.denseVectorStats);
+            && Objects.equals(nodeMappings, that.nodeMappings);
     }
 
     @Override
@@ -298,8 +284,7 @@ public class CommonStats implements Writeable, ToXContentFragment {
             recoveryStats,
             bulk,
             shards,
-            nodeMappings,
-            denseVectorStats
+            nodeMappings
         );
     }
 
@@ -456,14 +441,6 @@ public class CommonStats implements Writeable, ToXContentFragment {
                 nodeMappings.add(stats.getNodeMappings());
             }
         }
-        if (denseVectorStats == null) {
-            if (stats.getDenseVectorStats() != null) {
-                denseVectorStats = new DenseVectorStats();
-                denseVectorStats.add(stats.getDenseVectorStats());
-            }
-        } else {
-            denseVectorStats.add(stats.getDenseVectorStats());
-        }
     }
 
     @Nullable
@@ -561,11 +538,6 @@ public class CommonStats implements Writeable, ToXContentFragment {
         return nodeMappings;
     }
 
-    @Nullable
-    public DenseVectorStats getDenseVectorStats() {
-        return denseVectorStats;
-    }
-
     /**
      * Utility method which computes total memory by adding
      * FieldData, PercolatorCache, Segments (index writer, version map)
@@ -607,7 +579,6 @@ public class CommonStats implements Writeable, ToXContentFragment {
         addIfNonNull(builder, params, recoveryStats);
         addIfNonNull(builder, params, bulk);
         addIfNonNull(builder, params, nodeMappings);
-        addIfNonNull(builder, params, denseVectorStats);
         return builder;
     }
 

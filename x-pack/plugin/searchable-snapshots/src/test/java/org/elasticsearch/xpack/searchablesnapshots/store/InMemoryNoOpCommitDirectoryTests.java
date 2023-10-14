@@ -13,6 +13,7 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.NoDeletionPolicy;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
@@ -176,7 +177,7 @@ public class InMemoryNoOpCommitDirectoryTests extends ESTestCase {
 
         try (DirectoryReader directoryReader = DirectoryReader.open(inMemoryNoOpCommitDirectory)) {
             assertThat(directoryReader.getIndexCommit().getUserData().get("user_data"), equalTo("original"));
-            final TopDocs topDocs = newSearcher(directoryReader).search(new MatchAllDocsQuery(), 1);
+            final TopDocs topDocs = new IndexSearcher(directoryReader).search(new MatchAllDocsQuery(), 1);
             assertThat(topDocs.totalHits, equalTo(new TotalHits(1L, TotalHits.Relation.EQUAL_TO)));
             assertThat(topDocs.scoreDocs.length, equalTo(1));
             assertThat(directoryReader.document(topDocs.scoreDocs[0].doc).getField("foo").stringValue(), equalTo("bar"));
@@ -223,7 +224,7 @@ public class InMemoryNoOpCommitDirectoryTests extends ESTestCase {
 
         try (DirectoryReader directoryReader = DirectoryReader.open(inMemoryNoOpCommitDirectory)) {
             assertThat(directoryReader.getIndexCommit().getUserData().get("user_data"), equalTo("original"));
-            final TopDocs topDocs = newSearcher(directoryReader).search(new MatchAllDocsQuery(), 1);
+            final TopDocs topDocs = new IndexSearcher(directoryReader).search(new MatchAllDocsQuery(), 1);
             assertThat(topDocs.totalHits, equalTo(new TotalHits(1L, TotalHits.Relation.EQUAL_TO)));
             assertThat(topDocs.scoreDocs.length, equalTo(1));
             assertThat(directoryReader.document(topDocs.scoreDocs[0].doc).getField("foo").stringValue(), equalTo("bar"));

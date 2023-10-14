@@ -69,7 +69,7 @@ public class ClientYamlSuiteRestApi {
         return location;
     }
 
-    void addPath(String path, String[] methods, Set<String> parts, boolean deprecated) {
+    void addPath(String path, String[] methods, Set<String> parts) {
         Objects.requireNonNull(path, name + " API: path must not be null");
         Objects.requireNonNull(methods, name + " API: methods must not be null");
         if (methods.length == 0) {
@@ -81,7 +81,7 @@ public class ClientYamlSuiteRestApi {
                 throw new IllegalArgumentException(name + " API: part [" + part + "] not contained in path [" + path + "]");
             }
         }
-        boolean add = this.paths.add(new Path(path, methods, parts, deprecated));
+        boolean add = this.paths.add(new Path(path, methods, parts));
         if (add == false) {
             throw new IllegalArgumentException(name + " API: found duplicate path [" + path + "]");
         }
@@ -194,7 +194,7 @@ public class ClientYamlSuiteRestApi {
         return pathsByRelevance;
     }
 
-    public record Path(String path, String[] methods, Set<String> parts, boolean deprecated) {
+    public record Path(String path, String[] methods, Set<String> parts) {
 
         @Override
         public boolean equals(Object o) {

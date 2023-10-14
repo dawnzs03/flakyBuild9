@@ -13,8 +13,6 @@ import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.Scope;
-import org.elasticsearch.rest.ServerlessScope;
 import org.elasticsearch.rest.action.RestToXContentListener;
 
 import java.io.IOException;
@@ -25,7 +23,6 @@ import static org.elasticsearch.rest.RestRequest.Method.DELETE;
 /**
  * Deletes a snapshot
  */
-@ServerlessScope(Scope.INTERNAL)
 public class RestDeleteSnapshotAction extends BaseRestHandler {
 
     @Override

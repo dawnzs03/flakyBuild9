@@ -132,7 +132,7 @@ public class WatcherInfoTransportActionTests extends ESTestCase {
         var usageAction = new WatcherUsageTransportAction(
             mock(TransportService.class),
             clusterService,
-            mock(ThreadPool.class),
+            null,
             mock(ActionFilters.class),
             null,
             Settings.EMPTY,

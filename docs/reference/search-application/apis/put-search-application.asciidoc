@@ -79,16 +79,11 @@ Search Application `<name>` exists and `create` is `true`.
 [[put-search-application-example]]
 ==== {api-examples-title}
 
-The following example creates or updates a new Search Application called `my-app`:
+The following example creates a new Search Application called `my-app`:
 
-////
 [source,console]
 ----
-PUT /index1
-
-PUT /index2
-
-PUT _application/search_application/my-app
+PUT _application/search_application/my-app?create
 {
   "indices": [ "index1", "index2" ],
   "template": {
@@ -127,63 +122,7 @@ PUT _application/search_application/my-app
   }
 }
 ----
-// TESTSETUP
-
-//////////////////////////
-
-[source,console]
---------------------------------------------------
-DELETE _application/search_application/my-app
-
-DELETE /index1
-
-DELETE /index2
---------------------------------------------------
-// TEARDOWN
-
-////
-
-[source,console]
-----
-PUT _application/search_application/my-app
-{
-  "indices": [ "index1", "index2" ],
-  "template": {
-    "script": {
-      "source": {
-        "query": {
-          "query_string": {
-            "query": "{{query_string}}",
-            "default_field": "{{default_field}}"
-          }
-        }
-      },
-      "params": {
-        "query_string": "*",
-        "default_field": "*"
-      }
-    },
-    "dictionary": {
-      "properties": {
-        "query_string": {
-          "type": "string"
-        },
-        "default_field": {
-          "type": "string",
-          "enum": [
-            "title",
-            "description"
-          ]
-        },
-        "additionalProperties": false
-      },
-      "required": [
-        "query_string"
-      ]
-    }
-  }
-}
-----
+// TEST[skip:TBD]
 
 When the above `dictionary` parameter is specified, the <<search-application-search, search application search>> API will perform the following parameter validation:
 
@@ -202,27 +141,69 @@ POST _application/search_application/my-app/_search
   }
 }
 ----
-// TEST[catch:bad_request]
+// TEST[skip:TBD]
 
 In the above example, the value of the `default_field` parameter is not valid, therefore Elasticsearch will return an error:
 
-[source,JSON]
+[source,console-result]
 ----
 {
   "error": {
     "root_cause": [
       {
         "type": "validation_exception",
-        "reason": 'Validation Failed: 1: $.default_field: does not have a value in the enumeration [title, description];',
-        "stack_trace": ...
+        "reason": "Validation Failed: 1: $.default_field: does not have a value in the enumeration [title, description];"
       }
     ],
     "type": "validation_exception",
-    "reason": 'Validation Failed: 1: $.default_field: does not have a value in the enumeration [title, description];',
-    "stack_trace": ...
+    "reason": "Validation Failed: 1: $.default_field: does not have a value in the enumeration [title, description];"
   },
   "status": 400
 }
 ----
-// TESTRESPONSE[s/"stack_trace": \.\.\./"stack_trace": $body.$_path/]
-// Need to use source,JSON above instead console-result, as $ fields are replaced in console-result snippets
+// TEST[skip:TBD]
+
+The following example creates or updates an existing Search Application called `my-app`:
+
+[source,console]
+----
+PUT _application/search_application/my-app
+{
+  "indices": [ "index1", "index2", "index3" ],
+  "template": {
+    "script": {
+      "source": {
+        "query": {
+          "query_string": {
+            "query": "{{query_string}}",
+            "default_field": "{{default_field}}"
+          }
+        }
+      },
+      "params": {
+        "query_string": "*",
+        "default_field": "*"
+      }
+    },
+    "dictionary": {
+      "properties": {
+        "query_string": {
+          "type": "string"
+        },
+        "default_field": {
+          "type": "string",
+          "enum": [
+            "title",
+            "description"
+          ]
+        },
+        "additionalProperties": false
+      },
+      "required": [
+        "query_string"
+      ]
+    }
+  }
+}
+----
+// TEST[skip:TBD]

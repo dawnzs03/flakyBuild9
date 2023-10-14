@@ -7,42 +7,49 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.math;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.elasticsearch.compute.data.Block;
 import org.elasticsearch.compute.data.DoubleBlock;
 import org.elasticsearch.xpack.esql.expression.function.scalar.AbstractScalarFunctionTestCase;
 import org.elasticsearch.xpack.ql.expression.Expression;
+import org.elasticsearch.xpack.ql.expression.Literal;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.type.DataType;
 import org.elasticsearch.xpack.ql.type.DataTypes;
+import org.hamcrest.Matcher;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.hamcrest.Matchers.equalTo;
 
 public class PiTests extends AbstractScalarFunctionTestCase {
-    public PiTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
-    }
-
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        return parameterSuppliersFromTypedData(List.of(new TestCaseSupplier("Pi Test", () -> {
-            return new TestCase(
-                List.of(new TypedData(1, DataTypes.INTEGER, "foo")),
-                "LiteralsEvaluator[block=3.141592653589793]",
-                DataTypes.DOUBLE,
-                equalTo(Math.PI)
-            );
-        })));
+    @Override
+    protected List<Object> simpleData() {
+        return List.of(1); // Need to put some data in the input page or it'll fail to build
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
+    protected Expression expressionForSimpleData() {
         return new Pi(Source.EMPTY);
+    }
+
+    @Override
+    protected Matcher<Object> resultMatcher(List<Object> data, DataType dataType) {
+        return equalTo(Math.PI);
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "LiteralsEvaluator[block=3.141592653589793]";
+    }
+
+    @Override
+    protected Expression constantFoldable(List<Object> data) {
+        return expressionForSimpleData();
+    }
+
+    @Override
+    protected Expression build(Source source, List<Literal> args) {
+        return expressionForSimpleData();
     }
 
     @Override

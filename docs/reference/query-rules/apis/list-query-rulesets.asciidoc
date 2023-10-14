@@ -19,7 +19,7 @@ Summary information on the number of rules per ruleset will be returned, and ful
 [[list-query-rules-prereq]]
 ==== {api-prereq-title}
 
-Requires the `manage_search_query_rules` privilege.
+Requires the `manage_cluster` privilege.
 
 [[list-query-rules-path-params]]
 ==== {api-path-parms-title}
@@ -30,136 +30,19 @@ Requires the `manage_search_query_rules` privilege.
 `from`::
 (Optional, integer) The offset from the first result to fetch.
 
+[[list-query-rules-response-codes]]
+==== {api-response-codes-title}
+
 [[list-query-rules-example]]
 ==== {api-examples-title}
 
 The following example lists all configured query rulesets:
 
-////
-
-[source,console]
---------------------------------------------------
-PUT _query_rules/ruleset-1
-{
-    "rules": [
-        {
-            "rule_id": "rule-1",
-            "type": "pinned",
-            "criteria": [
-                {
-                    "type": "exact",
-                    "metadata": "query_string",
-                    "values": [ "puggles" ]
-                }
-            ],
-            "actions": {
-                "ids": ["id1"]
-            }
-        }
-    ]
-}
-
-PUT _query_rules/ruleset-2
-{
-    "rules": [
-        {
-            "rule_id": "rule-1",
-            "type": "pinned",
-            "criteria": [
-                {
-                    "type": "exact",
-                    "metadata": "query_string",
-                    "values": [ "puggles" ]
-                }
-            ],
-            "actions": {
-                "ids": ["id1"]
-            }
-        },
-        {
-            "rule_id": "rule-2",
-            "type": "pinned",
-            "criteria": [
-                {
-                    "type": "fuzzy",
-                    "metadata": "query_string",
-                    "values": [ "pugs" ]
-                }
-            ],
-            "actions": {
-                "ids": ["id2"]
-            }
-        }
-    ]
-}
-
-PUT _query_rules/ruleset-3
-{
-    "rules": [
-        {
-            "rule_id": "rule-1",
-            "type": "pinned",
-            "criteria": [
-                {
-                    "type": "exact",
-                    "metadata": "query_string",
-                    "values": [ "puggles" ]
-                }
-            ],
-            "actions": {
-                "ids": ["id1"]
-            }
-        },
-        {
-            "rule_id": "rule-2",
-            "type": "pinned",
-            "criteria": [
-                {
-                    "type": "fuzzy",
-                    "metadata": "query_string",
-                    "values": [ "pugs" ]
-                }
-            ],
-            "actions": {
-                "ids": ["id2"]
-            }
-        },
-        {
-            "rule_id": "rule-3",
-            "type": "pinned",
-            "criteria": [
-                {
-                    "type": "fuzzy",
-                    "metadata": "query_string",
-                    "values": [ "beagles" ]
-                }
-            ],
-            "actions": {
-                "ids": ["id2"]
-            }
-        }
-    ]
-}
---------------------------------------------------
-// TESTSETUP
-
-[source,console]
---------------------------------------------------
-DELETE _query_rules/ruleset-1
-
-DELETE _query_rules/ruleset-2
-
-DELETE _query_rules/ruleset-3
-
---------------------------------------------------
-// TEARDOWN
-
-////
-
 [source,console]
 ----
 GET _query_rules/
 ----
+// TEST[skip:TBD]
 
 The following example lists the first three query rulesets:
 
@@ -167,41 +50,27 @@ The following example lists the first three query rulesets:
 ----
 GET _query_rules/?from=0&size=3
 ----
+// TEST[skip:TBD]
 
 A sample response:
 
 [source,console-result]
 ----
 {
-    "count": 3,
+    "count": 4,
     "results": [
         {
             "ruleset_id": "ruleset-1",
-            "rule_total_count": 1,
-            "rule_criteria_types_counts": {
-                "exact": 1
-            }
+            "rules_count": 10
         },
         {
             "ruleset_id": "ruleset-2",
-            "rule_total_count": 2,
-            "rule_criteria_types_counts": {
-                "exact": 1,
-                "fuzzy": 1
-            }
+            "rules_count": 15
         },
         {
             "ruleset_id": "ruleset-3",
-            "rule_total_count": 3,
-            "rule_criteria_types_counts": {
-                "exact": 1,
-                "fuzzy": 2
-            }
+            "rules_count": 5
         }
     ]
 }
 ----
-// TEST[continued]
-
-[NOTE]
-The counts in `rule_criteria_types_counts` may be larger than the value of `rule_total_count`, because a rule may have multiple criteria.

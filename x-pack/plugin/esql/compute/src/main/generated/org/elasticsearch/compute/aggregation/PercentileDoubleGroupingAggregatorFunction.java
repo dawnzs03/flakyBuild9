@@ -17,8 +17,9 @@ import org.elasticsearch.compute.data.BytesRefVector;
 import org.elasticsearch.compute.data.DoubleBlock;
 import org.elasticsearch.compute.data.DoubleVector;
 import org.elasticsearch.compute.data.ElementType;
-import org.elasticsearch.compute.data.IntBlock;
 import org.elasticsearch.compute.data.IntVector;
+import org.elasticsearch.compute.data.LongBlock;
+import org.elasticsearch.compute.data.LongVector;
 import org.elasticsearch.compute.data.Page;
 
 /**
@@ -60,56 +61,54 @@ public final class PercentileDoubleGroupingAggregatorFunction implements Groupin
   }
 
   @Override
-  public GroupingAggregatorFunction.AddInput prepareProcessPage(SeenGroupIds seenGroupIds,
-      Page page) {
+  public GroupingAggregatorFunction.AddInput prepareProcessPage(Page page) {
     Block uncastValuesBlock = page.getBlock(channels.get(0));
     if (uncastValuesBlock.areAllValuesNull()) {
-      state.enableGroupIdTracking(seenGroupIds);
       return new GroupingAggregatorFunction.AddInput() {
         @Override
-        public void add(int positionOffset, IntBlock groupIds) {
+        public void add(int positionOffset, LongBlock groupIds) {
+          addRawInputAllNulls(positionOffset, groupIds, uncastValuesBlock);
         }
 
         @Override
-        public void add(int positionOffset, IntVector groupIds) {
+        public void add(int positionOffset, LongVector groupIds) {
+          addRawInputAllNulls(positionOffset, groupIds, uncastValuesBlock);
         }
       };
     }
     DoubleBlock valuesBlock = (DoubleBlock) uncastValuesBlock;
     DoubleVector valuesVector = valuesBlock.asVector();
     if (valuesVector == null) {
-      if (valuesBlock.mayHaveNulls()) {
-        state.enableGroupIdTracking(seenGroupIds);
-      }
       return new GroupingAggregatorFunction.AddInput() {
         @Override
-        public void add(int positionOffset, IntBlock groupIds) {
+        public void add(int positionOffset, LongBlock groupIds) {
           addRawInput(positionOffset, groupIds, valuesBlock);
         }
 
         @Override
-        public void add(int positionOffset, IntVector groupIds) {
+        public void add(int positionOffset, LongVector groupIds) {
           addRawInput(positionOffset, groupIds, valuesBlock);
         }
       };
     }
     return new GroupingAggregatorFunction.AddInput() {
       @Override
-      public void add(int positionOffset, IntBlock groupIds) {
+      public void add(int positionOffset, LongBlock groupIds) {
         addRawInput(positionOffset, groupIds, valuesVector);
       }
 
       @Override
-      public void add(int positionOffset, IntVector groupIds) {
+      public void add(int positionOffset, LongVector groupIds) {
         addRawInput(positionOffset, groupIds, valuesVector);
       }
     };
   }
 
-  private void addRawInput(int positionOffset, IntVector groups, DoubleBlock values) {
+  private void addRawInput(int positionOffset, LongVector groups, DoubleBlock values) {
     for (int groupPosition = 0; groupPosition < groups.getPositionCount(); groupPosition++) {
-      int groupId = Math.toIntExact(groups.getInt(groupPosition));
+      int groupId = Math.toIntExact(groups.getLong(groupPosition));
       if (values.isNull(groupPosition + positionOffset)) {
+        state.putNull(groupId);
         continue;
       }
       int valuesStart = values.getFirstValueIndex(groupPosition + positionOffset);
@@ -120,14 +119,22 @@ public final class PercentileDoubleGroupingAggregatorFunction implements Groupin
     }
   }
 
-  private void addRawInput(int positionOffset, IntVector groups, DoubleVector values) {
+  private void addRawInput(int positionOffset, LongVector groups, DoubleVector values) {
     for (int groupPosition = 0; groupPosition < groups.getPositionCount(); groupPosition++) {
-      int groupId = Math.toIntExact(groups.getInt(groupPosition));
+      int groupId = Math.toIntExact(groups.getLong(groupPosition));
       PercentileDoubleAggregator.combine(state, groupId, values.getDouble(groupPosition + positionOffset));
     }
   }
 
-  private void addRawInput(int positionOffset, IntBlock groups, DoubleBlock values) {
+  private void addRawInputAllNulls(int positionOffset, LongVector groups, Block values) {
+    for (int groupPosition = 0; groupPosition < groups.getPositionCount(); groupPosition++) {
+      int groupId = Math.toIntExact(groups.getLong(groupPosition));
+      assert values.isNull(groupPosition + positionOffset);
+      state.putNull(groupPosition + positionOffset);
+    }
+  }
+
+  private void addRawInput(int positionOffset, LongBlock groups, DoubleBlock values) {
     for (int groupPosition = 0; groupPosition < groups.getPositionCount(); groupPosition++) {
       if (groups.isNull(groupPosition)) {
         continue;
@@ -135,8 +142,9 @@ public final class PercentileDoubleGroupingAggregatorFunction implements Groupin
       int groupStart = groups.getFirstValueIndex(groupPosition);
       int groupEnd = groupStart + groups.getValueCount(groupPosition);
       for (int g = groupStart; g < groupEnd; g++) {
-        int groupId = Math.toIntExact(groups.getInt(g));
+        int groupId = Math.toIntExact(groups.getLong(g));
         if (values.isNull(groupPosition + positionOffset)) {
+          state.putNull(groupId);
           continue;
         }
         int valuesStart = values.getFirstValueIndex(groupPosition + positionOffset);
@@ -148,7 +156,7 @@ public final class PercentileDoubleGroupingAggregatorFunction implements Groupin
     }
   }
 
-  private void addRawInput(int positionOffset, IntBlock groups, DoubleVector values) {
+  private void addRawInput(int positionOffset, LongBlock groups, DoubleVector values) {
     for (int groupPosition = 0; groupPosition < groups.getPositionCount(); groupPosition++) {
       if (groups.isNull(groupPosition)) {
         continue;
@@ -156,20 +164,34 @@ public final class PercentileDoubleGroupingAggregatorFunction implements Groupin
       int groupStart = groups.getFirstValueIndex(groupPosition);
       int groupEnd = groupStart + groups.getValueCount(groupPosition);
       for (int g = groupStart; g < groupEnd; g++) {
-        int groupId = Math.toIntExact(groups.getInt(g));
+        int groupId = Math.toIntExact(groups.getLong(g));
         PercentileDoubleAggregator.combine(state, groupId, values.getDouble(groupPosition + positionOffset));
       }
     }
   }
 
+  private void addRawInputAllNulls(int positionOffset, LongBlock groups, Block values) {
+    for (int groupPosition = 0; groupPosition < groups.getPositionCount(); groupPosition++) {
+      if (groups.isNull(groupPosition)) {
+        continue;
+      }
+      int groupStart = groups.getFirstValueIndex(groupPosition);
+      int groupEnd = groupStart + groups.getValueCount(groupPosition);
+      for (int g = groupStart; g < groupEnd; g++) {
+        int groupId = Math.toIntExact(groups.getLong(g));
+        assert values.isNull(groupPosition + positionOffset);
+        state.putNull(groupPosition + positionOffset);
+      }
+    }
+  }
+
   @Override
-  public void addIntermediateInput(int positionOffset, IntVector groups, Page page) {
-    state.enableGroupIdTracking(new SeenGroupIds.Empty());
+  public void addIntermediateInput(int positionOffset, LongVector groups, Page page) {
     assert channels.size() == intermediateBlockCount();
     BytesRefVector quart = page.<BytesRefBlock>getBlock(channels.get(0)).asVector();
     BytesRef scratch = new BytesRef();
     for (int groupPosition = 0; groupPosition < groups.getPositionCount(); groupPosition++) {
-      int groupId = Math.toIntExact(groups.getInt(groupPosition));
+      int groupId = Math.toIntExact(groups.getLong(groupPosition));
       PercentileDoubleAggregator.combineIntermediate(state, groupId, quart.getBytesRef(groupPosition + positionOffset, scratch));
     }
   }
@@ -180,7 +202,6 @@ public final class PercentileDoubleGroupingAggregatorFunction implements Groupin
       throw new IllegalArgumentException("expected " + getClass() + "; got " + input.getClass());
     }
     QuantileStates.GroupingState inState = ((PercentileDoubleGroupingAggregatorFunction) input).state;
-    state.enableGroupIdTracking(new SeenGroupIds.Empty());
     PercentileDoubleAggregator.combineStates(state, groupId, inState, position);
   }
 

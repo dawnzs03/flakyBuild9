@@ -70,7 +70,6 @@ import org.elasticsearch.transport.TransportService;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.elasticsearch.core.Strings.format;
@@ -446,7 +445,7 @@ public abstract class TransportReplicationAction<
                             primaryRequest.getPrimaryTerm()
                         ),
                         transportOptions,
-                        new ActionListenerResponseHandler<>(onCompletionListener, reader, TransportResponseHandler.TRANSPORT_WORKER) {
+                        new ActionListenerResponseHandler<>(onCompletionListener, reader) {
                             @Override
                             public void handleResponse(Response response) {
                                 setPhase(replicationTask, "finished");
@@ -694,11 +693,7 @@ public abstract class TransportReplicationAction<
                             clusterService.localNode(),
                             transportReplicaAction,
                             replicaRequest,
-                            new ActionListenerResponseHandler<>(
-                                onCompletionListener,
-                                ReplicaResponse::new,
-                                TransportResponseHandler.TRANSPORT_WORKER
-                            )
+                            new ActionListenerResponseHandler<>(onCompletionListener, ReplicaResponse::new)
                         );
                     }
 
@@ -951,11 +946,6 @@ public abstract class TransportReplicationAction<
                 @Override
                 public Response read(StreamInput in) throws IOException {
                     return newResponseInstance(in);
-                }
-
-                @Override
-                public Executor executor(ThreadPool threadPool) {
-                    return TransportResponseHandler.TRANSPORT_WORKER;
                 }
 
                 @Override
@@ -1258,8 +1248,7 @@ public abstract class TransportReplicationAction<
             );
             final ActionListenerResponseHandler<ReplicaResponse> handler = new ActionListenerResponseHandler<>(
                 listener,
-                ReplicaResponse::new,
-                TransportResponseHandler.TRANSPORT_WORKER
+                ReplicaResponse::new
             );
             transportService.sendRequest(node, transportReplicaAction, replicaRequest, transportOptions, handler);
         }

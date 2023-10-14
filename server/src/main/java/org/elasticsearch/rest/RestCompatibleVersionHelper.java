@@ -13,8 +13,6 @@ import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.xcontent.MediaType;
 import org.elasticsearch.xcontent.ParsedMediaType;
 
-import java.util.Optional;
-
 /**
  * A helper that is responsible for parsing a Compatible REST API version from RestRequest.
  * It also performs a validation of allowed combination of versions provided on those headers.
@@ -22,10 +20,7 @@ import java.util.Optional;
  */
 class RestCompatibleVersionHelper {
 
-    /**
-     * @return The requested API version, or {@link Optional#empty()} if there was no explicit version in the request.
-     */
-    static Optional<RestApiVersion> getCompatibleVersion(
+    static RestApiVersion getCompatibleVersion(
         @Nullable ParsedMediaType acceptHeader,
         @Nullable ParsedMediaType contentTypeHeader,
         boolean hasContent
@@ -81,19 +76,15 @@ class RestCompatibleVersionHelper {
                 );
             }
             if (contentTypeVersion < RestApiVersion.current().major) {
-                return Optional.of(RestApiVersion.minimumSupported());
+                return RestApiVersion.minimumSupported();
             }
         }
 
         if (acceptVersion < RestApiVersion.current().major) {
-            return Optional.of(RestApiVersion.minimumSupported());
+            return RestApiVersion.minimumSupported();
         }
 
-        if (cVersion == null && aVersion == null) {
-            return Optional.empty();
-        } else {
-            return Optional.of(RestApiVersion.current());
-        }
+        return RestApiVersion.current();
     }
 
     static Byte parseVersion(ParsedMediaType parsedMediaType) {

@@ -8,6 +8,7 @@
 package org.elasticsearch.xpack.analytics.aggregations.bucket.histogram;
 
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.elasticsearch.index.mapper.CustomTermFreqField;
@@ -41,7 +42,8 @@ public class HistoBackedHistogramAggregatorTests extends AggregatorTestCase {
 
             HistogramAggregationBuilder aggBuilder = new HistogramAggregationBuilder("my_agg").field(FIELD_NAME).interval(5);
             try (IndexReader reader = w.getReader()) {
-                InternalHistogram histogram = searchAndReduce(reader, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
+                IndexSearcher searcher = new IndexSearcher(reader);
+                InternalHistogram histogram = searchAndReduce(searcher, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
                 assertEquals(9, histogram.getBuckets().size());
                 assertEquals(-10d, histogram.getBuckets().get(0).getKey());
                 assertEquals(1, histogram.getBuckets().get(0).getDocCount());
@@ -74,7 +76,8 @@ public class HistoBackedHistogramAggregatorTests extends AggregatorTestCase {
 
             HistogramAggregationBuilder aggBuilder = new HistogramAggregationBuilder("my_agg").field(FIELD_NAME).interval(5).minDocCount(2);
             try (IndexReader reader = w.getReader()) {
-                InternalHistogram histogram = searchAndReduce(reader, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
+                IndexSearcher searcher = new IndexSearcher(reader);
+                InternalHistogram histogram = searchAndReduce(searcher, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
                 assertEquals(4, histogram.getBuckets().size());
                 assertEquals(0d, histogram.getBuckets().get(0).getKey());
                 assertEquals(3, histogram.getBuckets().get(0).getDocCount());
@@ -102,7 +105,8 @@ public class HistoBackedHistogramAggregatorTests extends AggregatorTestCase {
             HistogramAggregationBuilder aggBuilder = new HistogramAggregationBuilder("my_agg").field(FIELD_NAME).interval(100);
 
             try (IndexReader reader = w.getReader()) {
-                InternalHistogram histogram = searchAndReduce(reader, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
+                IndexSearcher searcher = new IndexSearcher(reader);
+                InternalHistogram histogram = searchAndReduce(searcher, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
                 assertTrue(AggregationInspectionHelper.hasValue(histogram));
                 assertEquals(8, histogram.getBuckets().get(0).getDocCount());
             }
@@ -123,7 +127,8 @@ public class HistoBackedHistogramAggregatorTests extends AggregatorTestCase {
                 .offset(offset)
                 .minDocCount(1);
             try (IndexReader reader = w.getReader()) {
-                InternalHistogram histogram = searchAndReduce(reader, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
+                IndexSearcher searcher = new IndexSearcher(reader);
+                InternalHistogram histogram = searchAndReduce(searcher, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
 
                 assertEquals(3, histogram.getBuckets().size());
                 assertEquals(-10 + expectedOffset, histogram.getBuckets().get(0).getKey());
@@ -150,7 +155,8 @@ public class HistoBackedHistogramAggregatorTests extends AggregatorTestCase {
                 .interval(5)
                 .extendedBounds(-12, 13);
             try (IndexReader reader = w.getReader()) {
-                InternalHistogram histogram = searchAndReduce(reader, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
+                IndexSearcher searcher = new IndexSearcher(reader);
+                InternalHistogram histogram = searchAndReduce(searcher, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
                 assertEquals(6, histogram.getBuckets().size());
                 assertEquals(-15d, histogram.getBuckets().get(0).getKey());
                 assertEquals(0, histogram.getBuckets().get(0).getDocCount());
@@ -181,7 +187,8 @@ public class HistoBackedHistogramAggregatorTests extends AggregatorTestCase {
                 .interval(5)
                 .hardBounds(new DoubleBounds(0.0, 5.0));
             try (IndexReader reader = w.getReader()) {
-                InternalHistogram histogram = searchAndReduce(reader, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
+                IndexSearcher searcher = new IndexSearcher(reader);
+                InternalHistogram histogram = searchAndReduce(searcher, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
                 assertEquals(1, histogram.getBuckets().size());
                 assertEquals(0d, histogram.getBuckets().get(0).getKey());
                 assertEquals(4, histogram.getBuckets().get(0).getDocCount());
@@ -204,8 +211,10 @@ public class HistoBackedHistogramAggregatorTests extends AggregatorTestCase {
                 .extendedBounds(-12, 13)
                 .subAggregation(new TopHitsAggregationBuilder("top_hits"));
             try (IndexReader reader = w.getReader()) {
+                IndexSearcher searcher = new IndexSearcher(reader);
+
                 IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> {
-                    searchAndReduce(reader, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
+                    searchAndReduce(searcher, new AggTestConfig(aggBuilder, defaultFieldType(FIELD_NAME)));
                 });
 
                 assertEquals("Histogram aggregation on histogram fields does not support sub-aggregations", e.getMessage());

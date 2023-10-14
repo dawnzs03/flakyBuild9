@@ -15,7 +15,6 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.TransportVersionUtils;
 import org.elasticsearch.test.rest.ObjectPath;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -97,7 +96,7 @@ public class MonitoringInfoTransportActionTests extends ESTestCase {
         var usageAction = new MonitoringUsageTransportAction(
             mock(TransportService.class),
             null,
-            mock(ThreadPool.class),
+            null,
             mock(ActionFilters.class),
             null,
             new MonitoringUsageServices(monitoring, exporters)

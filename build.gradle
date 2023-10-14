@@ -200,7 +200,6 @@ allprojects {
 
   tasks.register('resolveAllDependencies', ResolveAllDependencies) {
     configs = project.configurations
-    resolveJavaToolChain = true
     if (project.path.contains("fixture")) {
       dependsOn tasks.withType(ComposePull)
     }

@@ -19,5 +19,4 @@ testClusters.configureEach {
   user username: 'entsearch-superuser', password: 'entsearch-superuser-password', role: 'superuser'
   user username: 'entsearch-admin', password: 'entsearch-admin-password', role: 'admin'
   user username: 'entsearch-user', password: 'entsearch-user-password', role: 'user'
-  user username: 'entsearch-unprivileged', password: 'entsearch-unprivileged-password', role: 'unprivileged'
 }

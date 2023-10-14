@@ -2,6 +2,8 @@
 [[tutorial-manage-existing-data-stream]]
 === Tutorial: Update existing data stream
 
+preview::[]
+
 To update the lifecycle of an existing data stream you do the following actions:
 
 . <<set-lifecycle>>
@@ -58,7 +60,6 @@ The response will look like:
       "index_creation_date_millis": 1681919221417,
       "time_since_index_creation": "6.85s",             <3>
       "lifecycle": {
-        "enabled": true,
         "data_retention": "30d"                         <4>
       }
     },
@@ -71,7 +72,6 @@ The response will look like:
       "time_since_rollover": "6.84s",                   <8>
       "generation_time": "6.84s",                       <9>
       "lifecycle": {
-        "enabled": true,
         "data_retention": "30d"                         <10>
       }
     }

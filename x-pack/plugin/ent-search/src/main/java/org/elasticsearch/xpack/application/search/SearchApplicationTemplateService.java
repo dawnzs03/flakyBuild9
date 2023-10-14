@@ -39,10 +39,11 @@ public class SearchApplicationTemplateService {
 
     public SearchSourceBuilder renderQuery(SearchApplication searchApplication, Map<String, Object> templateParams) throws IOException,
         ValidationException {
-        final SearchApplicationTemplate template = searchApplication.searchApplicationTemplateOrDefault();
+        final SearchApplicationTemplate template = searchApplication.searchApplicationTemplate();
         template.validateTemplateParams(templateParams);
-        final Map<String, Object> renderedTemplateParams = renderTemplateParams(template, templateParams);
+        final Map<String, Object> renderedTemplateParams = renderTemplate(searchApplication, templateParams);
         final Script script = template.script();
+
         TemplateScript compiledTemplate = scriptService.compile(script, TemplateScript.CONTEXT).newInstance(renderedTemplateParams);
         final String requestSource = SearchTemplateHelper.stripTrailingComma(compiledTemplate.execute());
         XContentParserConfiguration parserConfig = XContentParserConfiguration.EMPTY.withRegistry(xContentRegistry)
@@ -64,14 +65,13 @@ public class SearchApplicationTemplateService {
      */
     public Map<String, Object> renderTemplate(SearchApplication searchApplication, Map<String, Object> queryParams)
         throws ValidationException {
-        final SearchApplicationTemplate template = searchApplication.searchApplicationTemplateOrDefault();
-        return renderTemplateParams(template, queryParams);
-    }
 
-    private Map<String, Object> renderTemplateParams(SearchApplicationTemplate template, Map<String, Object> queryParams) {
+        final SearchApplicationTemplate template = searchApplication.searchApplicationTemplate();
         final Script script = template.script();
+
         Map<String, Object> mergedTemplateParams = new HashMap<>(script.getParams());
         mergedTemplateParams.putAll(queryParams);
+
         return mergedTemplateParams;
     }
 }

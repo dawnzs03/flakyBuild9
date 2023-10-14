@@ -154,9 +154,4 @@ public class IndicesStatsRequestBuilder extends BroadcastOperationRequestBuilder
         request.includeUnloadedSegments(includeUnloadedSegments);
         return this;
     }
-
-    public IndicesStatsRequestBuilder setDenseVector(boolean denseVector) {
-        request.denseVector(denseVector);
-        return this;
-    }
 }

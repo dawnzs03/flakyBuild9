@@ -71,7 +71,7 @@ public class TransportRestoreSnapshotAction extends TransportMasterNodeAction<Re
         final ActionListener<RestoreSnapshotResponse> listener
     ) {
         restoreService.restoreSnapshot(request, listener.delegateFailure((delegatedListener, restoreCompletionResponse) -> {
-            if (restoreCompletionResponse.restoreInfo() == null && request.waitForCompletion()) {
+            if (restoreCompletionResponse.getRestoreInfo() == null && request.waitForCompletion()) {
                 RestoreClusterStateListener.createAndRegisterListener(
                     clusterService,
                     restoreCompletionResponse,
@@ -79,7 +79,7 @@ public class TransportRestoreSnapshotAction extends TransportMasterNodeAction<Re
                     threadPool.getThreadContext()
                 );
             } else {
-                delegatedListener.onResponse(new RestoreSnapshotResponse(restoreCompletionResponse.restoreInfo()));
+                delegatedListener.onResponse(new RestoreSnapshotResponse(restoreCompletionResponse.getRestoreInfo()));
             }
         }));
     }

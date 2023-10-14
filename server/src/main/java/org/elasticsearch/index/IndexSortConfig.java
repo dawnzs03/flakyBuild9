@@ -61,8 +61,7 @@ public final class IndexSortConfig {
     public static final Setting<List<String>> INDEX_SORT_FIELD_SETTING = Setting.stringListSetting(
         "index.sort.field",
         Setting.Property.IndexScope,
-        Setting.Property.Final,
-        Setting.Property.ServerlessPublic
+        Setting.Property.Final
     );
 
     /**
@@ -73,8 +72,7 @@ public final class IndexSortConfig {
         Collections.emptyList(),
         IndexSortConfig::parseOrderMode,
         Setting.Property.IndexScope,
-        Setting.Property.Final,
-        Setting.Property.ServerlessPublic
+        Setting.Property.Final
     );
 
     /**
@@ -85,8 +83,7 @@ public final class IndexSortConfig {
         Collections.emptyList(),
         IndexSortConfig::parseMultiValueMode,
         Setting.Property.IndexScope,
-        Setting.Property.Final,
-        Setting.Property.ServerlessPublic
+        Setting.Property.Final
     );
 
     /**
@@ -97,8 +94,7 @@ public final class IndexSortConfig {
         Collections.emptyList(),
         IndexSortConfig::validateMissingValue,
         Setting.Property.IndexScope,
-        Setting.Property.Final,
-        Setting.Property.ServerlessPublic
+        Setting.Property.Final
     );
 
     public static final FieldSortSpec[] TIME_SERIES_SORT;

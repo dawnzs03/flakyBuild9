@@ -23,6 +23,7 @@ import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.transport.TransportException;
+import org.elasticsearch.transport.TransportResponse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -122,7 +123,7 @@ public class PublicationTests extends ESTestCase {
         boolean committed;
 
         Map<DiscoveryNode, ActionListener<PublishWithJoinResponse>> pendingPublications = new LinkedHashMap<>();
-        Map<DiscoveryNode, ActionListener<Void>> pendingCommits = new LinkedHashMap<>();
+        Map<DiscoveryNode, ActionListener<TransportResponse.Empty>> pendingCommits = new LinkedHashMap<>();
         Map<DiscoveryNode, Join> joins = new HashMap<>();
         Set<DiscoveryNode> missingJoins = new HashSet<>();
 
@@ -162,7 +163,7 @@ public class PublicationTests extends ESTestCase {
         protected void sendApplyCommit(
             DiscoveryNode destination,
             ApplyCommitRequest applyCommit,
-            ActionListener<Void> responseActionListener
+            ActionListener<TransportResponse.Empty> responseActionListener
         ) {
             if (this.applyCommit == null) {
                 this.applyCommit = applyCommit;
@@ -261,7 +262,7 @@ public class PublicationTests extends ESTestCase {
             assertFalse(publication.completed);
             assertFalse(publication.committed);
             nodeResolver.apply(e.getKey()).coordinationState.handleCommit(publication.applyCommit);
-            e.getValue().onResponse(null);
+            e.getValue().onResponse(TransportResponse.Empty.INSTANCE);
         });
 
         if (delayProcessingNode2PublishResponse) {
@@ -274,7 +275,7 @@ public class PublicationTests extends ESTestCase {
             assertFalse(publication.completed);
             assertFalse(publication.committed);
             assertThat(publication.completedNodes(), containsInAnyOrder(n1, n3));
-            publication.pendingCommits.get(n2).onResponse(null);
+            publication.pendingCommits.get(n2).onResponse(TransportResponse.Empty.INSTANCE);
         }
 
         assertTrue(publication.completed);
@@ -318,7 +319,7 @@ public class PublicationTests extends ESTestCase {
 
         publication.pendingCommits.entrySet().stream().collect(shuffle()).forEach(e -> {
             nodeResolver.apply(e.getKey()).coordinationState.handleCommit(publication.applyCommit);
-            e.getValue().onResponse(null);
+            e.getValue().onResponse(TransportResponse.Empty.INSTANCE);
         });
 
         assertTrue(publication.completed);
@@ -369,7 +370,7 @@ public class PublicationTests extends ESTestCase {
             }
             if (e.getKey().equals(n2) == false || randomBoolean()) {
                 nodeResolver.apply(e.getKey()).coordinationState.handleCommit(publication.applyCommit);
-                e.getValue().onResponse(null);
+                e.getValue().onResponse(TransportResponse.Empty.INSTANCE);
             }
         });
 
@@ -491,7 +492,7 @@ public class PublicationTests extends ESTestCase {
         publication.pendingCommits.entrySet().stream().collect(shuffle()).forEach(e -> {
             if (committingNodes.contains(e.getKey())) {
                 nodeResolver.apply(e.getKey()).coordinationState.handleCommit(publication.applyCommit);
-                e.getValue().onResponse(null);
+                e.getValue().onResponse(TransportResponse.Empty.INSTANCE);
             }
         });
 
@@ -512,7 +513,9 @@ public class PublicationTests extends ESTestCase {
 
         Set<DiscoveryNode> nonCommittedNodes = Sets.difference(discoNodes, committingNodes);
         logger.info("Non-committed nodes: {}", nonCommittedNodes);
-        nonCommittedNodes.stream().collect(shuffle()).forEach(n -> publication.pendingCommits.get(n).onResponse(null));
+        nonCommittedNodes.stream()
+            .collect(shuffle())
+            .forEach(n -> publication.pendingCommits.get(n).onResponse(TransportResponse.Empty.INSTANCE));
 
         assertEquals(discoNodes, ackListener.await(0L, TimeUnit.SECONDS));
     }

@@ -7,9 +7,6 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.string;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.compute.data.BytesRefBlock;
 import org.elasticsearch.compute.data.Page;
@@ -24,9 +21,7 @@ import org.hamcrest.Matcher;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.joining;
@@ -34,29 +29,18 @@ import static org.elasticsearch.compute.data.BlockUtils.toJavaObject;
 import static org.hamcrest.Matchers.equalTo;
 
 public class SplitTests extends AbstractScalarFunctionTestCase {
-    public SplitTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
+    @Override
+    protected List<Object> simpleData() {
+        String delimiter = randomAlphaOfLength(1);
+        String str = IntStream.range(0, between(1, 5))
+            .mapToObj(i -> randomValueOtherThanMany(s -> s.contains(delimiter), () -> randomAlphaOfLength(4)))
+            .collect(joining(delimiter));
+        return List.of(new BytesRef(str), new BytesRef(delimiter));
     }
 
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        return parameterSuppliersFromTypedData(List.of(new TestCaseSupplier("split basic test", () -> {
-            String delimiter = randomAlphaOfLength(1);
-            List<BytesRef> strings = IntStream.range(0, between(1, 5))
-                .mapToObj(i -> randomValueOtherThanMany(s -> s.contains(delimiter), () -> randomAlphaOfLength(4)))
-                .map(BytesRef::new)
-                .collect(Collectors.toList());
-            String str = strings.stream().map(BytesRef::utf8ToString).collect(joining(delimiter));
-            return new TestCase(
-                List.of(
-                    new TypedData(new BytesRef(str), DataTypes.KEYWORD, "str"),
-                    new TypedData(new BytesRef(delimiter), DataTypes.KEYWORD, "delim")
-                ),
-                "SplitVariableEvaluator[str=Attribute[channel=0], delim=Attribute[channel=1]]",
-                DataTypes.KEYWORD,
-                equalTo(strings.size() == 1 ? strings.get(0) : strings)
-            );
-        })));
+    @Override
+    protected Expression expressionForSimpleData() {
+        return new Split(Source.EMPTY, field("str", DataTypes.KEYWORD), field("delim", DataTypes.KEYWORD));
     }
 
     @Override
@@ -64,11 +48,26 @@ public class SplitTests extends AbstractScalarFunctionTestCase {
         return DataTypes.KEYWORD;
     }
 
-    private Matcher<Object> resultsMatcher(List<TypedData> typedData) {
-        String str = ((BytesRef) typedData.get(0).data()).utf8ToString();
-        String delim = ((BytesRef) typedData.get(1).data()).utf8ToString();
+    @Override
+    protected Matcher<Object> resultMatcher(List<Object> data, DataType dataType) {
+        String str = ((BytesRef) data.get(0)).utf8ToString();
+        String delim = ((BytesRef) data.get(1)).utf8ToString();
         List<BytesRef> split = Arrays.stream(str.split(Pattern.quote(delim))).map(BytesRef::new).toList();
         return equalTo(split.size() == 1 ? split.get(0) : split);
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "SplitVariableEvaluator[str=Attribute[channel=0], delim=Attribute[channel=1]]";
+    }
+
+    @Override
+    protected Expression constantFoldable(List<Object> data) {
+        return new Split(
+            Source.EMPTY,
+            new Literal(Source.EMPTY, data.get(0), DataTypes.KEYWORD),
+            new Literal(Source.EMPTY, data.get(1), DataTypes.KEYWORD)
+        );
     }
 
     @Override
@@ -77,7 +76,7 @@ public class SplitTests extends AbstractScalarFunctionTestCase {
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
+    protected Expression build(Source source, List<Literal> args) {
         return new Split(source, args.get(0), args.get(1));
     }
 

@@ -23,13 +23,12 @@ import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.util.CollectionUtils;
-import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
-import org.elasticsearch.transport.Transports;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static java.util.Collections.unmodifiableMap;
@@ -58,7 +57,7 @@ public class TransportGetSettingsAction extends TransportMasterNodeReadAction<Ge
             GetSettingsRequest::new,
             indexNameExpressionResolver,
             GetSettingsResponse::new,
-            ThreadPool.Names.MANAGEMENT
+            ThreadPool.Names.SAME
         );
         this.settingsFilter = settingsFilter;
         this.indexScopedSettings = indexedScopedSettings;
@@ -81,12 +80,9 @@ public class TransportGetSettingsAction extends TransportMasterNodeReadAction<Ge
         ClusterState state,
         ActionListener<GetSettingsResponse> listener
     ) {
-        assert Transports.assertNotTransportThread("O(indices) work is too much for a transport thread");
-        final Index[] concreteIndices = indexNameExpressionResolver.concreteIndices(state, request);
-        final Map<String, Settings> indexToSettings = Maps.newHashMapWithExpectedSize(concreteIndices.length);
-        final Map<String, Settings> indexToDefaultSettings = request.includeDefaults()
-            ? Maps.newHashMapWithExpectedSize(concreteIndices.length)
-            : null;
+        Index[] concreteIndices = indexNameExpressionResolver.concreteIndices(state, request);
+        Map<String, Settings> indexToSettings = new HashMap<>();
+        Map<String, Settings> indexToDefaultSettings = new HashMap<>();
         for (Index concreteIndex : concreteIndices) {
             IndexMetadata indexMetadata = state.getMetadata().index(concreteIndex);
             if (indexMetadata == null) {
@@ -103,7 +99,7 @@ public class TransportGetSettingsAction extends TransportMasterNodeReadAction<Ge
             }
 
             indexToSettings.put(concreteIndex.getName(), indexSettings);
-            if (indexToDefaultSettings != null) {
+            if (request.includeDefaults()) {
                 Settings defaultSettings = settingsFilter.filter(indexScopedSettings.diff(indexSettings, Settings.EMPTY));
                 if (isFilteredRequest(request)) {
                     defaultSettings = defaultSettings.filter(k -> Regex.simpleMatch(request.names(), k));
@@ -111,11 +107,6 @@ public class TransportGetSettingsAction extends TransportMasterNodeReadAction<Ge
                 indexToDefaultSettings.put(concreteIndex.getName(), defaultSettings);
             }
         }
-        listener.onResponse(
-            new GetSettingsResponse(
-                unmodifiableMap(indexToSettings),
-                indexToDefaultSettings == null ? Map.of() : unmodifiableMap(indexToDefaultSettings)
-            )
-        );
+        listener.onResponse(new GetSettingsResponse(unmodifiableMap(indexToSettings), unmodifiableMap(indexToDefaultSettings)));
     }
 }

@@ -17,7 +17,6 @@ import org.apache.lucene.search.IndexOrDocValuesQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.IndexSortSortedNumericDocValuesRangeQuery;
 import org.apache.lucene.search.LeafCollector;
-import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.PointRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreMode;
@@ -29,7 +28,6 @@ import org.elasticsearch.search.aggregations.Aggregator;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.IntPredicate;
 
@@ -247,20 +245,5 @@ public class QueryToFilterAdapter {
             weight = searcher().createWeight(query, ScoreMode.COMPLETE_NO_SCORES, 1.0f);
         }
         return weight;
-    }
-
-    /**
-     * Checks if all passed filters contain MatchNoDocsQuery queries. In this case, filter aggregation produces
-     * no docs for the given segment.
-     * @param filters list of filters to check
-     * @return true if all filters match no docs, otherwise false
-     */
-    static boolean MatchesNoDocs(List<QueryToFilterAdapter> filters) {
-        for (QueryToFilterAdapter filter : filters) {
-            if (filter.query() instanceof MatchNoDocsQuery == false) {
-                return false;
-            }
-        }
-        return true;
     }
 }

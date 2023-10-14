@@ -25,7 +25,6 @@ import org.elasticsearch.ingest.IngestService;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequestOptions;
-import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.Collection;
@@ -111,8 +110,7 @@ public class SimulatePipelineTransportAction extends HandledTransportAction<Simu
                 logger.trace("forwarding request [{}] to ingest node [{}]", actionName, ingestNode);
                 ActionListenerResponseHandler<SimulatePipelineResponse> handler = new ActionListenerResponseHandler<>(
                     listener,
-                    SimulatePipelineAction.INSTANCE.getResponseReader(),
-                    TransportResponseHandler.TRANSPORT_WORKER
+                    SimulatePipelineAction.INSTANCE.getResponseReader()
                 );
                 if (task == null) {
                     transportService.sendRequest(ingestNode, actionName, request, handler);

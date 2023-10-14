@@ -35,22 +35,18 @@ class SnykDependencyMonitoringGradlePluginFuncTest extends AbstractGradleInterna
             version = "$version"
 
             repositories {
-                mavenCentral()
+                mavenCentral() 
             }
-
+            
             dependencies {
                 implementation 'org.apache.lucene:lucene-monitor:9.2.0'
-            }
-
-            tasks.named('generateSnykDependencyGraph').configure {
-                remoteUrl = "http://acme.org"
             }
         """
         when:
         def build = gradleRunner("generateSnykDependencyGraph").build()
         then:
         build.task(":generateSnykDependencyGraph").outcome == TaskOutcome.SUCCESS
-        JSONAssert.assertEquals("""{
+        JSONAssert.assertEquals(file("build/snyk/dependencies.json").text, """{
             "meta": {
                 "method": "custom gradle",
                 "id": "gradle",
@@ -105,7 +101,7 @@ class SnykDependencyMonitoringGradlePluginFuncTest extends AbstractGradleInterna
                         {
                             "nodeId": "org.apache.lucene:lucene-core@9.2.0",
                             "deps": [
-
+                                
                             ],
                             "pkgId": "org.apache.lucene:lucene-core@9.2.0"
                         },
@@ -159,7 +155,7 @@ class SnykDependencyMonitoringGradlePluginFuncTest extends AbstractGradleInterna
                 ]
             },
             "target": {
-                "remoteUrl": "http://acme.org",
+                "remoteUrl": "http://github.com/elastic/elasticsearch.git",
                 "branch": "unknown"
             },
             "targetReference": "$version",
@@ -168,7 +164,7 @@ class SnykDependencyMonitoringGradlePluginFuncTest extends AbstractGradleInterna
                   "$expectedLifecycle"
                 ]
             }
-        }""", file("build/snyk/dependencies.json").text, true)
+        }""", true)
 
         where:
         version        | expectedLifecycle

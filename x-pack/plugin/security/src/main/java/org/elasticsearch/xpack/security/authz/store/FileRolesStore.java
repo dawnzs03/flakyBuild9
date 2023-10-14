@@ -19,6 +19,7 @@ import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.license.XPackLicenseState;
+import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.watcher.FileChangesListener;
 import org.elasticsearch.watcher.FileWatcher;
 import org.elasticsearch.watcher.ResourceWatcherService;
@@ -140,7 +141,9 @@ public class FileRolesStore implements BiConsumer<Set<String>, ActionListener<Ro
 
         usageStats.put("fls", fls);
         usageStats.put("dls", dls);
-        usageStats.put("remote_indices", localPermissions.values().stream().filter(RoleDescriptor::hasRemoteIndicesPrivileges).count());
+        if (TcpTransport.isUntrustedRemoteClusterEnabled()) {
+            usageStats.put("remote_indices", localPermissions.values().stream().filter(RoleDescriptor::hasRemoteIndicesPrivileges).count());
+        }
 
         return usageStats;
     }

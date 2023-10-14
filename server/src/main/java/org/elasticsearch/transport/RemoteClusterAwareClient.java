@@ -18,14 +18,11 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import java.util.concurrent.Executor;
-
 final class RemoteClusterAwareClient extends AbstractClient {
 
     private final TransportService service;
     private final String clusterAlias;
     private final RemoteClusterService remoteClusterService;
-    private final Executor responseExecutor;
     private final boolean ensureConnected;
 
     RemoteClusterAwareClient(
@@ -33,14 +30,12 @@ final class RemoteClusterAwareClient extends AbstractClient {
         ThreadPool threadPool,
         TransportService service,
         String clusterAlias,
-        Executor responseExecutor,
         boolean ensureConnected
     ) {
         super(settings, threadPool);
         this.service = service;
         this.clusterAlias = clusterAlias;
         this.remoteClusterService = service.getRemoteClusterService();
-        this.responseExecutor = responseExecutor;
         this.ensureConnected = ensureConnected;
     }
 
@@ -71,7 +66,7 @@ final class RemoteClusterAwareClient extends AbstractClient {
                 action.name(),
                 request,
                 TransportRequestOptions.EMPTY,
-                new ActionListenerResponseHandler<>(delegateListener, action.getResponseReader(), responseExecutor)
+                new ActionListenerResponseHandler<>(delegateListener, action.getResponseReader())
             );
         }));
     }
@@ -90,7 +85,7 @@ final class RemoteClusterAwareClient extends AbstractClient {
     }
 
     @Override
-    public Client getRemoteClusterClient(String remoteClusterAlias, Executor responseExecutor) {
-        return remoteClusterService.getRemoteClusterClient(threadPool(), remoteClusterAlias, responseExecutor);
+    public Client getRemoteClusterClient(String remoteClusterAlias) {
+        return remoteClusterService.getRemoteClusterClient(threadPool(), remoteClusterAlias);
     }
 }

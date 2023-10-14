@@ -17,12 +17,12 @@ import java.util.Objects;
 public class ExchangeSourceExec extends LeafExec {
 
     private final List<Attribute> output;
-    private final boolean intermediateAgg;
+    private final PhysicalPlan planUsedForLayout;
 
-    public ExchangeSourceExec(Source source, List<Attribute> output, boolean intermediateAgg) {
+    public ExchangeSourceExec(Source source, List<Attribute> output, PhysicalPlan fragmentPlanUsedForLayout) {
         super(source);
         this.output = output;
-        this.intermediateAgg = intermediateAgg;
+        this.planUsedForLayout = fragmentPlanUsedForLayout;
     }
 
     @Override
@@ -30,13 +30,13 @@ public class ExchangeSourceExec extends LeafExec {
         return output;
     }
 
-    public boolean isIntermediateAgg() {
-        return intermediateAgg;
+    public PhysicalPlan nodeLayout() {
+        return planUsedForLayout;
     }
 
     @Override
     protected NodeInfo<ExchangeSourceExec> info() {
-        return NodeInfo.create(this, ExchangeSourceExec::new, output, intermediateAgg);
+        return NodeInfo.create(this, ExchangeSourceExec::new, output, planUsedForLayout);
     }
 
     @Override
@@ -44,11 +44,11 @@ public class ExchangeSourceExec extends LeafExec {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ExchangeSourceExec that = (ExchangeSourceExec) o;
-        return Objects.equals(output, that.output) && intermediateAgg == that.intermediateAgg;
+        return Objects.equals(output, that.output) && Objects.equals(planUsedForLayout, that.planUsedForLayout);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(output, intermediateAgg);
+        return Objects.hash(output, planUsedForLayout);
     }
 }

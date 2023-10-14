@@ -16,6 +16,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.elasticsearch.index.mapper.MappedFieldType;
@@ -62,8 +63,9 @@ public class SamplerAggregatorTests extends AggregatorTestCase {
                 .subAggregation(new MinAggregationBuilder("min").field("int"));
             try (DirectoryReader reader = DirectoryReader.open(w)) {
                 assertEquals("test expects a single segment", 1, reader.leaves().size());
+                IndexSearcher searcher = newIndexSearcher(reader);
                 InternalSampler sampler = searchAndReduce(
-                    reader,
+                    searcher,
                     new AggTestConfig(aggBuilder, textFieldType, numericFieldType).withQuery(new TermQuery(new Term("text", "good")))
                 );
                 Min min = sampler.getAggregations().get("min");
@@ -97,8 +99,9 @@ public class SamplerAggregatorTests extends AggregatorTestCase {
                 .subAggregation(new MinAggregationBuilder("min").field("int"));
             try (DirectoryReader reader = DirectoryReader.open(w)) {
                 assertEquals("test expects a single segment", 1, reader.leaves().size());
+                IndexSearcher searcher = newIndexSearcher(reader);
                 InternalSampler sampler = searchAndReduce(
-                    reader,
+                    searcher,
                     new AggTestConfig(aggBuilder, textFieldType, numericFieldType).withQuery(new TermQuery(new Term("text", "good")))
                 );
                 Min min = sampler.getAggregations().get("min");
@@ -118,13 +121,15 @@ public class SamplerAggregatorTests extends AggregatorTestCase {
             writer.addDocument(new Document());
 
             try (IndexReader reader = DirectoryReader.open(writer)) {
+                IndexSearcher searcher = new IndexSearcher(reader);
+
                 QueryBuilder[] filters = new QueryBuilder[] { new MatchAllQueryBuilder(), new MatchNoneQueryBuilder() };
                 FiltersAggregationBuilder samplerParent = new FiltersAggregationBuilder("filters", filters);
                 TermsAggregationBuilder samplerChild = new TermsAggregationBuilder("child").field("field");
                 SamplerAggregationBuilder sampler = new SamplerAggregationBuilder("sampler").subAggregation(samplerChild);
                 samplerParent.subAggregation(sampler);
 
-                InternalFilters response = searchAndReduce(reader, new AggTestConfig(samplerParent));
+                InternalFilters response = searchAndReduce(searcher, new AggTestConfig(samplerParent));
                 assertEquals(response.getBuckets().size(), 2);
                 assertEquals(response.getBuckets().get(0).getDocCount(), 1);
                 assertEquals(response.getBuckets().get(1).getDocCount(), 0);

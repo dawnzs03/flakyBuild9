@@ -8,16 +8,12 @@
 package org.elasticsearch.xpack.application.rules;
 
 import org.elasticsearch.ElasticsearchParseException;
-import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.core.Nullable;
-import org.elasticsearch.logging.LogManager;
-import org.elasticsearch.logging.Logger;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContentObject;
@@ -27,92 +23,84 @@ import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
-import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstructorArg;
-import static org.elasticsearch.xpack.application.rules.QueryRuleCriteriaType.ALWAYS;
 
 public class QueryRuleCriteria implements Writeable, ToXContentObject {
-
-    public static final TransportVersion CRITERIA_METADATA_VALUES_TRANSPORT_VERSION = TransportVersion.V_8_500_046;
-    private final QueryRuleCriteriaType criteriaType;
+    private final CriteriaType criteriaType;
     private final String criteriaMetadata;
-    private final List<Object> criteriaValues;
+    private final Object criteriaValue;
 
-    private static final Logger logger = LogManager.getLogger(QueryRuleCriteria.class);
+    public enum CriteriaType {
+        EXACT;
+
+        public static CriteriaType criteriaType(String criteriaType) {
+            for (CriteriaType type : values()) {
+                if (type.name().equalsIgnoreCase(criteriaType)) {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("Unknown CriteriaType: " + criteriaType);
+        }
+
+        @Override
+        public String toString() {
+            return name().toLowerCase(Locale.ROOT);
+        }
+    }
 
     /**
      *
-     * @param criteriaType The {@link QueryRuleCriteriaType}, indicating how the criteria is matched
-     * @param criteriaMetadata The metadata for this identifier, indicating the criteria key of what is matched against.
-     *                         Required unless the CriteriaType is ALWAYS.
-     * @param criteriaValues The values to match against when evaluating {@link QueryRuleCriteria} against a {@link QueryRule}
-     *                      Required unless the CriteriaType is ALWAYS.
+     * @param criteriaType The {@link CriteriaType}, indicating how the criteria is matched
+     * @param criteriaMetadata The metadata for this identifier, indicating the criteria key of what is matched against
+     * @param criteriaValue The value to match against when evaluating {@link QueryRuleCriteria} against a {@link QueryRule}
      */
-    public QueryRuleCriteria(QueryRuleCriteriaType criteriaType, @Nullable String criteriaMetadata, @Nullable List<Object> criteriaValues) {
+    public QueryRuleCriteria(CriteriaType criteriaType, String criteriaMetadata, Object criteriaValue) {
 
         Objects.requireNonNull(criteriaType);
+        Objects.requireNonNull(criteriaMetadata);
+        Objects.requireNonNull(criteriaValue);
 
-        if (criteriaType != ALWAYS) {
-            if (Strings.isNullOrEmpty(criteriaMetadata)) {
-                throw new IllegalArgumentException("criteriaMetadata cannot be blank");
-            }
-            if (criteriaValues == null || criteriaValues.isEmpty()) {
-                throw new IllegalArgumentException("criteriaValues cannot be null or empty");
-            }
+        if ((criteriaType == CriteriaType.EXACT) == false) {
+            throw new IllegalArgumentException("Invalid criteriaType " + criteriaType);
         }
 
-        this.criteriaMetadata = criteriaMetadata;
-        this.criteriaValues = criteriaValues;
-        this.criteriaType = criteriaType;
+        if (Strings.isNullOrEmpty(criteriaMetadata)) {
+            throw new IllegalArgumentException("criteriaMetadata cannot be blank");
+        }
 
+        this.criteriaType = criteriaType;
+        this.criteriaMetadata = criteriaMetadata;
+        this.criteriaValue = criteriaValue;
     }
 
     public QueryRuleCriteria(StreamInput in) throws IOException {
-        this.criteriaType = in.readEnum(QueryRuleCriteriaType.class);
-        if (in.getTransportVersion().onOrAfter(CRITERIA_METADATA_VALUES_TRANSPORT_VERSION)) {
-            this.criteriaMetadata = in.readOptionalString();
-            this.criteriaValues = in.readOptionalList(StreamInput::readGenericValue);
-        } else {
-            this.criteriaMetadata = in.readString();
-            this.criteriaValues = List.of(in.readGenericValue());
-        }
-    }
-
-    @Override
-    public void writeTo(StreamOutput out) throws IOException {
-        out.writeEnum(criteriaType);
-        if (out.getTransportVersion().onOrAfter(CRITERIA_METADATA_VALUES_TRANSPORT_VERSION)) {
-            out.writeOptionalString(criteriaMetadata);
-            out.writeOptionalCollection(criteriaValues, StreamOutput::writeGenericValue);
-        } else {
-            out.writeString(criteriaMetadata);
-            out.writeGenericValue(criteriaValues().get(0));
-        }
+        this.criteriaType = in.readEnum(CriteriaType.class);
+        this.criteriaMetadata = in.readString();
+        this.criteriaValue = in.readGenericValue();
     }
 
     private static final ConstructingObjectParser<QueryRuleCriteria, String> PARSER = new ConstructingObjectParser<>(
         "query_rule_criteria",
         false,
         (params, resourceName) -> {
-            final QueryRuleCriteriaType type = QueryRuleCriteriaType.type((String) params[0]);
-            final String metadata = params.length >= 3 ? (String) params[1] : null;
-            @SuppressWarnings("unchecked")
-            final List<Object> values = params.length >= 3 ? (List<Object>) params[2] : null;
-            return new QueryRuleCriteria(type, metadata, values);
+            final CriteriaType type = CriteriaType.criteriaType((String) params[0]);
+            final String metadata = (String) params[1];
+            final Object value = params[2];
+            return new QueryRuleCriteria(type, metadata, value);
         }
     );
 
     public static final ParseField TYPE_FIELD = new ParseField("type");
     public static final ParseField METADATA_FIELD = new ParseField("metadata");
-    public static final ParseField VALUES_FIELD = new ParseField("values");
+    public static final ParseField VALUE_FIELD = new ParseField("value");
 
     static {
         PARSER.declareString(constructorArg(), TYPE_FIELD);
-        PARSER.declareStringOrNull(optionalConstructorArg(), METADATA_FIELD);
-        PARSER.declareStringArray(optionalConstructorArg(), VALUES_FIELD);
+        PARSER.declareString(constructorArg(), METADATA_FIELD);
+        PARSER.declareString(constructorArg(), VALUE_FIELD);
     }
 
     /**
@@ -146,18 +134,21 @@ public class QueryRuleCriteria implements Writeable, ToXContentObject {
         builder.startObject();
         {
             builder.field(TYPE_FIELD.getPreferredName(), criteriaType);
-            if (criteriaMetadata != null) {
-                builder.field(METADATA_FIELD.getPreferredName(), criteriaMetadata);
-            }
-            if (criteriaValues != null) {
-                builder.array(VALUES_FIELD.getPreferredName(), criteriaValues.toArray());
-            }
+            builder.field(METADATA_FIELD.getPreferredName(), criteriaMetadata);
+            builder.field(VALUE_FIELD.getPreferredName(), criteriaValue);
         }
         builder.endObject();
         return builder;
     }
 
-    public QueryRuleCriteriaType criteriaType() {
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        out.writeEnum(criteriaType);
+        out.writeString(criteriaMetadata);
+        out.writeGenericValue(criteriaValue);
+    }
+
+    public CriteriaType criteriaType() {
         return criteriaType;
     }
 
@@ -165,8 +156,8 @@ public class QueryRuleCriteria implements Writeable, ToXContentObject {
         return criteriaMetadata;
     }
 
-    public List<Object> criteriaValues() {
-        return criteriaValues;
+    public Object criteriaValue() {
+        return criteriaValue;
     }
 
     @Override
@@ -176,12 +167,12 @@ public class QueryRuleCriteria implements Writeable, ToXContentObject {
         QueryRuleCriteria that = (QueryRuleCriteria) o;
         return criteriaType == that.criteriaType
             && Objects.equals(criteriaMetadata, that.criteriaMetadata)
-            && Objects.equals(criteriaValues, that.criteriaValues);
+            && Objects.equals(criteriaValue, that.criteriaValue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(criteriaType, criteriaMetadata, criteriaValues);
+        return Objects.hash(criteriaType, criteriaMetadata, criteriaValue);
     }
 
     @Override
@@ -189,18 +180,7 @@ public class QueryRuleCriteria implements Writeable, ToXContentObject {
         return Strings.toString(this);
     }
 
-    public boolean isMatch(Object matchValue, QueryRuleCriteriaType matchType) {
-        if (matchType == ALWAYS) {
-            return true;
-        }
-        final String matchString = matchValue.toString();
-        for (Object criteriaValue : criteriaValues) {
-            matchType.validateInput(matchValue);
-            boolean matchFound = matchType.isMatch(matchString, criteriaValue);
-            if (matchFound) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isMatch(String matchString) {
+        return criteriaType == CriteriaType.EXACT && criteriaValue.equals(matchString);
     }
 }

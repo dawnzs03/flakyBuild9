@@ -9,14 +9,11 @@ package org.elasticsearch.compute.aggregation.blockhash;
 
 import org.apache.lucene.util.ArrayUtil;
 import org.elasticsearch.common.util.BigArrays;
-import org.elasticsearch.common.util.BitArray;
 import org.elasticsearch.common.util.LongLongHash;
 import org.elasticsearch.compute.aggregation.GroupingAggregatorFunction;
-import org.elasticsearch.compute.aggregation.SeenGroupIds;
 import org.elasticsearch.compute.data.Block;
-import org.elasticsearch.compute.data.IntArrayVector;
-import org.elasticsearch.compute.data.IntBlock;
 import org.elasticsearch.compute.data.IntVector;
+import org.elasticsearch.compute.data.LongArrayVector;
 import org.elasticsearch.compute.data.LongBlock;
 import org.elasticsearch.compute.data.LongVector;
 import org.elasticsearch.compute.data.Page;
@@ -56,13 +53,13 @@ final class LongLongBlockHash extends BlockHash {
         }
     }
 
-    private IntVector add(LongVector vector1, LongVector vector2) {
+    private LongVector add(LongVector vector1, LongVector vector2) {
         int positions = vector1.getPositionCount();
-        final int[] ords = new int[positions];
+        final long[] ords = new long[positions];
         for (int i = 0; i < positions; i++) {
-            ords[i] = Math.toIntExact(hashOrdToGroup(hash.add(vector1.getLong(i), vector2.getLong(i))));
+            ords[i] = hashOrdToGroup(hash.add(vector1.getLong(i), vector2.getLong(i)));
         }
-        return new IntArrayVector(ords, positions);
+        return new LongArrayVector(ords, positions);
     }
 
     private static final long[] EMPTY = new long[0];
@@ -93,7 +90,7 @@ final class LongLongBlockHash extends BlockHash {
                 int count1 = block1.getValueCount(p);
                 int count2 = block2.getValueCount(p);
                 if (count1 == 1 && count2 == 1) {
-                    ords.appendInt(Math.toIntExact(hashOrdToGroup(hash.add(block1.getLong(start1), block2.getLong(start2)))));
+                    ords.appendLong(hashOrdToGroup(hash.add(block1.getLong(start1), block2.getLong(start2))));
                     addedValue(p);
                     continue;
                 }
@@ -114,14 +111,14 @@ final class LongLongBlockHash extends BlockHash {
                     seenSize2 = LongLongBlockHash.add(seen2, seenSize2, block2.getLong(i));
                 }
                 if (seenSize1 == 1 && seenSize2 == 1) {
-                    ords.appendInt(Math.toIntExact(hashOrdToGroup(hash.add(seen1[0], seen2[0]))));
+                    ords.appendLong(hashOrdToGroup(hash.add(seen1[0], seen2[0])));
                     addedValue(p);
                     continue;
                 }
                 ords.beginPositionEntry();
                 for (int s1 = 0; s1 < seenSize1; s1++) {
                     for (int s2 = 0; s2 < seenSize2; s2++) {
-                        ords.appendInt(Math.toIntExact(hashOrdToGroup(hash.add(seen1[s1], seen2[s2]))));
+                        ords.appendLong(hashOrdToGroup(hash.add(seen1[s1], seen2[s2])));
                         addedValueInMultivaluePosition(p);
                     }
                 }
@@ -137,13 +134,13 @@ final class LongLongBlockHash extends BlockHash {
 
         private int positionOffset = 0;
         private int added = 0;
-        protected IntBlock.Builder ords;
+        protected LongBlock.Builder ords;
 
         AbstractAddBlock(int emitBatchSize, GroupingAggregatorFunction.AddInput addInput) {
             this.emitBatchSize = emitBatchSize;
             this.addInput = addInput;
 
-            this.ords = IntBlock.newBlockBuilder(emitBatchSize);
+            this.ords = LongBlock.newBlockBuilder(emitBatchSize);
         }
 
         protected final void addedValue(int position) {
@@ -161,13 +158,19 @@ final class LongLongBlockHash extends BlockHash {
         }
 
         protected final void emitOrds() {
-            addInput.add(positionOffset, ords.build());
+            LongBlock groupIdsBlock = ords.build();
+            LongVector groupIdsVector = groupIdsBlock.asVector();
+            if (groupIdsVector == null) {
+                addInput.add(positionOffset, groupIdsBlock);
+            } else {
+                addInput.add(positionOffset, groupIdsVector);
+            }
         }
 
         private void rollover(int position) {
             emitOrds();
             positionOffset = position;
-            ords = IntBlock.newBlockBuilder(emitBatchSize); // TODO add a clear method to the builder?
+            ords = LongBlock.newBlockBuilder(emitBatchSize); // TODO build a clear method on the builder?
         }
     }
 
@@ -196,11 +199,6 @@ final class LongLongBlockHash extends BlockHash {
     @Override
     public IntVector nonEmpty() {
         return IntVector.range(0, Math.toIntExact(hash.size()));
-    }
-
-    @Override
-    public BitArray seenGroupIds(BigArrays bigArrays) {
-        return new SeenGroupIds.Range(0, Math.toIntExact(hash.size())).seenGroupIds(bigArrays);
     }
 
     @Override

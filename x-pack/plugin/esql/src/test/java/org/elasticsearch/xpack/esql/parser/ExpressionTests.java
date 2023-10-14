@@ -8,11 +8,6 @@
 package org.elasticsearch.xpack.esql.parser;
 
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Add;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Div;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Mul;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Neg;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Sub;
 import org.elasticsearch.xpack.esql.plan.logical.Drop;
 import org.elasticsearch.xpack.esql.plan.logical.Rename;
 import org.elasticsearch.xpack.ql.expression.Alias;
@@ -24,6 +19,11 @@ import org.elasticsearch.xpack.ql.expression.function.UnresolvedFunction;
 import org.elasticsearch.xpack.ql.expression.predicate.logical.And;
 import org.elasticsearch.xpack.ql.expression.predicate.logical.Not;
 import org.elasticsearch.xpack.ql.expression.predicate.logical.Or;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Add;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Div;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Mul;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Neg;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Sub;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.Equals;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.GreaterThan;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.GreaterThanOrEqual;
@@ -63,17 +63,17 @@ public class ExpressionTests extends ESTestCase {
     public void testNumberLiterals() {
         assertEquals(l(123, INTEGER), whereExpression("123"));
         assertEquals(l(123, INTEGER), whereExpression("+123"));
-        assertEquals(l(-123, INTEGER), whereExpression("-123"));
+        assertEquals(new Neg(null, l(123, INTEGER)), whereExpression("-123"));
         assertEquals(l(123.123, DOUBLE), whereExpression("123.123"));
         assertEquals(l(123.123, DOUBLE), whereExpression("+123.123"));
-        assertEquals(l(-123.123, DOUBLE), whereExpression("-123.123"));
+        assertEquals(new Neg(null, l(123.123, DOUBLE)), whereExpression("-123.123"));
         assertEquals(l(0.123, DOUBLE), whereExpression(".123"));
         assertEquals(l(0.123, DOUBLE), whereExpression("0.123"));
         assertEquals(l(0.123, DOUBLE), whereExpression("+0.123"));
-        assertEquals(l(-0.123, DOUBLE), whereExpression("-0.123"));
+        assertEquals(new Neg(null, l(0.123, DOUBLE)), whereExpression("-0.123"));
         assertEquals(l(12345678901L, LONG), whereExpression("12345678901"));
         assertEquals(l(12345678901L, LONG), whereExpression("+12345678901"));
-        assertEquals(l(-12345678901L, LONG), whereExpression("-12345678901"));
+        assertEquals(new Neg(null, l(12345678901L, LONG)), whereExpression("-12345678901"));
         assertEquals(l(123e12, DOUBLE), whereExpression("123e12"));
         assertEquals(l(123e-12, DOUBLE), whereExpression("123e-12"));
         assertEquals(l(123E12, DOUBLE), whereExpression("123E12"));
@@ -81,10 +81,10 @@ public class ExpressionTests extends ESTestCase {
     }
 
     public void testMinusSign() {
-        assertEquals(l(-123, INTEGER), whereExpression("+(-123)"));
-        assertEquals(l(-123, INTEGER), whereExpression("+(+(-123))"));
+        assertEquals(new Neg(null, l(123, INTEGER)), whereExpression("+(-123)"));
+        assertEquals(new Neg(null, l(123, INTEGER)), whereExpression("+(+(-123))"));
         // we could do better here. ES SQL is smarter and accounts for the number of minuses
-        assertEquals(new Neg(null, l(-123, INTEGER)), whereExpression("-(-123)"));
+        assertEquals(new Neg(null, new Neg(null, l(123, INTEGER))), whereExpression("-(-123)"));
     }
 
     public void testStringLiterals() {
@@ -330,11 +330,11 @@ public class ExpressionTests extends ESTestCase {
         );
         assertThat(
             whereExpression("10 days > 5 hours and 1/5 minutes > 8 seconds * 3 and -1 minutes > foo"),
-            equalTo(whereExpression("((10 days) > (5 hours)) and ((1/(5 minutes) > ((8 seconds) * 3))) and (-1 minute > foo)"))
+            equalTo(whereExpression("((10 days) > (5 hours)) and ((1/(5 minutes) > ((8 seconds) * 3))) and (-(1 minute) > foo)"))
         );
         assertThat(
             whereExpression("10 DAYS > 5 HOURS and 1/5 MINUTES > 8 SECONDS * 3 and -1 MINUTES > foo"),
-            equalTo(whereExpression("((10 days) > (5 hours)) and ((1/(5 minutes) > ((8 seconds) * 3))) and (-1 minute > foo)"))
+            equalTo(whereExpression("((10 days) > (5 hours)) and ((1/(5 minutes) > ((8 seconds) * 3))) and (-(1 minute) > foo)"))
         );
     }
 
@@ -383,20 +383,19 @@ public class ExpressionTests extends ESTestCase {
         assertEquals(l(Duration.ofHours(value), TIME_DURATION), whereExpression(value + "hour"));
         assertEquals(l(Duration.ofHours(value), TIME_DURATION), whereExpression(value + " hours"));
 
-        assertEquals(l(Duration.ofHours(-value), TIME_DURATION), whereExpression("-" + value + " hours"));
+        assertEquals(new Neg(EMPTY, l(Duration.ofHours(value), TIME_DURATION)), whereExpression("-" + value + " hours"));
     }
 
     public void testDatePeriodLiterals() {
         int value = randomInt(Integer.MAX_VALUE);
-        int weeksValue = randomInt(Integer.MAX_VALUE / 7);
 
         assertEquals(l(Period.ZERO, DATE_PERIOD), whereExpression("0 day"));
         assertEquals(l(Period.ofDays(value), DATE_PERIOD), whereExpression(value + "day"));
         assertEquals(l(Period.ofDays(value), DATE_PERIOD), whereExpression(value + " days"));
 
         assertEquals(l(Period.ZERO, DATE_PERIOD), whereExpression("0week"));
-        assertEquals(l(Period.ofDays(weeksValue * 7), DATE_PERIOD), whereExpression(weeksValue + "week"));
-        assertEquals(l(Period.ofDays(weeksValue * 7), DATE_PERIOD), whereExpression(weeksValue + " weeks"));
+        assertEquals(l(Period.ofDays(value * 7), DATE_PERIOD), whereExpression(value + "week"));
+        assertEquals(l(Period.ofDays(value * 7), DATE_PERIOD), whereExpression(value + " weeks"));
 
         assertEquals(l(Period.ZERO, DATE_PERIOD), whereExpression("0 month"));
         assertEquals(l(Period.ofMonths(value), DATE_PERIOD), whereExpression(value + "month"));
@@ -406,7 +405,7 @@ public class ExpressionTests extends ESTestCase {
         assertEquals(l(Period.ofYears(value), DATE_PERIOD), whereExpression(value + "year"));
         assertEquals(l(Period.ofYears(value), DATE_PERIOD), whereExpression(value + " years"));
 
-        assertEquals(l(Period.ofYears(-value), DATE_PERIOD), whereExpression("-" + value + " years"));
+        assertEquals(new Neg(EMPTY, l(Period.ofYears(value), DATE_PERIOD)), whereExpression("-" + value + " years"));
     }
 
     public void testUnknownNumericQualifier() {
@@ -415,40 +414,6 @@ public class ExpressionTests extends ESTestCase {
 
     public void testQualifiedDecimalLiteral() {
         assertParsingException(() -> whereExpression("1.1 hours"), "extraneous input 'hours' expecting <EOF>");
-    }
-
-    public void testOverflowingValueForDuration() {
-        for (String unit : List.of("milliseconds", "seconds", "minutes", "hours")) {
-            assertParsingException(
-                () -> parse("row x = 9223372036854775808 " + unit), // unsigned_long (Long.MAX_VALUE + 1)
-                "line 1:10: Number [9223372036854775808] outside of [" + unit + "] range"
-            );
-            assertParsingException(
-                () -> parse("row x = 18446744073709551616 " + unit), // double (UNSIGNED_LONG_MAX + 1)
-                "line 1:10: Number [18446744073709551616] outside of [" + unit + "] range"
-            );
-        }
-        assertParsingException(
-            () -> parse("row x = 153722867280912931 minutes"), // Long.MAX_VALUE / 60 + 1
-            "line 1:10: Number [153722867280912931] outside of [minutes] range"
-        );
-        assertParsingException(
-            () -> parse("row x = 2562047788015216 hours"), // Long.MAX_VALUE / 3600 + 1
-            "line 1:10: Number [2562047788015216] outside of [hours] range"
-        );
-    }
-
-    public void testOverflowingValueForPeriod() {
-        for (String unit : List.of("days", "weeks", "months", "years")) {
-            assertParsingException(
-                () -> parse("row x = 2147483648 " + unit), // long (Integer.MAX_VALUE + 1)
-                "line 1:10: Number [2147483648] outside of [" + unit + "] range"
-            );
-        }
-        assertParsingException(
-            () -> parse("row x = 306783379 weeks"), // Integer.MAX_VALUE / 7 + 1
-            "line 1:10: Number [306783379] outside of [weeks] range"
-        );
     }
 
     public void testWildcardProjectKeepPatterns() {
@@ -561,7 +526,7 @@ public class ExpressionTests extends ESTestCase {
         String[] oldName = new String[] { "b", "a.c", "x.y", "a" };
         List<?> renamings;
         for (int i = 0; i < newName.length; i++) {
-            Rename r = renameExpression(oldName[i] + " AS " + newName[i]);
+            Rename r = renameExpression(newName[i] + "=" + oldName[i]);
             renamings = r.renamings();
             assertThat(renamings.size(), equalTo(1));
             assertThat(renamings.get(0), instanceOf(Alias.class));
@@ -574,7 +539,7 @@ public class ExpressionTests extends ESTestCase {
     }
 
     public void testMultipleProjectPatterns() {
-        LogicalPlan plan = parse("from a | rename y as x | keep abc, xyz*, x, *");
+        LogicalPlan plan = parse("from a | rename x = y | keep abc, xyz*, x, *");
         Project p = as(plan, Project.class);
         List<?> projections = p.projections();
         assertThat(projections.size(), equalTo(4));
@@ -588,38 +553,9 @@ public class ExpressionTests extends ESTestCase {
 
     public void testForbidWildcardProjectRename() {
         assertParsingException(
-            () -> renameExpression("b* AS a*"),
-            "line 1:18: Using wildcards (*) in renaming projections is not allowed [b* AS a*]"
+            () -> renameExpression("a*=b*"),
+            "line 1:18: Using wildcards (*) in renaming projections is not allowed [a*=b*]"
         );
-    }
-
-    public void testSimplifyInWithSingleElementList() {
-        Expression e = whereExpression("a IN (1)");
-        assertThat(e, instanceOf(Equals.class));
-        Equals eq = (Equals) e;
-        assertThat(eq.left(), instanceOf(UnresolvedAttribute.class));
-        assertThat(((UnresolvedAttribute) eq.left()).name(), equalTo("a"));
-        assertThat(eq.right(), instanceOf(Literal.class));
-        assertThat(eq.right().fold(), equalTo(1));
-
-        e = whereExpression("1 IN (a)");
-        assertThat(e, instanceOf(Equals.class));
-        eq = (Equals) e;
-        assertThat(eq.right(), instanceOf(UnresolvedAttribute.class));
-        assertThat(((UnresolvedAttribute) eq.right()).name(), equalTo("a"));
-        assertThat(eq.left(), instanceOf(Literal.class));
-        assertThat(eq.left().fold(), equalTo(1));
-
-        e = whereExpression("1 NOT IN (a)");
-        assertThat(e, instanceOf(Not.class));
-        e = e.children().get(0);
-        assertThat(e, instanceOf(Equals.class));
-        eq = (Equals) e;
-        assertThat(eq.right(), instanceOf(UnresolvedAttribute.class));
-        assertThat(((UnresolvedAttribute) eq.right()).name(), equalTo("a"));
-        assertThat(eq.left(), instanceOf(Literal.class));
-        assertThat(eq.left().fold(), equalTo(1));
-
     }
 
     private Expression whereExpression(String e) {

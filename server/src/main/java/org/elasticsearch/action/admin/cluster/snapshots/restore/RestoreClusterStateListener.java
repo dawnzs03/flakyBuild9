@@ -43,7 +43,7 @@ public class RestoreClusterStateListener {
         ActionListener<RestoreSnapshotResponse> listener,
         ThreadContext threadContext
     ) {
-        final String uuid = response.uuid();
+        final String uuid = response.getUuid();
         final DiscoveryNode localNode = clusterService.localNode();
         ClusterStateObserver.waitForState(clusterService, threadContext, new RestoreListener(listener, localNode) {
             @Override
@@ -66,7 +66,7 @@ public class RestoreClusterStateListener {
                 ClusterStateObserver.waitForState(clusterService, threadContext, new RestoreListener(listener, localNode) {
                     @Override
                     public void onNewClusterState(ClusterState state) {
-                        logger.debug("restore of [{}] completed", response.snapshot().getSnapshotId());
+                        logger.debug("restore of [{}] completed", response.getSnapshot().getSnapshotId());
                         listener.onResponse(new RestoreSnapshotResponse(restoreInfo));
                     }
                 }, clusterState -> restoreInProgress(clusterState, uuid) == null, null, logger);

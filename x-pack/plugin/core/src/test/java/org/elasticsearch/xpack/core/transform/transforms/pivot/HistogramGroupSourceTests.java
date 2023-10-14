@@ -7,48 +7,48 @@
 
 package org.elasticsearch.xpack.core.transform.transforms.pivot;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.Writeable.Reader;
 import org.elasticsearch.test.AbstractXContentSerializingTestCase;
 import org.elasticsearch.xcontent.XContentParser;
-import org.elasticsearch.xpack.core.transform.TransformConfigVersion;
 
 import java.io.IOException;
 
 public class HistogramGroupSourceTests extends AbstractXContentSerializingTestCase<HistogramGroupSource> {
 
     public static HistogramGroupSource randomHistogramGroupSource() {
-        return randomHistogramGroupSource(TransformConfigVersion.CURRENT);
+        return randomHistogramGroupSource(Version.CURRENT);
     }
 
     public static HistogramGroupSource randomHistogramGroupSourceNoScript() {
-        return randomHistogramGroupSource(TransformConfigVersion.CURRENT, false);
+        return randomHistogramGroupSource(Version.CURRENT, false);
     }
 
     public static HistogramGroupSource randomHistogramGroupSourceNoScript(String fieldPrefix) {
-        return randomHistogramGroupSource(TransformConfigVersion.CURRENT, false, fieldPrefix);
+        return randomHistogramGroupSource(Version.CURRENT, false, fieldPrefix);
     }
 
-    public static HistogramGroupSource randomHistogramGroupSource(TransformConfigVersion version) {
+    public static HistogramGroupSource randomHistogramGroupSource(Version version) {
         return randomHistogramGroupSource(version, randomBoolean());
     }
 
-    public static HistogramGroupSource randomHistogramGroupSource(TransformConfigVersion version, boolean withScript) {
+    public static HistogramGroupSource randomHistogramGroupSource(Version version, boolean withScript) {
         return randomHistogramGroupSource(version, withScript, "");
     }
 
-    public static HistogramGroupSource randomHistogramGroupSource(TransformConfigVersion version, boolean withScript, String fieldPrefix) {
+    public static HistogramGroupSource randomHistogramGroupSource(Version version, boolean withScript, String fieldPrefix) {
         ScriptConfig scriptConfig = null;
         String field;
 
         // either a field or a script must be specified, it's possible to have both, but disallowed to have none
-        if (version.onOrAfter(TransformConfigVersion.V_7_7_0) && withScript) {
+        if (version.onOrAfter(Version.V_7_7_0) && withScript) {
             scriptConfig = ScriptConfigTests.randomScriptConfig();
             field = randomBoolean() ? null : fieldPrefix + randomAlphaOfLengthBetween(1, 20);
         } else {
             field = fieldPrefix + randomAlphaOfLengthBetween(1, 20);
         }
 
-        boolean missingBucket = version.onOrAfter(TransformConfigVersion.V_7_10_0) ? randomBoolean() : false;
+        boolean missingBucket = version.onOrAfter(Version.V_7_10_0) ? randomBoolean() : false;
         double interval = randomDoubleBetween(Math.nextUp(0), Double.MAX_VALUE, false);
         return new HistogramGroupSource(field, scriptConfig, missingBucket, interval);
     }

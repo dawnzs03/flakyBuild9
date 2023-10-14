@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ResourceAlreadyExistsException;
 import org.elasticsearch.ResourceNotFoundException;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.master.TransportMasterNodeAction;
@@ -33,7 +34,6 @@ import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.core.XPackField;
 import org.elasticsearch.xpack.core.ml.MachineLearningField;
 import org.elasticsearch.xpack.core.ml.MlConfigIndex;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 import org.elasticsearch.xpack.core.ml.MlTasks;
 import org.elasticsearch.xpack.core.ml.action.UpgradeJobModelSnapshotAction;
 import org.elasticsearch.xpack.core.ml.action.UpgradeJobModelSnapshotAction.Request;
@@ -174,8 +174,7 @@ public class TransportUpgradeJobModelSnapshotAction extends TransportMasterNodeA
                 client,
                 state,
                 request.masterNodeTimeout(),
-                configIndexMappingUpdaterListener,
-                MlConfigIndex.CONFIG_INDEX_MAPPINGS_VERSION
+                configIndexMappingUpdaterListener
             ),
             listener::onFailure
         );
@@ -191,13 +190,13 @@ public class TransportUpgradeJobModelSnapshotAction extends TransportMasterNodeA
                 );
                 return;
             }
-            if (MlConfigVersion.CURRENT.equals(response.result.getMinVersion())) {
+            if (Version.CURRENT.equals(response.result.getMinVersion())) {
                 listener.onFailure(
                     ExceptionsHelper.conflictStatusException(
                         "Cannot upgrade job [{}] snapshot [{}] as it is already compatible with current version {}",
                         request.getJobId(),
                         request.getSnapshotId(),
-                        MlConfigVersion.CURRENT
+                        Version.CURRENT
                     )
                 );
                 return;

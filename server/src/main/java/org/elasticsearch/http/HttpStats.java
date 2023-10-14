@@ -89,7 +89,7 @@ public record HttpStats(long serverOpen, long totalOpen, List<ClientStats> clien
                     .field(Fields.TOTAL_OPENED, totalOpen)
                     .startArray(Fields.CLIENTS)
             ),
-            clientStats.iterator(),
+            Iterators.flatMap(clientStats.iterator(), Iterators::<ToXContent>single),
             Iterators.single((builder, params) -> builder.endArray().endObject())
         );
     }

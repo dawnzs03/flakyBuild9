@@ -26,17 +26,10 @@ import java.nio.ByteOrder;
 
 public abstract class BatchEncoder implements Accountable {
     /**
-     * Checks if an offset is {@code null}.
-     */
-    public interface IsNull {
-        boolean isNull(int offset);
-    }
-
-    /**
      * Decodes values encoded by {@link BatchEncoder}.
      */
     public interface Decoder {
-        void decode(Block.Builder builder, IsNull isNull, BytesRef[] encoded, int count);
+        void decode(Block.Builder builder, BytesRef[] encoded, int count);
     }
 
     /**
@@ -252,13 +245,13 @@ public abstract class BatchEncoder implements Accountable {
 
     private static class IntsDecoder implements Decoder {
         @Override
-        public void decode(Block.Builder builder, IsNull isNull, BytesRef[] encoded, int count) {
+        public void decode(Block.Builder builder, BytesRef[] encoded, int count) {
             IntBlock.Builder b = (IntBlock.Builder) builder;
             for (int i = 0; i < count; i++) {
-                if (isNull.isNull(i)) {
+                BytesRef e = encoded[i];
+                if (e.length == 0) {
                     b.appendNull();
                 } else {
-                    BytesRef e = encoded[i];
                     b.appendInt((int) intHandle.get(e.bytes, e.offset));
                     e.offset += Integer.BYTES;
                     e.length -= Integer.BYTES;
@@ -302,13 +295,13 @@ public abstract class BatchEncoder implements Accountable {
 
     private static class LongsDecoder implements Decoder {
         @Override
-        public void decode(Block.Builder builder, IsNull isNull, BytesRef[] encoded, int count) {
+        public void decode(Block.Builder builder, BytesRef[] encoded, int count) {
             LongBlock.Builder b = (LongBlock.Builder) builder;
             for (int i = 0; i < count; i++) {
-                if (isNull.isNull(i)) {
+                BytesRef e = encoded[i];
+                if (e.length == 0) {
                     b.appendNull();
                 } else {
-                    BytesRef e = encoded[i];
                     b.appendLong((long) longHandle.get(e.bytes, e.offset));
                     e.offset += Long.BYTES;
                     e.length -= Long.BYTES;
@@ -353,13 +346,13 @@ public abstract class BatchEncoder implements Accountable {
 
     private static class DoublesDecoder implements Decoder {
         @Override
-        public void decode(Block.Builder builder, IsNull isNull, BytesRef[] encoded, int count) {
+        public void decode(Block.Builder builder, BytesRef[] encoded, int count) {
             DoubleBlock.Builder b = (DoubleBlock.Builder) builder;
             for (int i = 0; i < count; i++) {
-                if (isNull.isNull(i)) {
+                BytesRef e = encoded[i];
+                if (e.length == 0) {
                     b.appendNull();
                 } else {
-                    BytesRef e = encoded[i];
                     b.appendDouble((double) doubleHandle.get(e.bytes, e.offset));
                     e.offset += Double.BYTES;
                     e.length -= Double.BYTES;
@@ -398,13 +391,13 @@ public abstract class BatchEncoder implements Accountable {
 
     private static class BooleansDecoder implements Decoder {
         @Override
-        public void decode(Block.Builder builder, IsNull isNull, BytesRef[] encoded, int count) {
+        public void decode(Block.Builder builder, BytesRef[] encoded, int count) {
             BooleanBlock.Builder b = (BooleanBlock.Builder) builder;
             for (int i = 0; i < count; i++) {
-                if (isNull.isNull(i)) {
+                BytesRef e = encoded[i];
+                if (e.length == 0) {
                     b.appendNull();
                 } else {
-                    BytesRef e = encoded[i];
                     b.appendBoolean(e.bytes[e.offset] == 1);
                     e.offset++;
                     e.length--;
@@ -450,14 +443,14 @@ public abstract class BatchEncoder implements Accountable {
 
     private static class BytesRefsDecoder implements Decoder {
         @Override
-        public void decode(Block.Builder builder, IsNull isNull, BytesRef[] encoded, int count) {
+        public void decode(Block.Builder builder, BytesRef[] encoded, int count) {
             BytesRef scratch = new BytesRef();
             BytesRefBlock.Builder b = (BytesRefBlock.Builder) builder;
             for (int i = 0; i < count; i++) {
-                if (isNull.isNull(i)) {
+                BytesRef e = encoded[i];
+                if (e.length == 0) {
                     b.appendNull();
                 } else {
-                    BytesRef e = encoded[i];
                     scratch.bytes = e.bytes;
                     scratch.length = (int) intHandle.get(e.bytes, e.offset);
                     e.offset += Integer.BYTES;

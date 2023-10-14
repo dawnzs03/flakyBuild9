@@ -16,7 +16,6 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.util.BigArrays;
-import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -81,7 +80,7 @@ public class TransportGetAsyncStatusAction extends HandledTransportAction<GetAsy
                 node,
                 GetAsyncStatusAction.NAME,
                 request,
-                new ActionListenerResponseHandler<>(listener, AsyncStatusResponse::new, EsExecutors.DIRECT_EXECUTOR_SERVICE)
+                new ActionListenerResponseHandler<>(listener, AsyncStatusResponse::new, ThreadPool.Names.SAME)
             );
         }
     }

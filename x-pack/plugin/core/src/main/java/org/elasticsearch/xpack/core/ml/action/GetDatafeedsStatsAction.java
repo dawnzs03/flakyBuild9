@@ -186,10 +186,6 @@ public class GetDatafeedsStatsAction extends ActionType<GetDatafeedsStatsAction.
                 return timingStats;
             }
 
-            public RunningState getRunningState() {
-                return runningState;
-            }
-
             @Override
             public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
                 builder.startObject();

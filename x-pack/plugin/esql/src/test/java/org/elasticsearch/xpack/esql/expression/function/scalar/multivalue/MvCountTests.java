@@ -7,37 +7,18 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.multivalue;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.type.DataType;
 import org.elasticsearch.xpack.ql.type.DataTypes;
+import org.hamcrest.Matcher;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 
 public class MvCountTests extends AbstractMultivalueFunctionTestCase {
-    public MvCountTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
-    }
-
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        List<TestCaseSupplier> cases = new ArrayList<>();
-        booleans(cases, "mv_count", "MvCount", DataTypes.INTEGER, (size, values) -> equalTo(Math.toIntExact(values.count())));
-        bytesRefs(cases, "mv_count", "MvCount", DataTypes.INTEGER, (size, values) -> equalTo(Math.toIntExact(values.count())));
-        doubles(cases, "mv_count", "MvCount", DataTypes.INTEGER, (size, values) -> equalTo(Math.toIntExact(values.count())));
-        ints(cases, "mv_count", "MvCount", DataTypes.INTEGER, (size, values) -> equalTo(Math.toIntExact(values.count())));
-        longs(cases, "mv_count", "MvCount", DataTypes.INTEGER, (size, values) -> equalTo(Math.toIntExact(values.count())));
-        unsignedLongs(cases, "mv_count", "MvCount", DataTypes.INTEGER, (size, values) -> equalTo(Math.toIntExact(values.count())));
-        return parameterSuppliersFromTypedData(cases);
-    }
-
     @Override
     protected Expression build(Source source, Expression field) {
         return new MvCount(source, field);
@@ -51,5 +32,15 @@ public class MvCountTests extends AbstractMultivalueFunctionTestCase {
     @Override
     protected DataType expectedType(List<DataType> argTypes) {
         return DataTypes.INTEGER;
+    }
+
+    @Override
+    protected Matcher<Object> resultMatcherForInput(List<?> input, DataType dataType) {
+        return input == null ? nullValue() : equalTo(input.size());
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "MvCount[field=Attribute[channel=0]]";
     }
 }

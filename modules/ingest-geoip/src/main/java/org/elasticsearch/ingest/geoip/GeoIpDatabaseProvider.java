@@ -26,7 +26,8 @@ public interface GeoIpDatabaseProvider {
     Boolean isValid(String name);
 
     /**
-     * @param name the name of the database to provide.
+     * @param name the name of the database to provide. Default database names that should always be supported are listed in
+     *             {@link IngestGeoIpPlugin#DEFAULT_DATABASE_FILENAMES}.
      * @return a ready-to-use database instance, or <code>null</code> if no database could be loaded.
      */
     GeoIpDatabase getDatabase(String name);

@@ -20,29 +20,25 @@ import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.TransportChannel;
 import org.elasticsearch.transport.TransportRequestHandler;
 import org.elasticsearch.transport.TransportRequestOptions;
+import org.elasticsearch.transport.TransportResponse;
 import org.elasticsearch.transport.TransportService;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executor;
-
-public abstract class TransportBroadcastUnpromotableAction<Request extends BroadcastUnpromotableRequest, Response extends ActionResponse>
-    extends HandledTransportAction<Request, Response> {
+public abstract class TransportBroadcastUnpromotableAction<Request extends BroadcastUnpromotableRequest> extends HandledTransportAction<
+    Request,
+    ActionResponse.Empty> {
 
     protected final ClusterService clusterService;
     protected final TransportService transportService;
     protected final ShardStateAction shardStateAction;
 
     protected final String transportUnpromotableAction;
-    protected final Executor executor;
+    protected final String executor;
 
     protected TransportBroadcastUnpromotableAction(
         String actionName,
@@ -58,31 +54,24 @@ public abstract class TransportBroadcastUnpromotableAction<Request extends Broad
         this.shardStateAction = shardStateAction;
         this.transportService = transportService;
         this.transportUnpromotableAction = actionName + "[u]";
-        this.executor = transportService.getThreadPool().executor(executor);
+        this.executor = executor;
 
         transportService.registerRequestHandler(transportUnpromotableAction, executor, requestReader, new UnpromotableTransportHandler());
     }
 
-    protected abstract void unpromotableShardOperation(Task task, Request request, ActionListener<Response> listener);
+    protected abstract void unpromotableShardOperation(Task task, Request request, ActionListener<ActionResponse.Empty> listener);
 
     @Override
-    protected void doExecute(Task task, Request request, ActionListener<Response> listener) {
-        final var unpromotableShards = request.indexShardRoutingTable.unpromotableShards();
-        final var responses = new ArrayList<Response>(unpromotableShards.size());
-
-        try (var listeners = new RefCountingListener(listener.map(v -> combineUnpromotableShardResponses(responses)))) {
+    protected void doExecute(Task task, Request request, ActionListener<ActionResponse.Empty> listener) {
+        try (var listeners = new RefCountingListener(listener.map(v -> ActionResponse.Empty.INSTANCE))) {
             ActionListener.completeWith(listeners.acquire(), () -> {
                 final ClusterState clusterState = clusterService.state();
                 if (task != null) {
                     request.setParentTask(clusterService.localNode().getId(), task.getId());
                 }
-                unpromotableShards.forEach(shardRouting -> {
+                request.indexShardRoutingTable.unpromotableShards().forEach(shardRouting -> {
                     final DiscoveryNode node = clusterState.nodes().get(shardRouting.currentNodeId());
-                    final ActionListener<Response> shardRequestListener = listeners.acquire(response -> {
-                        synchronized (responses) {
-                            responses.add(response);
-                        }
-                    });
+                    final ActionListener<TransportResponse.Empty> acquired = listeners.acquire(ignored -> {});
                     transportService.sendRequest(
                         node,
                         transportUnpromotableAction,
@@ -90,9 +79,9 @@ public abstract class TransportBroadcastUnpromotableAction<Request extends Broad
                         TransportRequestOptions.EMPTY,
                         new ActionListenerResponseHandler<>(
                             request.failShardOnError()
-                                ? shardRequestListener.delegateResponse((l, e) -> failShard(shardRouting, clusterState, l, e))
-                                : shardRequestListener,
-                            this::readResponse,
+                                ? acquired.delegateResponse((l, e) -> failShard(shardRouting, clusterState, l, e))
+                                : acquired,
+                            (in) -> TransportResponse.Empty.INSTANCE,
                             executor
                         )
                     );
@@ -102,13 +91,7 @@ public abstract class TransportBroadcastUnpromotableAction<Request extends Broad
         }
     }
 
-    protected abstract Response combineUnpromotableShardResponses(List<Response> responses);
-
-    protected abstract Response readResponse(StreamInput in) throws IOException;
-
-    protected abstract Response emptyResponse();
-
-    private void failShard(ShardRouting shardRouting, ClusterState clusterState, ActionListener<Response> l, Exception e) {
+    private void failShard(ShardRouting shardRouting, ClusterState clusterState, ActionListener<TransportResponse.Empty> l, Exception e) {
         shardStateAction.remoteShardFailed(
             shardRouting.shardId(),
             shardRouting.allocationId().getId(),
@@ -120,7 +103,7 @@ public abstract class TransportBroadcastUnpromotableAction<Request extends Broad
                 @Override
                 public void onResponse(Void unused) {
                     logger.debug("Marked shard {} as failed", shardRouting.shardId());
-                    l.onResponse(emptyResponse());
+                    l.onResponse(TransportResponse.Empty.INSTANCE);
                 }
 
                 @Override
@@ -136,7 +119,7 @@ public abstract class TransportBroadcastUnpromotableAction<Request extends Broad
 
         @Override
         public void messageReceived(Request request, TransportChannel channel, Task task) throws Exception {
-            final ActionListener<Response> listener = new ChannelActionListener<>(channel);
+            final ActionListener<ActionResponse.Empty> listener = new ChannelActionListener<>(channel);
             ActionListener.run(listener, (l) -> unpromotableShardOperation(task, request, l));
         }
 

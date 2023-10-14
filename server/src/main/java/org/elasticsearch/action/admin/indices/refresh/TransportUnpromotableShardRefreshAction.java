@@ -15,18 +15,13 @@ import org.elasticsearch.action.support.broadcast.unpromotable.TransportBroadcas
 import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
-import java.util.List;
-
-public class TransportUnpromotableShardRefreshAction extends TransportBroadcastUnpromotableAction<
-    UnpromotableShardRefreshRequest,
-    ActionResponse.Empty> {
+public class TransportUnpromotableShardRefreshAction extends TransportBroadcastUnpromotableAction<UnpromotableShardRefreshRequest> {
 
     public static final String NAME = RefreshAction.NAME + "/unpromotable";
 
@@ -64,18 +59,4 @@ public class TransportUnpromotableShardRefreshAction extends TransportBroadcastU
         });
     }
 
-    @Override
-    protected ActionResponse.Empty combineUnpromotableShardResponses(List<ActionResponse.Empty> empties) {
-        return ActionResponse.Empty.INSTANCE;
-    }
-
-    @Override
-    protected ActionResponse.Empty readResponse(StreamInput in) {
-        return ActionResponse.Empty.INSTANCE;
-    }
-
-    @Override
-    protected ActionResponse.Empty emptyResponse() {
-        return ActionResponse.Empty.INSTANCE;
-    }
 }

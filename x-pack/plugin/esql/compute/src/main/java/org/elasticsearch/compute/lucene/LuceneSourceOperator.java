@@ -59,13 +59,7 @@ public class LuceneSourceOperator extends LuceneOperator {
 
         @Override
         public String describe() {
-            return "LuceneSourceOperator[dataPartitioning = "
-                + dataPartitioning
-                + ", maxPageSize = "
-                + maxPageSize
-                + ", limit = "
-                + limit
-                + "]";
+            return "LuceneSourceOperator[dataPartitioning = " + dataPartitioning + ", limit = " + limit + "]";
         }
     }
 
@@ -98,13 +92,8 @@ public class LuceneSourceOperator extends LuceneOperator {
     }
 
     @Override
-    protected boolean doneCollecting() {
-        return currentLeaf >= leaves.size() || numCollectedDocs >= maxCollectedDocs;
-    }
-
-    @Override
     public boolean isFinished() {
-        return doneCollecting();
+        return currentLeaf >= leaves.size() || numCollectedDocs >= maxCollectedDocs;
     }
 
     @Override
