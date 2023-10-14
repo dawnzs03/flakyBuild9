@@ -123,7 +123,6 @@ class LogValidatorTest {
       magic,
       TimestampType.CREATE_TIME,
       1000L,
-      1000L,
       RecordBatch.NO_PRODUCER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.IBP_2_3_IV1
@@ -154,7 +153,6 @@ class LogValidatorTest {
       false,
       magic,
       TimestampType.LOG_APPEND_TIME,
-      1000L,
       1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -199,7 +197,6 @@ class LogValidatorTest {
       false,
       targetMagic,
       TimestampType.LOG_APPEND_TIME,
-      1000L,
       1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -251,7 +248,6 @@ class LogValidatorTest {
       false,
       magic,
       TimestampType.LOG_APPEND_TIME,
-      1000L,
       1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -318,7 +314,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V2,
       TimestampType.LOG_APPEND_TIME,
       1000L,
-      1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -365,7 +360,6 @@ class LogValidatorTest {
       false,
       magic,
       TimestampType.CREATE_TIME,
-      1000L,
       1000L,
       partitionLeaderEpoch,
       AppendOrigin.CLIENT,
@@ -444,7 +438,6 @@ class LogValidatorTest {
       magic,
       TimestampType.CREATE_TIME,
       1000L,
-      1000L,
       partitionLeaderEpoch,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -503,7 +496,6 @@ class LogValidatorTest {
       toMagic,
       TimestampType.CREATE_TIME,
       1000L,
-      1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -550,7 +542,6 @@ class LogValidatorTest {
       false,
       RecordBatch.MAGIC_VALUE_V2,
       TimestampType.CREATE_TIME,
-      1000L,
       1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -611,7 +602,6 @@ class LogValidatorTest {
       magic,
       TimestampType.CREATE_TIME,
       1000L,
-      1000L,
       partitionLeaderEpoch,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -667,7 +657,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V1,
       TimestampType.CREATE_TIME,
       1000L,
-      1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -692,7 +681,6 @@ class LogValidatorTest {
       false,
       RecordBatch.MAGIC_VALUE_V2,
       TimestampType.CREATE_TIME,
-      1000L,
       1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -719,7 +707,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V1,
       TimestampType.CREATE_TIME,
       1000L,
-      1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -745,7 +732,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V1,
       TimestampType.CREATE_TIME,
       1000L,
-      1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -770,7 +756,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V0,
       TimestampType.CREATE_TIME,
       1000L,
-      1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest,
@@ -792,7 +777,6 @@ class LogValidatorTest {
       false,
       RecordBatch.MAGIC_VALUE_V0,
       TimestampType.CREATE_TIME,
-      1000L,
       1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -817,7 +801,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V1,
       TimestampType.CREATE_TIME,
       5000L,
-      5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -841,7 +824,6 @@ class LogValidatorTest {
       false,
       RecordBatch.MAGIC_VALUE_V2,
       TimestampType.CREATE_TIME,
-      5000L,
       5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -868,7 +850,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V1,
       TimestampType.CREATE_TIME,
       5000L,
-      5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -894,7 +875,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V2,
       TimestampType.CREATE_TIME,
       5000L,
-      5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -917,7 +897,6 @@ class LogValidatorTest {
       false,
       RecordBatch.MAGIC_VALUE_V1,
       TimestampType.LOG_APPEND_TIME,
-      1000L,
       1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -944,7 +923,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V2,
       TimestampType.LOG_APPEND_TIME,
       1000L,
-      1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -969,7 +947,6 @@ class LogValidatorTest {
       false,
       RecordBatch.MAGIC_VALUE_V1,
       TimestampType.LOG_APPEND_TIME,
-      1000L,
       1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -996,7 +973,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V2,
       TimestampType.LOG_APPEND_TIME,
       1000L,
-      1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -1022,7 +998,6 @@ class LogValidatorTest {
       RecordBatch.CURRENT_MAGIC_VALUE,
       TimestampType.CREATE_TIME,
       5000L,
-      5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -1044,7 +1019,6 @@ class LogValidatorTest {
       false,
       RecordBatch.CURRENT_MAGIC_VALUE,
       TimestampType.CREATE_TIME,
-      5000L,
       5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.COORDINATOR,
@@ -1073,7 +1047,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V0,
       TimestampType.CREATE_TIME,
       5000L,
-      5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -1097,7 +1070,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V0,
       TimestampType.CREATE_TIME,
       5000L,
-      5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -1120,7 +1092,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V2,
       TimestampType.LOG_APPEND_TIME,
       1000L,
-      1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -1142,7 +1113,6 @@ class LogValidatorTest {
       false,
       RecordBatch.MAGIC_VALUE_V2,
       TimestampType.LOG_APPEND_TIME,
-      1000L,
       1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -1167,7 +1137,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V1,
       TimestampType.CREATE_TIME,
       5000L,
-      5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -1190,7 +1159,6 @@ class LogValidatorTest {
       false,
       RecordBatch.MAGIC_VALUE_V1,
       TimestampType.CREATE_TIME,
-      5000L,
       5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -1217,7 +1185,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V1,
       TimestampType.CREATE_TIME,
       5000L,
-      5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -1243,7 +1210,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V1,
       TimestampType.CREATE_TIME,
       5000L,
-      5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -1266,7 +1232,6 @@ class LogValidatorTest {
       false,
       RecordBatch.MAGIC_VALUE_V0,
       TimestampType.CREATE_TIME,
-      5000L,
       5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -1291,7 +1256,6 @@ class LogValidatorTest {
       RecordBatch.MAGIC_VALUE_V0,
       TimestampType.CREATE_TIME,
       5000L,
-      5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
       MetadataVersion.latest
@@ -1313,7 +1277,6 @@ class LogValidatorTest {
         RecordBatch.MAGIC_VALUE_V0,
         TimestampType.CREATE_TIME,
         5000L,
-      5000L,
         RecordBatch.NO_PARTITION_LEADER_EPOCH,
         AppendOrigin.CLIENT,
         MetadataVersion.latest
@@ -1341,7 +1304,6 @@ class LogValidatorTest {
       false,
       RecordBatch.MAGIC_VALUE_V2,
       TimestampType.LOG_APPEND_TIME,
-      1000L,
       1000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
@@ -1376,7 +1338,6 @@ class LogValidatorTest {
         false,
         RecordBatch.MAGIC_VALUE_V1,
         TimestampType.CREATE_TIME,
-        1000L,
         1000L,
         RecordBatch.NO_PARTITION_LEADER_EPOCH,
         AppendOrigin.CLIENT,
@@ -1437,73 +1398,6 @@ class LogValidatorTest {
     assertEquals(6, e.recordErrors.size)
   }
 
-  @Test
-  def testRecordWithPastTimestampIsRejected(): Unit = {
-    val timestampBeforeMaxConfig = 24 * 60 * 60 * 1000L //24 hrs
-    val timestampAfterMaxConfig = 1 * 60 * 60 * 1000L //1 hr
-    val now = System.currentTimeMillis()
-    val fiveMinutesBeforeThreshold = now - timestampBeforeMaxConfig - (5 * 60 * 1000L)
-    val records = createRecords(magicValue = RecordBatch.MAGIC_VALUE_V2, timestamp = fiveMinutesBeforeThreshold,
-      codec = CompressionType.GZIP)
-    val e = assertThrows(classOf[RecordValidationException],
-      () => new LogValidator(
-        records,
-        topicPartition,
-        time,
-        CompressionType.GZIP,
-        CompressionType.GZIP,
-        false,
-        RecordBatch.MAGIC_VALUE_V2,
-        TimestampType.CREATE_TIME,
-        timestampBeforeMaxConfig,
-        timestampAfterMaxConfig,
-        RecordBatch.NO_PARTITION_LEADER_EPOCH,
-        AppendOrigin.CLIENT,
-        MetadataVersion.latest
-      ).validateMessagesAndAssignOffsets(
-        PrimitiveRef.ofLong(0L), metricsRecorder, RequestLocal.withThreadConfinedCaching.bufferSupplier
-      )
-    )
-
-    assertTrue(e.invalidException.isInstanceOf[InvalidTimestampException])
-    assertFalse(e.recordErrors.isEmpty)
-    assertEquals(e.recordErrors.size, 3)
-  }
-
-
-  @Test
-  def testRecordWithFutureTimestampIsRejected(): Unit = {
-    val timestampBeforeMaxConfig = 24 * 60 * 60 * 1000L //24 hrs
-    val timestampAfterMaxConfig = 1 * 60 * 60 * 1000L //1 hr
-    val now = System.currentTimeMillis()
-    val fiveMinutesAfterThreshold = now + timestampAfterMaxConfig + (5 * 60 * 1000L)
-    val records = createRecords(magicValue = RecordBatch.MAGIC_VALUE_V2, timestamp = fiveMinutesAfterThreshold,
-      codec = CompressionType.GZIP)
-    val e = assertThrows(classOf[RecordValidationException],
-      () => new LogValidator(
-        records,
-        topicPartition,
-        time,
-        CompressionType.GZIP,
-        CompressionType.GZIP,
-        false,
-        RecordBatch.MAGIC_VALUE_V2,
-        TimestampType.CREATE_TIME,
-        timestampBeforeMaxConfig,
-        timestampAfterMaxConfig,
-        RecordBatch.NO_PARTITION_LEADER_EPOCH,
-        AppendOrigin.CLIENT,
-        MetadataVersion.latest
-      ).validateMessagesAndAssignOffsets(
-        PrimitiveRef.ofLong(0L), metricsRecorder, RequestLocal.withThreadConfinedCaching.bufferSupplier
-      )
-    )
-
-    assertTrue(e.invalidException.isInstanceOf[InvalidTimestampException])
-    assertFalse(e.recordErrors.isEmpty)
-    assertEquals(e.recordErrors.size, 3)
-  }
-
   private def testBatchWithoutRecordsNotAllowed(sourceCompression: CompressionType, targetCompression: CompressionType): Unit = {
     val offset = 1234567
     val (producerId, producerEpoch, baseSequence, isTransactional, partitionLeaderEpoch) =
@@ -1522,7 +1416,6 @@ class LogValidatorTest {
       false,
       RecordBatch.CURRENT_MAGIC_VALUE,
       TimestampType.CREATE_TIME,
-      5000L,
       5000L,
       RecordBatch.NO_PARTITION_LEADER_EPOCH,
       AppendOrigin.CLIENT,
