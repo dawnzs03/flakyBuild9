@@ -5,9 +5,8 @@ namespace OpenQA.Selenium.Environment
         DriverService service;
         DriverOptions options;
 
-        public DriverStartingEventArgs(DriverService service, DriverOptions options)
+        public DriverStartingEventArgs(DriverOptions options)
         {
-            this.Service = service;
             this.Options = options;
         }
 

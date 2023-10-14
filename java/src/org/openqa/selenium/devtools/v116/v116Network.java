@@ -24,12 +24,7 @@ import com.google.common.io.ByteStreams;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.logging.Logger;
 import org.openqa.selenium.UsernameAndPassword;
 import org.openqa.selenium.devtools.Command;
@@ -143,7 +138,7 @@ public class v116Network extends Network<AuthRequired, RequestPaused> {
         bodyIsBase64Encoded = false;
       }
 
-      List<Map.Entry<String, String>> headers = new ArrayList<>();
+      List<Map.Entry<String, String>> headers = new LinkedList<>();
       pausedReq
           .getResponseHeaders()
           .ifPresent(
@@ -193,8 +188,11 @@ public class v116Network extends Network<AuthRequired, RequestPaused> {
       return continueWithoutModification(pausedReq);
     }
 
-    List<HeaderEntry> headers = new ArrayList<>();
-    req.forEachHeader((name, value) -> headers.add(new HeaderEntry(name, value)));
+    List<HeaderEntry> headers = new LinkedList<>();
+    req.getHeaderNames()
+        .forEach(
+            name ->
+                req.getHeaders(name).forEach(value -> headers.add(new HeaderEntry(name, value))));
 
     return Fetch.continueRequest(
         pausedReq.getRequestId(),
@@ -207,8 +205,11 @@ public class v116Network extends Network<AuthRequired, RequestPaused> {
 
   @Override
   protected Command<Void> fulfillRequest(RequestPaused pausedReq, HttpResponse res) {
-    List<HeaderEntry> headers = new ArrayList<>();
-    res.forEachHeader((name, value) -> headers.add(new HeaderEntry(name, value)));
+    List<HeaderEntry> headers = new LinkedList<>();
+    res.getHeaderNames()
+        .forEach(
+            name ->
+                res.getHeaders(name).forEach(value -> headers.add(new HeaderEntry(name, value))));
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     try (InputStream is = res.getContent().get()) {

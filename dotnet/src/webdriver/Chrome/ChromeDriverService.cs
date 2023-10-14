@@ -16,7 +16,6 @@
 // limitations under the License.
 // </copyright>
 
-using System;
 using System.IO;
 using OpenQA.Selenium.Chromium;
 using OpenQA.Selenium.Internal;
@@ -47,7 +46,7 @@ namespace OpenQA.Selenium.Chrome
         /// <returns>A ChromeDriverService that implements default settings.</returns>
         public static ChromeDriverService CreateDefaultService()
         {
-            return new ChromeDriverService(null, null, PortUtilities.FindFreePort());
+            return CreateDefaultService(new ChromeOptions());
         }
 
         /// <summary>
@@ -55,7 +54,6 @@ namespace OpenQA.Selenium.Chrome
         /// </summary>
         /// /// <param name="options">Browser options used to find the correct ChromeDriver binary.</param>
         /// <returns>A ChromeDriverService that implements default settings.</returns>
-        [Obsolete("CreateDefaultService() now evaluates options in Driver constructor")]
         public static ChromeDriverService CreateDefaultService(ChromeOptions options)
         {
             string fullServicePath = DriverFinder.FullPath(options);

@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
 """The WebDriver implementation."""
 import contextlib
 import copy
@@ -769,13 +770,13 @@ class WebDriver(BaseWebDriver):
 
     @property
     def desired_capabilities(self) -> dict:
-        """Returns the drivers current desired capabilities being used."""
+        """returns the drivers current desired capabilities being used."""
         warnings.warn("desired_capabilities is deprecated. Please call capabilities.", DeprecationWarning, stacklevel=2)
         return self.caps
 
     @property
     def capabilities(self) -> dict:
-        """Returns the drivers current capabilities being used."""
+        """returns the drivers current capabilities being used."""
         return self.caps
 
     def get_screenshot_as_file(self, filename) -> bool:

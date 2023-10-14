@@ -69,7 +69,11 @@ class NettyMessages {
       request.removeHeader("Content-Length");
     }
 
-    request.forEachHeader(builder::addHeader);
+    for (String name : request.getHeaderNames()) {
+      for (String value : request.getHeaders(name)) {
+        builder.addHeader(name, value);
+      }
+    }
     if (request.getHeader("User-Agent") == null) {
       builder.addHeader("User-Agent", AddSeleniumUserAgent.USER_AGENT);
     }

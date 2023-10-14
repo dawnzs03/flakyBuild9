@@ -23,7 +23,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.openqa.selenium.remote.Browser.SAFARI_TECH_PREVIEW;
 
 import com.google.auto.service.AutoService;
-import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
@@ -48,7 +47,7 @@ public class SafariTechPreviewDriverService extends DriverService {
    */
   public static final String TP_SAFARI_DRIVER_EXE_PROPERTY = "webdriver.tp.safari.driver";
 
-  public static final String TP_SAFARI_DRIVER_LOGGING = "webdriver.tp.safari.logging";
+  private static final String TP_SAFARI_DRIVER_LOGGING = "webdriver.tp.safari.logging";
 
   private static final File TP_SAFARI_DRIVER_EXECUTABLE =
       new File("/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver");
@@ -105,7 +104,7 @@ public class SafariTechPreviewDriverService extends DriverService {
   }
 
   @Override
-  public Capabilities getDefaultDriverOptions() {
+  protected Capabilities getDefaultDriverOptions() {
     return new SafariOptions().setUseTechnologyPreview(true);
   }
 
@@ -173,7 +172,7 @@ public class SafariTechPreviewDriverService extends DriverService {
     @Override
     protected List<String> createArgs() {
       List<String> args = new ArrayList<>(Arrays.asList("--port", String.valueOf(getPort())));
-      if (Boolean.TRUE.equals(diagnose)) {
+      if (this.diagnose) {
         args.add("--diagnose");
       }
       return args;
@@ -183,7 +182,6 @@ public class SafariTechPreviewDriverService extends DriverService {
     protected SafariTechPreviewDriverService createDriverService(
         File exe, int port, Duration timeout, List<String> args, Map<String, String> environment) {
       try {
-        withLogOutput(ByteStreams.nullOutputStream());
         return new SafariTechPreviewDriverService(exe, port, timeout, args, environment);
       } catch (IOException e) {
         throw new WebDriverException(e);

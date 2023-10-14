@@ -756,20 +756,18 @@ public class LocalDistributor extends Distributor implements AutoCloseable {
     @Override
     public void run() {
       Set<RequestId> inQueue;
-      boolean pollQueue;
-
+      boolean loop;
       if (rejectUnsupportedCaps) {
         inQueue =
             sessionQueue.getQueueContents().stream()
                 .map(SessionRequestCapability::getRequestId)
                 .collect(Collectors.toSet());
-        pollQueue = !inQueue.isEmpty();
+        loop = !inQueue.isEmpty();
       } else {
         inQueue = null;
-        pollQueue = !sessionQueue.peekEmpty();
+        loop = !sessionQueue.peekEmpty();
       }
-
-      if (pollQueue) {
+      while (loop) {
         // We deliberately run this outside of a lock: if we're unsuccessful
         // starting the session, we just put the request back on the queue.
         // This does mean, however, that under high contention, we might end
@@ -785,9 +783,11 @@ public class LocalDistributor extends Distributor implements AutoCloseable {
           List<SessionRequest> matchingRequests = sessionQueue.getNextAvailable(stereotypes);
           matchingRequests.forEach(
               req -> sessionCreatorExecutor.execute(() -> handleNewSessionRequest(req)));
+          loop = !matchingRequests.isEmpty();
+        } else {
+          loop = false;
         }
       }
-
       if (rejectUnsupportedCaps) {
         checkMatchingSlot(
             sessionQueue.getQueueContents().stream()

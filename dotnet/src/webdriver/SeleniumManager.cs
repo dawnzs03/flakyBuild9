@@ -92,12 +92,9 @@ namespace OpenQA.Selenium
 
             if (options.Proxy != null)
             {
-                if (options.Proxy.SslProxy != null)
-                {
+                if (options.Proxy.SslProxy != null) {
                     argsBuilder.AppendFormat(CultureInfo.InvariantCulture, " --proxy \"{0}\"", options.Proxy.SslProxy);
-                }
-                else if (options.Proxy.HttpProxy != null)
-                {
+                } else if (options.Proxy.HttpProxy != null) {
                     argsBuilder.AppendFormat(CultureInfo.InvariantCulture, " --proxy \"{0}\"", options.Proxy.HttpProxy);
                 }
             }
@@ -140,20 +137,16 @@ namespace OpenQA.Selenium
             process.StartInfo.RedirectStandardError = true;
 
             StringBuilder outputBuilder = new StringBuilder();
-            StringBuilder errorOutputBuilder = new StringBuilder();
 
             DataReceivedEventHandler outputHandler = (sender, e) => outputBuilder.AppendLine(e.Data);
-            DataReceivedEventHandler errorOutputHandler = (sender, e) => errorOutputBuilder.AppendLine(e.Data);
 
             try
             {
                 process.OutputDataReceived += outputHandler;
-                process.ErrorDataReceived += errorOutputHandler;
 
                 process.Start();
 
                 process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
 
                 process.WaitForExit();
 
@@ -161,25 +154,7 @@ namespace OpenQA.Selenium
                 {
                     // We do not log any warnings coming from Selenium Manager like the other bindings as we don't have any logging in the .NET bindings
 
-                    var exceptionMessageBuilder = new StringBuilder($"Selenium Manager process exited abnormally with {process.ExitCode} code: {fileName} {arguments}");
-
-                    if (!string.IsNullOrWhiteSpace(errorOutputBuilder.ToString()))
-                    {
-                        exceptionMessageBuilder.AppendLine();
-                        exceptionMessageBuilder.AppendLine("Error Output >>");
-                        exceptionMessageBuilder.Append(errorOutputBuilder);
-                        exceptionMessageBuilder.AppendLine("<<");
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(outputBuilder.ToString()))
-                    {
-                        exceptionMessageBuilder.AppendLine();
-                        exceptionMessageBuilder.AppendLine("Standard Output >>");
-                        exceptionMessageBuilder.Append(outputBuilder);
-                        exceptionMessageBuilder.AppendLine("<<");
-                    }
-
-                    throw new WebDriverException(exceptionMessageBuilder.ToString());
+                    throw new WebDriverException($"Selenium Manager process exited abnormally with {process.ExitCode} code: {fileName} {arguments}\n{outputBuilder}");
                 }
             }
             catch (Exception ex)
@@ -189,7 +164,6 @@ namespace OpenQA.Selenium
             finally
             {
                 process.OutputDataReceived -= outputHandler;
-                process.ErrorDataReceived -= errorOutputHandler;
             }
 
             string output = outputBuilder.ToString().Trim();

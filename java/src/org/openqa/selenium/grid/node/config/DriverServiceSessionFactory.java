@@ -127,6 +127,11 @@ public class DriverServiceSessionFactory implements SessionFactory {
       Capabilities capabilities =
           sessionCapabilitiesMutator.apply(sessionRequest.getDesiredCapabilities());
 
+      Optional<Platform> platformName = Optional.ofNullable(capabilities.getPlatformName());
+      if (platformName.isPresent()) {
+        capabilities = removePlatform(capabilities);
+      }
+
       CAPABILITIES.accept(span, capabilities);
       CAPABILITIES_EVENT.accept(attributeMap, capabilities);
       attributeMap.put(
@@ -140,17 +145,6 @@ public class DriverServiceSessionFactory implements SessionFactory {
           capabilities = setBrowserBinary(capabilities, result.getBrowserPath());
         }
       }
-
-      Optional<Platform> platformName = Optional.ofNullable(capabilities.getPlatformName());
-      if (platformName.isPresent()) {
-        capabilities = removeCapability(capabilities, "platformName");
-      }
-
-      Optional<String> browserVersion = Optional.ofNullable(capabilities.getBrowserVersion());
-      if (browserVersion.isPresent()) {
-        capabilities = removeCapability(capabilities, "browserVersion");
-      }
-
       try {
         service.start();
 
@@ -185,13 +179,7 @@ public class DriverServiceSessionFactory implements SessionFactory {
 
         Capabilities caps = new ImmutableCapabilities((Map<?, ?>) response.getValue());
         if (platformName.isPresent()) {
-          caps = setInitialCapabilityValue(caps, "platformName", platformName.get());
-        }
-
-        if (caps.getBrowserVersion().isEmpty()
-            && browserVersion.isPresent()
-            && !browserVersion.get().isEmpty()) {
-          caps = setInitialCapabilityValue(caps, "browserVersion", browserVersion.get());
+          caps = setInitialPlatform(caps, platformName.get());
         }
 
         caps = readDevToolsEndpointAndVersion(caps);
@@ -331,17 +319,16 @@ public class DriverServiceSessionFactory implements SessionFactory {
     return returnedCaps;
   }
 
-  // We remove a capability before sending the caps to the driver because some drivers will
-  // reject session requests when they cannot parse the specific capabilities (like platform or
-  // browser version).
-  private Capabilities removeCapability(Capabilities caps, String capability) {
+  // We remove the platform before sending the caps to the driver because some drivers will
+  // reject session requests when they cannot parse the platform.
+  private Capabilities removePlatform(Capabilities caps) {
     MutableCapabilities noPlatformName = new MutableCapabilities(new HashMap<>(caps.asMap()));
-    noPlatformName.setCapability(capability, (String) null);
+    noPlatformName.setCapability("platformName", (String) null);
     return new PersistentCapabilities(noPlatformName);
   }
 
-  private Capabilities setInitialCapabilityValue(Capabilities caps, String key, Object value) {
-    return new PersistentCapabilities(caps).setCapability(key, value);
+  private Capabilities setInitialPlatform(Capabilities caps, Platform platform) {
+    return new PersistentCapabilities(caps).setCapability("platformName", platform);
   }
 
   private String getHost() {

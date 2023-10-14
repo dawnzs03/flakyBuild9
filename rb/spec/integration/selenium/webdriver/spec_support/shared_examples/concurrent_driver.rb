@@ -23,8 +23,7 @@ shared_examples_for 'driver that can be started concurrently' do |guard|
 
   before { quit_driver }
 
-  after do |example|
-    skip if example.metadata[:skip]
+  after do
     drivers.each(&:quit)
     threads.select(&:alive?).each(&:kill)
     create_driver!

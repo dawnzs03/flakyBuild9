@@ -5,15 +5,20 @@ namespace OpenQA.Selenium.Safari
     // constructor.
     public class DefaultSafariDriver : SafariDriver
     {
+        public DefaultSafariDriver()
+            : base(DefaultOptions)
+        {
+        }
+
         // Required for dynamic setting with `EnvironmentManager.Instance.CreateDriverInstance(options)`
         public DefaultSafariDriver(SafariOptions options)
             : base(options)
         {
         }
 
-        public DefaultSafariDriver(SafariDriverService service, SafariOptions options)
-            : base(service, options)
+        public static SafariOptions DefaultOptions
         {
+            get { return new SafariOptions(); }
         }
     }
 }

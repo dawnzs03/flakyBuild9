@@ -52,7 +52,7 @@ namespace OpenQA.Selenium.DevTools.V115
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task DisableNetworkCaching()
         {
-            await network.SetCacheDisabled(new SetCacheDisabledCommandSettings() { CacheDisabled = true }).ConfigureAwait(false);
+            await network.SetCacheDisabled(new SetCacheDisabledCommandSettings() { CacheDisabled = true });
         }
 
         /// <summary>
@@ -61,25 +61,17 @@ namespace OpenQA.Selenium.DevTools.V115
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task EnableNetworkCaching()
         {
-            await network.SetCacheDisabled(new SetCacheDisabledCommandSettings() { CacheDisabled = false }).ConfigureAwait(false);
+            await network.SetCacheDisabled(new SetCacheDisabledCommandSettings() { CacheDisabled = false });
         }
 
-        /// <summary>
-        /// Asynchronously enables the Network domain..
-        /// </summary>
-        /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task EnableNetwork()
         {
-            await network.Enable(new Network.EnableCommandSettings()).ConfigureAwait(false);
+            await network.Enable(new Network.EnableCommandSettings());
         }
 
-        /// <summary>
-        /// Asynchronously disables the Network domain..
-        /// </summary>
-        /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task DisableNetwork()
         {
-            await network.Disable().ConfigureAwait(false);
+            await network.Disable();
         }
 
         /// <summary>
@@ -88,15 +80,15 @@ namespace OpenQA.Selenium.DevTools.V115
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task EnableFetchForAllPatterns()
         {
-            await fetch.Enable(new Fetch.EnableCommandSettings()
+            await fetch.Enable(new OpenQA.Selenium.DevTools.V115.Fetch.EnableCommandSettings()
             {
-                Patterns = new Fetch.RequestPattern[]
+                Patterns = new OpenQA.Selenium.DevTools.V115.Fetch.RequestPattern[]
                 {
-                    new Fetch.RequestPattern() { UrlPattern = "*", RequestStage = RequestStage.Request },
-                    new Fetch.RequestPattern() { UrlPattern = "*", RequestStage = RequestStage.Response }
+                    new OpenQA.Selenium.DevTools.V115.Fetch.RequestPattern() { UrlPattern = "*", RequestStage = RequestStage.Request },
+                    new OpenQA.Selenium.DevTools.V115.Fetch.RequestPattern() { UrlPattern = "*", RequestStage = RequestStage.Response }
                 },
                 HandleAuthRequests = true
-            }).ConfigureAwait(false);
+            });
         }
 
         /// <summary>
@@ -105,7 +97,7 @@ namespace OpenQA.Selenium.DevTools.V115
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task DisableFetch()
         {
-            await fetch.Disable().ConfigureAwait(false);
+            await fetch.Disable();
         }
 
         /// <summary>
@@ -120,7 +112,7 @@ namespace OpenQA.Selenium.DevTools.V115
                 UserAgent = userAgent.UserAgentString,
                 AcceptLanguage = userAgent.AcceptLanguage,
                 Platform = userAgent.Platform
-            }).ConfigureAwait(false);
+            });
         }
 
         /// <summary>
@@ -153,7 +145,7 @@ namespace OpenQA.Selenium.DevTools.V115
                 commandSettings.PostData = Convert.ToBase64String(Encoding.UTF8.GetBytes(requestData.PostData));
             }
 
-            await fetch.ContinueRequest(commandSettings).ConfigureAwait(false);
+            await fetch.ContinueRequest(commandSettings);
         }
 
         /// <summary>
@@ -191,7 +183,7 @@ namespace OpenQA.Selenium.DevTools.V115
                 commandSettings.Body = Convert.ToBase64String(Encoding.UTF8.GetBytes(responseData.Body));
             }
 
-            await fetch.FulfillRequest(commandSettings).ConfigureAwait(false);
+            await fetch.FulfillRequest(commandSettings);
         }
 
         /// <summary>
@@ -201,7 +193,7 @@ namespace OpenQA.Selenium.DevTools.V115
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task ContinueRequestWithoutModification(HttpRequestData requestData)
         {
-            await fetch.ContinueRequest(new ContinueRequestCommandSettings() { RequestId = requestData.RequestId }).ConfigureAwait(false);
+            await fetch.ContinueRequest(new ContinueRequestCommandSettings() { RequestId = requestData.RequestId });
         }
 
         /// <summary>
@@ -222,7 +214,7 @@ namespace OpenQA.Selenium.DevTools.V115
                     Username = userName,
                     Password = password
                 }
-            }).ConfigureAwait(false);
+            });
         }
 
         /// <summary>
@@ -239,7 +231,7 @@ namespace OpenQA.Selenium.DevTools.V115
                 {
                     Response = V115.Fetch.AuthChallengeResponseResponseValues.CancelAuth
                 }
-            }).ConfigureAwait(false);
+            });
         }
 
         /// <summary>
@@ -252,7 +244,7 @@ namespace OpenQA.Selenium.DevTools.V115
             // If the response is a redirect, retrieving the body will throw an error in CDP.
             if (responseData.StatusCode < 300 || responseData.StatusCode > 399)
             {
-                var bodyResponse = await fetch.GetResponseBody(new Fetch.GetResponseBodyCommandSettings() { RequestId = responseData.RequestId }).ConfigureAwait(false);
+                var bodyResponse = await fetch.GetResponseBody(new Fetch.GetResponseBodyCommandSettings() { RequestId = responseData.RequestId });
                 if (bodyResponse != null)
                 {
                     if (bodyResponse.Base64Encoded)
@@ -274,7 +266,7 @@ namespace OpenQA.Selenium.DevTools.V115
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task ContinueResponseWithoutModification(HttpResponseData responseData)
         {
-            await fetch.ContinueResponse(new ContinueResponseCommandSettings() { RequestId = responseData.RequestId }).ConfigureAwait(false);
+            await fetch.ContinueResponse(new ContinueResponseCommandSettings() { RequestId = responseData.RequestId });
         }
 
         private void OnFetchAuthRequired(object sender, Fetch.AuthRequiredEventArgs e)

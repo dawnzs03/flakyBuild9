@@ -187,7 +187,12 @@ public class InternetExplorerDriverService extends DriverService {
 
     @Override
     protected void loadSystemProperties() {
-      parseLogOutput(IE_DRIVER_LOGFILE_PROPERTY);
+      if (getLogFile() == null) {
+        String logFilePath = System.getProperty(IE_DRIVER_LOGFILE_PROPERTY);
+        if (logFilePath != null) {
+          withLogFile(new File(logFilePath));
+        }
+      }
       if (logLevel == null) {
         String level = System.getProperty(IE_DRIVER_LOGLEVEL_PROPERTY);
         if (level != null) {
@@ -228,7 +233,7 @@ public class InternetExplorerDriverService extends DriverService {
       if (extractPath != null) {
         args.add(String.format("--extract-path=\"%s\"", extractPath.getAbsolutePath()));
       }
-      if (Boolean.TRUE.equals(silent)) {
+      if (silent != null && silent.equals(Boolean.TRUE)) {
         args.add("--silent");
       }
 
@@ -239,7 +244,10 @@ public class InternetExplorerDriverService extends DriverService {
     protected InternetExplorerDriverService createDriverService(
         File exe, int port, Duration timeout, List<String> args, Map<String, String> environment) {
       try {
-        return new InternetExplorerDriverService(exe, port, timeout, args, environment);
+        InternetExplorerDriverService service =
+            new InternetExplorerDriverService(exe, port, timeout, args, environment);
+        service.sendOutputTo(getLogOutput(IE_DRIVER_LOGFILE_PROPERTY));
+        return service;
       } catch (IOException e) {
         throw new WebDriverException(e);
       }

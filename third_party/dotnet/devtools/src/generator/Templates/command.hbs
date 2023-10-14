@@ -1,4 +1,4 @@
-namespace {{rootNamespace}}.{{domain.Name}}
+﻿namespace {{rootNamespace}}.{{domain.Name}}
 {
     using Newtonsoft.Json;
 
@@ -8,10 +8,7 @@ namespace {{rootNamespace}}.{{domain.Name}}
     public sealed class {{className}}CommandSettings : ICommand
     {
         private const string DevToolsRemoteInterface_CommandName = "{{domain.Name}}.{{command.Name}}";
-
-        /// <summary>
-        /// Gets the name of the command.
-        /// </summary>
+        
         [JsonIgnore]
         public string CommandName
         {
@@ -37,9 +34,6 @@ namespace {{rootNamespace}}.{{domain.Name}}
     {{/each}}
     }
 
-    /// <summary>
-    /// Response for {{xml-code-comment command.Description 1}}
-    /// </summary>
     public sealed class {{className}}CommandResponse : ICommandResponse<{{className}}CommandSettings>
     {
     {{#each command.Returns}}

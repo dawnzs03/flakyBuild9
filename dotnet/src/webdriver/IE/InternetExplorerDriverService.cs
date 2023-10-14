@@ -16,7 +16,6 @@
 // limitations under the License.
 // </copyright>
 
-using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -149,7 +148,7 @@ namespace OpenQA.Selenium.IE
         /// <returns>A InternetExplorerDriverService that implements default settings.</returns>
         public static InternetExplorerDriverService CreateDefaultService()
         {
-            return new InternetExplorerDriverService(null, null, PortUtilities.FindFreePort());
+            return CreateDefaultService(new InternetExplorerOptions());
         }
 
         /// <summary>
@@ -157,7 +156,6 @@ namespace OpenQA.Selenium.IE
         /// </summary>
         /// <param name="options">Browser options used to find the correct IEDriver binary.</param>
         /// <returns>A InternetExplorerDriverService that implements default settings.</returns>
-        [Obsolete("CreateDefaultService() now evaluates options in Driver constructor")]
         public static InternetExplorerDriverService CreateDefaultService(InternetExplorerOptions options)
         {
             string fullServicePath = DriverFinder.FullPath(options);
