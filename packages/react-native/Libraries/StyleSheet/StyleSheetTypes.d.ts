@@ -339,7 +339,6 @@ export interface TextStyle extends TextStyleIOS, TextStyleAndroid, ViewStyle {
   textShadowOffset?: {width: number; height: number} | undefined;
   textShadowRadius?: number | undefined;
   textTransform?: 'none' | 'capitalize' | 'uppercase' | 'lowercase' | undefined;
-  userSelect?: 'auto' | 'none' | 'text' | 'contain' | 'all' | undefined;
 }
 
 /**

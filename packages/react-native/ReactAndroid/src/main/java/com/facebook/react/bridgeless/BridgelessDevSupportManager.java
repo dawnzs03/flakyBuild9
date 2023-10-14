@@ -121,7 +121,7 @@ class BridgelessDevSupportManager extends DevSupportManagerBase {
       @androidx.annotation.Nullable
       @Override
       public Activity getCurrentActivity() {
-        return reactHost.getLastUsedActivity();
+        return reactHost.getCurrentActivity();
       }
 
       @Override

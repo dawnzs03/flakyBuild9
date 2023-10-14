@@ -15,13 +15,11 @@ import type {
   Page,
   PageDescription,
 } from './types';
-import type {EventReporter} from '../types/EventReporter';
 import type {IncomingMessage, ServerResponse} from 'http';
 
+import Device from './Device';
 import url from 'url';
 import WS from 'ws';
-import getDevToolsFrontendUrl from '../utils/getDevToolsFrontendUrl';
-import Device from './Device';
 
 const debug = require('debug')('Metro:InspectorProxy');
 
@@ -51,12 +49,9 @@ export default class InspectorProxy {
   // by debugger to know where to connect.
   _serverBaseUrl: string = '';
 
-  _eventReporter: ?EventReporter;
-
-  constructor(projectRoot: string, eventReporter: ?EventReporter) {
+  constructor(projectRoot: string) {
     this._projectRoot = projectRoot;
     this._devices = new Map();
-    this._eventReporter = eventReporter;
   }
 
   // Process HTTP request sent to server. We only respond to 2 HTTP requests:
@@ -115,13 +110,15 @@ export default class InspectorProxy {
   ): PageDescription {
     const debuggerUrl = `${this._serverBaseUrl}${WS_DEBUGGER_URL}?device=${deviceId}&page=${page.id}`;
     const webSocketDebuggerUrl = 'ws://' + debuggerUrl;
-
+    const devtoolsFrontendUrl =
+      'devtools://devtools/bundled/js_app.html?experiments=true&v8only=true&ws=' +
+      encodeURIComponent(debuggerUrl);
     return {
       id: `${deviceId}-${page.id}`,
       description: page.app,
       title: page.title,
       faviconUrl: 'https://reactjs.org/favicon.ico',
-      devtoolsFrontendUrl: getDevToolsFrontendUrl(webSocketDebuggerUrl),
+      devtoolsFrontendUrl,
       type: 'node',
       webSocketDebuggerUrl,
       vm: page.vm,
@@ -172,7 +169,6 @@ export default class InspectorProxy {
           appName,
           socket,
           this._projectRoot,
-          this._eventReporter,
         );
 
         if (oldDevice) {
@@ -223,17 +219,10 @@ export default class InspectorProxy {
           throw new Error('Unknown device with ID ' + deviceId);
         }
 
-        device.handleDebuggerConnection(socket, pageId, {
-          userAgent: req.headers['user-agent'] ?? null,
-        });
+        device.handleDebuggerConnection(socket, pageId);
       } catch (e) {
         console.error(e);
         socket.close(INTERNAL_ERROR_CODE, e?.toString() ?? 'Unknown error');
-        this._eventReporter?.logEvent({
-          type: 'connect_debugger_frontend',
-          status: 'error',
-          error: e,
-        });
       }
     });
     return wss;

@@ -16,7 +16,6 @@ import static java.lang.Boolean.TRUE;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.facebook.common.logging.FLog;
 import com.facebook.infer.annotation.Assertions;
@@ -72,8 +71,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import kotlin.Unit;
-import kotlin.jvm.functions.Function0;
 
 /**
  * A ReactHost is an object that manages a single {@link ReactInstance}. A ReactHost can be
@@ -120,8 +117,6 @@ public class ReactHostImpl implements ReactHost {
       new BridgelessAtomicRef<>();
 
   private final AtomicReference<Activity> mActivity = new AtomicReference<>();
-  private final AtomicReference<WeakReference<Activity>> mLastUsedActivity =
-      new AtomicReference<>(new WeakReference<>(null));
   private final BridgelessReactStateTracker mBridgelessReactStateTracker =
       new BridgelessReactStateTracker(DEV);
   private final ReactLifecycleStateManager mReactLifecycleStateManager =
@@ -130,9 +125,6 @@ public class ReactHostImpl implements ReactHost {
   private @Nullable JSEngineResolutionAlgorithm mJSEngineResolutionAlgorithm = null;
   private MemoryPressureListener mMemoryPressureListener;
   private @Nullable DefaultHardwareBackBtnHandler mDefaultHardwareBackBtnHandler;
-
-  private final Set<Function0<Unit>> mBeforeDestroyListeners =
-      Collections.synchronizedSet(new HashSet<>());
 
   public ReactHostImpl(
       Context context,
@@ -284,11 +276,11 @@ public class ReactHostImpl implements ReactHost {
     final String method = "onHostResume(activity)";
     log(method);
 
-    setCurrentActivity(activity);
+    mActivity.set(activity);
     ReactContext currentContext = getCurrentReactContext();
 
     // TODO(T137233065): Enable DevSupportManager here
-    mReactLifecycleStateManager.moveToOnHostResume(currentContext, getCurrentActivity());
+    mReactLifecycleStateManager.moveToOnHostResume(currentContext, mActivity.get());
   }
 
   @ThreadConfined(UI)
@@ -299,7 +291,7 @@ public class ReactHostImpl implements ReactHost {
 
     ReactContext currentContext = getCurrentReactContext();
 
-    Activity currentActivity = getCurrentActivity();
+    Activity currentActivity = mActivity.get();
     if (currentActivity != null) {
       String currentActivityClass = currentActivity.getClass().getSimpleName();
       String activityClass = activity == null ? "null" : activity.getClass().getSimpleName();
@@ -329,7 +321,7 @@ public class ReactHostImpl implements ReactHost {
 
     // TODO(T137233065): Disable DevSupportManager here
     mDefaultHardwareBackBtnHandler = null;
-    mReactLifecycleStateManager.moveToOnHostPause(currentContext, getCurrentActivity());
+    mReactLifecycleStateManager.moveToOnHostPause(currentContext, mActivity.get());
   }
 
   /** To be called when the host activity is destroyed. */
@@ -349,7 +341,7 @@ public class ReactHostImpl implements ReactHost {
     final String method = "onHostDestroy(activity)";
     log(method);
 
-    Activity currentActivity = getCurrentActivity();
+    Activity currentActivity = mActivity.get();
 
     // TODO(T137233065): Disable DevSupportManager here
     if (currentActivity == activity) {
@@ -443,27 +435,16 @@ public class ReactHostImpl implements ReactHost {
     if (ReactFeatureFlags.enableBridgelessArchitectureNewCreateReloadDestroy) {
       return Task.call(
               () -> {
-                Task<Void> reloadTask = null;
                 if (mDestroyTask != null) {
-                  log(method, "Waiting for destroy to finish, before reloading React Native.");
-                  reloadTask =
-                      mDestroyTask
-                          .continueWithTask(task -> newGetOrCreateReloadTask(reason), mBGExecutor)
-                          .makeVoid();
-                } else {
-                  reloadTask = newGetOrCreateReloadTask(reason).makeVoid();
+                  log(
+                      method,
+                      "Destroying React Native. Waiting for destroy to finish, before reloading React Native.");
+                  return mDestroyTask
+                      .continueWithTask(task -> newGetOrCreateReloadTask(reason), mBGExecutor)
+                      .makeVoid();
                 }
 
-                return reloadTask.continueWithTask(
-                    task -> {
-                      if (task.isFaulted()) {
-                        mReactHostDelegate.handleInstanceException(task.getError());
-                        return newGetOrCreateDestroyTask("Reload failed", task.getError());
-                      }
-
-                      return task;
-                    },
-                    mBGExecutor);
+                return newGetOrCreateReloadTask(reason).makeVoid();
               },
               mBGExecutor)
           .continueWithTask(Task::getResult);
@@ -521,22 +502,6 @@ public class ReactHostImpl implements ReactHost {
   @Nullable
   /* package */ Activity getCurrentActivity() {
     return mActivity.get();
-  }
-
-  @Nullable
-  /* package */ Activity getLastUsedActivity() {
-    @Nullable WeakReference<Activity> lastUsedActivityWeakRef = mLastUsedActivity.get();
-    if (lastUsedActivityWeakRef != null) {
-      return lastUsedActivityWeakRef.get();
-    }
-    return null;
-  }
-
-  private void setCurrentActivity(@Nullable Activity activity) {
-    mActivity.set(activity);
-    if (activity != null) {
-      mLastUsedActivity.set(new WeakReference<>(activity));
-    }
   }
 
   /**
@@ -694,20 +659,6 @@ public class ReactHostImpl implements ReactHost {
     }
   }
 
-  @Override
-  public void addBeforeDestroyListener(@NonNull Function0<Unit> onBeforeDestroy) {
-    synchronized (mBeforeDestroyListeners) {
-      mBeforeDestroyListeners.add(onBeforeDestroy);
-    }
-  }
-
-  @Override
-  public void removeBeforeDestroyListener(@NonNull Function0<Unit> onBeforeDestroy) {
-    synchronized (mBeforeDestroyListeners) {
-      mBeforeDestroyListeners.remove(onBeforeDestroy);
-    }
-  }
-
   /* package */ interface VeniceThenable<T> {
     void then(T t);
   }
@@ -716,7 +667,7 @@ public class ReactHostImpl implements ReactHost {
   private @Nullable Task<Void> mStartTask = null;
 
   private Task<Void> oldStart() {
-    final String method = "oldStart()";
+    final String method = "oldPreload()";
     return Task.call(
             () -> {
               if (mStartTask == null) {
@@ -727,7 +678,7 @@ public class ReactHostImpl implements ReactHost {
                             task -> {
                               if (task.isFaulted()) {
                                 destroy(
-                                    "oldStart() failure: " + task.getError().getMessage(),
+                                    "oldPreload() failure: " + task.getError().getMessage(),
                                     task.getError());
                                 mReactHostDelegate.handleInstanceException(task.getError());
                               }
@@ -744,7 +695,7 @@ public class ReactHostImpl implements ReactHost {
   }
 
   private Task<Void> newStart() {
-    final String method = "newStart()";
+    final String method = "newPreload()";
     return Task.call(
             () -> {
               if (mStartTask == null) {
@@ -757,7 +708,7 @@ public class ReactHostImpl implements ReactHost {
                                 mReactHostDelegate.handleInstanceException(task.getError());
                                 // Wait for destroy to finish
                                 return newGetOrCreateDestroyTask(
-                                        "newStart() failure: " + task.getError().getMessage(),
+                                        "newPreload() failure: " + task.getError().getMessage(),
                                         task.getError())
                                     .continueWithTask(destroyTask -> Task.forError(task.getError()))
                                     .makeVoid();
@@ -775,7 +726,7 @@ public class ReactHostImpl implements ReactHost {
   @ThreadConfined(UI)
   private void moveToHostDestroy(@Nullable ReactContext currentContext) {
     mReactLifecycleStateManager.moveToOnHostDestroy(currentContext);
-    setCurrentActivity(null);
+    mActivity.set(null);
   }
 
   private void raiseSoftException(String method, String message) {
@@ -958,53 +909,29 @@ public class ReactHostImpl implements ReactHost {
                         });
 
                     class Result {
-                      final ReactInstance mInstance = instance;
-                      final ReactContext mContext = reactContext;
-                      final boolean mIsReloading = mReloadTask != null;
+                      final ReactInstance mInstance;
+                      final ReactContext mContext;
+
+                      Result(ReactInstance instance, ReactContext context) {
+                        mInstance = instance;
+                        mContext = context;
+                      }
                     }
 
-                    return new Result();
+                    return new Result(instance, reactContext);
                   },
                   mBGExecutor)
               .onSuccess(
                   task -> {
-                    final ReactInstance reactInstance = task.getResult().mInstance;
-                    final ReactContext reactContext = task.getResult().mContext;
-                    final boolean isReloading = task.getResult().mIsReloading;
-                    final boolean isManagerResumed =
-                        mReactLifecycleStateManager.getLifecycleState() == LifecycleState.RESUMED;
+                    ReactInstance reactInstance = task.getResult().mInstance;
+                    ReactContext reactContext = task.getResult().mContext;
 
                     /**
-                     * ReactContext.onHostResume() should only be called when the user navigates to
-                     * the first React Native screen.
-                     *
-                     * <p>During init: The application puts the React manager in a resumed state,
-                     * when the user navigates to a React Native screen. Two types of init: (1) If
-                     * React Native init happens when the user navigates to a React Native screen,
-                     * the React manager will get resumed on init start, so
-                     * ReactContext.onHostResume() will be executed here. (2) If React Native init
-                     * happens before the user navigates to a React Native screen (i.e: React Native
-                     * is preloaded), the React manager won't be in a resumed state here. So
-                     * ReactContext.onHostResume() won't be executed here. But, when the user
-                     * navigates to their first React Native screen, the application will call
-                     * ReactHost.onHostResume(). That will call ReactContext.onHostResume().
-                     *
-                     * <p>During reloads, if the manager isn't resumed, call
-                     * ReactContext.onHostResume(). If React Native is reloading, it seems
-                     * reasonable to assume that: (1) We must have navigated to a React Native
-                     * screen in the past, or (2) We must be on a React Native screen.
+                     * Call ReactContext.onHostResume() only when already in the resumed state which
+                     * aligns with the bridge https://fburl.com/diffusion/2qhxmudv.
                      */
-                    if (isReloading && !isManagerResumed) {
-                      mReactLifecycleStateManager.moveToOnHostResume(
-                          reactContext, getCurrentActivity());
-                    } else {
-                      /**
-                       * Call ReactContext.onHostResume() only when already in the resumed state
-                       * which aligns with the bridge https://fburl.com/diffusion/2qhxmudv.
-                       */
-                      mReactLifecycleStateManager.resumeReactContextIfHostResumed(
-                          reactContext, getCurrentActivity());
-                    }
+                    mReactLifecycleStateManager.resumeReactContextIfHostResumed(
+                        reactContext, mActivity.get());
 
                     ReactInstanceEventListener[] listeners =
                         new ReactInstanceEventListener[mReactInstanceEventListeners.size()];
@@ -1083,7 +1010,7 @@ public class ReactHostImpl implements ReactHost {
                      aligns with the bridge https://fburl.com/diffusion/2qhxmudv.
                     */
                     mReactLifecycleStateManager.resumeReactContextIfHostResumed(
-                        reactContext, getCurrentActivity());
+                        reactContext, mActivity.get());
 
                     ReactInstanceEventListener[] listeners =
                         new ReactInstanceEventListener[mReactInstanceEventListeners.size()];
@@ -1189,82 +1116,8 @@ public class ReactHostImpl implements ReactHost {
     mBridgelessReactStateTracker.enterState("ReactHost{" + mId + "}." + method);
   }
 
-  private void stopAttachedSurfaces(String method, ReactInstance reactInstance) {
-    log(method, "Stopping all React Native surfaces");
-    synchronized (mAttachedSurfaces) {
-      for (ReactSurfaceImpl surface : mAttachedSurfaces) {
-        reactInstance.stopSurface(surface);
-        surface.clear();
-      }
-    }
-  }
-
-  private void startAttachedSurfaces(String method, ReactInstance reactInstance) {
-    log(method, "Restarting previously running React Native Surfaces");
-    synchronized (mAttachedSurfaces) {
-      for (ReactSurfaceImpl surface : mAttachedSurfaces) {
-        reactInstance.startSurface(surface);
-      }
-    }
-  }
-
   @ThreadConfined("ReactHost")
   private @Nullable Task<ReactInstance> mReloadTask = null;
-
-  private interface ReactInstanceTaskUnwrapper {
-    @Nullable
-    ReactInstance unwrap(Task<ReactInstance> task, String stage);
-  }
-
-  private ReactInstanceTaskUnwrapper createReactInstanceUnwraper(
-      String tag, String method, String reason) {
-
-    return (task, stage) -> {
-      final ReactInstance reactInstance = task.getResult();
-      final ReactInstance currentReactInstance = mReactInstanceTaskRef.get().getResult();
-
-      final String stageLabel = "Stage: " + stage;
-      final String reasonLabel = tag + " reason: " + reason;
-      if (task.isFaulted()) {
-        final Exception ex = task.getError();
-        final String faultLabel = "Fault reason: " + ex.getMessage();
-        raiseSoftException(
-            method,
-            tag
-                + ": ReactInstance task faulted. "
-                + stageLabel
-                + ". "
-                + faultLabel
-                + ". "
-                + reasonLabel);
-        return currentReactInstance;
-      }
-
-      if (task.isCancelled()) {
-        raiseSoftException(
-            method, tag + ": ReactInstance task cancelled. " + stageLabel + ". " + reasonLabel);
-        return currentReactInstance;
-      }
-
-      if (reactInstance == null) {
-        raiseSoftException(
-            method, tag + ": ReactInstance task returned null. " + stageLabel + ". " + reasonLabel);
-        return currentReactInstance;
-      }
-
-      if (currentReactInstance != null && reactInstance != currentReactInstance) {
-        raiseSoftException(
-            method,
-            tag
-                + ": Detected two different ReactInstances. Returning old. "
-                + stageLabel
-                + ". "
-                + reasonLabel);
-      }
-
-      return reactInstance;
-    };
-  }
 
   /**
    * The ReactInstance is loaded. Tear it down, and re-create it.
@@ -1283,18 +1136,30 @@ public class ReactHostImpl implements ReactHost {
     // TODO(T136397487): Remove after Venice is shipped to 100%
     raiseSoftException(method, reason);
 
-    ReactInstanceTaskUnwrapper reactInstanceTaskUnwrapper =
-        createReactInstanceUnwraper("Reload", method, reason);
-
     if (mReloadTask == null) {
       mReloadTask =
           mReactInstanceTaskRef
               .get()
               .continueWithTask(
                   (task) -> {
-                    log(method, "Starting React Native reload");
-                    final ReactInstance reactInstance =
-                        reactInstanceTaskUnwrapper.unwrap(task, "1: Starting reload");
+                    log(method, "Starting on UI thread");
+
+                    if (task.isFaulted()) {
+                      raiseSoftException(
+                          method,
+                          "ReactInstance task faulted. Reload reason: " + reason,
+                          task.getError());
+                    }
+
+                    if (task.isCancelled()) {
+                      raiseSoftException(
+                          method, "ReactInstance task cancelled. Reload reason: " + reason);
+                    }
+
+                    final ReactInstance reactInstance = task.getResult();
+                    if (reactInstance == null) {
+                      raiseSoftException(method, "ReactInstance is null. Reload reason: " + reason);
+                    }
 
                     final ReactContext reactContext = mBridgelessReactContextRef.getNullable();
                     if (reactContext == null) {
@@ -1308,43 +1173,29 @@ public class ReactHostImpl implements ReactHost {
                       reactContext.onHostPause();
                     }
 
-                    return Task.forResult(reactInstance);
+                    return task;
                   },
                   mUIExecutor)
               .continueWithTask(
                   task -> {
-                    final ReactInstance reactInstance =
-                        reactInstanceTaskUnwrapper.unwrap(task, "2: Surface shutdown");
+                    final ReactInstance reactInstance = task.getResult();
 
-                    if (reactInstance == null) {
-                      raiseSoftException(method, "Skipping surface shutdown: ReactInstance null");
-                      return task;
+                    log(method, "Stopping all React Native surfaces");
+                    synchronized (mAttachedSurfaces) {
+                      for (ReactSurfaceImpl surface : mAttachedSurfaces) {
+                        if (reactInstance != null) {
+                          reactInstance.stopSurface(surface);
+                        }
+
+                        surface.clear();
+                      }
                     }
 
-                    stopAttachedSurfaces(method, reactInstance);
                     return task;
                   },
                   mBGExecutor)
               .continueWithTask(
-                  (task) -> {
-                    reactInstanceTaskUnwrapper.unwrap(
-                        task, "3: Executing Before Destroy Listeners");
-
-                    Set<Function0<Unit>> beforeDestroyListeners;
-                    synchronized (mBeforeDestroyListeners) {
-                      beforeDestroyListeners = new HashSet<>(mBeforeDestroyListeners);
-                    }
-
-                    for (Function0<Unit> destroyListener : beforeDestroyListeners) {
-                      destroyListener.invoke();
-                    }
-                    return task;
-                  },
-                  mUIExecutor)
-              .continueWithTask(
                   task -> {
-                    reactInstanceTaskUnwrapper.unwrap(task, "4: Destroying ReactContext");
-
                     log(method, "Removing memory pressure listener");
                     mMemoryPressureRouter.removeMemoryPressureListener(mMemoryPressureListener);
 
@@ -1366,14 +1217,10 @@ public class ReactHostImpl implements ReactHost {
                   mUIExecutor)
               .continueWithTask(
                   task -> {
-                    final ReactInstance reactInstance =
-                        reactInstanceTaskUnwrapper.unwrap(task, "5: Destroying ReactInstance");
+                    final ReactInstance reactInstance = task.getResult();
 
-                    if (reactInstance == null) {
-                      raiseSoftException(
-                          method, "Skipping ReactInstance.destroy(): ReactInstance null");
-                    } else {
-                      log(method, "Destroying ReactInstance");
+                    log(method, "Destroying ReactInstance");
+                    if (reactInstance != null) {
                       reactInstance.destroy();
                     }
 
@@ -1390,30 +1237,27 @@ public class ReactHostImpl implements ReactHost {
                     return newGetOrCreateReactInstanceTask();
                   },
                   mBGExecutor)
-              .continueWithTask(
+              .onSuccess(
                   task -> {
-                    final ReactInstance reactInstance =
-                        reactInstanceTaskUnwrapper.unwrap(task, "7: Restarting surfaces");
+                    final ReactInstance reactInstance = task.getResult();
+                    if (reactInstance != null) {
+                      log(method, "Restarting previously running React Native Surfaces");
 
-                    if (reactInstance == null) {
-                      raiseSoftException(method, "Skipping surface restart: ReactInstance null");
-                      return task;
+                      synchronized (mAttachedSurfaces) {
+                        for (ReactSurfaceImpl surface : mAttachedSurfaces) {
+                          reactInstance.startSurface(surface);
+                        }
+                      }
                     }
-
-                    startAttachedSurfaces(method, reactInstance);
-
-                    return task;
+                    return reactInstance;
                   },
                   mBGExecutor)
               .continueWithTask(
                   task -> {
                     if (task.isFaulted()) {
-                      Exception fault = task.getError();
                       raiseSoftException(
                           method,
-                          "Error during reload. ReactInstance task faulted. Fault reason: "
-                              + fault.getMessage()
-                              + ". Reload reason: "
+                          "Failed to re-created ReactInstance. Task faulted. Reload reason: "
                               + reason,
                           task.getError());
                     }
@@ -1421,7 +1265,7 @@ public class ReactHostImpl implements ReactHost {
                     if (task.isCancelled()) {
                       raiseSoftException(
                           method,
-                          "Error during reload. ReactInstance task cancelled. Reload reason: "
+                          "Failed to re-created ReactInstance. Task cancelled. Reload reason: "
                               + reason);
                     }
 
@@ -1455,19 +1299,31 @@ public class ReactHostImpl implements ReactHost {
     // TODO(T136397487): Remove after Venice is shipped to 100%
     raiseSoftException(method, reason, ex);
 
-    ReactInstanceTaskUnwrapper reactInstanceTaskUnwrapper =
-        createReactInstanceUnwraper("Destroy", method, reason);
-
     if (mDestroyTask == null) {
       mDestroyTask =
           mReactInstanceTaskRef
               .get()
               .continueWithTask(
                   task -> {
-                    log(method, "Starting React Native destruction");
+                    log(method, "Destroying ReactInstance on UI Thread");
 
-                    final ReactInstance reactInstance =
-                        reactInstanceTaskUnwrapper.unwrap(task, "1: Starting destroy");
+                    if (task.isFaulted()) {
+                      raiseSoftException(
+                          method,
+                          "ReactInstance task faulted. Destroy reason: " + reason,
+                          task.getError());
+                    }
+
+                    if (task.isCancelled()) {
+                      raiseSoftException(
+                          method, "ReactInstance task cancelled. Destroy reason: " + reason);
+                    }
+
+                    final ReactInstance reactInstance = task.getResult();
+                    if (reactInstance == null) {
+                      raiseSoftException(
+                          method, "ReactInstance is null. Destroy reason: " + reason);
+                    }
 
                     // Step 1: Destroy DevSupportManager
                     if (mUseDevSupport) {
@@ -1486,55 +1342,7 @@ public class ReactHostImpl implements ReactHost {
                     log(method, "Move ReactHost to onHostDestroy()");
                     mReactLifecycleStateManager.moveToOnHostDestroy(reactContext);
 
-                    return Task.forResult(reactInstance);
-                  },
-                  mUIExecutor)
-              .continueWithTask(
-                  task -> {
-                    final ReactInstance reactInstance =
-                        reactInstanceTaskUnwrapper.unwrap(task, "2: Stopping surfaces");
-
-                    if (reactInstance == null) {
-                      raiseSoftException(method, "Skipping surface shutdown: ReactInstance null");
-                      return task;
-                    }
-
-                    // Step 3: Stop all React Native surfaces
-                    stopAttachedSurfaces(method, reactInstance);
-
-                    // TODO(T161461674): Should we clear mAttachedSurfaces?
-                    // Not clearing mAttachedSurfaces could lead to a memory leak.
-
-                    return task;
-                  },
-                  mBGExecutor)
-              .continueWithTask(
-                  task -> {
-                    reactInstanceTaskUnwrapper.unwrap(
-                        task, "3: Executing Before Destroy Listeners");
-
-                    Set<Function0<Unit>> beforeDestroyListeners;
-                    synchronized (mBeforeDestroyListeners) {
-                      beforeDestroyListeners = new HashSet<>(mBeforeDestroyListeners);
-                    }
-
-                    for (Function0<Unit> destroyListener : beforeDestroyListeners) {
-                      destroyListener.invoke();
-                    }
-                    return task;
-                  },
-                  mUIExecutor)
-              .continueWithTask(
-                  task -> {
-                    reactInstanceTaskUnwrapper.unwrap(task, "4: Destroying ReactContext");
-
-                    final ReactContext reactContext = mBridgelessReactContextRef.getNullable();
-
-                    if (reactContext == null) {
-                      raiseSoftException(method, "ReactContext is null. Destroy reason: " + reason);
-                    }
-
-                    // Step 4: De-register the memory pressure listener
+                    // Step 3: De-register the memory pressure listener
                     log(method, "Destroying MemoryPressureRouter");
                     mMemoryPressureRouter.destroy(mContext);
 
@@ -1544,7 +1352,7 @@ public class ReactHostImpl implements ReactHost {
                     }
 
                     // Reset current activity
-                    setCurrentActivity(null);
+                    mActivity.set(null);
 
                     // Clear ResourceIdleDrawableIdMap
                     ResourceDrawableIdHelper.getInstance().clear();
@@ -1552,15 +1360,10 @@ public class ReactHostImpl implements ReactHost {
                     return task;
                   },
                   mUIExecutor)
-              .continueWithTask(
+              .continueWith(
                   task -> {
-                    final ReactInstance reactInstance =
-                        reactInstanceTaskUnwrapper.unwrap(task, "5: Destroying ReactInstance");
-
-                    if (reactInstance == null) {
-                      raiseSoftException(
-                          method, "Skipping ReactInstance.destroy(): ReactInstance null");
-                    } else {
+                    final ReactInstance reactInstance = task.getResult();
+                    if (reactInstance != null) {
                       log(method, "Destroying ReactInstance");
                       reactInstance.destroy();
                     }
@@ -1576,30 +1379,9 @@ public class ReactHostImpl implements ReactHost {
 
                     log(method, "Resetting destroy task ref");
                     mDestroyTask = null;
-                    return task;
-                  },
-                  mBGExecutor)
-              .continueWith(
-                  task -> {
-                    if (task.isFaulted()) {
-                      Exception fault = task.getError();
-                      raiseSoftException(
-                          method,
-                          "React destruction failed. ReactInstance task faulted. Fault reason: "
-                              + fault.getMessage()
-                              + ". Destroy reason: "
-                              + reason,
-                          task.getError());
-                    }
-
-                    if (task.isCancelled()) {
-                      raiseSoftException(
-                          method,
-                          "React destruction failed. ReactInstance task cancelled. Destroy reason: "
-                              + reason);
-                    }
                     return null;
-                  });
+                  },
+                  mBGExecutor);
     }
 
     return mDestroyTask;

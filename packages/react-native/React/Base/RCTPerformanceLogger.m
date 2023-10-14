@@ -6,16 +6,12 @@
  */
 
 #import <QuartzCore/QuartzCore.h>
-#import <cxxreact/ReactMarker.h>
-#include <unordered_map>
 
 #import "RCTLog.h"
 #import "RCTPerformanceLogger.h"
 #import "RCTPerformanceLoggerLabels.h"
 #import "RCTProfile.h"
 #import "RCTRootView.h"
-
-using namespace facebook::react;
 
 @interface RCTPerformanceLogger () {
   int64_t _data[RCTPLSize][2];
@@ -26,24 +22,6 @@ using namespace facebook::react;
 
 @implementation RCTPerformanceLogger
 
-static const std::unordered_map<RCTPLTag, ReactMarker::ReactMarkerId> &getStartTagToReactMarkerIdMap()
-{
-  static std::unordered_map<RCTPLTag, ReactMarker::ReactMarkerId> StartTagToReactMarkerIdMap = {
-      {RCTPLAppStartup, ReactMarker::APP_STARTUP_START},
-      {RCTPLInitReactRuntime, ReactMarker::INIT_REACT_RUNTIME_START},
-      {RCTPLScriptExecution, ReactMarker::RUN_JS_BUNDLE_START}};
-  return StartTagToReactMarkerIdMap;
-}
-
-static const std::unordered_map<RCTPLTag, ReactMarker::ReactMarkerId> &getStopTagToReactMarkerIdMap()
-{
-  static std::unordered_map<RCTPLTag, ReactMarker::ReactMarkerId> StopTagToReactMarkerIdMap = {
-      {RCTPLAppStartup, ReactMarker::APP_STARTUP_STOP},
-      {RCTPLInitReactRuntime, ReactMarker::INIT_REACT_RUNTIME_STOP},
-      {RCTPLScriptExecution, ReactMarker::RUN_JS_BUNDLE_STOP}};
-  return StopTagToReactMarkerIdMap;
-}
-
 - (void)markStartForTag:(RCTPLTag)tag
 {
 #if RCT_PROFILE
@@ -52,15 +30,8 @@ static const std::unordered_map<RCTPLTag, ReactMarker::ReactMarkerId> &getStopTa
     _cookies[tag] = RCTProfileBeginAsyncEvent(RCTProfileTagAlways, label, nil);
   }
 #endif
-  const NSTimeInterval currentTime = CACurrentMediaTime() * 1000;
-  _data[tag][0] = currentTime;
+  _data[tag][0] = CACurrentMediaTime() * 1000;
   _data[tag][1] = 0;
-
-  // Notify RN ReactMarker when hosting platform log for markers
-  const auto &startTagToReactMarkerIdMap = getStartTagToReactMarkerIdMap();
-  if (startTagToReactMarkerIdMap.find(tag) != startTagToReactMarkerIdMap.end()) {
-    ReactMarker::logMarkerDone(startTagToReactMarkerIdMap.at(tag), currentTime);
-  }
 }
 
 - (void)markStopForTag:(RCTPLTag)tag
@@ -71,17 +42,10 @@ static const std::unordered_map<RCTPLTag, ReactMarker::ReactMarkerId> &getStopTa
     RCTProfileEndAsyncEvent(RCTProfileTagAlways, @"native", _cookies[tag], label, @"RCTPerformanceLogger");
   }
 #endif
-  const NSTimeInterval currentTime = CACurrentMediaTime() * 1000;
   if (_data[tag][0] != 0 && _data[tag][1] == 0) {
-    _data[tag][1] = currentTime;
+    _data[tag][1] = CACurrentMediaTime() * 1000;
   } else {
     RCTLogInfo(@"Unbalanced calls start/end for tag %li", (unsigned long)tag);
-  }
-
-  // Notify RN ReactMarker when hosting platform log for markers
-  const auto &stopTagToReactMarkerIdMap = getStopTagToReactMarkerIdMap();
-  if (stopTagToReactMarkerIdMap.find(tag) != stopTagToReactMarkerIdMap.end()) {
-    ReactMarker::logMarkerDone(stopTagToReactMarkerIdMap.at(tag), currentTime);
   }
 }
 

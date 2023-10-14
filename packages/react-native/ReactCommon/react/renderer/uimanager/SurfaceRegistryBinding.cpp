@@ -36,11 +36,10 @@ void SurfaceRegistryBinding::startSurface(
     folly::dynamic const &initialProps,
     DisplayMode displayMode) {
   SystraceSection s("SurfaceRegistryBinding::startSurface");
-  jsi::Object parameters(runtime);
-  parameters.setProperty(runtime, "rootTag", surfaceId);
-  parameters.setProperty(
-      runtime, "initialProps", jsi::valueFromDynamic(runtime, initialProps));
-  parameters.setProperty(runtime, "fabric", true);
+  folly::dynamic parameters = folly::dynamic::object();
+  parameters["rootTag"] = surfaceId;
+  parameters["initialProps"] = initialProps;
+  parameters["fabric"] = true;
 
   auto global = runtime.global();
   auto registry = global.getProperty(runtime, "RN$AppRegistry");
@@ -50,7 +49,7 @@ void SurfaceRegistryBinding::startSurface(
     method.call(
         runtime,
         {jsi::String::createFromUtf8(runtime, moduleName),
-         std::move(parameters),
+         jsi::valueFromDynamic(runtime, parameters),
          jsi::Value(runtime, displayModeToInt(displayMode))});
   } else {
     throwIfBridgeless(runtime, global, "startSurface");
@@ -59,7 +58,7 @@ void SurfaceRegistryBinding::startSurface(
         "AppRegistry",
         "runApplication",
         {jsi::String::createFromUtf8(runtime, moduleName),
-         std::move(parameters),
+         jsi::valueFromDynamic(runtime, parameters),
          jsi::Value(runtime, displayModeToInt(displayMode))});
   }
 }
@@ -71,11 +70,10 @@ void SurfaceRegistryBinding::setSurfaceProps(
     folly::dynamic const &initialProps,
     DisplayMode displayMode) {
   SystraceSection s("UIManagerBinding::setSurfaceProps");
-  jsi::Object parameters(runtime);
-  parameters.setProperty(runtime, "rootTag", surfaceId);
-  parameters.setProperty(
-      runtime, "initialProps", jsi::valueFromDynamic(runtime, initialProps));
-  parameters.setProperty(runtime, "fabric", true);
+  folly::dynamic parameters = folly::dynamic::object();
+  parameters["rootTag"] = surfaceId;
+  parameters["initialProps"] = initialProps;
+  parameters["fabric"] = true;
 
   auto global = runtime.global();
   auto registry = global.getProperty(runtime, "RN$AppRegistry");
@@ -85,7 +83,7 @@ void SurfaceRegistryBinding::setSurfaceProps(
     method.call(
         runtime,
         {jsi::String::createFromUtf8(runtime, moduleName),
-         std::move(parameters),
+         jsi::valueFromDynamic(runtime, parameters),
          jsi::Value(runtime, displayModeToInt(displayMode))});
   } else {
     throwIfBridgeless(runtime, global, "setSurfaceProps");
@@ -94,7 +92,7 @@ void SurfaceRegistryBinding::setSurfaceProps(
         "AppRegistry",
         "setSurfaceProps",
         {jsi::String::createFromUtf8(runtime, moduleName),
-         std::move(parameters),
+         jsi::valueFromDynamic(runtime, parameters),
          jsi::Value(runtime, displayModeToInt(displayMode))});
   }
 }

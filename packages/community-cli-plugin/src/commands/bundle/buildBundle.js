@@ -12,43 +12,20 @@
 import type {Config} from '@react-native-community/cli-types';
 import type {RequestOptions} from 'metro/src/shared/types.flow';
 import type {ConfigT} from 'metro-config';
+import type {CommandLineArgs} from './bundleCommandLineArgs';
 
 import Server from 'metro/src/Server';
-import metroBundle from 'metro/src/shared/output/bundle';
-import metroRamBundle from 'metro/src/shared/output/RamBundle';
+const outputBundle = require('metro/src/shared/output/bundle');
 import path from 'path';
 import chalk from 'chalk';
 import saveAssets from './saveAssets';
-import loadMetroConfig from '../../utils/loadMetroConfig';
+import {default as loadMetroConfig} from '../../utils/loadMetroConfig';
 import {logger} from '@react-native-community/cli-tools';
 
-export type BundleCommandArgs = {
-  assetsDest?: string,
-  assetCatalogDest?: string,
-  entryFile: string,
-  resetCache: boolean,
-  resetGlobalCache: boolean,
-  transformer?: string,
-  minify?: boolean,
-  config?: string,
-  platform: string,
-  dev: boolean,
-  bundleOutput: string,
-  bundleEncoding?: 'utf8' | 'utf16le' | 'ascii',
-  maxWorkers?: number,
-  sourcemapOutput?: string,
-  sourcemapSourcesRoot?: string,
-  sourcemapUseAbsolutePath: boolean,
-  verbose: boolean,
-  unstableTransformProfile: string,
-  indexedRamBundle?: boolean,
-};
-
 async function buildBundle(
-  _argv: Array<string>,
+  args: CommandLineArgs,
   ctx: Config,
-  args: BundleCommandArgs,
-  bundleImpl: typeof metroBundle | typeof metroRamBundle = metroBundle,
+  output: typeof outputBundle = outputBundle,
 ): Promise<void> {
   const config = await loadMetroConfig(ctx, {
     maxWorkers: args.maxWorkers,
@@ -56,13 +33,13 @@ async function buildBundle(
     config: args.config,
   });
 
-  return buildBundleWithConfig(args, config, bundleImpl);
+  return buildBundleWithConfig(args, config, output);
 }
 
 async function buildBundleWithConfig(
-  args: BundleCommandArgs,
+  args: CommandLineArgs,
   config: ConfigT,
-  bundleImpl: typeof metroBundle | typeof metroRamBundle = metroBundle,
+  output: typeof outputBundle = outputBundle,
 ): Promise<void> {
   if (config.resolver.platforms.indexOf(args.platform) === -1) {
     logger.error(
@@ -103,13 +80,11 @@ async function buildBundleWithConfig(
   const server = new Server(config);
 
   try {
-    const bundle = await bundleImpl.build(server, requestOpts);
+    const bundle = await output.build(server, requestOpts);
 
     // $FlowIgnore[class-object-subtyping]
     // $FlowIgnore[incompatible-call]
-    // $FlowIgnore[prop-missing]
-    // $FlowIgnore[incompatible-exact]
-    await bundleImpl.save(bundle, args, logger.info);
+    await output.save(bundle, args, logger.info);
 
     // Save the assets of the bundle
     const outputAssets = await server.getAssets({

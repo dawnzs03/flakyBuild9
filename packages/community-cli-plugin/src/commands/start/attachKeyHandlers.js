@@ -32,18 +32,13 @@ export default function attachKeyHandlers(
 ) {
   if (process.stdin.isTTY !== true) {
     logger.debug('Interactive mode is not supported in this environment');
-    return;
   }
 
   readline.emitKeypressEvents(process.stdin);
   // $FlowIgnore[prop-missing]
   process.stdin.setRawMode(true);
 
-  const execaOptions = {
-    env: {FORCE_COLOR: chalk.supportsColor ? 'true' : 'false'},
-  };
-
-  const onPress = async (key: string) => {
+  const onPressAsync = async (key: string) => {
     switch (key) {
       case 'r':
         messageSocket.broadcast('reload', null);
@@ -55,27 +50,19 @@ export default function attachKeyHandlers(
         break;
       case 'i':
         logger.info('Opening app on iOS...');
-        execa(
-          'npx',
-          [
-            'react-native',
-            'run-ios',
-            ...(cliConfig.project.ios?.watchModeCommandParams ?? []),
-          ],
-          execaOptions,
-        ).stdout?.pipe(process.stdout);
+        execa('npx', [
+          'react-native',
+          'run-ios',
+          ...(cliConfig.project.ios?.watchModeCommandParams ?? []),
+        ]).stdout?.pipe(process.stdout);
         break;
       case 'a':
         logger.info('Opening app on Android...');
-        execa(
-          'npx',
-          [
-            'react-native',
-            'run-android',
-            ...(cliConfig.project.android?.watchModeCommandParams ?? []),
-          ],
-          execaOptions,
-        ).stdout?.pipe(process.stdout);
+        execa('npx', [
+          'react-native',
+          'run-android',
+          ...(cliConfig.project.android?.watchModeCommandParams ?? []),
+        ]).stdout?.pipe(process.stdout);
         break;
       case CTRL_Z:
         process.emit('SIGTSTP', 'SIGTSTP');
@@ -85,7 +72,7 @@ export default function attachKeyHandlers(
     }
   };
 
-  const keyPressHandler = new KeyPressHandler(onPress);
+  const keyPressHandler = new KeyPressHandler(onPressAsync);
   const listener = keyPressHandler.createInteractionListener();
   addInteractionListener(listener);
   keyPressHandler.startInterceptingKeyStrokes();

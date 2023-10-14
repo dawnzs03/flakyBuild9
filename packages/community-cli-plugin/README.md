@@ -15,7 +15,7 @@ Start the React Native development server.
 #### Usage
 
 ```sh
-npx react-native start [options]
+react-native start [options]
 ```
 
 #### Options
@@ -45,7 +45,7 @@ Build the bundle for the provided JavaScript entry file.
 #### Usage
 
 ```sh
-npx react-native bundle --entry-file <path> [options]
+react-native bundle --entry-file <path> [options]
 ```
 
 #### Options
@@ -75,7 +75,7 @@ Build the [RAM bundle](https://reactnative.dev/docs/ram-bundles-inline-requires)
 #### Usage
 
 ```sh
-npx react-native ram-bundle --entry-file <path> [options]
+react-native ram-bundle --entry-file <path> [options]
 ```
 
 #### Options
@@ -85,7 +85,3 @@ Accepts all options supported by [`bundle`](#bundle) and the following:
 | Option | Description |
 | - | - |
 | `--indexed-ram-bundle` | Force the "Indexed RAM" bundle file format, even when building for Android. |
-
-## Contributing
-
-Changes to this package can be made locally and tested against the `rn-tester` app, per the [Contributing guide](https://reactnative.dev/contributing/overview#contributing-code). During development, this package is automatically run from source with no build step.
