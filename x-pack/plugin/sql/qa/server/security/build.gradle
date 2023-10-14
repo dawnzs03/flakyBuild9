@@ -7,7 +7,6 @@ dependencies {
   testImplementation(project(':x-pack:plugin:sql:qa:server')) {
     transitive = false
   }
-  api project(xpackModule('ql:test-fixtures'))
 }
 
 Project mainProject = project

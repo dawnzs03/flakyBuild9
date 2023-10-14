@@ -19,7 +19,6 @@ import org.elasticsearch.cluster.routing.allocation.ShardAllocationDecision;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.xcontent.ToXContentObject;
@@ -183,8 +182,7 @@ public final class ClusterAllocationExplanation implements ToXContentObject, Wri
             if (this.clusterInfo != null) {
                 builder.startObject("cluster_info");
                 {
-                    // This field might be huge, TODO add chunking support here
-                    ChunkedToXContent.wrapAsToXContent(clusterInfo).toXContent(builder, params);
+                    this.clusterInfo.toXContent(builder, params);
                 }
                 builder.endObject(); // end "cluster_info"
             }

@@ -56,13 +56,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -309,10 +309,7 @@ public class NodeSubclassTests<T extends B, B extends Node<B>> extends ESTestCas
     @ParametersFactory
     @SuppressWarnings("rawtypes")
     public static List<Object[]> nodeSubclasses() throws IOException {
-        return subclassesOf(Node.class, CLASSNAME_FILTER).stream()
-            .filter(c -> testClassFor(c) == null)
-            .map(c -> new Object[] { c })
-            .toList();
+        return subclassesOf(Node.class).stream().filter(c -> testClassFor(c) == null).map(c -> new Object[] { c }).collect(toList());
     }
 
     /**
@@ -399,12 +396,9 @@ public class NodeSubclassTests<T extends B, B extends Node<B>> extends ESTestCas
                         }
                     };
                 }
+
             }
-            Object obj = pluggableMakeParameterizedArg(toBuildClass, pt);
-            if (obj != null) {
-                return obj;
-            }
-            throw new IllegalArgumentException("Unsupported parameterized type [" + pt + "], for " + toBuildClass.getSimpleName());
+            throw new IllegalArgumentException("Unsupported parameterized type [" + pt + "]");
         }
         if (argType instanceof WildcardType wt) {
             if (wt.getLowerBounds().length > 0 || wt.getUpperBounds().length > 1) {
@@ -540,11 +534,7 @@ public class NodeSubclassTests<T extends B, B extends Node<B>> extends ESTestCas
         return makeArg(TestEnclosedAgg.class);
     }
 
-    protected Object pluggableMakeArg(Class<? extends Node<?>> toBuildClass, Class<?> argClass) throws Exception {
-        return null;
-    }
-
-    protected Object pluggableMakeParameterizedArg(Class<? extends Node<?>> toBuildClass, ParameterizedType pt) {
+    protected Object pluggableMakeArg(Class<? extends Node<?>> toBuildClass, Class<?> argClass) {
         return null;
     }
 
@@ -601,13 +591,12 @@ public class NodeSubclassTests<T extends B, B extends Node<B>> extends ESTestCas
 
     public <T extends Node<?>> T makeNode(Class<? extends T> nodeClass) throws Exception {
         if (Modifier.isAbstract(nodeClass.getModifiers())) {
-            nodeClass = randomFrom(innerSubclassesOf(nodeClass));
+            nodeClass = randomFrom(subclassesOf(nodeClass));
         }
         Class<?> testSubclassFor = testClassFor(nodeClass);
         if (testSubclassFor != null) {
             // Delegate to the test class for a node if there is one
             Method m = testSubclassFor.getMethod("random" + Strings.capitalize(nodeClass.getSimpleName()));
-            assert Modifier.isStatic(m.getModifiers()) : "Expected static method, got:" + m;
             return nodeClass.cast(m.invoke(null));
         }
         Constructor<? extends T> ctor = longestCtor(nodeClass);
@@ -621,33 +610,10 @@ public class NodeSubclassTests<T extends B, B extends Node<B>> extends ESTestCas
      */
     private static final Map<Class<?>, Set<?>> subclassCache = new HashMap<>();
 
-    private static final Predicate<String> CLASSNAME_FILTER = className -> {
-        // filter the class that are not interested
-        // (and IDE folders like eclipse)
-        if (className.startsWith("org.elasticsearch.xpack.ql") == false
-            && className.startsWith("org.elasticsearch.xpack.sql") == false
-            && className.startsWith("org.elasticsearch.xpack.eql") == false) {
-            return false;
-        }
-        return true;
-    };
-
-    protected Predicate<String> pluggableClassNameFilter() {
-        return CLASSNAME_FILTER;
-    }
-
-    private <T> Set<Class<? extends T>> innerSubclassesOf(Class<T> clazz) throws IOException {
-        return subclassesOf(clazz, pluggableClassNameFilter());
-    }
-
-    public static <T> Set<Class<? extends T>> subclassesOf(Class<T> clazz) throws IOException {
-        return subclassesOf(clazz, CLASSNAME_FILTER);
-    }
-
     /**
      * Find all subclasses of a particular class.
      */
-    public static <T> Set<Class<? extends T>> subclassesOf(Class<T> clazz, Predicate<String> classNameFilter) throws IOException {
+    public static <T> Set<Class<? extends T>> subclassesOf(Class<T> clazz) throws IOException {
         @SuppressWarnings("unchecked") // The map is built this way
         Set<Class<? extends T>> lookup = (Set<Class<? extends T>>) subclassCache.get(clazz);
         if (lookup != null) {
@@ -670,7 +636,7 @@ public class NodeSubclassTests<T extends B, B extends Node<B>> extends ESTestCas
                         String name = je.getName();
                         if (name.endsWith(".class")) {
                             String className = name.substring(0, name.length() - ".class".length()).replace("/", ".");
-                            maybeLoadClass(clazz, className, root + "!/" + name, classNameFilter, results);
+                            maybeLoadClass(clazz, className, root + "!/" + name, results);
                         }
                     }
                 }
@@ -686,7 +652,7 @@ public class NodeSubclassTests<T extends B, B extends Node<B>> extends ESTestCas
                             String className = fileName.substring(rootLength, fileName.length() - ".class".length());
                             // Go from "path" style to class style
                             className = className.replace(PathUtils.getDefaultFileSystem().getSeparator(), ".");
-                            maybeLoadClass(clazz, className, fileName, classNameFilter, results);
+                            maybeLoadClass(clazz, className, fileName, results);
                         }
                         return FileVisitResult.CONTINUE;
                     }
@@ -705,14 +671,14 @@ public class NodeSubclassTests<T extends B, B extends Node<B>> extends ESTestCas
     /**
      * Load classes from predefined packages (hack to limit the scope) and if they match the hierarchy, add them to the cache
      */
-    private static <T> void maybeLoadClass(
-        Class<T> clazz,
-        String className,
-        String location,
-        Predicate<String> classNameFilter,
-        Set<Class<? extends T>> results
-    ) throws IOException {
-        if (classNameFilter.test(className) == false) {
+    private static <T> void maybeLoadClass(Class<T> clazz, String className, String location, Set<Class<? extends T>> results)
+        throws IOException {
+
+        // filter the class that are not interested
+        // (and IDE folders like eclipse)
+        if (className.startsWith("org.elasticsearch.xpack.ql") == false
+            && className.startsWith("org.elasticsearch.xpack.sql") == false
+            && className.startsWith("org.elasticsearch.xpack.eql") == false) {
             return;
         }
 
@@ -734,7 +700,7 @@ public class NodeSubclassTests<T extends B, B extends Node<B>> extends ESTestCas
      * if there isn't such a class or it doesn't extend
      * {@link AbstractNodeTestCase}.
      */
-    protected static Class<?> testClassFor(Class<?> nodeSubclass) {
+    private static Class<?> testClassFor(Class<?> nodeSubclass) {
         String testClassName = nodeSubclass.getName() + "Tests";
         try {
             Class<?> c = Class.forName(testClassName);

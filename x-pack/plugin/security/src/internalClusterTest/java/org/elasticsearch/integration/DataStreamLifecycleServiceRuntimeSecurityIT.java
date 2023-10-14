@@ -23,6 +23,7 @@ import org.elasticsearch.cluster.metadata.Template;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.datastreams.DataStreamsPlugin;
 import org.elasticsearch.datastreams.lifecycle.DataStreamLifecycleErrorStore;
 import org.elasticsearch.datastreams.lifecycle.DataStreamLifecycleService;
@@ -114,7 +115,7 @@ public class DataStreamLifecycleServiceRuntimeSecurityIT extends SecurityIntegTe
 
     public void testRolloverAndRetentionAuthorized() throws Exception {
         String dataStreamName = randomDataStreamName();
-        prepareDataStreamAndIndex(dataStreamName, DataStreamLifecycle.newBuilder().dataRetention(0).build());
+        prepareDataStreamAndIndex(dataStreamName, new DataStreamLifecycle(TimeValue.timeValueMillis(0)));
 
         assertBusy(() -> {
             assertNoAuthzErrors();
@@ -258,7 +259,7 @@ public class DataStreamLifecycleServiceRuntimeSecurityIT extends SecurityIntegTe
                     SystemDataStreamDescriptor.Type.EXTERNAL,
                     new ComposableIndexTemplate(
                         List.of(SYSTEM_DATA_STREAM_NAME),
-                        new Template(Settings.EMPTY, null, null, DataStreamLifecycle.newBuilder().dataRetention(0).build()),
+                        new Template(Settings.EMPTY, null, null, new DataStreamLifecycle(0)),
                         null,
                         null,
                         null,

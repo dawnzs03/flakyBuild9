@@ -49,7 +49,6 @@ import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.snapshots.SnapshotShardSizeInfo;
-import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.autoscaling.capacity.AutoscalingCapacity;
 import org.elasticsearch.xpack.autoscaling.capacity.AutoscalingDeciderContext;
@@ -62,7 +61,6 @@ import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -954,7 +952,7 @@ public class ReactiveStorageDeciderService implements AutoscalingDeciderService 
             }
 
             @Override
-            public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params params) {
+            public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
                 throw new UnsupportedOperationException();
             }
         }

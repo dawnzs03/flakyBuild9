@@ -36,8 +36,8 @@ import org.elasticsearch.search.aggregations.AggregationPhase;
 import org.elasticsearch.search.internal.ContextIndexSearcher;
 import org.elasticsearch.search.internal.ScrollContext;
 import org.elasticsearch.search.internal.SearchContext;
-import org.elasticsearch.search.profile.query.CollectorResult;
-import org.elasticsearch.search.profile.query.ProfileCollectorManager;
+import org.elasticsearch.search.profile.query.InternalProfileCollector;
+import org.elasticsearch.search.profile.query.InternalProfileCollectorManager;
 import org.elasticsearch.search.rank.RankSearchContext;
 import org.elasticsearch.search.rank.RankShardContext;
 import org.elasticsearch.search.rescore.RescorePhase;
@@ -188,24 +188,20 @@ public class QueryPhase {
                 searchContext,
                 searchContext.parsedPostFilter() != null || searchContext.minimumScore() != null
             );
-            CollectorManager<? extends Collector, Void> topDocsCollectorManager = topDocsFactory.collectorManager();
-            ProfileCollectorManager<Void> topDocsProfileCollectorManager = null;
+
+            CollectorManager<Collector, Void> topDocsCollectorManager = topDocsFactory.collectorManager();
             if (searchContext.getProfilers() != null) {
-                topDocsProfileCollectorManager = new ProfileCollectorManager<>(topDocsCollectorManager, topDocsFactory.profilerName);
-                topDocsCollectorManager = topDocsProfileCollectorManager;
+                Collector topDocsCollector = topDocsCollectorManager.newCollector();
+                InternalProfileCollector profileCollector = new InternalProfileCollector(topDocsCollector, topDocsFactory.profilerName);
+                topDocsCollectorManager = new InternalProfileCollectorManager(profileCollector);
             }
 
-            CollectorManager<? extends Collector, Void> aggsCollectorManager = null;
-            ProfileCollectorManager<Void> aggsProfileCollectorManager = null;
-            if (searchContext.aggregations() != null) {
-                aggsCollectorManager = searchContext.aggregations().getAggsCollectorManager();
-                if (searchContext.getProfilers() != null) {
-                    aggsProfileCollectorManager = new ProfileCollectorManager<>(aggsCollectorManager, CollectorResult.REASON_AGGREGATION);
-                    aggsCollectorManager = aggsProfileCollectorManager;
-                }
-            }
-
+            Collector topDocsCollector = topDocsCollectorManager.newCollector();
+            Collector aggsCollector = null;
             Weight postFilterWeight = null;
+            if (searchContext.aggregations() != null) {
+                aggsCollector = searchContext.aggregations().getAggsCollectorManager().newCollector();
+            }
             if (searchContext.parsedPostFilter() != null) {
                 postFilterWeight = searcher.createWeight(
                     searcher.rewrite(searchContext.parsedPostFilter().query()),
@@ -213,26 +209,34 @@ public class QueryPhase {
                     1f
                 );
             }
-
-            QueryPhaseCollector.CollectorManager queryPhaseCollectorManager = QueryPhaseCollector.createManager(
-                topDocsCollectorManager,
+            QueryPhaseCollector queryPhaseCollector = new QueryPhaseCollector(
+                topDocsCollector,
                 postFilterWeight,
                 searchContext.terminateAfter(),
-                aggsCollectorManager,
+                aggsCollector,
                 searchContext.minimumScore()
             );
-            final CollectorManager<? extends Collector, Void> collectorManager;
+
+            SingleThreadCollectorManager collectorManager;
             if (searchContext.getProfilers() == null) {
-                collectorManager = queryPhaseCollectorManager;
+                collectorManager = new SingleThreadCollectorManager(queryPhaseCollector);
             } else {
-                ProfileCollectorManager<Void> queryPhaseProfileManager = new ProfileCollectorManager<>(
-                    queryPhaseCollectorManager,
-                    REASON_SEARCH_QUERY_PHASE,
-                    topDocsProfileCollectorManager,
-                    aggsProfileCollectorManager
-                );
-                searchContext.getProfilers().getCurrentQueryProfiler().setCollectorManager(queryPhaseProfileManager::getCollectorTree);
-                collectorManager = queryPhaseProfileManager;
+                InternalProfileCollector profileCollector;
+                if (aggsCollector == null) {
+                    profileCollector = new InternalProfileCollector(
+                        queryPhaseCollector,
+                        REASON_SEARCH_QUERY_PHASE,
+                        (InternalProfileCollector) topDocsCollector
+                    );
+                } else {
+                    profileCollector = new InternalProfileCollector(
+                        queryPhaseCollector,
+                        REASON_SEARCH_QUERY_PHASE,
+                        (InternalProfileCollector) topDocsCollector,
+                        (InternalProfileCollector) aggsCollector
+                    );
+                }
+                collectorManager = new InternalProfileCollectorManager(profileCollector);
             }
 
             final Runnable timeoutRunnable = getTimeoutCheck(searchContext);
@@ -242,7 +246,7 @@ public class QueryPhase {
 
             try {
                 searchWithCollectorManager(searchContext, searcher, query, collectorManager, timeoutRunnable != null);
-                if (queryPhaseCollectorManager.isTerminatedAfter()) {
+                if (queryPhaseCollector.isTerminatedAfter()) {
                     queryResult.terminatedEarly(true);
                 }
                 queryResult.topDocs(topDocsFactory.topDocsAndMaxScore(), topDocsFactory.sortValueFormats);
@@ -270,9 +274,14 @@ public class QueryPhase {
         SearchContext searchContext,
         ContextIndexSearcher searcher,
         Query query,
-        CollectorManager<? extends Collector, Void> collectorManager,
+        CollectorManager<Collector, Void> collectorManager,
         boolean timeoutSet
     ) throws IOException {
+        if (searchContext.getProfilers() != null) {
+            searchContext.getProfilers()
+                .getCurrentQueryProfiler()
+                .setCollectorManager(((InternalProfileCollectorManager) collectorManager)::getCollectorTree);
+        }
         QuerySearchResult queryResult = searchContext.queryResult();
         try {
             searcher.search(query, collectorManager);

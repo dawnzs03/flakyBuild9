@@ -40,7 +40,7 @@ public class RestGetDataStreamsAction extends BaseRestHandler {
         GetDataStreamAction.Request getDataStreamsRequest = new GetDataStreamAction.Request(
             Strings.splitStringByCommaToArray(request.param("name"))
         );
-        if (DataStreamLifecycle.isFeatureEnabled()) {
+        if (DataStreamLifecycle.isEnabled()) {
             getDataStreamsRequest.includeDefaults(request.paramAsBoolean("include_defaults", false));
         }
         getDataStreamsRequest.indicesOptions(IndicesOptions.fromRequest(request, getDataStreamsRequest.indicesOptions()));

@@ -109,7 +109,7 @@ public class ComposableIndexTemplateTests extends SimpleDiffableSerializationTes
     }
 
     private static DataStreamLifecycle randomLifecycle() {
-        return DataStreamLifecycle.newBuilder().dataRetention(randomMillisUpToYear9999()).build();
+        return new DataStreamLifecycle(randomMillisUpToYear9999());
     }
 
     private static CompressedXContent randomMappings(ComposableIndexTemplate.DataStreamTemplate dataStreamTemplate) {

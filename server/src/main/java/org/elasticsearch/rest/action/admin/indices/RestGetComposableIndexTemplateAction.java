@@ -51,7 +51,7 @@ public class RestGetComposableIndexTemplateAction extends BaseRestHandler {
 
         getRequest.local(request.paramAsBoolean("local", getRequest.local()));
         getRequest.masterNodeTimeout(request.paramAsTime("master_timeout", getRequest.masterNodeTimeout()));
-        if (DataStreamLifecycle.isFeatureEnabled()) {
+        if (DataStreamLifecycle.isEnabled()) {
             getRequest.includeDefaults(request.paramAsBoolean("include_defaults", false));
         }
         final boolean implicitAll = getRequest.name() == null;

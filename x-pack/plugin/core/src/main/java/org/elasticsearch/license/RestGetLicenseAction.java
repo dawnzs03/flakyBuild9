@@ -38,7 +38,7 @@ public class RestGetLicenseAction extends BaseRestHandler {
 
     private static final DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(RestGetLicenseAction.class);
 
-    public RestGetLicenseAction() {}
+    RestGetLicenseAction() {}
 
     @Override
     public List<Route> routes() {

@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.ml.inference.assignment;
 
 import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.ShardSearchFailure;
@@ -376,7 +375,6 @@ public class TrainedModelAssignmentNodeServiceTests extends ESTestCase {
             "testClusterChanged",
             ClusterState.builder(new ClusterName("testClusterChanged"))
                 .nodes(nodes)
-                .putTransportVersion(NODE_ID, TransportVersion.current())
                 .metadata(
                     Metadata.builder()
                         .putCustom(
@@ -434,7 +432,6 @@ public class TrainedModelAssignmentNodeServiceTests extends ESTestCase {
             "testClusterChanged",
             ClusterState.builder(new ClusterName("testClusterChanged"))
                 .nodes(nodes)
-                .putTransportVersion(NODE_ID, TransportVersion.current())
                 .metadata(
                     Metadata.builder()
                         .putCustom(
@@ -487,7 +484,6 @@ public class TrainedModelAssignmentNodeServiceTests extends ESTestCase {
             "testClusterChanged",
             ClusterState.builder(new ClusterName("testClusterChanged"))
                 .nodes(nodes)
-                .putTransportVersion(NODE_ID, TransportVersion.current())
                 .metadata(
                     Metadata.builder()
                         .putCustom(
@@ -528,7 +524,6 @@ public class TrainedModelAssignmentNodeServiceTests extends ESTestCase {
             "shouldUpdateAllocations",
             ClusterState.builder(new ClusterName("shouldUpdateAllocations"))
                 .nodes(nodes)
-                .putTransportVersion(NODE_ID, TransportVersion.current())
                 .metadata(
                     Metadata.builder()
                         .putCustom(

@@ -6,6 +6,7 @@
  */
 package org.elasticsearch.xpack.monitoring.test;
 
+import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.ingest.ConfigurationUtils;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
@@ -13,9 +14,7 @@ import org.elasticsearch.plugins.IngestPlugin;
 import org.elasticsearch.plugins.Plugin;
 
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Mock representation of the Ingest Common plugin for the subset of processors that are needed for the pipelines in Monitoring's exporters.
@@ -24,12 +23,17 @@ public class MockIngestPlugin extends Plugin implements IngestPlugin {
 
     @Override
     public Map<String, Processor.Factory> getProcessors(final Processor.Parameters parameters) {
-        return Stream.of(
-            new MockProcessorFactory("gsub", new String[] { "field", "pattern", "replacement" }),
-            new MockProcessorFactory("rename", new String[] { "field", "target_field" }),
-            new MockProcessorFactory("set", new String[] { "field", "value" }),
-            new MockProcessorFactory("script", new String[] { "source" })
-        ).collect(Collectors.toMap(factory -> factory.type, Function.identity()));
+        final Map<String, String[]> processorFields = MapBuilder.<String, String[]>newMapBuilder()
+            .put("gsub", new String[] { "field", "pattern", "replacement" })
+            .put("rename", new String[] { "field", "target_field" })
+            .put("set", new String[] { "field", "value" })
+            .put("script", new String[] { "source" })
+            .map();
+
+        return processorFields.entrySet()
+            .stream()
+            .map(MockProcessorFactory::new)
+            .collect(Collectors.toMap(factory -> factory.type, factory -> factory));
     }
 
     static class MockProcessorFactory implements Processor.Factory {

@@ -467,7 +467,7 @@ public class PrivilegeTests extends ESTestCase {
     }
 
     public void testDataStreamLifecyclePrivileges() {
-        assumeTrue("feature flag required", DataStreamLifecycle.isFeatureEnabled());
+        assumeTrue("feature flag required", DataStreamLifecycle.isEnabled());
         {
             Predicate<String> predicate = IndexPrivilege.MANAGE_DATA_STREAM_LIFECYCLE.predicate();
             // check indices actions

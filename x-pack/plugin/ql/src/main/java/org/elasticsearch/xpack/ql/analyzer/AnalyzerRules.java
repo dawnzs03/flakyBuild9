@@ -145,8 +145,7 @@ public final class AnalyzerRules {
         UnresolvedAttribute u,
         Collection<Attribute> attrList,
         boolean allowCompound,
-        boolean acceptPattern,
-        BiFunction<UnresolvedAttribute, Attribute, Attribute> specialFieldHandler
+        boolean acceptPattern
     ) {
         List<Attribute> matches = new ArrayList<>();
 
@@ -178,7 +177,7 @@ public final class AnalyzerRules {
         // found exact match or multiple if pattern
         if (matches.size() == 1 || isPattern) {
             // only add the location if the match is univocal; b/c otherwise adding the location will overwrite any preexisting one
-            matches.replaceAll(e -> specialFieldHandler.apply(u, e.withLocation(u.source())));
+            matches.replaceAll(e -> handleSpecialFields(u, e.withLocation(u.source()), allowCompound));
             return matches;
         }
 
@@ -204,7 +203,7 @@ public final class AnalyzerRules {
         );
     }
 
-    public static Attribute handleSpecialFields(UnresolvedAttribute u, Attribute named, boolean allowCompound) {
+    private static Attribute handleSpecialFields(UnresolvedAttribute u, Attribute named, boolean allowCompound) {
         // if it's a object/compound type, keep it unresolved with a nice error message
         if (named instanceof FieldAttribute fa) {
 

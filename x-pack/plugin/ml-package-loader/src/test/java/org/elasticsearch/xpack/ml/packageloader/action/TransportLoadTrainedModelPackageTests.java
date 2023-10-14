@@ -12,8 +12,6 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.tasks.Task;
-import org.elasticsearch.tasks.TaskManager;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.core.ml.action.AuditMlNotificationAction;
 import org.elasticsearch.xpack.core.ml.inference.trainedmodel.ModelPackageConfig;
@@ -24,7 +22,6 @@ import org.mockito.ArgumentCaptor;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.elasticsearch.core.Strings.format;
 import static org.hamcrest.core.Is.is;
@@ -38,19 +35,10 @@ public class TransportLoadTrainedModelPackageTests extends ESTestCase {
     private static final String MODEL_IMPORT_FAILURE_MSG_FORMAT = "Model importing failed due to %s [%s]";
 
     public void testSendsFinishedUploadNotification() {
-        var uploader = mock(ModelImporter.class);
-        var taskManager = mock(TaskManager.class);
-        var task = mock(Task.class);
-        var client = mock(Client.class);
+        ModelImporter uploader = mock(ModelImporter.class);
+        Client client = mock(Client.class);
 
-        TransportLoadTrainedModelPackage.importModel(
-            client,
-            taskManager,
-            createRequestWithWaiting(),
-            uploader,
-            ActionListener.noop(),
-            task
-        );
+        TransportLoadTrainedModelPackage.importModel(client, createRequest(true), uploader, ActionListener.noop());
 
         var notificationArg = ArgumentCaptor.forClass(AuditMlNotificationAction.Request.class);
         verify(client).execute(eq(AuditMlNotificationAction.INSTANCE), notificationArg.capture(), any());
@@ -92,32 +80,20 @@ public class TransportLoadTrainedModelPackageTests extends ESTestCase {
     }
 
     public void testCallsOnResponseWithAcknowledgedResponse() throws URISyntaxException, IOException {
-        var client = mock(Client.class);
-        var taskManager = mock(TaskManager.class);
-        var task = mock(Task.class);
+        Client client = mock(Client.class);
         ModelImporter uploader = createUploader(null);
 
-        var responseRef = new AtomicReference<AcknowledgedResponse>();
-        var listener = ActionListener.wrap(responseRef::set, e -> fail("received an exception: " + e.getMessage()));
+        @SuppressWarnings("unchecked")
+        var listener = (ActionListener<AcknowledgedResponse>) mock(ActionListener.class);
+        TransportLoadTrainedModelPackage.importModel(client, createRequest(true), uploader, listener);
 
-        TransportLoadTrainedModelPackage.importModel(client, taskManager, createRequestWithWaiting(), uploader, listener, task);
-        assertThat(responseRef.get(), is(AcknowledgedResponse.TRUE));
+        verify(listener).onResponse(AcknowledgedResponse.TRUE);
     }
 
     public void testDoesNotCallListenerWhenNotWaitingForCompletion() {
         var uploader = mock(ModelImporter.class);
         var client = mock(Client.class);
-        var taskManager = mock(TaskManager.class);
-        var task = mock(Task.class);
-
-        TransportLoadTrainedModelPackage.importModel(
-            client,
-            taskManager,
-            createRequestWithoutWaiting(),
-            uploader,
-            ActionListener.running(ESTestCase::fail),
-            task
-        );
+        TransportLoadTrainedModelPackage.importModel(client, createRequest(false), uploader, ActionListener.running(ESTestCase::fail));
     }
 
     private void assertUploadCallsOnFailure(Exception exception, String message, RestStatus status) throws URISyntaxException, IOException {
@@ -132,28 +108,22 @@ public class TransportLoadTrainedModelPackageTests extends ESTestCase {
 
     private void assertNotificationAndOnFailure(Exception thrownException, ElasticsearchStatusException onFailureException, String message)
         throws URISyntaxException, IOException {
-        var client = mock(Client.class);
-        var taskManager = mock(TaskManager.class);
-        var task = mock(Task.class);
+        Client client = mock(Client.class);
         ModelImporter uploader = createUploader(thrownException);
 
-        var failureRef = new AtomicReference<Exception>();
-        var listener = ActionListener.wrap(
-            (AcknowledgedResponse response) -> { fail("received a acknowledged response: " + response.toString()); },
-            failureRef::set
-        );
-        TransportLoadTrainedModelPackage.importModel(client, taskManager, createRequestWithWaiting(), uploader, listener, task);
+        @SuppressWarnings("unchecked")
+        var listener = (ActionListener<AcknowledgedResponse>) mock(ActionListener.class);
+        TransportLoadTrainedModelPackage.importModel(client, createRequest(true), uploader, listener);
 
         var notificationArg = ArgumentCaptor.forClass(AuditMlNotificationAction.Request.class);
         verify(client).execute(eq(AuditMlNotificationAction.INSTANCE), notificationArg.capture(), any());
         assertThat(notificationArg.getValue().getMessage(), is(message));
 
-        var receivedException = (ElasticsearchStatusException) failureRef.get();
-        assertThat(receivedException.toString(), is(onFailureException.toString()));
-        assertThat(receivedException.status(), is(onFailureException.status()));
-        assertThat(receivedException.getCause(), is(onFailureException.getCause()));
-
-        verify(taskManager).unregister(task);
+        var listenerArg = ArgumentCaptor.forClass(ElasticsearchStatusException.class);
+        verify(listener).onFailure(listenerArg.capture());
+        assertThat(listenerArg.getValue().toString(), is(onFailureException.toString()));
+        assertThat(listenerArg.getValue().status(), is(onFailureException.status()));
+        assertThat(listenerArg.getValue().getCause(), is(onFailureException.getCause()));
     }
 
     private ModelImporter createUploader(Exception exception) throws URISyntaxException, IOException {
@@ -165,11 +135,7 @@ public class TransportLoadTrainedModelPackageTests extends ESTestCase {
         return uploader;
     }
 
-    private LoadTrainedModelPackageAction.Request createRequestWithWaiting() {
-        return new LoadTrainedModelPackageAction.Request("id", mock(ModelPackageConfig.class), true);
-    }
-
-    private LoadTrainedModelPackageAction.Request createRequestWithoutWaiting() {
-        return new LoadTrainedModelPackageAction.Request("id", mock(ModelPackageConfig.class), false);
+    private LoadTrainedModelPackageAction.Request createRequest(boolean waitForCompletion) {
+        return new LoadTrainedModelPackageAction.Request("id", mock(ModelPackageConfig.class), waitForCompletion);
     }
 }

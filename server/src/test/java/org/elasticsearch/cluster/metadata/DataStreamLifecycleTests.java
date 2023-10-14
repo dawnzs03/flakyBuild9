@@ -87,7 +87,7 @@ public class DataStreamLifecycleTests extends AbstractXContentSerializingTestCas
                 };
             }
         }
-        return DataStreamLifecycle.newBuilder().dataRetention(retention).downsampling(downsampling).build();
+        return new DataStreamLifecycle(retention, downsampling);
     }
 
     @Override
@@ -230,7 +230,7 @@ public class DataStreamLifecycleTests extends AbstractXContentSerializingTestCas
 
     @Nullable
     public static DataStreamLifecycle randomLifecycle() {
-        return DataStreamLifecycle.newBuilder().dataRetention(randomRetention()).downsampling(randomDownsampling()).build();
+        return new DataStreamLifecycle(randomRetention(), randomDownsampling());
     }
 
     @Nullable

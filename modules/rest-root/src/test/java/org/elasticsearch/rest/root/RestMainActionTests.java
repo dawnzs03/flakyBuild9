@@ -37,12 +37,14 @@ public class RestMainActionTests extends ESTestCase {
         final String clusterUUID = randomAlphaOfLengthBetween(10, 20);
         final Version version = Version.CURRENT;
         final IndexVersion indexVersion = IndexVersion.current();
+        final TransportVersion transportVersion = TransportVersion.current();
         final Build build = Build.current();
 
         final MainResponse mainResponse = new MainResponse(
             nodeName,
             version,
-            indexVersion.luceneVersion().toString(),
+            indexVersion,
+            transportVersion,
             clusterName,
             clusterUUID,
             build
@@ -76,7 +78,8 @@ public class RestMainActionTests extends ESTestCase {
         final MainResponse mainResponse = new MainResponse(
             nodeName,
             version,
-            indexVersion.luceneVersion().toString(),
+            indexVersion,
+            transportVersion,
             clusterName,
             clusterUUID,
             build

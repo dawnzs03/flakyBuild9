@@ -13,20 +13,17 @@ import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.store.StoreStats;
-import org.elasticsearch.xcontent.ToXContent;
+import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,9 +31,6 @@ import java.util.Set;
 
 import static org.elasticsearch.cluster.routing.ShardRouting.newUnassigned;
 import static org.elasticsearch.cluster.routing.UnassignedInfo.Reason.REINITIALIZED;
-import static org.elasticsearch.common.xcontent.ChunkedToXContentHelper.endArray;
-import static org.elasticsearch.common.xcontent.ChunkedToXContentHelper.singleChunk;
-import static org.elasticsearch.common.xcontent.ChunkedToXContentHelper.startObject;
 
 /**
  * ClusterInfo is an object representing a map of nodes to {@link DiskUsage}
@@ -44,7 +38,7 @@ import static org.elasticsearch.common.xcontent.ChunkedToXContentHelper.startObj
  * <code>InternalClusterInfoService.shardIdentifierFromRouting(String)</code>
  * for the key used in the shardSizes map
  */
-public class ClusterInfo implements ChunkedToXContent, Writeable {
+public class ClusterInfo implements ToXContentFragment, Writeable {
 
     public static final ClusterInfo EMPTY = new ClusterInfo();
 
@@ -138,79 +132,66 @@ public class ClusterInfo implements ChunkedToXContent, Writeable {
         ).initialize(nodeAndShard.nodeId, null, 0L).moveToStarted(0L);
     }
 
-    @Override
-    public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params params) {
-        return Iterators.concat(startObject("nodes"), leastAvailableSpaceUsage.entrySet().stream().<ToXContent>map(c -> (builder, p) -> {
-            builder.startObject(c.getKey());
-            { // node
-                builder.field("node_name", c.getValue().getNodeName());
-                builder.startObject("least_available");
-                {
-                    c.getValue().toShortXContent(builder);
-                }
-                builder.endObject(); // end "least_available"
-                builder.startObject("most_available");
-                {
-                    DiskUsage most = this.mostAvailableSpaceUsage.get(c.getKey());
-                    if (most != null) {
-                        most.toShortXContent(builder);
+    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        builder.startObject("nodes");
+        {
+            for (Map.Entry<String, DiskUsage> c : this.leastAvailableSpaceUsage.entrySet()) {
+                builder.startObject(c.getKey());
+                { // node
+                    builder.field("node_name", c.getValue().getNodeName());
+                    builder.startObject("least_available");
+                    {
+                        c.getValue().toShortXContent(builder);
                     }
+                    builder.endObject(); // end "least_available"
+                    builder.startObject("most_available");
+                    {
+                        DiskUsage most = this.mostAvailableSpaceUsage.get(c.getKey());
+                        if (most != null) {
+                            most.toShortXContent(builder);
+                        }
+                    }
+                    builder.endObject(); // end "most_available"
                 }
-                builder.endObject(); // end "most_available"
+                builder.endObject(); // end $nodename
             }
-            builder.endObject(); // end $nodename
-            return builder;
-        }).iterator(),
-            singleChunk(
-                (builder, p) -> builder.endObject(), // end "nodes"
-                (builder, p) -> builder.startObject("shard_sizes")
-            ),
-
-            shardSizes.entrySet()
-                .stream()
-                .<ToXContent>map(
-                    c -> (builder, p) -> builder.humanReadableField(c.getKey() + "_bytes", c.getKey(), ByteSizeValue.ofBytes(c.getValue()))
-                )
-                .iterator(),
-            singleChunk(
-                (builder, p) -> builder.endObject(), // end "shard_sizes"
-                (builder, p) -> builder.startObject("shard_data_set_sizes")
-            ),
-            shardDataSetSizes.entrySet()
-                .stream()
-                .<ToXContent>map(
-                    c -> (builder, p) -> builder.humanReadableField(
-                        c.getKey() + "_bytes",
-                        c.getKey().toString(),
-                        ByteSizeValue.ofBytes(c.getValue())
-                    )
-                )
-                .iterator(),
-            singleChunk(
-                (builder, p) -> builder.endObject(), // end "shard_data_set_sizes"
-                (builder, p) -> builder.startObject("shard_paths")
-            ),
-            dataPath.entrySet()
-                .stream()
-                .<ToXContent>map(c -> (builder, p) -> builder.field(c.getKey().toString(), c.getValue()))
-                .iterator(),
-            singleChunk(
-                (builder, p) -> builder.endObject(), // end "shard_paths"
-                (builder, p) -> builder.startArray("reserved_sizes")
-            ),
-            reservedSpace.entrySet().stream().<ToXContent>map(c -> (builder, p) -> {
+        }
+        builder.endObject(); // end "nodes"
+        builder.startObject("shard_sizes");
+        {
+            for (Map.Entry<String, Long> c : this.shardSizes.entrySet()) {
+                builder.humanReadableField(c.getKey() + "_bytes", c.getKey(), ByteSizeValue.ofBytes(c.getValue()));
+            }
+        }
+        builder.endObject(); // end "shard_sizes"
+        builder.startObject("shard_data_set_sizes");
+        {
+            for (Map.Entry<ShardId, Long> c : this.shardDataSetSizes.entrySet()) {
+                builder.humanReadableField(c.getKey() + "_bytes", c.getKey().toString(), ByteSizeValue.ofBytes(c.getValue()));
+            }
+        }
+        builder.endObject(); // end "shard_data_set_sizes"
+        builder.startObject("shard_paths");
+        {
+            for (Map.Entry<NodeAndShard, String> c : this.dataPath.entrySet()) {
+                builder.field(c.getKey().toString(), c.getValue());
+            }
+        }
+        builder.endObject(); // end "shard_paths"
+        builder.startArray("reserved_sizes");
+        {
+            for (Map.Entry<NodeAndPath, ReservedSpace> c : this.reservedSpace.entrySet()) {
                 builder.startObject();
                 {
                     builder.field("node_id", c.getKey().nodeId);
                     builder.field("path", c.getKey().path);
                     c.getValue().toXContent(builder, params);
                 }
-                return builder.endObject(); // NodeAndPath
-            }).iterator(),
-
-            endArray() // end "reserved_sizes"
-
-        );
+                builder.endObject(); // NodeAndPath
+            }
+        }
+        builder.endArray(); // end "reserved_sizes"
+        return builder;
     }
 
     /**
@@ -309,11 +290,6 @@ public class ClusterInfo implements ChunkedToXContent, Writeable {
         return Strings.toString(this, true, false);
     }
 
-    // exposed for tests, computed here rather than exposing all the collections separately
-    int getChunkCount() {
-        return leastAvailableSpaceUsage.size() + shardSizes.size() + shardDataSetSizes.size() + dataPath.size() + reservedSpace.size() + 6;
-    }
-
     public record NodeAndShard(String nodeId, ShardId shardId) implements Writeable {
 
         public NodeAndShard {
@@ -382,7 +358,7 @@ public class ClusterInfo implements ChunkedToXContent, Writeable {
             return shardIds.contains(shardId);
         }
 
-        void toXContent(XContentBuilder builder, ToXContent.Params params) throws IOException {
+        void toXContent(XContentBuilder builder, Params params) throws IOException {
             builder.field("total", total);
             builder.startArray("shards");
             {

@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.ml.integration;
 
-import org.elasticsearch.TransportVersion;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.cluster.ClusterChangedEvent;
@@ -111,7 +110,6 @@ public class MlAutoUpdateServiceIT extends MlSingleNodeTestCase {
                         .masterNodeId("node_id")
                         .build()
                 )
-                .putTransportVersion("node_id", TransportVersion.current())
                 .build(),
             ClusterState.builder(new ClusterName("test")).build()
         );
