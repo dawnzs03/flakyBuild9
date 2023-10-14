@@ -202,6 +202,7 @@ final class AspectFunction implements SkyFunction {
       return AspectValue.create(
           key,
           aspect,
+          target.getLocation(),
           ConfiguredAspect.forNonapplicableTarget(),
           computeDependenciesState.transitivePackages());
     }
@@ -242,6 +243,7 @@ final class AspectFunction implements SkyFunction {
           return AspectValue.create(
               key,
               aspect,
+              target.getLocation(),
               ConfiguredAspect.forNonapplicableTarget(),
               computeDependenciesState.transitivePackages());
         }
@@ -405,7 +407,6 @@ final class AspectFunction implements SkyFunction {
               new DependencyContextProducer(
                   unloadedToolchainContextsInputs,
                   targetAndConfiguration,
-                  key.getConfigurationKey(),
                   state.transitiveState,
                   (DependencyContextProducer.ResultSink) state));
     }
@@ -692,6 +693,7 @@ final class AspectFunction implements SkyFunction {
     return AspectValue.create(
         originalKey,
         aspect,
+        originalTarget.getLocation(),
         ConfiguredAspect.forAlias(real),
         transitivePackages);
   }
@@ -800,6 +802,7 @@ final class AspectFunction implements SkyFunction {
     return AspectValue.create(
         key,
         aspect,
+        associatedTarget.getLocation(),
         configuredAspect,
         transitiveState.transitivePackages());
   }

@@ -16,6 +16,7 @@ package com.google.devtools.build.lib.analysis.producers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.devtools.build.lib.analysis.InconsistentNullConfigException;
+import com.google.devtools.build.lib.analysis.TargetAndConfiguration;
 import com.google.devtools.build.lib.analysis.TransitiveDependencyState;
 import com.google.devtools.build.lib.analysis.config.ConfigConditions;
 import com.google.devtools.build.lib.analysis.config.ConfigMatchingProvider;
@@ -27,7 +28,6 @@ import com.google.devtools.build.lib.packages.RawAttributeMapper;
 import com.google.devtools.build.lib.packages.Rule;
 import com.google.devtools.build.lib.packages.RuleClass;
 import com.google.devtools.build.lib.packages.Target;
-import com.google.devtools.build.lib.skyframe.BuildConfigurationKey;
 import com.google.devtools.build.lib.skyframe.ConfiguredTargetAndData;
 import com.google.devtools.build.lib.skyframe.ConfiguredTargetKey;
 import com.google.devtools.build.lib.skyframe.ConfiguredValueCreationException;
@@ -47,9 +47,7 @@ final class ConfigConditionsProducer
   }
 
   // -------------------- Input --------------------
-  private final Label targetLabel;
-  private final Target target;
-  private final BuildConfigurationKey buildConfigurationKey;
+  private final TargetAndConfiguration targetAndConfiguration;
   @Nullable private final PlatformInfo targetPlatformInfo;
   private final TransitiveDependencyState transitiveState;
 
@@ -68,22 +66,18 @@ final class ConfigConditionsProducer
   private DetailedExitCode mostImportantExitCode;
 
   ConfigConditionsProducer(
-      Target target,
-      Label targetLabel,
-      BuildConfigurationKey buildConfigurationKey,
+      TargetAndConfiguration targetAndConfiguration,
       @Nullable PlatformInfo targetPlatformInfo,
       TransitiveDependencyState transitiveState,
       ResultSink sink,
       StateMachine runAfter) {
-    this.targetLabel = targetLabel;
-    this.target = target;
-    this.buildConfigurationKey = buildConfigurationKey;
+    this.targetAndConfiguration = targetAndConfiguration;
     this.targetPlatformInfo = targetPlatformInfo;
     this.transitiveState = transitiveState;
     this.sink = sink;
     this.runAfter = runAfter;
 
-    this.configLabels = computeConfigLabels(target);
+    this.configLabels = computeConfigLabels(targetAndConfiguration.getTarget());
     this.prerequisites =
         configLabels == null ? null : new ConfiguredTargetAndData[configLabels.size()];
   }
@@ -104,7 +98,7 @@ final class ConfigConditionsProducer
           new ConfiguredTargetAndDataProducer(
               ConfiguredTargetKey.builder()
                   .setLabel(configLabels.get(i))
-                  .setConfigurationKey(buildConfigurationKey)
+                  .setConfiguration(targetAndConfiguration.getConfiguration())
                   .build(),
               /* transitionKeys= */ ImmutableList.of(),
               transitiveState,
@@ -153,6 +147,7 @@ final class ConfigConditionsProducer
         asConfigConditions.put(
             label, ConfigConditions.fromConfiguredTarget(prerequisite, targetPlatformInfo));
       } catch (ConfigConditions.InvalidConditionException e) {
+        var targetLabel = targetAndConfiguration.getLabel();
         String message =
             String.format(
                     "%s is not a valid select() condition for %s.\n",
@@ -160,7 +155,8 @@ final class ConfigConditionsProducer
                 + String.format(
                     "To inspect the select(), run: bazel query --output=build %s.\n", targetLabel)
                 + "For more help, see https://bazel.build/reference/be/functions#select.\n\n";
-        sink.acceptConfigConditionsError(new ConfiguredValueCreationException(target, message));
+        sink.acceptConfigConditionsError(
+            new ConfiguredValueCreationException(targetAndConfiguration, message));
         return runAfter;
       }
     }
@@ -204,7 +200,9 @@ final class ConfigConditionsProducer
           // The precise error is reported by the dependency that failed to load.
           // TODO(gregce): beautify this error: https://github.com/bazelbuild/bazel/issues/11984.
           new ConfiguredValueCreationException(
-              target, "errors encountered resolving select() keys for " + targetLabel));
+              targetAndConfiguration,
+              "errors encountered resolving select() keys for "
+                  + targetAndConfiguration.getLabel()));
     }
   }
 }

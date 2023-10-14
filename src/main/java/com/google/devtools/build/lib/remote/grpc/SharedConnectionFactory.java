@@ -75,8 +75,7 @@ public class SharedConnectionFactory implements ConnectionPool {
           connection.close();
         }
 
-        // If it still has observers, it means the subject hasn't completed. Complete it now.
-        if (connectionAsyncSubject.hasObservers()) {
+        if (!connectionAsyncSubject.hasComplete()) {
           connectionAsyncSubject.onError(new IllegalStateException("closed"));
         }
       }

@@ -13,19 +13,14 @@
 // limitations under the License.
 package com.google.devtools.build.lib.remote;
 
-import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
-import static com.google.devtools.build.lib.remote.util.DigestUtil.isOldStyleDigestFunction;
 import static com.google.devtools.build.lib.remote.util.RxFutures.toCompletable;
 import static com.google.devtools.build.lib.remote.util.RxFutures.toListenableFuture;
 import static com.google.devtools.build.lib.remote.util.RxFutures.toSingle;
 import static com.google.devtools.build.lib.remote.util.Utils.grpcAwareErrorMessage;
 
 import build.bazel.remote.execution.v2.Digest;
-import build.bazel.remote.execution.v2.DigestFunction;
 import build.bazel.remote.execution.v2.RequestMetadata;
-import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -78,8 +73,7 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
   private final RemoteCache remoteCache;
   private final String buildRequestId;
   private final String commandId;
-  private final String remoteInstanceName;
-  private final String remoteBytestreamUriPrefix;
+  private final String remoteServerInstanceName;
 
   private final AtomicBoolean shutdown = new AtomicBoolean();
   private final Scheduler scheduler;
@@ -96,8 +90,7 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
       ExtendedEventHandler reporter,
       boolean verboseFailures,
       RemoteCache remoteCache,
-      String remoteInstanceName,
-      String remoteBytestreamUriPrefix,
+      String remoteServerInstanceName,
       String buildRequestId,
       String commandId,
       XattrProvider xattrProvider,
@@ -108,8 +101,7 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
     this.remoteCache = remoteCache;
     this.buildRequestId = buildRequestId;
     this.commandId = commandId;
-    this.remoteInstanceName = remoteInstanceName;
-    this.remoteBytestreamUriPrefix = remoteBytestreamUriPrefix;
+    this.remoteServerInstanceName = remoteServerInstanceName;
     this.scheduler = Schedulers.from(executor);
     this.xattrProvider = xattrProvider;
     this.remoteBuildEventUploadMode = remoteBuildEventUploadMode;
@@ -143,7 +135,6 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
     private final boolean symlink;
     private final boolean remote;
     private final boolean omitted;
-    private final DigestFunction.Value digestFunction;
 
     PathMetadata(
         Path path,
@@ -151,15 +142,13 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
         boolean directory,
         boolean symlink,
         boolean remote,
-        boolean omitted,
-        DigestFunction.Value digestFunction) {
+        boolean omitted) {
       this.path = path;
       this.digest = digest;
       this.directory = directory;
       this.symlink = symlink;
       this.remote = remote;
       this.omitted = omitted;
-      this.digestFunction = digestFunction;
     }
 
     public Path getPath() {
@@ -185,10 +174,6 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
     public boolean isOmitted() {
       return omitted;
     }
-
-    public DigestFunction.Value getDigestFunction() {
-      return digestFunction;
-    }
   }
 
   /**
@@ -196,8 +181,6 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
    * might do I/O.
    */
   private PathMetadata readPathMetadata(Path path, LocalFile file) throws IOException {
-    DigestUtil digestUtil = new DigestUtil(xattrProvider, path.getFileSystem().getDigestFunction());
-
     if (file.type == LocalFileType.OUTPUT_DIRECTORY
         || (file.type == LocalFileType.OUTPUT && path.isDirectory())) {
       return new PathMetadata(
@@ -206,8 +189,7 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
           /* directory= */ true,
           /* symlink= */ false,
           /* remote= */ false,
-          /* omitted= */ false,
-          /* digestFunction= */ digestUtil.getDigestFunction());
+          /* omitted= */ false);
     }
     if (file.type == LocalFileType.OUTPUT_SYMLINK) {
       return new PathMetadata(
@@ -216,8 +198,7 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
           /* directory= */ false,
           /* symlink= */ true,
           /* remote= */ false,
-          /* omitted= */ false,
-          /* digestFunction= */ digestUtil.getDigestFunction());
+          /* omitted= */ false);
     }
 
     PathFragment filePathFragment = path.asFragment();
@@ -233,15 +214,10 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
       }
     }
 
+    DigestUtil digestUtil = new DigestUtil(xattrProvider, path.getFileSystem().getDigestFunction());
     Digest digest = digestUtil.compute(path);
     return new PathMetadata(
-        path,
-        digest,
-        /* directory= */ false,
-        /* symlink= */ false,
-        isRemoteFile(path),
-        omitted,
-        digestUtil.getDigestFunction());
+        path, digest, /* directory= */ false, /* symlink= */ false, isRemoteFile(path), omitted);
   }
 
   private static void processQueryResult(
@@ -259,8 +235,7 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
                 file.isDirectory(),
                 file.isSymlink(),
                 /* remote= */ true,
-                file.isOmitted(),
-                file.getDigestFunction());
+                file.isOmitted());
         knownRemotePaths.add(remotePathMetadata);
       }
     }
@@ -361,8 +336,7 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
                               // set remote to true so the PathConverter will use bytestream://
                               // scheme to convert the URI for this file
                               /* remote= */ true,
-                              path.isOmitted(),
-                              path.getDigestFunction()))
+                              path.isOmitted()))
                   .onErrorResumeNext(
                       error -> {
                         reportUploadError(error, path.getPath(), path.getDigest());
@@ -370,21 +344,6 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
                       });
             })
         .collect(Collectors.toList());
-  }
-
-  private Single<String> getRemoteServerInstanceName(RemoteCache remoteCache) {
-    if (!Strings.isNullOrEmpty(remoteBytestreamUriPrefix)) {
-      return Single.just(remoteBytestreamUriPrefix);
-    }
-
-    return toSingle(remoteCache.cacheProtocol::getAuthority, directExecutor())
-        .map(
-            a -> {
-              if (!Strings.isNullOrEmpty(remoteInstanceName)) {
-                return a + "/" + remoteInstanceName;
-              }
-              return a;
-            });
   }
 
   private Single<PathConverter> doUpload(Map<Path, LocalFile> files) {
@@ -416,22 +375,16 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
                             /* directory= */ false,
                             /* symlink= */ false,
                             /* remote= */ false,
-                            /* omitted= */ false,
-                            DigestFunction.Value.SHA256);
+                            /* omitted= */ false);
                       }
                     })
                 .collect(Collectors.toList())
                 .flatMap(paths -> queryRemoteCache(remoteCache, context, paths))
                 .flatMap(paths -> uploadLocalFiles(remoteCache, context, paths))
-                .flatMap(
+                .map(
                     paths ->
-                        getRemoteServerInstanceName(remoteCache)
-                            .map(
-                                remoteServerInstanceName ->
-                                    new PathConverterImpl(
-                                        remoteServerInstanceName,
-                                        paths,
-                                        remoteBuildEventUploadMode))),
+                        new PathConverterImpl(
+                            remoteServerInstanceName, paths, remoteBuildEventUploadMode)),
         RemoteCache::release);
   }
 
@@ -466,7 +419,7 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
   private static class PathConverterImpl implements PathConverter {
 
     private final String remoteServerInstanceName;
-    private final Map<Path, PathMetadata> pathToMetadata;
+    private final Map<Path, Digest> pathToDigest;
     private final Set<Path> skippedPaths;
     private final Set<Path> localPaths;
 
@@ -476,18 +429,18 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
         RemoteBuildEventUploadMode remoteBuildEventUploadMode) {
       Preconditions.checkNotNull(uploads);
       this.remoteServerInstanceName = remoteServerInstanceName;
-      pathToMetadata = Maps.newHashMapWithExpectedSize(uploads.size());
+      pathToDigest = Maps.newHashMapWithExpectedSize(uploads.size());
       ImmutableSet.Builder<Path> skippedPaths = ImmutableSet.builder();
       ImmutableSet.Builder<Path> localPaths = ImmutableSet.builder();
-      for (PathMetadata metadata : uploads) {
-        Path path = metadata.getPath();
-        Digest digest = metadata.getDigest();
+      for (PathMetadata pair : uploads) {
+        Path path = pair.getPath();
+        Digest digest = pair.getDigest();
         if (digest != null) {
           // Always use bytestream:// in MINIMAL mode
           if (remoteBuildEventUploadMode == RemoteBuildEventUploadMode.MINIMAL) {
-            pathToMetadata.put(path, metadata);
-          } else if (metadata.isRemote()) {
-            pathToMetadata.put(path, metadata);
+            pathToDigest.put(path, digest);
+          } else if (pair.isRemote()) {
+            pathToDigest.put(path, digest);
           } else {
             localPaths.add(path);
           }
@@ -508,8 +461,8 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
         return String.format("file://%s", path.getPathString());
       }
 
-      PathMetadata metadata = pathToMetadata.get(path);
-      if (metadata == null) {
+      Digest digest = pathToDigest.get(path);
+      if (digest == null) {
         if (skippedPaths.contains(path)) {
           return null;
         }
@@ -517,25 +470,9 @@ class ByteStreamBuildEventArtifactUploader extends AbstractReferenceCounted
         throw new IllegalStateException(
             String.format("Illegal file reference: '%s'", path.getPathString()));
       }
-
-      Digest digest = metadata.getDigest();
-      DigestFunction.Value digestFunction = metadata.getDigestFunction();
-      String out;
-      if (isOldStyleDigestFunction(digestFunction)) {
-        out =
-            String.format(
-                "bytestream://%s/blobs/%s/%d",
-                remoteServerInstanceName, digest.getHash(), digest.getSizeBytes());
-      } else {
-        out =
-            String.format(
-                "bytestream://%s/blobs/%s/%s/%d",
-                remoteServerInstanceName,
-                Ascii.toLowerCase(digestFunction.getValueDescriptor().getName()),
-                digest.getHash(),
-                digest.getSizeBytes());
-      }
-      return out;
+      return String.format(
+          "bytestream://%s/blobs/%s/%d",
+          remoteServerInstanceName, digest.getHash(), digest.getSizeBytes());
     }
   }
 }

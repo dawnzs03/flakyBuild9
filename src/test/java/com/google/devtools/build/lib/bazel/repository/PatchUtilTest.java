@@ -512,8 +512,7 @@ public final class PatchUtilTest {
     assertThat(expected)
         .hasMessageThat()
         .contains(
-            "in patch applied to /root/foo.cc: Incorrect Chunk: the chunk content doesn't match "
-                + "the target\n"
+            "Incorrect Chunk: the chunk content doesn't match the target\n"
                 + "**Original Position**: 2\n"
                 + "\n"
                 + "**Original Content**:\n"

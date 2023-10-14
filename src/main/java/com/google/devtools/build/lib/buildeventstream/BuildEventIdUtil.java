@@ -122,12 +122,6 @@ public final class BuildEventIdUtil {
     return ConfigurationId.newBuilder().setId(checksum).build();
   }
 
-  public static BuildEventId execRequestId() {
-    return BuildEventId.newBuilder()
-        .setExecRequest(BuildEventId.ExecRequestId.getDefaultInstance())
-        .build();
-  }
-
   public static BuildEventId nullConfigurationId() {
     return NULL_CONFIGURATION_ID;
   }
@@ -239,7 +233,7 @@ public final class BuildEventIdUtil {
   }
 
   public static BuildEventId testResult(
-      Label target, int run, int shard, int attempt, BuildEventId configuration) {
+      Label target, Integer run, Integer shard, Integer attempt, BuildEventId configuration) {
     BuildEventId.ConfigurationId configId = configuration.getConfiguration();
     BuildEventId.TestResultId resultId =
         BuildEventId.TestResultId.newBuilder()
@@ -253,27 +247,8 @@ public final class BuildEventIdUtil {
   }
 
   public static BuildEventId testResult(
-      Label target, int run, int shard, BuildEventId configuration) {
+      Label target, Integer run, Integer shard, BuildEventId configuration) {
     return testResult(target, run, shard, 1, configuration);
-  }
-
-  public static BuildEventId testProgressId(
-      String label,
-      BuildEventId.ConfigurationId configId,
-      int run,
-      int shard,
-      int attempt,
-      int opaqueCount) {
-    return BuildEventId.newBuilder()
-        .setTestProgress(
-            BuildEventId.TestProgressId.newBuilder()
-                .setLabel(label)
-                .setConfiguration(configId)
-                .setRun(run)
-                .setShard(shard)
-                .setAttempt(attempt)
-                .setOpaqueCount(opaqueCount))
-        .build();
   }
 
   public static BuildEventId testSummary(Label target, BuildEventId configuration) {

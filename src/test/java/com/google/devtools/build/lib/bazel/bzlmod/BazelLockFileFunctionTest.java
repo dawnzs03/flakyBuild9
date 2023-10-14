@@ -156,7 +156,6 @@ public class BazelLockFileFunctionTest extends FoundationTestCase {
                     SkyFunctions.MODULE_FILE,
                     new ModuleFileFunction(registryFactory, rootDirectory, ImmutableMap.of()))
                 .put(SkyFunctions.BAZEL_LOCK_FILE, new BazelLockFileFunction(rootDirectory))
-                .put(SkyFunctions.REPO_SPEC, new RepoSpecFunction(registryFactory))
                 .put(
                     SkyFunctions.CLIENT_ENVIRONMENT_VARIABLE,
                     new ClientEnvironmentFunction(
@@ -430,9 +429,7 @@ public class BazelLockFileFunctionTest extends FoundationTestCase {
       fail(result.getError().toString());
     }
 
-    scratch.overwriteFile(
-        rootDirectory.getRelative("MODULE.bazel.lock").getPathString(),
-        "{\"lockFileVersion\": " + BazelLockFileValue.LOCK_FILE_VERSION + "}");
+    scratch.overwriteFile(rootDirectory.getRelative("MODULE.bazel.lock").getPathString(), "{}");
 
     result = evaluator.evaluate(ImmutableList.of(BazelLockFileValue.KEY), evaluationContext);
     if (!result.hasError()) {

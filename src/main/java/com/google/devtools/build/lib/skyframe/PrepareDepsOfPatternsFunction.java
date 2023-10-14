@@ -117,7 +117,7 @@ public class PrepareDepsOfPatternsFunction implements SkyFunction {
                 ProcessPackageDirectoryException.class,
                 InconsistentFilesystemException.class);
         if (value == null) {
-          BugReport.sendNonFatalBugReport(
+          BugReport.sendBugReport(
               new IllegalStateException(
                   "SkyValue " + key + " was missing, this should never happen"));
           return null;

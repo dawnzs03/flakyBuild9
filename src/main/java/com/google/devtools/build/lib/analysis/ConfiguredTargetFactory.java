@@ -139,7 +139,7 @@ public final class ConfiguredTargetFactory {
       // ConfiguredTargetGraph, but for now, this is the minimally invasive way of providing a sane
       // error message in case a cycle is created by a visibility attribute.
       if (group != null) {
-        provider = group.get(PackageSpecificationProvider.PROVIDER);
+        provider = group.get(PackageGroupConfiguredTarget.PROVIDER);
       }
       if (provider != null) {
         result.addTransitive(provider.getPackageSpecifications());
@@ -592,22 +592,23 @@ public final class ConfiguredTargetFactory {
       return erroredConfiguredAspectWithFailures(ruleContext, analysisFailures);
     }
     if (ruleContext.hasErrors() && !allowAnalysisFailures) {
-      return erroredConfiguredAspect(ruleContext, null);
+      return erroredConfiguredAspect(ruleContext);
     }
 
-    ConfiguredAspect configuredAspect =
-        aspectFactory.create(
-            associatedTarget.getLabel(),
-            configuredTarget,
-            ruleContext,
-            aspect.getParameters(),
-            ruleClassProvider.getToolsRepository());
-    if (configuredAspect == null) {
-      return erroredConfiguredAspect(ruleContext, null);
-    } else if (configuredAspect.get(AnalysisFailureInfo.STARLARK_CONSTRUCTOR) != null) {
-      // this was created by #erroredConfiguredAspect, return early to skip validating advertised
-      // providers
-      return configuredAspect;
+    ConfiguredAspect configuredAspect;
+    try {
+      configuredAspect =
+          aspectFactory.create(
+              associatedTarget.getLabel(),
+              configuredTarget,
+              ruleContext,
+              aspect.getParameters(),
+              ruleClassProvider.getToolsRepository());
+      if (configuredAspect == null) {
+        return erroredConfiguredAspect(ruleContext);
+      }
+    } finally {
+      ruleContext.close();
     }
 
     validateAdvertisedProviders(
@@ -641,9 +642,7 @@ public final class ConfiguredTargetFactory {
    * about the failure.
    */
   @Nullable
-  public static ConfiguredAspect erroredConfiguredAspect(
-      RuleContext ruleContext,
-      @Nullable RequiredConfigFragmentsProvider requiredConfigFragmentsProvider)
+  private static ConfiguredAspect erroredConfiguredAspect(RuleContext ruleContext)
       throws ActionConflictException, InterruptedException {
     if (ruleContext.getConfiguration().allowAnalysisFailures()) {
       ImmutableList.Builder<AnalysisFailure> analysisFailures = ImmutableList.builder();
@@ -654,11 +653,6 @@ public final class ConfiguredTargetFactory {
       ConfiguredAspect.Builder builder = new ConfiguredAspect.Builder(ruleContext);
       builder.addNativeDeclaredProvider(
           AnalysisFailureInfo.forAnalysisFailures(analysisFailures.build()));
-
-      if (requiredConfigFragmentsProvider != null) {
-        builder.addProvider(requiredConfigFragmentsProvider);
-      }
-
       // Unlike erroredConfiguredTarget, we do not add a RunfilesProvider; that would result in a
       // RunfilesProvider being provided twice in the merged configured target.
 

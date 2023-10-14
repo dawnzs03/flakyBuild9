@@ -788,8 +788,10 @@ public class OptionsParser implements OptionsParsingResult {
   private void addResidueFromResult(OptionsParserImplResult result) throws OptionsParsingException {
     residue.addAll(result.getResidue());
     postDoubleDashResidue.addAll(result.postDoubleDashResidue);
-    if (!allowResidue && !residue.isEmpty()) {
-      String errorMsg = "Unrecognized arguments: " + Joiner.on(' ').join(residue);
+    if (!allowResidue && (!getSkippedArgs().isEmpty() || !residue.isEmpty())) {
+      String errorMsg =
+          "Unrecognized arguments: "
+              + Joiner.on(' ').join(Iterables.concat(getSkippedArgs(), residue));
       throw new OptionsParsingException(errorMsg);
     }
   }

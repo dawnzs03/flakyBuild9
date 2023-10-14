@@ -118,7 +118,8 @@ public class BlazeJavacMain {
     options.put("expandJarClassPaths", "false");
 
     try (ClassloaderMaskingFileManager fileManager =
-        new ClassloaderMaskingFileManager(context, getMatchingBootFileManager(arguments))) {
+        new ClassloaderMaskingFileManager(
+            context, arguments.builtinProcessors(), getMatchingBootFileManager(arguments))) {
 
       setLocations(fileManager, arguments);
 
@@ -366,12 +367,16 @@ public class BlazeJavacMain {
   @Trusted
   private static class ClassloaderMaskingFileManager extends JavacFileManager {
 
+    private final ImmutableSet<String> builtinProcessors;
     /** the BootClassPathCachingFileManager instance used for BootClassPaths only. */
     private final BootClassPathCachingFileManager bootFileManger;
 
     public ClassloaderMaskingFileManager(
-        Context context, BootClassPathCachingFileManager bootFileManager) {
+        Context context,
+        ImmutableSet<String> builtinProcessors,
+        BootClassPathCachingFileManager bootFileManager) {
       super(context, true, UTF_8);
+      this.builtinProcessors = builtinProcessors;
       this.bootFileManger = bootFileManager;
     }
 
@@ -401,7 +406,10 @@ public class BlazeJavacMain {
                   || name.startsWith("org.checkerframework.errorprone.dataflow.")
                   || name.startsWith("com.sun.source.")
                   || name.startsWith("com.sun.tools.")
-                  || name.startsWith("com.google.devtools.build.buildjar.javac.statistics.")) {
+                  || name.startsWith("com.google.devtools.build.buildjar.javac.statistics.")
+                  || name.startsWith("dagger.model.")
+                  || name.startsWith("dagger.spi.")
+                  || builtinProcessors.contains(name)) {
                 return Class.forName(name);
               }
               throw new ClassNotFoundException(name);

@@ -22,6 +22,14 @@ gen_workspace_stanza(
     ],
 )
 
+gen_workspace_stanza(
+    name = "rules_proto_stanza",
+    out = "rules_proto_stanza.txt",
+    repos = [
+        "rules_proto",
+    ],
+)
+
 filegroup(
     name = "test-deps",
     testonly = 1,
@@ -338,7 +346,10 @@ sh_test(
     name = "bazel_proto_library_test",
     size = "large",  # Downloads and compiles protobuf for *every* *test* *case*
     srcs = ["bazel_proto_library_test.sh"],
-    data = [":test-deps"],
+    data = [
+        ":rules_proto_stanza.txt",
+        ":test-deps",
+    ],
     exec_compatible_with = ["//:highcpu_machine"],
     tags = ["no_windows"],  # Doesn't work on Windows for unknown reason
 )

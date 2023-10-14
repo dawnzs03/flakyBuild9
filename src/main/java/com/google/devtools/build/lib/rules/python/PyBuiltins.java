@@ -152,8 +152,8 @@ public abstract class PyBuiltins implements StarlarkValue {
         runfiles,
         /* manifest= */ null,
         /* repoMappingManifest= */ null,
-        ruleContext.getConfiguration().getRunfileSymlinksMode(),
-        ruleContext.getConfiguration().buildRunfileLinks());
+        ruleContext.getConfiguration().buildRunfileLinks(),
+        ruleContext.getConfiguration().runfilesEnabled());
   }
 
   // TODO(rlevasseur): Remove once Starlark exposes this directly, see

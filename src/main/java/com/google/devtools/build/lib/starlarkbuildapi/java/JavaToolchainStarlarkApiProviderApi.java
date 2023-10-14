@@ -14,6 +14,7 @@
 
 package com.google.devtools.build.lib.starlarkbuildapi.java;
 
+import com.google.common.collect.ImmutableList;
 import com.google.devtools.build.docgen.annot.DocCategory;
 import com.google.devtools.build.lib.cmdline.Label;
 import com.google.devtools.build.lib.collect.nestedset.Depset;
@@ -149,18 +150,12 @@ public interface JavaToolchainStarlarkApiProviderApi extends StructApi {
             allowedTypes = {
               @ParamType(type = String.class),
             },
-            defaultValue = ""),
-        @Param(
-            name = "as_depset",
-            defaultValue = "False",
-            named = true,
-            positional = false,
-            documented = false)
+            defaultValue = "")
       },
       allowReturnNones = true,
       useStarlarkThread = true)
   @Nullable
-  Object getCompatibleJavacOptionsForStarlark(String key, boolean asDepset, StarlarkThread thread)
+  ImmutableList<String> getCompatibleJavacOptionsForStarlark(String key, StarlarkThread thread)
       throws EvalException;
 
   @Nullable

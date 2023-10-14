@@ -16,7 +16,6 @@ package com.google.devtools.build.lib.remote.common;
 
 import build.bazel.remote.execution.v2.Action;
 import build.bazel.remote.execution.v2.ActionResult;
-import build.bazel.remote.execution.v2.CacheCapabilities;
 import build.bazel.remote.execution.v2.Digest;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
@@ -32,9 +31,6 @@ import javax.annotation.Nullable;
  * <p>Implementations must be thread-safe.
  */
 public interface RemoteCacheClient extends MissingDigestsFinder {
-  CacheCapabilities getCacheCapabilities();
-
-  ListenableFuture<String> getAuthority();
 
   /**
    * A key in the remote action cache. The type wraps around a {@link Digest} of an {@link Action}.

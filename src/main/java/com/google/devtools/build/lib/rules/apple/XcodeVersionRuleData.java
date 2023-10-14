@@ -52,8 +52,6 @@ public class XcodeVersionRuleData implements TransitiveInfoProvider {
             attrMapper.get(XcodeVersionRule.VERSION_ATTR_NAME, Type.STRING));
     String iosSdkVersionString =
         attrMapper.get(XcodeVersionRule.DEFAULT_IOS_SDK_VERSION_ATTR_NAME, Type.STRING);
-    String visionosSdkVersionString =
-        attrMapper.get(XcodeVersionRule.DEFAULT_VISIONOS_SDK_VERSION_ATTR_NAME, Type.STRING);
     String watchosSdkVersionString =
         attrMapper.get(XcodeVersionRule.DEFAULT_WATCHOS_SDK_VERSION_ATTR_NAME, Type.STRING);
     String tvosSdkVersionString =
@@ -65,7 +63,6 @@ public class XcodeVersionRuleData implements TransitiveInfoProvider {
         new XcodeVersionProperties(
             xcodeVersion,
             iosSdkVersionString,
-            visionosSdkVersionString,
             watchosSdkVersionString,
             tvosSdkVersionString,
             macosxSdkVersionString);
@@ -117,9 +114,6 @@ public class XcodeVersionRuleData implements TransitiveInfoProvider {
         && xcodeVersionProperties
             .getDefaultIosSdkVersion()
             .equals(otherData.getXcodeVersionProperties().getDefaultIosSdkVersion())
-        && xcodeVersionProperties
-            .getDefaultVisionosSdkVersion()
-            .equals(otherData.getXcodeVersionProperties().getDefaultVisionosSdkVersion())
         && xcodeVersionProperties
             .getDefaultWatchosSdkVersion()
             .equals(otherData.getXcodeVersionProperties().getDefaultWatchosSdkVersion())

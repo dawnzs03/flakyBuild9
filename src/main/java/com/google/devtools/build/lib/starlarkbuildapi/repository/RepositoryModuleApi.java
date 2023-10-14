@@ -173,18 +173,6 @@ public interface RepositoryModuleApi {
                     + "re-evaluated.",
             named = true,
             positional = false),
-        @Param(
-            name = "os_dependent",
-            defaultValue = "False",
-            doc = "Indicates whether this extension is OS-dependent or not",
-            named = true,
-            positional = false),
-        @Param(
-            name = "arch_dependent",
-            defaultValue = "False",
-            doc = "Indicates whether this extension is architecture-dependent or not",
-            named = true,
-            positional = false)
       },
       useStarlarkThread = true)
   Object moduleExtension(
@@ -192,8 +180,6 @@ public interface RepositoryModuleApi {
       Dict<?, ?> tagClasses, // Dict<String, TagClassApi>
       Object doc, // <String> or Starlark.NONE
       Sequence<?> environ, // <String>
-      boolean osDependent,
-      boolean archDependent,
       StarlarkThread thread)
       throws EvalException;
 

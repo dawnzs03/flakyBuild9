@@ -109,7 +109,7 @@ public class AndroidResourceParsingActionBuilder {
               .addAapt()
               .addInput("--resources", resourceDirectories, resourceArtifacts)
               .addOutput("--output", compiledSymbols)
-              .addFlag("--useDataBindingAndroidX");
+              .maybeAddFlag("--useDataBindingAndroidX", dataContext.useDataBindingAndroidX());
 
       if (dataBindingInfoZip != null) {
         compiledBuilder

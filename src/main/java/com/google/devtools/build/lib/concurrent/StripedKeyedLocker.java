@@ -14,6 +14,7 @@
 package com.google.devtools.build.lib.concurrent;
 
 import com.google.common.util.concurrent.Striped;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -52,5 +53,10 @@ public class StripedKeyedLocker<K> implements KeyedLocker<K> {
   @Override
   public AutoUnlocker writeLock(K key) {
     return lockAndMakeAutoUnlocker(locks.get(key).writeLock(), key);
+  }
+
+  @Override
+  public AutoUnlocker readLock(K key) {
+    return lockAndMakeAutoUnlocker(locks.get(key).readLock(), key);
   }
 }

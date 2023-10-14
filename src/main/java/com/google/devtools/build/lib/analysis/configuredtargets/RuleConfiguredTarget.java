@@ -14,7 +14,6 @@
 package com.google.devtools.build.lib.analysis.configuredtargets;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.Joiner;
@@ -47,6 +46,9 @@ import com.google.devtools.build.lib.packages.OutputFile;
 import com.google.devtools.build.lib.packages.PackageSpecification.PackageGroupContents;
 import com.google.devtools.build.lib.packages.Provider;
 import com.google.devtools.build.lib.skyframe.ConfiguredTargetKey;
+import com.google.devtools.build.lib.skyframe.serialization.autocodec.AutoCodec;
+import com.google.devtools.build.lib.skyframe.serialization.autocodec.AutoCodec.Instantiator;
+import com.google.devtools.build.lib.skyframe.serialization.autocodec.AutoCodec.VisibleForSerialization;
 import com.google.devtools.build.lib.starlarkbuildapi.ActionApi;
 import com.google.devtools.build.lib.vfs.PathFragment;
 import java.util.function.Consumer;
@@ -63,6 +65,7 @@ import net.starlark.java.eval.StarlarkSemantics;
  * is an instance of this class for every analyzed rule. For more information about how analysis
  * works, see {@link com.google.devtools.build.lib.analysis.RuleConfiguredTargetFactory}.
  */
+@AutoCodec(checkClassExplicitlyAllowed = true)
 @Immutable
 public final class RuleConfiguredTarget extends AbstractConfiguredTarget {
 
@@ -80,16 +83,11 @@ public final class RuleConfiguredTarget extends AbstractConfiguredTarget {
   private final TransitiveInfoProviderMap providers;
   private final ImmutableMap<Label, ConfigMatchingProvider> configConditions;
   private final String ruleClassString;
+  private final ImmutableList<ActionAnalysisMetadata> actions;
 
-  /**
-   * Operations accessing actions, for example, executing them should be performed in the same Bazel
-   * instance that constructs the {@code RuleConfiguredTarget} instance and not on a Bazel instance
-   * that retrieves it remotely using deserialization.
-   */
-  @Nullable // Null if deserialized.
-  private final transient ImmutableList<ActionAnalysisMetadata> actions;
-
-  private RuleConfiguredTarget(
+  @Instantiator
+  @VisibleForSerialization
+  RuleConfiguredTarget(
       ActionLookupKey actionLookupKey,
       NestedSet<PackageGroupContents> visibility,
       TransitiveInfoProviderMap providers,
@@ -267,7 +265,7 @@ public final class RuleConfiguredTarget extends AbstractConfiguredTarget {
 
   /** Returns a list of actions that this configured target generated. */
   public ImmutableList<ActionAnalysisMetadata> getActions() {
-    return checkNotNull(actions, "actions are not available on deserialized instances");
+    return actions;
   }
 
   /**

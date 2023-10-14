@@ -101,7 +101,7 @@ class TargetCompletor
   @Override
   @Nullable
   public ExtendedEventHandler.Postable createFailed(
-      TargetCompletionKey skyKey,
+      ConfiguredTargetValue value,
       NestedSet<Cause> rootCauses,
       CompletionContext ctx,
       ImmutableMap<String, ArtifactsInOutputGroup> outputs,

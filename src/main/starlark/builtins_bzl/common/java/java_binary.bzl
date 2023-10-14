@@ -29,7 +29,6 @@ load(
     "collect_native_deps_dirs",
     "get_runtime_classpath_for_archive",
 )
-load(":common/cc/cc_common.bzl", "cc_common")
 
 CcLauncherInfo = _builtins.internal.cc_internal.launcher_provider
 
@@ -48,6 +47,11 @@ InternalDeployJarInfo = provider(
         "add_opens",
         "manifest_lines",
     ],
+)
+
+JavaRuntimeClasspathInfo = provider(
+    "Provider for the runtime classpath contributions of a Java binary.",
+    fields = ["runtime_classpath"],
 )
 
 def basic_java_binary(
@@ -93,9 +97,9 @@ def basic_java_binary(
           )
 
     """
-    if not ctx.attr.create_executable and (ctx.attr.launcher and cc_common.launcher_provider in ctx.attr.launcher):
+    if not ctx.attr.create_executable and ctx.attr.launcher:
         fail("launcher specified but create_executable is false")
-    if not ctx.attr.use_launcher and (ctx.attr.launcher and ctx.attr.launcher.label != semantics.LAUNCHER_FLAG_LABEL):
+    if not ctx.attr.use_launcher and ctx.attr.launcher:
         fail("launcher specified but use_launcher is false")
 
     if not ctx.attr.srcs and ctx.attr.deps:
@@ -276,7 +280,7 @@ def basic_java_binary(
         "OutputGroupInfo": OutputGroupInfo(**output_groups),
         "JavaInfo": java_binary_info,
         "InstrumentedFilesInfo": target["InstrumentedFilesInfo"],
-        "JavaRuntimeClasspathInfo": java_common.JavaRuntimeClasspathInfo(runtime_classpath = java_info.transitive_runtime_jars),
+        "JavaRuntimeClasspathInfo": JavaRuntimeClasspathInfo(runtime_classpath = java_info.transitive_runtime_jars),
         "InternalDeployJarInfo": InternalDeployJarInfo(
             java_attrs = java_attrs,
             launcher_info = struct(
@@ -298,7 +302,7 @@ def basic_java_binary(
 
 def _collect_attrs(ctx, runtime_classpath, classpath_resources):
     deploy_env_jars = depset(transitive = [
-        dep[java_common.JavaRuntimeClasspathInfo].runtime_classpath
+        dep[JavaRuntimeClasspathInfo].runtime_classpath
         for dep in ctx.attr.deploy_env
     ]) if hasattr(ctx.attr, "deploy_env") else depset()
 
@@ -510,12 +514,12 @@ BASIC_JAVA_BINARY_ATTRIBUTES = merge_attrs(
             cfg = "exec",
         ),
         "deploy_env": attr.label_list(
-            providers = [java_common.JavaRuntimeClasspathInfo],
+            allow_rules = ["java_binary"],
             allow_files = False,
         ),
         "launcher": attr.label(
             allow_files = False,
-            # TODO(b/295221112): add back CcLauncherInfo
+            providers = [CcLauncherInfo],
         ),
         "neverlink": attr.bool(),
         "javacopts": attr.string_list(),
@@ -536,7 +540,9 @@ BASIC_JAVA_BINARY_ATTRIBUTES = merge_attrs(
             allow_single_file = True,
         ),
         "_cc_toolchain": attr.label(default = "@" + cc_semantics.get_repo() + "//tools/cpp:current_cc_toolchain"),
+        "_grep_includes": cc_semantics.get_grep_includes(),
         "_java_toolchain_type": attr.label(default = semantics.JAVA_TOOLCHAIN_TYPE),
+        "_java_runtime_toolchain_type": attr.label(default = semantics.JAVA_RUNTIME_TOOLCHAIN_TYPE),
     },
 )
 
@@ -548,7 +554,6 @@ BASE_TEST_ATTRIBUTES = {
             "@" + paths.join(cc_semantics.get_platforms_root(), "os:ios"),
             "@" + paths.join(cc_semantics.get_platforms_root(), "os:macos"),
             "@" + paths.join(cc_semantics.get_platforms_root(), "os:tvos"),
-            "@" + paths.join(cc_semantics.get_platforms_root(), "os:visionos"),
             "@" + paths.join(cc_semantics.get_platforms_root(), "os:watchos"),
         ],
     ),

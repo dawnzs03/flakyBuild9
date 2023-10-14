@@ -24,7 +24,6 @@ java_test(
         "MutabilityTest.java",
         "PrinterTest.java",
         "StarlarkAnnotationsTest.java",
-        "StarlarkClassTest.java",
         "StarlarkEvaluationTest.java",
         "StarlarkFlagGuardingTest.java",
         "StarlarkListTest.java",

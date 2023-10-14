@@ -28,7 +28,6 @@ public enum ProfilerTask {
   ACTION_RELEASE("action resource release", Threshold.TEN_MILLIS),
   ACTION_UPDATE("update action information", Threshold.TEN_MILLIS),
   ACTION_COMPLETE("complete action execution"),
-  BZLMOD("bazel module processing"),
   INFO("general information"),
   CREATE_PACKAGE("package creation"),
   REMOTE_EXECUTION("remote action execution"),
@@ -95,7 +94,6 @@ public enum ProfilerTask {
   CREDENTIAL_HELPER("calling credential helper"),
   PRESSURE_STALL_IO("I/O pressure stall level"),
   PRESSURE_STALL_MEMORY("Memory pressure stall level"),
-  CONFLICT_CHECK("Conflict checking"),
   DYNAMIC_LOCK("Acquiring dynamic execution output lock", Threshold.FIFTY_MILLIS),
   UNKNOWN("Unknown event");
 

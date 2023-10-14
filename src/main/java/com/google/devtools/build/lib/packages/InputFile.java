@@ -124,14 +124,4 @@ public class InputFile extends FileTarget {
   public static String targetKind() {
     return "source file";
   }
-
-  @Override
-  public boolean isInputFile() {
-    return true;
-  }
-
-  @Override
-  public Path getInputPath() {
-    return getPath();
-  }
 }

@@ -21,6 +21,7 @@ import com.google.devtools.build.lib.packages.semantics.BuildLanguageOptions;
 import com.google.devtools.build.lib.starlarkbuildapi.core.Bootstrap;
 import com.google.devtools.build.lib.starlarkbuildapi.core.ContextAndFlagGuardedValue;
 import com.google.devtools.build.lib.starlarkbuildapi.stubs.ProviderStub;
+import net.starlark.java.eval.FlagGuardedValue;
 
 /** {@link Bootstrap} for Starlark objects related to the Python rules. */
 public class PyBootstrap implements Bootstrap {
@@ -31,7 +32,11 @@ public class PyBootstrap implements Bootstrap {
           PackageIdentifier.createUnchecked("rules_python", ""),
           PackageIdentifier.createUnchecked("", "tools/build_defs/python"));
 
-  public PyBootstrap() {}
+  private final PyStarlarkTransitionsApi pyStarlarkTransitionsApi;
+
+  public PyBootstrap(PyStarlarkTransitionsApi pyStarlarkTransitionsApi) {
+    this.pyStarlarkTransitionsApi = pyStarlarkTransitionsApi;
+  }
 
   @Override
   public void addBindingsToBuilder(ImmutableMap.Builder<String, Object> builder) {
@@ -50,6 +55,10 @@ public class PyBootstrap implements Bootstrap {
             new ProviderStub(),
             allowedRepositories));
 
+    builder.put(
+        "py_transitions",
+        FlagGuardedValue.onlyWhenExperimentalFlagIsTrue(
+            BuildLanguageOptions.EXPERIMENTAL_GOOGLE_LEGACY_API, pyStarlarkTransitionsApi));
     builder.put(
         "PyWrapCcInfo",
         ContextAndFlagGuardedValue.onlyInAllowedReposOrWhenIncompatibleFlagIsFalse(

@@ -63,7 +63,6 @@ public final class BazelAnalysisMock extends AnalysisMock {
     String androidGmavenR8Workspace = config.getPath("android_gmaven_r8").getPathString();
     String localConfigPlatformWorkspace =
         config.getPath("local_config_platform_workspace").getPathString();
-    String appleSupport = config.getPath("build_bazel_apple_support").getPathString();
 
     return ImmutableList.of(
         "# __SKIP_WORKSPACE_PREFIX__",
@@ -86,7 +85,6 @@ public final class BazelAnalysisMock extends AnalysisMock {
         "local_repository(name = 'rules_java', path = '" + rulesJavaWorkspace + "')",
         "local_repository(name = 'rules_java_builtin', path = '" + rulesJavaWorkspace + "')",
         "local_repository(name = 'android_gmaven_r8', path = '" + androidGmavenR8Workspace + "')",
-        "local_repository(name = 'build_bazel_apple_support', path = '" + appleSupport + "')",
         "register_toolchains('@rules_java//java/toolchains/runtime:all')",
         "register_toolchains('@rules_java//java/toolchains/javac:all')",
         "bind(name = 'android/sdk', actual='@bazel_tools//tools/android:sdk')",
@@ -113,8 +111,7 @@ public final class BazelAnalysisMock extends AnalysisMock {
         "local_config_xcode",
         "platforms",
         "rules_java",
-        "rules_java_builtin",
-        "build_bazel_apple_support");
+        "rules_java_builtin");
   }
 
   @Override
@@ -141,7 +138,6 @@ public final class BazelAnalysisMock extends AnalysisMock {
         "local_config_platform_workspace/WORKSPACE", "workspace(name = 'local_config_platform')");
     config.create(
         "local_config_platform_workspace/MODULE.bazel", "module(name = 'local_config_platform')");
-    config.create("build_bazel_apple_support/WORKSPACE", "workspace(name = 'apple_support')");
     config.create("embedded_tools/WORKSPACE", "workspace(name = 'bazel_tools')");
     Runfiles runfiles = Runfiles.create();
     for (String filename :
@@ -153,29 +149,6 @@ public final class BazelAnalysisMock extends AnalysisMock {
       config.create("embedded_tools/" + filename, MoreFiles.asCharSource(path, UTF_8).read());
     }
     config.create(
-        "embedded_tools/tools/jdk/launcher_flag_alias.bzl",
-        "_providers = [CcInfo, cc_common.launcher_provider]",
-        "def _impl(ctx):",
-        "    if not ctx.attr._launcher:",
-        "      return None",
-        "    launcher = ctx.attr._launcher",
-        "    providers = [ctx.attr._launcher[p] for p in _providers]",
-        "    providers.append(DefaultInfo(files = launcher[DefaultInfo].files, runfiles ="
-            + " launcher[DefaultInfo].default_runfiles))",
-        "    return providers",
-        "launcher_flag_alias = rule(",
-        "    implementation = _impl,",
-        "    attrs = {",
-        "        '_launcher': attr.label(",
-        "            default = configuration_field(",
-        "                fragment = 'java',",
-        "                name = 'launcher',",
-        "            ),",
-        "            providers = _providers,",
-        "        ),",
-        "    },",
-        ")");
-    config.create(
         "embedded_tools/tools/jdk/BUILD",
         "load(",
         "    ':java_toolchain_alias.bzl',",
@@ -183,7 +156,6 @@ public final class BazelAnalysisMock extends AnalysisMock {
         "    'java_runtime_alias',",
         "    'java_host_runtime_alias',",
         ")",
-        "load(':launcher_flag_alias.bzl', 'launcher_flag_alias')",
         "package(default_visibility=['//visibility:public'])",
         "java_toolchain(",
         "  name = 'toolchain',",
@@ -262,11 +234,7 @@ public final class BazelAnalysisMock extends AnalysisMock {
         "   toolchain_type = ':runtime_toolchain_type',",
         "   toolchain = ':jdk',",
         ")",
-        "java_plugins_flag_alias(name = 'java_plugins_flag_alias')",
-        "launcher_flag_alias(",
-        "  name = 'launcher_flag_alias',",
-        "  visibility = ['//visibility:public'],",
-        ")");
+        "java_plugins_flag_alias(name = 'java_plugins_flag_alias')");
 
     config.create(
         TestConstants.CONSTRAINTS_PATH + "/android/BUILD",

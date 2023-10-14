@@ -21,6 +21,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.devtools.build.lib.actions.ActionAnalysisMetadata;
 import com.google.devtools.build.lib.actions.Artifact;
 import com.google.devtools.build.lib.actions.ExecutionRequirements;
@@ -157,6 +158,7 @@ public final class JavaCompileActionBuilder {
   private JavaToolchainTool javaBuilder;
   private NestedSet<Artifact> toolsJars = NestedSetBuilder.emptySet(Order.NAIVE_LINK_ORDER);
   private JavaPluginData plugins = JavaPluginData.empty();
+  private ImmutableSet<String> builtinProcessorNames = ImmutableSet.of();
   private NestedSet<Artifact> extraData = NestedSetBuilder.emptySet(Order.NAIVE_LINK_ORDER);
   private Label targetLabel;
   @Nullable private String injectingRuleKind;
@@ -317,6 +319,9 @@ public final class JavaCompileActionBuilder {
     result.addExecPaths("--sourcepath", sourcePathEntries);
     result.addExecPaths("--processorpath", plugins.processorClasspath());
     result.addAll("--processors", plugins.processorClasses());
+    result.addAll(
+        "--builtin_processors",
+        Sets.intersection(plugins.processorClasses().toSet(), builtinProcessorNames));
     result.addExecPaths("--source_jars", sourceJars);
     result.addExecPaths("--sources", sourceFiles);
     if (!javacOpts.isEmpty()) {
@@ -458,6 +463,14 @@ public final class JavaCompileActionBuilder {
     checkNotNull(plugins, "plugins must not be null");
     checkState(this.plugins.isEmpty());
     this.plugins = plugins;
+    return this;
+  }
+
+  @CanIgnoreReturnValue
+  public JavaCompileActionBuilder setBuiltinProcessorNames(
+      ImmutableSet<String> builtinProcessorNames) {
+    this.builtinProcessorNames =
+        checkNotNull(builtinProcessorNames, "builtinProcessorNames must not be null");
     return this;
   }
 

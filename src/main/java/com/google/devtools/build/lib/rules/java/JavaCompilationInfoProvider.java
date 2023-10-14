@@ -30,7 +30,6 @@ import com.google.devtools.build.lib.rules.java.JavaInfo.JavaInfoInternalProvide
 import com.google.devtools.build.lib.starlarkbuildapi.java.JavaCompilationInfoProviderApi;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.starlark.java.eval.EvalException;
 import net.starlark.java.eval.Sequence;
@@ -113,13 +112,13 @@ public abstract class JavaCompilationInfoProvider
 
   /** Builder for {@link JavaCompilationInfoProvider}. */
   public static class Builder {
-    private ImmutableList<String> javacOpts = ImmutableList.of();
+    private ImmutableList<String> javacOpts;
     private NestedSet<Artifact> runtimeClasspath;
     private NestedSet<Artifact> compilationClasspath;
     private BootClassPathInfo bootClasspath = BootClassPathInfo.empty();
 
     @CanIgnoreReturnValue
-    public Builder setJavacOpts(@Nonnull ImmutableList<String> javacOpts) {
+    public Builder setJavacOpts(ImmutableList<String> javacOpts) {
       this.javacOpts = javacOpts;
       return this;
     }
@@ -152,6 +151,7 @@ public abstract class JavaCompilationInfoProvider
   }
 
   @Override
+  @Nullable
   public abstract ImmutableList<String> getJavacOpts();
 
   @Nullable

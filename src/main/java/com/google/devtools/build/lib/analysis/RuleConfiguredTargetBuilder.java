@@ -178,12 +178,9 @@ public final class RuleConfiguredTargetBuilder {
       }
     }
 
-    // Only add {@link ExtraActionProvider} if extra action listeners are applied
-    if (!ruleContext.getConfiguration().getActionListeners().isEmpty()) {
-      ExtraActionArtifactsProvider extraActionsProvider =
-          createExtraActionProvider(actionsWithoutExtraAction, ruleContext);
-      add(ExtraActionArtifactsProvider.class, extraActionsProvider);
-    }
+    ExtraActionArtifactsProvider extraActionsProvider =
+        createExtraActionProvider(actionsWithoutExtraAction, ruleContext);
+    add(ExtraActionArtifactsProvider.class, extraActionsProvider);
 
     if (!outputGroupBuilders.isEmpty()) {
       addNativeDeclaredProvider(OutputGroupInfo.fromBuilders(outputGroupBuilders));

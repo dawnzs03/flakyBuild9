@@ -13,11 +13,8 @@
 // limitations under the License.
 package com.google.devtools.build.lib.remote.http;
 
-import build.bazel.remote.execution.v2.ActionCacheUpdateCapabilities;
 import build.bazel.remote.execution.v2.ActionResult;
-import build.bazel.remote.execution.v2.CacheCapabilities;
 import build.bazel.remote.execution.v2.Digest;
-import build.bazel.remote.execution.v2.SymlinkAbsolutePathStrategy;
 import com.google.auth.Credentials;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -598,20 +595,6 @@ public final class HttpCacheClient implements RemoteCacheClient {
                         }
                       });
             });
-  }
-
-  @Override
-  public CacheCapabilities getCacheCapabilities() {
-    return CacheCapabilities.newBuilder()
-        .setActionCacheUpdateCapabilities(
-            ActionCacheUpdateCapabilities.newBuilder().setUpdateEnabled(true).build())
-        .setSymlinkAbsolutePathStrategy(SymlinkAbsolutePathStrategy.Value.ALLOWED)
-        .build();
-  }
-
-  @Override
-  public ListenableFuture<String> getAuthority() {
-    return Futures.immediateFuture("");
   }
 
   @Override

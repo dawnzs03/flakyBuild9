@@ -5986,6 +5986,13 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
   }
 
   @Test
+  public void testPassGrepIncludesToApiEvenThoughItDoesntDoAnything() throws Exception {
+    setupTestTransitiveLink(scratch, "grep_includes = ctx.executable._grep_includes");
+    ConfiguredTarget target = getConfiguredTarget("//foo:bin");
+    assertThat(target).isNotNull();
+  }
+
+  @Test
   public void testTransitiveLinkWithCompilationOutputs() throws Exception {
     setupTestTransitiveLink(scratch, "compilation_outputs=objects");
     ConfiguredTarget target = getConfiguredTarget("//foo:bin");
@@ -6359,6 +6366,14 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
       fragments = "    fragments = ['cpp'],";
     }
     scratch.overwriteFile("tools/build_defs/BUILD");
+    /*scratch.overwriteFile("tools/cpp/grep-includes");*/
+    scratch.overwriteFile("tools/cpp/grep_includes/grep-includes.sh");
+    scratch.appendFile(
+        "tools/cpp/grep_includes/BUILD",
+        "sh_binary(",
+        "    name = 'grep-includes',",
+        "    srcs = ['grep-includes.sh'],",
+        ")");
 
     String extensionDirectory = "tools/build_defs";
     if (internalApi) {
@@ -6403,6 +6418,11 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
         "      'deps': attr.label_list(),",
         "      '_cc_toolchain': attr.label(default =",
         "          configuration_field(fragment = 'cpp', name = 'cc_toolchain')),",
+        "      '_grep_includes': attr.label(",
+        "             executable = True,",
+        "             default = Label('//tools/cpp/grep_includes:grep-includes'),",
+        "             cfg = 'exec'",
+        "       ),",
         "      'additional_outputs': attr.output_list(),",
         "    },",
         fragments,
@@ -7368,6 +7388,12 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
         "cc_rule(name='foo', cc_dep=':cc_dep',",
         "        file='file.cc',",
         "        linkstamps_dep='//bazel_internal/test_rules/cc:linkstamps')");
+    scratch.appendFile(
+        "tools/cpp/grep_includes/BUILD",
+        "sh_binary(",
+        "    name = 'grep-includes',",
+        "    srcs = ['grep-includes.sh'],",
+        ")");
     List<String> calls =
         new ArrayList<>(
             Arrays.asList("linkstamp.file()", "linkstamp.hdrs()", "linking_context.linkstamps()"));
@@ -7375,7 +7401,7 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
       calls.add(
           "cc_common.register_linkstamp_compile_action(actions=ctx.actions,cc_toolchain=toolchain,"
               + " feature_configuration=feature_configuration, "
-              + " source_file=file, output_file=file,"
+              + " grep_includes=ctx.executable._grep_includes, source_file=file, output_file=file,"
               + " compilation_inputs=depset([]), inputs_for_validation=depset([]),"
               + " label_replacement='', output_replacement='')");
     }
@@ -7402,6 +7428,11 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
           "    'linkstamps_dep': attr.label(),",
           "    '_cc_toolchain': attr.label(default=Label('//b:alias')),",
           "    'file': attr.label(allow_single_file=True),",
+          "    '_grep_includes': attr.label(",
+          "          executable = True,",
+          "          default = Label('//tools/cpp/grep_includes:grep-includes'),",
+          "          cfg = 'exec'",
+          "    ),",
           "  },",
           "  fragments = ['cpp'],",
           ")");
@@ -7640,9 +7671,7 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
     AssertionError e =
         assertThrows(AssertionError.class, () -> getConfiguredTarget("//foo:custom"));
 
-    assertThat(e)
-        .hasMessageThat()
-        .contains("file '//foo:custom_rule.bzl' cannot use private @_builtins API");
+    assertThat(e).hasMessageThat().contains("private API only for use in builtins");
   }
 
   @Test
@@ -7818,7 +7847,7 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
   }
 
   @Test
-  public void testGetCompileBuildVariablesStripOptsNotAccessibleFromOutsideBuiltins()
+  public void testGetCompileBuildVariablesStripOptsNotAcessibleFromOutsideBuiltins()
       throws Exception {
     scratch.file(
         "foo/BUILD",
@@ -7848,7 +7877,7 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
   }
 
   @Test
-  public void testGetCompileBuildVariablesInputFileNotAccessibleFromOutsideBuiltins()
+  public void testGetCompileBuildVariablesInputFileNotAcessibleFromOutsideBuiltins()
       throws Exception {
     scratch.file(
         "foo/BUILD",
@@ -7878,7 +7907,7 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
   }
 
   @Test
-  public void testCreateLinkingContextFromCompilationOutputsStampNotAccessibleFromOutsideBuiltins()
+  public void testCreateLinkingContextFromCompilationOutputsStampNotAcessibleFromOutsideBuiltins()
       throws Exception {
     scratch.file(
         "foo/BUILD",
@@ -7910,7 +7939,7 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
   }
 
   @Test
-  public void testLinkUseTestOnlyFlagNotAccessibleFromOutsideBuiltins() throws Exception {
+  public void testLinkUseTestOnlyFlagNotAcessibleFromOutsideBuiltins() throws Exception {
     scratch.file(
         "foo/BUILD",
         "load(':custom_rule.bzl', 'custom_rule')",
@@ -7939,7 +7968,7 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
   }
 
   @Test
-  public void testLinkUsePdbFileNotAccessibleFromOutsideBuiltins() throws Exception {
+  public void testLinkUsePdbFileNotAcessibleFromOutsideBuiltins() throws Exception {
     scratch.file(
         "foo/BUILD",
         "load(':custom_rule.bzl', 'custom_rule')",
@@ -7968,7 +7997,7 @@ public class StarlarkCcCommonTest extends BuildViewTestCase {
   }
 
   @Test
-  public void testLinkUseWinDefFileNotAccessibleFromOutsideBuiltins() throws Exception {
+  public void testLinkUseWinDefFileNotAcessibleFromOutsideBuiltins() throws Exception {
     scratch.file(
         "foo/BUILD",
         "load(':custom_rule.bzl', 'custom_rule')",

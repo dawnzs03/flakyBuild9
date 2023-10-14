@@ -20,8 +20,6 @@ import com.google.devtools.build.lib.actions.Artifact.SpecialArtifact;
 import com.google.devtools.build.lib.actions.Artifact.TreeFileArtifact;
 import com.google.devtools.build.lib.analysis.platform.PlatformInfo;
 import javax.annotation.Nullable;
-import net.starlark.java.eval.Printer;
-import net.starlark.java.eval.StarlarkValue;
 
 /**
  * A placeholder action that, at execution time, expands into a list of {@link Action}s to be
@@ -56,7 +54,7 @@ import net.starlark.java.eval.StarlarkValue;
  *       not have artifact or artifact path prefix conflicts.
  * </ol>
  */
-public interface ActionTemplate<T extends Action> extends ActionAnalysisMetadata, StarlarkValue {
+public interface ActionTemplate<T extends Action> extends ActionAnalysisMetadata {
   /**
    * Given a set of input TreeFileArtifacts resolved at execution time, returns a list of expanded
    * actions to be executed.
@@ -109,15 +107,5 @@ public interface ActionTemplate<T extends Action> extends ActionAnalysisMetadata
   @Nullable
   default PlatformInfo getExecutionPlatform() {
     return null;
-  }
-
-  @Override
-  default void repr(Printer printer) {
-    printer.append(prettyPrint());
-  }
-
-  @Override
-  default boolean isImmutable() {
-    return true;
   }
 }

@@ -46,7 +46,6 @@ import com.google.devtools.build.lib.events.StoredEventHandler;
 import com.google.devtools.build.lib.exec.ExecutionOptions;
 import com.google.devtools.build.lib.profiler.MemoryProfiler;
 import com.google.devtools.build.lib.profiler.Profiler;
-import com.google.devtools.build.lib.profiler.ProfilerTask;
 import com.google.devtools.build.lib.profiler.SilentCloseable;
 import com.google.devtools.build.lib.runtime.proto.InvocationPolicyOuterClass.InvocationPolicy;
 import com.google.devtools.build.lib.server.FailureDetails;
@@ -155,6 +154,8 @@ public class BlazeCommandDispatcher implements CommandDispatcher {
       Optional<List<Pair<String, String>>> startupOptionsTaggedWithBazelRc,
       List<Any> commandExtensions)
       throws InterruptedException {
+    OriginalUnstructuredCommandLineEvent originalCommandLine =
+        new OriginalUnstructuredCommandLineEvent(args);
     Preconditions.checkNotNull(clientDescription);
     if (args.isEmpty()) { // Default to help command if no arguments specified.
       args = HELP_COMMAND;
@@ -242,6 +243,7 @@ public class BlazeCommandDispatcher implements CommandDispatcher {
         try {
           result =
               execExclusively(
+                  originalCommandLine,
                   invocationPolicy,
                   args,
                   outErr,
@@ -297,6 +299,7 @@ public class BlazeCommandDispatcher implements CommandDispatcher {
   }
 
   private BlazeCommandResult execExclusively(
+      OriginalUnstructuredCommandLineEvent unstructuredServerCommandLineEvent,
       InvocationPolicy invocationPolicy,
       List<String> args,
       OutErr outErr,
@@ -586,8 +589,7 @@ public class BlazeCommandDispatcher implements CommandDispatcher {
         // Compute the repo mapping of the main repo and re-parse options so that we get correct
         // values for label-typed options.
         env.getEventBus().post(new MainRepoMappingComputationStartingEvent());
-        try (SilentCloseable c =
-            Profiler.instance().profile(ProfilerTask.BZLMOD, "compute main repo mapping")) {
+        try {
           RepositoryMapping mainRepoMapping =
               env.getSkyframeExecutor().getMainRepoMapping(reporter);
           optionsParser = optionsParser.toBuilder().withConversionContext(mainRepoMapping).build();
@@ -608,14 +610,10 @@ public class BlazeCommandDispatcher implements CommandDispatcher {
           result = BlazeCommandResult.detailedExitCode(earlyExitCode);
           return result;
         }
-        try (SilentCloseable c =
-            Profiler.instance()
-                .profile(ProfilerTask.BZLMOD, "reparse options with main repo mapping")) {
-          optionHandler =
-              new BlazeOptionHandler(
-                  runtime, workspace, command, commandAnnotation, optionsParser, invocationPolicy);
-          earlyExitCode = optionHandler.parseOptions(args, reporter);
-        }
+        optionHandler =
+            new BlazeOptionHandler(
+                runtime, workspace, command, commandAnnotation, optionsParser, invocationPolicy);
+        earlyExitCode = optionHandler.parseOptions(args, reporter);
         if (!earlyExitCode.isSuccess()) {
           reporter.post(
               new NoBuildEvent(
@@ -626,10 +624,7 @@ public class BlazeCommandDispatcher implements CommandDispatcher {
       }
 
       // Parse starlark options.
-      try (SilentCloseable c =
-          Profiler.instance().profile(ProfilerTask.BZLMOD, "parse starlark options")) {
-        earlyExitCode = optionHandler.parseStarlarkOptions(env);
-      }
+      earlyExitCode = optionHandler.parseStarlarkOptions(env);
       if (!earlyExitCode.isSuccess()) {
         reporter.post(
             new NoBuildEvent(
@@ -646,15 +641,6 @@ public class BlazeCommandDispatcher implements CommandDispatcher {
               runtime, commandName, options, startupOptionsTaggedWithBazelRc);
       CommandLineEvent canonicalCommandLineEvent =
           new CommandLineEvent.CanonicalCommandLineEvent(runtime, commandName, options);
-      BuildEventProtocolOptions bepOptions =
-          env.getOptions().getOptions(BuildEventProtocolOptions.class);
-      OriginalUnstructuredCommandLineEvent unstructuredServerCommandLineEvent;
-      if (commandName.equals("run") && !bepOptions.includeResidueInRunBepEvent) {
-        unstructuredServerCommandLineEvent =
-            OriginalUnstructuredCommandLineEvent.REDACTED_UNSTRUCTURED_COMMAND_LINE_EVENT;
-      } else {
-        unstructuredServerCommandLineEvent = new OriginalUnstructuredCommandLineEvent(args);
-      }
       env.getEventBus().post(unstructuredServerCommandLineEvent);
       env.getEventBus().post(originalCommandLineEvent);
       env.getEventBus().post(canonicalCommandLineEvent);

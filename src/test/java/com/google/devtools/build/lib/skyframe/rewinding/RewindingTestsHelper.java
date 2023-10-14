@@ -236,7 +236,7 @@ public class RewindingTestsHelper {
         NotifyingHelper.MarkDirtyAfterContext markDirtyAfterContext =
             (NotifyingHelper.MarkDirtyAfterContext) context;
         checkState(
-            markDirtyAfterContext.dirtyType().equals(DirtyType.REWIND),
+            markDirtyAfterContext.dirtyType().equals(DirtyType.FORCE_REBUILD),
             "Unexpected DirtyType %s for key %s",
             context,
             key);
@@ -374,7 +374,7 @@ public class RewindingTestsHelper {
                   .getSkyframeExecutor()
                   .getEvaluator()
                   .getExistingEntryAtCurrentlyEvaluatingVersion(key)
-                  .markDirty(DirtyType.REWIND);
+                  .markDirty(DirtyType.FORCE_REBUILD);
             } catch (InterruptedException e) {
               throw new IllegalStateException(e);
             }
@@ -1234,7 +1234,7 @@ public class RewindingTestsHelper {
             NotifyingHelper.MarkDirtyAfterContext markDirtyAfterContext =
                 (NotifyingHelper.MarkDirtyAfterContext) context;
             checkState(
-                markDirtyAfterContext.dirtyType().equals(DirtyType.REWIND),
+                markDirtyAfterContext.dirtyType().equals(DirtyType.FORCE_REBUILD),
                 "Unexpected DirtyType %s for key %s",
                 context,
                 key);
@@ -2450,6 +2450,6 @@ public class RewindingTestsHelper {
   }
 
   final boolean buildRunfileManifests() {
-    return testCase.getRuntimeWrapper().getOptions(CoreOptions.class).buildRunfileManifests;
+    return testCase.getRuntimeWrapper().getOptions(CoreOptions.class).buildRunfilesManifests;
   }
 }

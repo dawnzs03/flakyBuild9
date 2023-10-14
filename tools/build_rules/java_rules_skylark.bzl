@@ -21,15 +21,6 @@ ready.
 
 _JarsInfo = provider(fields = ["compile_time_jars", "runtime_jars"])
 
-def _join_paths(separator, files):
-    """Joins the paths of the files separated by the given separator.
-
-    Args:
-      separator: string to separate the files paths
-      files: list of files to join their paths
-    """
-    return separator.join([f.path for f in files])
-
 def _java_library_impl(ctx):
     javac_options = ctx.fragments.java.default_javac_flags
     class_jar = ctx.outputs.class_jar
@@ -57,7 +48,7 @@ def _java_library_impl(ctx):
     sources_param_file = ctx.actions.declare_file(class_jar.basename + "-2.params")
     ctx.actions.write(
         output = sources_param_file,
-        content = _join_paths("\n", sources),
+        content = cmd_helper.join_paths("\n", depset(sources)),
         is_executable = False,
     )
 
@@ -78,7 +69,7 @@ def _java_library_impl(ctx):
         cmd += "%s/bin/javac" % java_runtime.java_home
         cmd += " " + " ".join(javac_options)
         if compile_time_jars:
-            cmd += " -classpath '" + _join_paths(ctx.configuration.host_path_separator, compile_time_jars_list) + "'"
+            cmd += " -classpath '" + cmd_helper.join_paths(ctx.configuration.host_path_separator, compile_time_jars) + "'"
         cmd += " -d " + build_output + files + "\n"
 
     # We haven't got a good story for where these should end up, so

@@ -152,6 +152,10 @@ class ZipFileBuilder {
       maskSize = false;
     }
 
+    public void setMaskSize(boolean ignore) {
+      maskSize = ignore;
+    }
+
     long compressedSize() {
       return method != 0 && !maskSize ? data.length : 0;
     }

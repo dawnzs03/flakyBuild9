@@ -14,8 +14,6 @@
 
 package com.google.devtools.build.lib.rules.objc;
 
-import static com.google.devtools.build.lib.packages.semantics.BuildLanguageOptions.INCOMPATIBLE_OBJC_PROVIDER_REMOVE_LINKING_INFO;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -24,6 +22,7 @@ import com.google.devtools.build.lib.actions.Artifact;
 import com.google.devtools.build.lib.analysis.RuleContext;
 import com.google.devtools.build.lib.analysis.TransitiveInfoCollection;
 import com.google.devtools.build.lib.analysis.config.BuildConfigurationValue;
+import com.google.devtools.build.lib.analysis.config.transitions.StarlarkExposedRuleTransitionFactory;
 import com.google.devtools.build.lib.analysis.platform.ConstraintValueInfo;
 import com.google.devtools.build.lib.analysis.starlark.StarlarkRuleContext;
 import com.google.devtools.build.lib.collect.nestedset.Depset;
@@ -45,6 +44,7 @@ import com.google.devtools.build.lib.rules.cpp.CcModule;
 import com.google.devtools.build.lib.rules.cpp.CppSemantics;
 import com.google.devtools.build.lib.rules.cpp.UserVariablesExtension;
 import com.google.devtools.build.lib.rules.objc.ObjcProvider.Flag;
+import com.google.devtools.build.lib.starlarkbuildapi.SplitTransitionProviderApi;
 import com.google.devtools.build.lib.starlarkbuildapi.objc.AppleCommonApi;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -70,6 +70,11 @@ public class AppleStarlarkCommon
         XcodeConfigInfo,
         ApplePlatform> {
 
+  @Override
+  public StarlarkExposedRuleTransitionFactory getAppleCrosstoolTransition() {
+    return new AppleCrosstoolTransition.AppleCrosstoolTransitionFactory();
+  }
+
   @VisibleForTesting
   public static final String DEPRECATED_KEY_ERROR =
       "Key '%s' no longer supported in ObjcProvider (use CcInfo instead).";
@@ -89,12 +94,6 @@ public class AppleStarlarkCommon
 
   @VisibleForTesting
   public static final String NOT_SET_ERROR = "Value for key %s must be a set, instead found %s.";
-
-  @VisibleForTesting
-  public static final String DEPRECATED_OBJC_PROVIDER_ERROR = "Key 'objc' no longer needed in %s.";
-
-  @VisibleForTesting
-  public static final String REQUIRED_CC_INFO_ERROR = "Key 'cc_info' is required in %s.";
 
   @Nullable private StructImpl platformType;
   @Nullable private StructImpl platform;
@@ -171,26 +170,22 @@ public class AppleStarlarkCommon
   }
 
   @Override
+  public SplitTransitionProviderApi getMultiArchSplitProvider() {
+    return new MultiArchSplitTransitionProvider();
+  }
+
+  @Override
   // This method is registered statically for Starlark, and never called directly.
   public ObjcProvider newObjcProvider(Dict<String, Object> kwargs, StarlarkThread thread)
       throws EvalException {
-    ObjcProvider.StarlarkBuilder resultBuilder =
-        new ObjcProvider.StarlarkBuilder(thread.getSemantics());
+    ObjcProvider.StarlarkBuilder resultBuilder = new ObjcProvider.StarlarkBuilder();
     for (Map.Entry<String, Object> entry : kwargs.entrySet()) {
       ObjcProvider.Key<?> key = ObjcProvider.getStarlarkKeyForString(entry.getKey());
       if (key != null) {
-        if (thread.getSemantics().getBool(INCOMPATIBLE_OBJC_PROVIDER_REMOVE_LINKING_INFO)
-            && ObjcProvider.DEPRECATED_KEYS.contains(key)) {
-          throw new EvalException(String.format(DEPRECATED_KEY_ERROR, key.getStarlarkKeyName()));
-        }
         resultBuilder.addElementsFromStarlark(key, entry.getValue());
       } else {
         switch (entry.getKey()) {
           case "cc_library":
-            if (thread.getSemantics().getBool(INCOMPATIBLE_OBJC_PROVIDER_REMOVE_LINKING_INFO)) {
-              throw new EvalException(
-                  String.format(DEPRECATED_KEY_ERROR, key.getStarlarkKeyName()));
-            }
             CcModule.checkPrivateStarlarkificationAllowlist(thread);
             resultBuilder.uncheckedAddTransitive(
                 ObjcProvider.CC_LIBRARY,
@@ -198,10 +193,6 @@ public class AppleStarlarkCommon
                     ObjcProvider.CC_LIBRARY, entry.getValue()));
             break;
           case "flag":
-            if (thread.getSemantics().getBool(INCOMPATIBLE_OBJC_PROVIDER_REMOVE_LINKING_INFO)) {
-              throw new EvalException(
-                  String.format(DEPRECATED_KEY_ERROR, key.getStarlarkKeyName()));
-            }
             resultBuilder.add(ObjcProvider.FLAG, Flag.USES_CPP);
             break;
           case "strict_include":
@@ -233,24 +224,12 @@ public class AppleStarlarkCommon
         Depset.noneableCast(dynamicFrameworkFiles, Artifact.class, "framework_files");
     Artifact binary = (dylibBinary != Starlark.NONE) ? (Artifact) dylibBinary : null;
     // TODO(b/252909384): Disallow Starlark.NONE once rules have been migrated to supply CcInfo.
-    CcInfo ccInfo;
-    if (depsCcInfo != Starlark.NONE) {
-      ccInfo = (CcInfo) depsCcInfo;
-    } else {
-      if (thread.getSemantics().getBool(INCOMPATIBLE_OBJC_PROVIDER_REMOVE_LINKING_INFO)) {
-        throw new EvalException(String.format(REQUIRED_CC_INFO_ERROR, "AppleDynamicFrameworkInfo"));
-      }
-      ccInfo = CcInfo.EMPTY;
-    }
+    CcInfo ccInfo = (depsCcInfo != Starlark.NONE) ? (CcInfo) depsCcInfo : CcInfo.EMPTY;
     ObjcProvider objcProvider;
     if (depsObjcProvider != Starlark.NONE) {
-      if (thread.getSemantics().getBool(INCOMPATIBLE_OBJC_PROVIDER_REMOVE_LINKING_INFO)) {
-        throw new EvalException(
-            String.format(DEPRECATED_OBJC_PROVIDER_ERROR, "AppleDynamicFrameworkInfo"));
-      }
       objcProvider = (ObjcProvider) depsObjcProvider;
     } else {
-      objcProvider = new ObjcProvider.StarlarkBuilder(thread.getSemantics()).build();
+      objcProvider = new ObjcProvider.StarlarkBuilder().build();
     }
     return new AppleDynamicFrameworkInfo(
         binary, ccInfo, objcProvider, frameworkDirs, frameworkFiles);
@@ -262,30 +241,18 @@ public class AppleStarlarkCommon
       throws EvalException {
     Artifact binary = (executableBinary != Starlark.NONE) ? (Artifact) executableBinary : null;
     // TODO(b/252909384): Disallow Starlark.NONE once rules have been migrated to supply CcInfo.
-    CcInfo ccInfo;
-    if (depsCcInfo != Starlark.NONE) {
-      ccInfo = (CcInfo) depsCcInfo;
-    } else {
-      if (thread.getSemantics().getBool(INCOMPATIBLE_OBJC_PROVIDER_REMOVE_LINKING_INFO)) {
-        throw new EvalException(String.format(REQUIRED_CC_INFO_ERROR, "AppleExecutableBinaryInfo"));
-      }
-      ccInfo = CcInfo.EMPTY;
-    }
+    CcInfo ccInfo = (depsCcInfo != Starlark.NONE) ? (CcInfo) depsCcInfo : CcInfo.EMPTY;
     ObjcProvider objcProvider;
     if (depsObjcProvider != Starlark.NONE) {
-      if (thread.getSemantics().getBool(INCOMPATIBLE_OBJC_PROVIDER_REMOVE_LINKING_INFO)) {
-        throw new EvalException(
-            String.format(DEPRECATED_OBJC_PROVIDER_ERROR, "AppleExecutableBinaryInfo"));
-      }
       objcProvider = (ObjcProvider) depsObjcProvider;
     } else {
-      objcProvider = new ObjcProvider.StarlarkBuilder(thread.getSemantics()).build();
+      objcProvider = new ObjcProvider.StarlarkBuilder().build();
     }
     return new AppleExecutableBinaryInfo(binary, ccInfo, objcProvider);
   }
 
   private Dict<?, ?> asDict(Object o) {
-    return o == Starlark.NONE ? Dict.empty() : (Dict<?, ?>) o;
+    return o == Starlark.UNBOUND ? Dict.empty() : (Dict<?, ?>) o;
   }
 
   @Override

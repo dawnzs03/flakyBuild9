@@ -17,7 +17,6 @@ package com.google.devtools.build.lib.starlarkbuildapi.cpp;
 import com.google.devtools.build.docgen.annot.DocCategory;
 import com.google.devtools.build.lib.collect.nestedset.Depset;
 import com.google.devtools.build.lib.starlarkbuildapi.FileApi;
-import javax.annotation.Nullable;
 import net.starlark.java.annot.Param;
 import net.starlark.java.annot.ParamType;
 import net.starlark.java.annot.StarlarkBuiltin;
@@ -36,9 +35,7 @@ import net.starlark.java.eval.StarlarkValue;
     doc =
         "Immutable store of information needed for C++ compilation that is aggregated across "
             + "dependencies.")
-public interface CcCompilationContextApi<
-        FileT extends FileApi, CppModuleMapT extends CppModuleMapApi<FileT>>
-    extends StarlarkValue {
+public interface CcCompilationContextApi<FileT extends FileApi> extends StarlarkValue {
   @StarlarkMethod(
       name = "defines",
       doc =
@@ -168,16 +165,4 @@ public interface CcCompilationContextApi<
       documented = false,
       useStarlarkThread = true)
   Depset getStarlarkVirtualToOriginalHeaders(StarlarkThread thread) throws EvalException;
-
-  @StarlarkMethod(
-      name = "module_map",
-      documented = false,
-      useStarlarkThread = true,
-      allowReturnNones = true)
-  @Nullable
-  CppModuleMapT getStarlarkModuleMap(StarlarkThread thread) throws EvalException;
-
-  @StarlarkMethod(name = "exporting_module_maps", documented = false, useStarlarkThread = true)
-  StarlarkList<CppModuleMapT> getStarlarkExportingModuleMaps(StarlarkThread thread)
-      throws EvalException;
 }

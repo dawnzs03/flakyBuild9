@@ -113,7 +113,5 @@ public abstract class AbstractFileWriteAction extends AbstractAction {
    */
   public interface FileContentsProvider {
     String getFileContents(@Nullable EventHandler eventHandler) throws IOException;
-
-    public boolean makeExecutable();
   }
 }

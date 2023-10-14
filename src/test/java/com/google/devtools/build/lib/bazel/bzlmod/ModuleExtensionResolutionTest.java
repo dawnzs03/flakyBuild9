@@ -215,7 +215,6 @@ public class ModuleExtensionResolutionTest extends FoundationTestCase {
                         /* packageProgress= */ null,
                         PackageFunction.ActionOnIOExceptionReadingBuildFile.UseOriginalIOException
                             .INSTANCE,
-                        /* shouldUseRepoDotBazel= */ true,
                         GlobbingStrategy.SKYFRAME_HYBRID,
                         ignored -> ThreadStateReceiver.NULL_INSTANCE))
                 .put(
@@ -264,7 +263,6 @@ public class ModuleExtensionResolutionTest extends FoundationTestCase {
                 .put(SkyFunctions.BAZEL_MODULE_RESOLUTION, new BazelModuleResolutionFunction())
                 .put(SkyFunctions.SINGLE_EXTENSION_USAGES, new SingleExtensionUsagesFunction())
                 .put(SkyFunctions.SINGLE_EXTENSION_EVAL, singleExtensionEvalFunction)
-                .put(SkyFunctions.REPO_SPEC, new RepoSpecFunction(registryFactory))
                 .put(
                     SkyFunctions.CLIENT_ENVIRONMENT_VARIABLE,
                     new ClientEnvironmentFunction(new AtomicReference<>(ImmutableMap.of())))
@@ -330,8 +328,7 @@ public class ModuleExtensionResolutionTest extends FoundationTestCase {
         "  for mod in ctx.modules:",
         "    for tag in mod.tags.tag:",
         "      data_repo(name=tag.name,data=tag.data)",
-        "ext = module_extension(implementation=_ext_impl, tag_classes={'tag':tag}, "
-            + "os_dependent=True, arch_dependent=True)");
+        "ext = module_extension(implementation=_ext_impl, tag_classes={'tag':tag})");
     scratch.file(workspaceRoot.getRelative("BUILD").getPathString());
     scratch.file(
         workspaceRoot.getRelative("data.bzl").getPathString(),
@@ -428,55 +425,6 @@ public class ModuleExtensionResolutionTest extends FoundationTestCase {
       throw result.getError().getException();
     }
     assertThat(result.get(skyKey).getModule().getGlobal("data")).isEqualTo("foo:fu bar:ba quz:qu");
-  }
-
-  @Test
-  public void multipleExtensions_sameName() throws Exception {
-    scratch.file(
-        workspaceRoot.getRelative("MODULE.bazel").getPathString(),
-        "bazel_dep(name='data_repo', version='1.0')",
-        "first_ext = use_extension('//first_ext:defs.bzl', 'ext')",
-        "first_ext.tag(name='foo', data='first_fu')",
-        "first_ext.tag(name='bar', data='first_ba')",
-        "use_repo(first_ext, first_foo='foo', first_bar='bar')",
-        "second_ext = use_extension('//second_ext:defs.bzl', 'ext')",
-        "second_ext.tag(name='foo', data='second_fu')",
-        "second_ext.tag(name='bar', data='second_ba')",
-        "use_repo(second_ext, second_foo='foo', second_bar='bar')");
-    scratch.file(workspaceRoot.getRelative("first_ext/BUILD").getPathString());
-    scratch.file(
-        workspaceRoot.getRelative("first_ext/defs.bzl").getPathString(),
-        "load('@data_repo//:defs.bzl','data_repo')",
-        "tag = tag_class(attrs = {'name':attr.string(),'data':attr.string()})",
-        "def _ext_impl(ctx):",
-        "  for mod in ctx.modules:",
-        "    for tag in mod.tags.tag:",
-        "      data_repo(name=tag.name,data=tag.data)",
-        "ext = module_extension(implementation=_ext_impl, tag_classes={'tag':tag})");
-    scratch.file(workspaceRoot.getRelative("second_ext/BUILD").getPathString());
-    scratch.file(
-        workspaceRoot.getRelative("second_ext/defs.bzl").getPathString(),
-        "load('//first_ext:defs.bzl', _ext = 'ext')",
-        "ext = _ext");
-    scratch.file(workspaceRoot.getRelative("BUILD").getPathString());
-    scratch.file(
-        workspaceRoot.getRelative("data.bzl").getPathString(),
-        "load('@first_foo//:data.bzl', first_foo_data='data')",
-        "load('@first_bar//:data.bzl', first_bar_data='data')",
-        "load('@second_foo//:data.bzl', second_foo_data='data')",
-        "load('@second_bar//:data.bzl', second_bar_data='data')",
-        "data = 'first_foo:'+first_foo_data+' first_bar:'+first_bar_data"
-            + "+' second_foo:'+second_foo_data+' second_bar:'+second_bar_data");
-
-    SkyKey skyKey = BzlLoadValue.keyForBuild(Label.parseCanonical("//:data.bzl"));
-    EvaluationResult<BzlLoadValue> result =
-        evaluator.evaluate(ImmutableList.of(skyKey), evaluationContext);
-    if (result.hasError()) {
-      throw result.getError().getException();
-    }
-    assertThat(result.get(skyKey).getModule().getGlobal("data"))
-        .isEqualTo(
-            "first_foo:first_fu first_bar:first_ba second_foo:second_fu " + "second_bar:second_ba");
   }
 
   @Test
@@ -2354,41 +2302,5 @@ public class ModuleExtensionResolutionTest extends FoundationTestCase {
     assertThat(result.get(skyKey).getModule().getGlobal("ext1_data")).isEqualTo("ext1: True");
     assertThat(result.get(skyKey).getModule().getGlobal("ext2_data")).isEqualTo("ext2: False");
     assertThat(result.get(skyKey).getModule().getGlobal("ext3_data")).isEqualTo("ext3: True");
-  }
-
-  @Test
-  public void printAndFailOnTag() throws Exception {
-    scratch.file(
-        workspaceRoot.getRelative("MODULE.bazel").getPathString(),
-        "ext = use_extension('//:defs.bzl', 'ext')",
-        "ext.foo()",
-        "ext.foo()");
-    scratch.file(
-        workspaceRoot.getRelative("defs.bzl").getPathString(),
-        "repo = repository_rule(lambda ctx: True)",
-        "def _ext_impl(ctx):",
-        "  tag1 = ctx.modules[0].tags.foo[0]",
-        "  tag2 = ctx.modules[0].tags.foo[1]",
-        "  print('Conflict between', tag1, 'and', tag2)",
-        "  fail('Fatal conflict between', tag1, 'and', tag2)",
-        "foo = tag_class()",
-        "ext = module_extension(implementation=_ext_impl,tag_classes={'foo':foo})");
-    scratch.file(workspaceRoot.getRelative("BUILD").getPathString());
-
-    ModuleExtensionId extensionId =
-        ModuleExtensionId.create(Label.parseCanonical("//:defs.bzl"), "ext", Optional.empty());
-    reporter.removeHandler(failFastHandler);
-    var result =
-        evaluator.<SingleExtensionEvalValue>evaluate(
-            ImmutableList.of(SingleExtensionEvalValue.key(extensionId)), evaluationContext);
-
-    assertThat(result.hasError()).isTrue();
-    assertContainsEvent(
-        "Fatal conflict between 'foo' tag at /ws/MODULE.bazel:2:8 and 'foo' tag at "
-            + "/ws/MODULE.bazel:3:8",
-        ImmutableSet.of(EventKind.ERROR));
-    assertContainsEvent(
-        "Conflict between 'foo' tag at /ws/MODULE.bazel:2:8 and 'foo' tag at /ws/MODULE.bazel:3:8",
-        ImmutableSet.of(EventKind.DEBUG));
   }
 }

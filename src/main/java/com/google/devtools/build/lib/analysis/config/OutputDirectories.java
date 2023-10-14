@@ -94,10 +94,10 @@ public class OutputDirectories {
     }
 
     public ArtifactRoot getRoot(
-        String outputDirName, BlazeDirectories directories, String workspaceName) {
-      // e.g., execroot/my_workspace
-      Path execRoot = directories.getExecRoot(workspaceName);
-      // e.g., [[execroot/my_workspace]/bazel-out/config/bin]
+        String outputDirName, BlazeDirectories directories, RepositoryName mainRepositoryName) {
+      // e.g., execroot/repo1
+      Path execRoot = directories.getExecRoot(mainRepositoryName.getName());
+      // e.g., [[execroot/repo1]/bazel-out/config/bin]
       return ArtifactRoot.asDerivedRoot(
           execRoot,
           this == MIDDLEMAN ? RootType.Middleman : RootType.Output,
@@ -129,7 +129,7 @@ public class OutputDirectories {
       CoreOptions options,
       @Nullable PlatformOptions platformOptions,
       ImmutableSortedMap<Class<? extends Fragment>, Fragment> fragments,
-      String workspaceName,
+      RepositoryName mainRepositoryName,
       boolean siblingRepositoryLayout,
       String transitionDirectoryNameFragment)
       throws InvalidMnemonicException {
@@ -137,19 +137,23 @@ public class OutputDirectories {
     this.mnemonic =
         buildMnemonic(options, platformOptions, fragments, transitionDirectoryNameFragment);
 
-    this.outputDirectory = OutputDirectory.OUTPUT.getRoot(mnemonic, directories, workspaceName);
-    this.binDirectory = OutputDirectory.BIN.getRoot(mnemonic, directories, workspaceName);
+    this.outputDirectory =
+        OutputDirectory.OUTPUT.getRoot(mnemonic, directories, mainRepositoryName);
+    this.binDirectory = OutputDirectory.BIN.getRoot(mnemonic, directories, mainRepositoryName);
     this.buildInfoDirectory =
-        OutputDirectory.BUILDINFO.getRoot(mnemonic, directories, workspaceName);
-    this.genfilesDirectory = OutputDirectory.GENFILES.getRoot(mnemonic, directories, workspaceName);
-    this.coverageDirectory = OutputDirectory.COVERAGE.getRoot(mnemonic, directories, workspaceName);
-    this.testlogsDirectory = OutputDirectory.TESTLOGS.getRoot(mnemonic, directories, workspaceName);
+        OutputDirectory.BUILDINFO.getRoot(mnemonic, directories, mainRepositoryName);
+    this.genfilesDirectory =
+        OutputDirectory.GENFILES.getRoot(mnemonic, directories, mainRepositoryName);
+    this.coverageDirectory =
+        OutputDirectory.COVERAGE.getRoot(mnemonic, directories, mainRepositoryName);
+    this.testlogsDirectory =
+        OutputDirectory.TESTLOGS.getRoot(mnemonic, directories, mainRepositoryName);
     this.middlemanDirectory =
-        OutputDirectory.MIDDLEMAN.getRoot(mnemonic, directories, workspaceName);
+        OutputDirectory.MIDDLEMAN.getRoot(mnemonic, directories, mainRepositoryName);
 
     this.mergeGenfilesDirectory = options.mergeGenfilesDirectory;
     this.siblingRepositoryLayout = siblingRepositoryLayout;
-    this.execRoot = directories.getExecRoot(workspaceName);
+    this.execRoot = directories.getExecRoot(mainRepositoryName.getName());
   }
 
   private static void addMnemonicPart(

@@ -211,27 +211,6 @@ public interface StarlarkRuleFunctionsApi {
                     + " provided by the user. It must create actions to generate all the declared "
                     + "outputs."),
         @Param(
-            name = "initializer",
-            named = true,
-            defaultValue = "None",
-            doc =
-                "the Stalark function initializing the attributes of the rule. The function is "
-                    + "called at load time for each instance of the rule. It's called with values "
-                    + "of public attributes defined by the rule (not with generic attributes, "
-                    + "for example <code>name</code> or <code>tags</code>). It has to return a "
-                    + "dictionary from the attribute names to the desired values. The attributes "
-                    + " that are not returned are unaffected. Returning <code>None</code> as value"
-                    + " results in using the default value specified in the attribute definition."
-                    + "<p>Initializers are evaluated before the default values specified in an"
-                    + "attribute definition. Consequently, if a parameter in the initializer's "
-                    + "signature contains a default values, it overwrites the default from the "
-                    + "attribute definition (except if returning <code>None</code>)."
-                    + "<p>Similarly, if a parameter in the initializer's signature doesn't have a "
-                    + "default, the parameter will become mandatory. It's a good practice to omit"
-                    + " default/mandatory settings on an attribute definition in such cases."
-                    + "<p>It's a good practice to use <code>**kwargs</code> for attributes "
-                    + " that are not handled."),
-        @Param(
             name = "test",
             named = true,
             defaultValue = "False",
@@ -247,9 +226,10 @@ public interface StarlarkRuleFunctionsApi {
             name = "attrs",
             allowedTypes = {
               @ParamType(type = Dict.class),
+              @ParamType(type = NoneType.class),
             },
             named = true,
-            defaultValue = "{}",
+            defaultValue = "None",
             doc =
                 "dictionary to declare all the attributes of the rule. It maps from an attribute"
                     + " name to an attribute object (see <a href=\"../toplevel/attr.html\">attr</a>"
@@ -461,22 +441,12 @@ public interface StarlarkRuleFunctionsApi {
                     + " allows rules to run actions on multiple execution platforms within a"
                     + " single target. See <a href='${link exec-groups}'>execution groups"
                     + " documentation</a> for more info."),
-        @Param(
-            name = "subrules",
-            allowedTypes = {
-              @ParamType(type = Sequence.class, generic1 = StarlarkSubruleApi.class),
-            },
-            named = true,
-            defaultValue = "[]",
-            positional = false,
-            doc = "Experimental, DO NOT USE!"),
       },
       useStarlarkThread = true)
   StarlarkCallable rule(
       StarlarkFunction implementation,
-      Object initializer,
       Boolean test,
-      Dict<?, ?> attrs,
+      Object attrs,
       Object implicitOutputs,
       Boolean executable,
       Boolean outputToGenfiles,
@@ -492,7 +462,6 @@ public interface StarlarkRuleFunctionsApi {
       Object buildSetting,
       Object cfg,
       Object execGroups,
-      Sequence<?> subrules,
       StarlarkThread thread)
       throws EvalException;
 
@@ -528,9 +497,10 @@ public interface StarlarkRuleFunctionsApi {
             name = "attrs",
             allowedTypes = {
               @ParamType(type = Dict.class),
+              @ParamType(type = NoneType.class),
             },
             named = true,
-            defaultValue = "{}",
+            defaultValue = "None",
             doc =
                 "A dictionary declaring all the attributes of the aspect. It maps from an attribute"
                     + " name to an attribute object, like `attr.label` or `attr.string` (see <a"
@@ -678,22 +648,13 @@ public interface StarlarkRuleFunctionsApi {
                     + " href='../globals/bzl.html#exec_group'><code>exec_group</code>s</a>. If set,"
                     + " allows aspects to run actions on multiple execution platforms within a"
                     + " single instance. See <a href='${link exec-groups}'>execution groups"
-                    + " documentation</a> for more info."),
-        @Param(
-            name = "subrules",
-            allowedTypes = {
-              @ParamType(type = Sequence.class, generic1 = StarlarkSubruleApi.class),
-            },
-            named = true,
-            defaultValue = "[]",
-            positional = false,
-            doc = "Experimental, DO NOT USE!")
+                    + " documentation</a> for more info.")
       },
       useStarlarkThread = true)
   StarlarkAspectApi aspect(
       StarlarkFunction implementation,
       Sequence<?> attributeAspects,
-      Dict<?, ?> attrs,
+      Object attrs,
       Sequence<?> requiredProvidersArg,
       Sequence<?> requiredAspectProvidersArg,
       Sequence<?> providesArg,
@@ -706,7 +667,6 @@ public interface StarlarkRuleFunctionsApi {
       Boolean applyToGeneratingRules,
       Sequence<?> execCompatibleWith,
       Object execGroups,
-      Sequence<?> subrules,
       StarlarkThread thread)
       throws EvalException;
 
@@ -758,29 +718,6 @@ public interface StarlarkRuleFunctionsApi {
       },
       useStarlarkThread = true)
   ExecGroupApi execGroup(
-      Sequence<?> toolchains, Sequence<?> execCompatibleWith, StarlarkThread thread)
-      throws EvalException;
-
-  @StarlarkMethod(
-      name = "subrule",
-      doc = "experimental, DO NOT USE!",
-      parameters = {
-        @Param(
-            name = "implementation",
-            doc = "The Starlark function implementing this subrule",
-            named = true,
-            positional = false,
-            allowedTypes = {@ParamType(type = StarlarkFunction.class)}),
-        @Param(
-            name = "attrs",
-            allowedTypes = {@ParamType(type = Dict.class)},
-            named = true,
-            positional = false,
-            defaultValue = "{}",
-            doc = "dictionary to declare all the (private) attributes of the subrule.")
-      },
-      useStarlarkThread = true)
-  StarlarkSubruleApi subrule(
-      StarlarkFunction implementation, Dict<?, ?> attrs, StarlarkThread thread)
+      Sequence<?> execCompatibleWith, Sequence<?> toolchains, StarlarkThread thread)
       throws EvalException;
 }

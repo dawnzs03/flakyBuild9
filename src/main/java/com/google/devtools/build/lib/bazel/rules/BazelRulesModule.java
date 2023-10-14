@@ -45,14 +45,6 @@ public final class BazelRulesModule extends BlazeModule {
   @SuppressWarnings("deprecation") // These fields have no JavaDoc by design
   public static class BuildGraveyardOptions extends OptionsBase {
     @Option(
-        name = "use_top_level_targets_for_symlinks",
-        defaultValue = "true",
-        documentationCategory = OptionDocumentationCategory.UNDOCUMENTED,
-        effectTags = {OptionEffectTag.AFFECTS_OUTPUTS},
-        help = "Deprecated. No-op.")
-    public boolean useTopLevelTargetsForSymlinks;
-
-    @Option(
         name = "experimental_skyframe_prepare_analysis",
         deprecationWarning = "This flag is a no-op and will be deleted in a future release.",
         defaultValue = "false",
@@ -60,6 +52,15 @@ public final class BazelRulesModule extends BlazeModule {
         effectTags = {OptionEffectTag.BAZEL_INTERNAL_CONFIGURATION},
         help = "Deprecated. No-op.")
     public boolean skyframePrepareAnalysis;
+
+    @Option(
+        name = "incompatible_use_platforms_repo_for_constraints",
+        defaultValue = "true",
+        documentationCategory = OptionDocumentationCategory.OUTPUT_PARAMETERS,
+        effectTags = {OptionEffectTag.AFFECTS_OUTPUTS},
+        metadataTags = {OptionMetadataTag.INCOMPATIBLE_CHANGE},
+        help = "Deprecated no-op.")
+    public boolean usePlatformsRepoForConstraints;
 
     @Option(
         name = "experimental_replay_action_out_err",
@@ -362,6 +363,14 @@ public final class BazelRulesModule extends BlazeModule {
         converter = Converters.CommaSeparatedOptionListConverter.class,
         help = "Deprecated no-op.")
     public List<String> availabilityInfoExempt;
+
+    @Option(
+        name = "experimental_skymeld_ui",
+        defaultValue = "false",
+        documentationCategory = OptionDocumentationCategory.UNDOCUMENTED,
+        effectTags = {OptionEffectTag.NO_OP},
+        help = "No-op. To be removed.")
+    public boolean skymeldUi;
 
     @Option(
         name = "experimental_collect_local_action_metrics",
@@ -725,15 +734,6 @@ public final class BazelRulesModule extends BlazeModule {
     public boolean useForkJoinPool;
 
     @Option(
-        name = "experimental_use_priority_in_analysis",
-        defaultValue = "false",
-        documentationCategory = OptionDocumentationCategory.UNDOCUMENTED,
-        metadataTags = OptionMetadataTag.DEPRECATED,
-        effectTags = {OptionEffectTag.NO_OP},
-        help = "No-op.")
-    public boolean usePrioritization;
-
-    @Option(
         name = "incompatible_generated_protos_in_virtual_imports",
         defaultValue = "true",
         documentationCategory = OptionDocumentationCategory.UNDOCUMENTED,
@@ -750,46 +750,6 @@ public final class BazelRulesModule extends BlazeModule {
         metadataTags = {OptionMetadataTag.EXPERIMENTAL},
         help = "This flag is a noop and scheduled for removal.")
     public boolean experimentalJavaProtoAddAllowedPublicImports;
-
-    @Option(
-        name = "watchos_simulator_version",
-        defaultValue = "null",
-        documentationCategory = OptionDocumentationCategory.UNDOCUMENTED,
-        effectTags = {OptionEffectTag.NO_OP},
-        help = "No-op")
-    public String watchosSimulatorVersion;
-
-    @Option(
-        name = "watchos_simulator_device",
-        defaultValue = "null",
-        documentationCategory = OptionDocumentationCategory.UNDOCUMENTED,
-        effectTags = {OptionEffectTag.NO_OP},
-        help = "No-op")
-    public String watchosSimulatorDevice;
-
-    @Option(
-        name = "tvos_simulator_version",
-        defaultValue = "null",
-        documentationCategory = OptionDocumentationCategory.UNDOCUMENTED,
-        effectTags = {OptionEffectTag.NO_OP},
-        help = "No-op")
-    public String tvosSimulatorVersion;
-
-    @Option(
-        name = "tvos_simulator_device",
-        defaultValue = "null",
-        documentationCategory = OptionDocumentationCategory.UNDOCUMENTED,
-        effectTags = {OptionEffectTag.NO_OP},
-        help = "No-op")
-    public String tvosSimulatorDevice;
-
-    @Option(
-        name = "java_optimization_mode",
-        defaultValue = "",
-        documentationCategory = OptionDocumentationCategory.UNDOCUMENTED,
-        effectTags = {OptionEffectTag.UNKNOWN},
-        help = "Do not use.")
-    public String javaOptimizationMode;
   }
 
   @Override

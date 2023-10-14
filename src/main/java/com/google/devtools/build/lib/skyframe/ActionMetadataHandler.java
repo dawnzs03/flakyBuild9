@@ -34,7 +34,6 @@ import com.google.devtools.build.lib.actions.Artifact.SpecialArtifact;
 import com.google.devtools.build.lib.actions.Artifact.TreeFileArtifact;
 import com.google.devtools.build.lib.actions.ArtifactPathResolver;
 import com.google.devtools.build.lib.actions.FileArtifactValue;
-import com.google.devtools.build.lib.actions.FileArtifactValue.RemoteFileArtifactValue;
 import com.google.devtools.build.lib.actions.FileStateType;
 import com.google.devtools.build.lib.actions.FileStateValue;
 import com.google.devtools.build.lib.actions.FileStatusWithMetadata;
@@ -304,11 +303,9 @@ final class ActionMetadataHandler implements InputMetadataProvider, OutputMetada
     Path treeDir = artifactPathResolver.toPath(parent);
     boolean chmod = executionMode.get();
 
-    FileStatus stat = treeDir.statIfFound(Symlinks.FOLLOW);
-
-    // Make sure the tree artifact root exists and is a regular directory. Note that this is how the
-    // action is initialized, so this should hold unless the action itself has deleted the root.
-    if (stat == null || !stat.isDirectory()) {
+    // Make sure the tree artifact root is a regular directory. Note that this is how the action is
+    // initialized, so this should hold unless the action itself has deleted the root.
+    if (!treeDir.isDirectory(Symlinks.FOLLOW)) {
       if (chmod) {
         setPathPermissionsIfFile(treeDir);
       }
@@ -318,8 +315,6 @@ final class ActionMetadataHandler implements InputMetadataProvider, OutputMetada
     if (chmod) {
       setPathPermissions(treeDir);
     }
-
-    AtomicBoolean anyRemote = new AtomicBoolean(false);
 
     TreeArtifactValue.Builder tree = TreeArtifactValue.newBuilder(parent);
 
@@ -347,37 +342,25 @@ final class ActionMetadataHandler implements InputMetadataProvider, OutputMetada
 
           // visitTree() uses multiple threads and putChild() is not thread-safe
           synchronized (tree) {
-            if (metadata.isRemote()) {
-              anyRemote.set(true);
-            }
             tree.putChild(child, metadata);
           }
         });
 
     if (archivedTreeArtifactsEnabled) {
       ArchivedTreeArtifact archivedTreeArtifact = ArchivedTreeArtifact.createForTree(parent);
-      FileStatus archivedStatNoFollow =
+      FileStatus statNoFollow =
           artifactPathResolver.toPath(archivedTreeArtifact).statIfFound(Symlinks.NOFOLLOW);
-      if (archivedStatNoFollow != null) {
+      if (statNoFollow != null) {
         tree.setArchivedRepresentation(
             archivedTreeArtifact,
             constructFileArtifactValue(
                 archivedTreeArtifact,
-                FileStatusWithDigestAdapter.maybeAdapt(archivedStatNoFollow),
-                /* injectedDigest= */ null));
+                FileStatusWithDigestAdapter.maybeAdapt(statNoFollow),
+                /*injectedDigest=*/ null));
       } else {
         logger.atInfo().atMostEvery(5, MINUTES).log(
             "Archived tree artifact: %s not created", archivedTreeArtifact);
       }
-    }
-
-    // Same rationale as for constructFileArtifactValue.
-    if (anyRemote.get() && treeDir.isSymbolicLink() && stat instanceof FileStatusWithMetadata) {
-      FileArtifactValue metadata = ((FileStatusWithMetadata) stat).getMetadata();
-      tree.setMaterializationExecPath(
-          metadata
-              .getMaterializationExecPath()
-              .orElse(treeDir.resolveSymbolicLinks().asFragment().relativeTo(execRoot)));
     }
 
     return tree.build();
@@ -514,20 +497,6 @@ final class ActionMetadataHandler implements InputMetadataProvider, OutputMetada
             // and potentially delaying the build for no reason.
             artifact.isConstantMetadata() ? null : tsgm);
     var value = statAndValue.fileArtifactValue();
-
-    // If the artifact is stored remotely but it was materialized in the filesystem as a symlink,
-    // store the original path in the metadata so it can later be recreated as such to avoid
-    // downloading multiple copies.
-    //
-    // This only affects Bazel when building without the bytes. In Blaze, without an action
-    // filesystem, metadata is always local (isRemote() is false); and with an action filesystem,
-    // createSymbolicLink() is implemented as a file copy (isSymbolicLink() is false).
-    if (value.isRemote() && statAndValue.statNoFollow().isSymbolicLink()) {
-      value =
-          RemoteFileArtifactValue.createFromExistingWithMaterializationPath(
-              (RemoteFileArtifactValue) value,
-              statAndValue.realPath().asFragment().relativeTo(execRoot));
-    }
 
     // Ensure that we don't have both an injected digest and a digest from the filesystem.
     byte[] fileDigest = value.getDigest();

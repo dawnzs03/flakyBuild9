@@ -158,19 +158,9 @@ public class StreamedConsumingOutputHandler implements AqueryConsumingOutputHand
 
   @Override
   public void close() throws IOException {
-    switch (outputType) {
-      case BINARY:
-        codedOutputStream.flush();
-        break;
-      case DELIMITED_BINARY:
-        outputStream.flush();
-        break;
-      case TEXT:
-        printStream.flush();
-        break;
-      default:
-        throw new IllegalStateException("Unknown outputType: " + outputType);
-    }
+    outputStream.flush();
+    codedOutputStream.flush();
+    printStream.flush();
   }
 
   // Only runs on 1 single thread.

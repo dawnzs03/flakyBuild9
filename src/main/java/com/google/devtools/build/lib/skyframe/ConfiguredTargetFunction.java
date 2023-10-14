@@ -398,16 +398,12 @@ public final class ConfiguredTargetFunction implements SkyFunction {
       return null;
     } catch (ActionConflictException e) {
       e.reportTo(env.getListener());
-      throw new ConfiguredValueCreationException(ctgValue.getTarget(), e.getMessage());
+      throw new ConfiguredValueCreationException(ctgValue, e.getMessage());
     } catch (InvalidExecGroupException e) {
-      throw new ConfiguredValueCreationException(ctgValue.getTarget(), e.getMessage());
+      throw new ConfiguredValueCreationException(ctgValue, e.getMessage());
     } catch (AnalysisFailurePropagationException e) {
       throw new ConfiguredValueCreationException(
-          ctgValue.getTarget(),
-          /* buildEventId */ null,
-          e.getMessage(),
-          /* rootCauses= */ null,
-          e.getDetailedExitCode());
+          ctgValue, e.getMessage(), /* rootCauses= */ null, e.getDetailedExitCode());
     }
 
     events.replayOn(env.getListener());
@@ -426,11 +422,7 @@ public final class ConfiguredTargetFunction implements SkyFunction {
                               createDetailedExitCode(event.getMessage())))
                   .collect(Collectors.toList()));
       throw new ConfiguredValueCreationException(
-          ctgValue.getTarget(),
-          null,
-          "Analysis of target '" + target.getLabel() + "' failed",
-          rootCauses,
-          null);
+          ctgValue, "Analysis of target '" + target.getLabel() + "' failed", rootCauses, null);
     }
     Preconditions.checkState(
         !analysisEnvironment.hasErrors(), "Analysis environment hasError() but no errors reported");
@@ -470,8 +462,6 @@ public final class ConfiguredTargetFunction implements SkyFunction {
                     configuredTargetKey,
                     ((ConfiguredRuleClassProvider) ruleClassProvider)
                         .getTrimmingTransitionFactory(),
-                    ((ConfiguredRuleClassProvider) ruleClassProvider)
-                        .getToolchainTaggedTrimmingTransition(),
                     buildViewProvider.getSkyframeBuildView().getStarlarkTransitionCache(),
                     state.computeDependenciesState.transitiveState,
                     (TargetAndConfigurationProducer.ResultSink) state,

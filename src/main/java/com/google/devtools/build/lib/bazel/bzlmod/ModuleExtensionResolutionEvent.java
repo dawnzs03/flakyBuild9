@@ -33,9 +33,4 @@ public abstract class ModuleExtensionResolutionEvent implements Postable {
   public abstract ModuleExtensionId getExtensionId();
 
   public abstract LockFileModuleExtension getModuleExtension();
-
-  @Override
-  public boolean storeForReplay() {
-    return true;
-  }
 }

@@ -199,7 +199,10 @@ public interface QueryableGraph {
     /** The node is being looked up merely to see if it is done or not. */
     DONE_CHECKING,
 
-    /** The node is being looked up so that it can be {@linkplain DirtyType#REWIND rewound}. */
+    /**
+     * The node is being looked up so that it can be {@linkplain DirtyType#FORCE_REBUILD force
+     * rebuilt} by rewinding.
+     */
     REWINDING,
 
     /**

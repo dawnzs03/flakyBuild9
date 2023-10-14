@@ -15,13 +15,10 @@
 
 package com.google.devtools.build.lib.bazel.bzlmod;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.devtools.build.lib.analysis.BlazeVersionInfo;
 import com.google.devtools.build.lib.bazel.BazelVersion;
@@ -31,9 +28,7 @@ import com.google.devtools.build.lib.bazel.repository.RepositoryOptions.BazelCom
 import com.google.devtools.build.lib.bazel.repository.RepositoryOptions.CheckDirectDepsMode;
 import com.google.devtools.build.lib.events.Event;
 import com.google.devtools.build.lib.events.EventHandler;
-import com.google.devtools.build.lib.profiler.Profiler;
-import com.google.devtools.build.lib.profiler.ProfilerTask;
-import com.google.devtools.build.lib.profiler.SilentCloseable;
+import com.google.devtools.build.lib.events.ExtendedEventHandler;
 import com.google.devtools.build.lib.server.FailureDetails.ExternalDeps.Code;
 import com.google.devtools.build.lib.skyframe.PrecomputedValue.Precomputed;
 import com.google.devtools.build.skyframe.SkyFunction;
@@ -41,7 +36,7 @@ import com.google.devtools.build.skyframe.SkyFunctionException;
 import com.google.devtools.build.skyframe.SkyFunctionException.Transience;
 import com.google.devtools.build.skyframe.SkyKey;
 import com.google.devtools.build.skyframe.SkyValue;
-import com.google.devtools.build.skyframe.SkyframeLookupResult;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
@@ -66,88 +61,36 @@ public class BazelModuleResolutionFunction implements SkyFunction {
     if (root == null) {
       return null;
     }
-
-    var state = env.getState(ModuleResolutionComputeState::new);
-    if (state.selectionResult == null) {
-      state.selectionResult = discoverAndSelect(env, root);
-      if (state.selectionResult == null) {
-        return null;
-      }
-    }
-
-    ImmutableSet<RepoSpecKey> repoSpecKeys =
-        state.selectionResult.getResolvedDepGraph().values().stream()
-            // Modules with a null registry have a non-registry override. We don't need to
-            // fetch or store the repo spec in this case.
-            .filter(module -> module.getRegistry() != null)
-            .map(RepoSpecKey::of)
-            .collect(toImmutableSet());
-    SkyframeLookupResult repoSpecResults = env.getValuesAndExceptions(repoSpecKeys);
-    ImmutableMap.Builder<ModuleKey, RepoSpec> remoteRepoSpecs = ImmutableMap.builder();
-    for (RepoSpecKey repoSpecKey : repoSpecKeys) {
-      RepoSpec repoSpec = (RepoSpec) repoSpecResults.get(repoSpecKey);
-      if (repoSpec == null) {
-        return null;
-      }
-      remoteRepoSpecs.put(repoSpecKey.getModuleKey(), repoSpec);
-    }
-
-    ImmutableMap<ModuleKey, Module> finalDepGraph;
-    try (SilentCloseable c =
-        Profiler.instance().profile(ProfilerTask.BZLMOD, "compute final dep graph")) {
-      finalDepGraph =
-          computeFinalDepGraph(
-              state.selectionResult.getResolvedDepGraph(),
-              root.getOverrides(),
-              remoteRepoSpecs.buildOrThrow());
-    }
-
-    return BazelModuleResolutionValue.create(
-        finalDepGraph, state.selectionResult.getUnprunedDepGraph());
-  }
-
-  @Nullable
-  private static Selection.Result discoverAndSelect(Environment env, RootModuleFileValue root)
-      throws BazelModuleResolutionFunctionException, InterruptedException {
-    ImmutableMap<ModuleKey, InterimModule> initialDepGraph;
-    try (SilentCloseable c = Profiler.instance().profile(ProfilerTask.BZLMOD, "discovery")) {
-      initialDepGraph = Discovery.run(env, root);
-    }
+    ImmutableMap<ModuleKey, InterimModule> initialDepGraph = Discovery.run(env, root);
     if (initialDepGraph == null) {
       return null;
     }
 
     Selection.Result selectionResult;
-    try (SilentCloseable c = Profiler.instance().profile(ProfilerTask.BZLMOD, "selection")) {
+    try {
       selectionResult = Selection.run(initialDepGraph, root.getOverrides());
     } catch (ExternalDepsException e) {
       throw new BazelModuleResolutionFunctionException(e, Transience.PERSISTENT);
     }
     ImmutableMap<ModuleKey, InterimModule> resolvedDepGraph = selectionResult.getResolvedDepGraph();
 
-    try (SilentCloseable c =
-        Profiler.instance().profile(ProfilerTask.BZLMOD, "verify root module direct deps")) {
-      verifyRootModuleDirectDepsAreAccurate(
-          initialDepGraph.get(ModuleKey.ROOT),
-          resolvedDepGraph.get(ModuleKey.ROOT),
-          Objects.requireNonNull(CHECK_DIRECT_DEPENDENCIES.get(env)),
-          env.getListener());
-    }
+    verifyRootModuleDirectDepsAreAccurate(
+        initialDepGraph.get(ModuleKey.ROOT),
+        resolvedDepGraph.get(ModuleKey.ROOT),
+        Objects.requireNonNull(CHECK_DIRECT_DEPENDENCIES.get(env)),
+        env.getListener());
 
-    try (SilentCloseable c =
-        Profiler.instance().profile(ProfilerTask.BZLMOD, "check bazel compatibility")) {
-      checkBazelCompatibility(
-          resolvedDepGraph.values(),
-          Objects.requireNonNull(BAZEL_COMPATIBILITY_MODE.get(env)),
-          env.getListener());
-    }
+    checkBazelCompatibility(
+        resolvedDepGraph.values(),
+        Objects.requireNonNull(BAZEL_COMPATIBILITY_MODE.get(env)),
+        env.getListener());
 
-    try (SilentCloseable c =
-        Profiler.instance().profile(ProfilerTask.BZLMOD, "check no yanked versions")) {
-      checkNoYankedVersions(resolvedDepGraph);
-    }
+    checkNoYankedVersions(resolvedDepGraph);
 
-    return selectionResult;
+    ImmutableMap<ModuleKey, Module> finalDepGraph =
+        computeFinalDepGraph(resolvedDepGraph, root.getOverrides(), env.getListener());
+
+    return BazelModuleResolutionValue.create(finalDepGraph, selectionResult.getUnprunedDepGraph());
   }
 
   private static void verifyRootModuleDirectDepsAreAccurate(
@@ -246,8 +189,7 @@ public class BazelModuleResolutionFunction implements SkyFunction {
     }
   }
 
-  private static RepoSpec maybeAppendAdditionalPatches(
-      @Nullable RepoSpec repoSpec, @Nullable ModuleOverride override) {
+  private static RepoSpec maybeAppendAdditionalPatches(RepoSpec repoSpec, ModuleOverride override) {
     if (!(override instanceof SingleVersionOverride)) {
       return repoSpec;
     }
@@ -267,15 +209,38 @@ public class BazelModuleResolutionFunction implements SkyFunction {
         .build();
   }
 
+  @Nullable
+  private static RepoSpec computeRepoSpec(
+      InterimModule interimModule, ModuleOverride override, ExtendedEventHandler eventHandler)
+      throws BazelModuleResolutionFunctionException, InterruptedException {
+    if (interimModule.getRegistry() == null) {
+      // This module has a non-registry override. We don't need to store the repo spec in this case.
+      return null;
+    }
+    try {
+      RepoSpec moduleRepoSpec =
+          interimModule
+              .getRegistry()
+              .getRepoSpec(
+                  interimModule.getKey(), interimModule.getCanonicalRepoName(), eventHandler);
+      return maybeAppendAdditionalPatches(moduleRepoSpec, override);
+    } catch (IOException e) {
+      throw new BazelModuleResolutionFunctionException(
+          ExternalDepsException.withMessage(
+              Code.ERROR_ACCESSING_REGISTRY,
+              "Unable to get module repo spec from registry: %s",
+              e.getMessage()),
+          Transience.PERSISTENT);
+    }
+  }
+
   /**
    * Builds a {@link Module} from an {@link InterimModule}, discarding unnecessary fields and adding
    * extra necessary ones (such as the repo spec).
-   *
-   * @param remoteRepoSpec the {@link RepoSpec} for the module obtained from a registry or null if
-   *     the module has a non-registry override
    */
   static Module moduleFromInterimModule(
-      InterimModule interim, @Nullable ModuleOverride override, @Nullable RepoSpec remoteRepoSpec) {
+      InterimModule interim, ModuleOverride override, ExtendedEventHandler eventHandler)
+      throws BazelModuleResolutionFunctionException, InterruptedException {
     return Module.builder()
         .setName(interim.getName())
         .setVersion(interim.getVersion())
@@ -284,7 +249,7 @@ public class BazelModuleResolutionFunction implements SkyFunction {
         .setExecutionPlatformsToRegister(interim.getExecutionPlatformsToRegister())
         .setToolchainsToRegister(interim.getToolchainsToRegister())
         .setDeps(ImmutableMap.copyOf(Maps.transformValues(interim.getDeps(), DepSpec::toModuleKey)))
-        .setRepoSpec(maybeAppendAdditionalPatches(remoteRepoSpec, override))
+        .setRepoSpec(computeRepoSpec(interim, override, eventHandler))
         .setExtensionUsages(interim.getExtensionUsages())
         .build();
   }
@@ -292,21 +257,16 @@ public class BazelModuleResolutionFunction implements SkyFunction {
   private static ImmutableMap<ModuleKey, Module> computeFinalDepGraph(
       ImmutableMap<ModuleKey, InterimModule> resolvedDepGraph,
       ImmutableMap<String, ModuleOverride> overrides,
-      ImmutableMap<ModuleKey, RepoSpec> remoteRepoSpecs) {
+      ExtendedEventHandler eventHandler)
+      throws BazelModuleResolutionFunctionException, InterruptedException {
     ImmutableMap.Builder<ModuleKey, Module> finalDepGraph = ImmutableMap.builder();
     for (Map.Entry<ModuleKey, InterimModule> entry : resolvedDepGraph.entrySet()) {
       finalDepGraph.put(
           entry.getKey(),
           moduleFromInterimModule(
-              entry.getValue(),
-              overrides.get(entry.getKey().getName()),
-              remoteRepoSpecs.get(entry.getKey())));
+              entry.getValue(), overrides.get(entry.getKey().getName()), eventHandler));
     }
     return finalDepGraph.buildOrThrow();
-  }
-
-  private static class ModuleResolutionComputeState implements Environment.SkyKeyComputeState {
-    Selection.Result selectionResult;
   }
 
   static class BazelModuleResolutionFunctionException extends SkyFunctionException {

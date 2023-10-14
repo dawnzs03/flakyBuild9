@@ -31,5 +31,5 @@ public interface CompilationInfoApi<FileT extends FileApi> extends StarlarkValue
   CcCompilationOutputsApi<?> getCcCompilationOutputs();
 
   @StarlarkMethod(name = "compilation_context", structField = true, documented = false)
-  CcCompilationContextApi<FileT, ? extends CppModuleMapApi<FileT>> getCcCompilationContext();
+  CcCompilationContextApi<FileT> getCcCompilationContext();
 }

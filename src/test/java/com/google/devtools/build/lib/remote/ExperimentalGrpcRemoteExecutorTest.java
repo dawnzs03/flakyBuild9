@@ -41,8 +41,6 @@ public class ExperimentalGrpcRemoteExecutorTest extends GrpcRemoteExecutorTestBa
   @Override
   protected RemoteExecutionClient createExecutionService(
       ServerCapabilities caps, ReferenceCountedChannel channel) throws Exception {
-    channel.setServerCapabilities(caps);
-
     RemoteRetrier retrier =
         TestUtils.newRemoteRetrier(
             () -> new ExponentialBackoff(remoteOptions),
@@ -50,7 +48,7 @@ public class ExperimentalGrpcRemoteExecutorTest extends GrpcRemoteExecutorTestBa
             retryService);
 
     return new ExperimentalGrpcRemoteExecutor(
-        remoteOptions, channel, CallCredentialsProvider.NO_CREDENTIALS, retrier);
+        caps, remoteOptions, channel, CallCredentialsProvider.NO_CREDENTIALS, retrier);
   }
 
   @Override

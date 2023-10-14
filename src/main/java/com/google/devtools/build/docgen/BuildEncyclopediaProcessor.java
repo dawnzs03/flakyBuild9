@@ -48,9 +48,6 @@ public abstract class BuildEncyclopediaProcessor {
   /** Class that expand links to the BE. */
   protected final RuleLinkExpander linkExpander;
 
-  /** Mapper from source files/labels to source code repository URLs. */
-  SourceUrlMapper urlMapper;
-
   /** Rule class provider from which to extract the rule class hierarchy and attributes. */
   protected final ConfiguredRuleClassProvider ruleClassProvider;
 
@@ -59,30 +56,21 @@ public abstract class BuildEncyclopediaProcessor {
    * rule class hierarchy and attribute checking.
    */
   public BuildEncyclopediaProcessor(
-      RuleLinkExpander linkExpander,
-      SourceUrlMapper urlMapper,
-      ConfiguredRuleClassProvider ruleClassProvider) {
+      RuleLinkExpander linkExpander, ConfiguredRuleClassProvider ruleClassProvider) {
     this.linkExpander = linkExpander;
-    this.urlMapper = Preconditions.checkNotNull(urlMapper);
     this.ruleClassProvider = Preconditions.checkNotNull(ruleClassProvider);
   }
 
   /**
-   * Collects and processes all the rule and attribute documentation in inputJavaDirs and generates
-   * the Build Encyclopedia into outputDir.
+   * Collects and processes all the rule and attribute documentation in inputDirs and generates the
+   * Build Encyclopedia into the outputDir.
    *
-   * @param inputJavaDirs list of directories to scan for documentation in Java source code
-   * @param inputStardocProtos list of file paths of stardoc_output.ModuleInfo binary proto files
-   *     generated from Build Encyclopedia entry point .bzl files; documentation from these protos
-   *     takes precedence over documentation from {@code inputJavaDirs}
+   * @param inputDirs list of directory to scan for document in the source code
    * @param outputRootDir output directory where to write the build encyclopedia
    * @param denyList optional path to a file listing rules to not document
    */
   public abstract void generateDocumentation(
-      List<String> inputJavaDirs,
-      List<String> inputStardocProtos,
-      String outputDir,
-      String denyList)
+      List<String> inputDirs, String outputDir, String denyList)
       throws BuildEncyclopediaDocException, IOException;
 
   /**

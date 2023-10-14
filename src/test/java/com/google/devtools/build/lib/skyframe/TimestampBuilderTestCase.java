@@ -35,7 +35,6 @@ import com.google.devtools.build.lib.actions.ActionKeyContext;
 import com.google.devtools.build.lib.actions.ActionLogBufferPathGenerator;
 import com.google.devtools.build.lib.actions.ActionLookupData;
 import com.google.devtools.build.lib.actions.ActionLookupKey;
-import com.google.devtools.build.lib.actions.ActionOutputDirectoryHelper;
 import com.google.devtools.build.lib.actions.ActionResult;
 import com.google.devtools.build.lib.actions.Actions;
 import com.google.devtools.build.lib.actions.Artifact;
@@ -250,10 +249,7 @@ public abstract class TimestampBuilderTestCase extends FoundationTestCase {
         new SingleBuildFileCache(
             rootDirectory.getPathString(), scratch.getFileSystem(), SyscallCache.NO_CACHE);
     skyframeActionExecutor.configure(
-        cache,
-        ActionInputPrefetcher.NONE,
-        ActionOutputDirectoryHelper.createForTesting(),
-        DiscoveredModulesPruner.DEFAULT);
+        cache, ActionInputPrefetcher.NONE, DiscoveredModulesPruner.DEFAULT);
 
     final InMemoryMemoizingEvaluator evaluator =
         new InMemoryMemoizingEvaluator(
@@ -284,7 +280,6 @@ public abstract class TimestampBuilderTestCase extends FoundationTestCase {
                         /* packageProgress= */ null,
                         PackageFunction.ActionOnIOExceptionReadingBuildFile.UseOriginalIOException
                             .INSTANCE,
-                        /* shouldUseRepoDotBazel= */ true,
                         GlobbingStrategy.SKYFRAME_HYBRID,
                         k -> ThreadStateReceiver.NULL_INSTANCE))
                 .put(

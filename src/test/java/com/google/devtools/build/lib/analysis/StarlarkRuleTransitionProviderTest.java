@@ -292,6 +292,7 @@ public final class StarlarkRuleTransitionProviderTest extends BuildViewTestCase 
     assertContainsEvent(
         "Rule transition only allowed to return a single transitioned configuration.");
   }
+
   @Test
   public void testCanDoBadStuffWithParameterizedTransitionsAndSelects() throws Exception {
     writeAllowlistFile();
@@ -338,9 +339,8 @@ public final class StarlarkRuleTransitionProviderTest extends BuildViewTestCase 
     getConfiguredTarget("//test");
     assertContainsEvent(
         "No attribute 'my_configurable_attr'. "
-            + "Either this attribute does not exist for this rule or the attribute "
-            + "was not resolved because it is set by a select that reads flags the transition "
-            + "may set.");
+            + "Either this attribute does not exist for this rule or is set by a select. "
+            + "Starlark rule transitions currently cannot read attributes behind selects.");
   }
 
   @Test
@@ -1557,7 +1557,7 @@ public final class StarlarkRuleTransitionProviderTest extends BuildViewTestCase 
         testTarget
             .getRuleClassObject()
             .getTransitionFactory()
-            .create(RuleTransitionData.create(testTarget, null, ""));
+            .create(RuleTransitionData.create(testTarget));
     RequiredConfigFragmentsProvider.Builder requiredFragments =
         RequiredConfigFragmentsProvider.builder();
     ruleTransition.addRequiredFragments(

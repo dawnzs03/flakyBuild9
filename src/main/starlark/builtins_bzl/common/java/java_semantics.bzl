@@ -38,7 +38,7 @@ def _get_default_resource_path(path, segment_extractor):
     return "/".join(java_segments) if java_segments != None else path
 
 def _compatible_javac_options(*_args):
-    return depset()
+    return []
 
 semantics = struct(
     JAVA_TOOLCHAIN_LABEL = "@bazel_tools//tools/jdk:current_java_toolchain",
@@ -72,5 +72,4 @@ semantics = struct(
     IS_BAZEL = True,
     get_default_resource_path = _get_default_resource_path,
     compatible_javac_options = _compatible_javac_options,
-    LAUNCHER_FLAG_LABEL = Label("@bazel_tools//tools/jdk:launcher_flag_alias"),
 )

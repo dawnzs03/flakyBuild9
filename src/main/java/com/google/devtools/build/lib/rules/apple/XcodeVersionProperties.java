@@ -36,14 +36,12 @@ public class XcodeVersionProperties extends NativeInfo implements XcodePropertie
       new BuiltinProvider<XcodeVersionProperties>(STARLARK_NAME, XcodeVersionProperties.class) {};
 
   @VisibleForTesting public static final String DEFAULT_IOS_SDK_VERSION = "8.4";
-  @VisibleForTesting public static final String DEFAULT_VISIONOS_SDK_VERSION = "1.0";
   @VisibleForTesting public static final String DEFAULT_WATCHOS_SDK_VERSION = "2.0";
   @VisibleForTesting public static final String DEFAULT_MACOS_SDK_VERSION = "10.11";
   @VisibleForTesting public static final String DEFAULT_TVOS_SDK_VERSION = "9.0";
 
   private final Optional<DottedVersion> xcodeVersion;
   private final DottedVersion defaultIosSdkVersion;
-  private final DottedVersion defaultVisionosSdkVersion;
   private final DottedVersion defaultWatchosSdkVersion;
   private final DottedVersion defaultTvosSdkVersion;
   private final DottedVersion defaultMacosSdkVersion;
@@ -65,7 +63,7 @@ public class XcodeVersionProperties extends NativeInfo implements XcodePropertie
    * specified.
    */
   XcodeVersionProperties(DottedVersion xcodeVersion) {
-    this(xcodeVersion, null, null, null, null, null);
+    this(xcodeVersion, null, null, null, null);
   }
 
   /**
@@ -75,7 +73,6 @@ public class XcodeVersionProperties extends NativeInfo implements XcodePropertie
   XcodeVersionProperties(
       DottedVersion xcodeVersion,
       @Nullable String defaultIosSdkVersion,
-      @Nullable String defaultVisionosSdkVersion,
       @Nullable String defaultWatchosSdkVersion,
       @Nullable String defaultTvosSdkVersion,
       @Nullable String defaultMacosSdkVersion) {
@@ -84,10 +81,6 @@ public class XcodeVersionProperties extends NativeInfo implements XcodePropertie
         Strings.isNullOrEmpty(defaultIosSdkVersion)
             ? DottedVersion.fromStringUnchecked(DEFAULT_IOS_SDK_VERSION)
             : DottedVersion.fromStringUnchecked(defaultIosSdkVersion);
-    this.defaultVisionosSdkVersion =
-        Strings.isNullOrEmpty(defaultVisionosSdkVersion)
-            ? DottedVersion.fromStringUnchecked(DEFAULT_VISIONOS_SDK_VERSION)
-            : DottedVersion.fromStringUnchecked(defaultVisionosSdkVersion);
     this.defaultWatchosSdkVersion =
         Strings.isNullOrEmpty(defaultWatchosSdkVersion)
             ? DottedVersion.fromStringUnchecked(DEFAULT_WATCHOS_SDK_VERSION)
@@ -124,13 +117,6 @@ public class XcodeVersionProperties extends NativeInfo implements XcodePropertie
     return defaultIosSdkVersion != null ? defaultIosSdkVersion.toString() : null;
   }
 
-  /** Returns the default visionOS sdk version to use if this xcode version is in use. */
-  @Nullable
-  @Override
-  public String getDefaultVisionosSdkVersionString() {
-    return defaultVisionosSdkVersion != null ? defaultVisionosSdkVersion.toString() : null;
-  }
-
   /** Returns the default watchos sdk version to use if this xcode version is in use. */
   @Nullable
   @Override
@@ -163,11 +149,6 @@ public class XcodeVersionProperties extends NativeInfo implements XcodePropertie
   }
 
   @Nullable
-  public DottedVersion getDefaultVisionosSdkVersion() {
-    return defaultVisionosSdkVersion;
-  }
-
-  @Nullable
   public DottedVersion getDefaultWatchosSdkVersion() {
     return defaultWatchosSdkVersion;
   }
@@ -193,7 +174,6 @@ public class XcodeVersionProperties extends NativeInfo implements XcodePropertie
     XcodeVersionProperties otherData = (XcodeVersionProperties) other;
     return xcodeVersion.equals(otherData.getXcodeVersion())
         && defaultIosSdkVersion.equals(otherData.getDefaultIosSdkVersion())
-        && defaultVisionosSdkVersion.equals(otherData.getDefaultVisionosSdkVersion())
         && defaultWatchosSdkVersion.equals(otherData.getDefaultWatchosSdkVersion())
         && defaultTvosSdkVersion.equals(otherData.getDefaultTvosSdkVersion())
         && defaultMacosSdkVersion.equals(otherData.getDefaultMacosSdkVersion());
@@ -204,7 +184,6 @@ public class XcodeVersionProperties extends NativeInfo implements XcodePropertie
     return Objects.hash(
         xcodeVersion,
         defaultIosSdkVersion,
-        defaultVisionosSdkVersion,
         defaultWatchosSdkVersion,
         defaultTvosSdkVersion,
         defaultMacosSdkVersion);

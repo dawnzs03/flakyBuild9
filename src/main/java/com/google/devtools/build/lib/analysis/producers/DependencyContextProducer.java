@@ -18,7 +18,6 @@ import com.google.devtools.build.lib.analysis.ToolchainCollection;
 import com.google.devtools.build.lib.analysis.TransitiveDependencyState;
 import com.google.devtools.build.lib.analysis.config.ConfigConditions;
 import com.google.devtools.build.lib.analysis.platform.PlatformInfo;
-import com.google.devtools.build.lib.skyframe.BuildConfigurationKey;
 import com.google.devtools.build.lib.skyframe.ConfiguredValueCreationException;
 import com.google.devtools.build.lib.skyframe.toolchains.ToolchainException;
 import com.google.devtools.build.lib.skyframe.toolchains.UnloadedToolchainContext;
@@ -57,7 +56,6 @@ public final class DependencyContextProducer
   // -------------------- Input --------------------
   private final UnloadedToolchainContextsInputs unloadedToolchainContextsInputs;
   private final TargetAndConfiguration targetAndConfiguration;
-  private final BuildConfigurationKey buildConfigurationKey;
   private final TransitiveDependencyState transitiveState;
 
   // -------------------- Output --------------------
@@ -72,12 +70,9 @@ public final class DependencyContextProducer
   public DependencyContextProducer(
       UnloadedToolchainContextsInputs unloadedToolchainContextsInputs,
       TargetAndConfiguration targetAndConfiguration,
-      BuildConfigurationKey buildConfigurationKey,
       TransitiveDependencyState transitiveState,
       ResultSink sink) {
     this.unloadedToolchainContextsInputs = unloadedToolchainContextsInputs;
-    this.buildConfigurationKey = buildConfigurationKey;
-    this.unloadedToolchainContexts = null;
     this.targetAndConfiguration = targetAndConfiguration;
     this.transitiveState = transitiveState;
     this.sink = sink;
@@ -109,9 +104,7 @@ public final class DependencyContextProducer
     }
 
     return new ConfigConditionsProducer(
-        targetAndConfiguration.getTarget(),
-        targetAndConfiguration.getTarget().getLabel(),
-        buildConfigurationKey,
+        targetAndConfiguration,
         unloadedToolchainContexts == null ? null : unloadedToolchainContexts.getTargetPlatform(),
         transitiveState,
         (ConfigConditionsProducer.ResultSink) this,

@@ -30,6 +30,7 @@ import net.starlark.java.annot.Param;
 import net.starlark.java.annot.ParamType;
 import net.starlark.java.annot.StarlarkMethod;
 import net.starlark.java.eval.EvalException;
+import net.starlark.java.eval.Sequence;
 import net.starlark.java.eval.StarlarkList;
 import net.starlark.java.eval.StarlarkThread;
 import net.starlark.java.eval.StarlarkValue;
@@ -45,17 +46,14 @@ public abstract class JavaPackageConfigurationProvider
       ImmutableList<PackageSpecificationProvider> packageSpecifications,
       ImmutableList<String> javacopts,
       NestedSet<Artifact> data) {
-    return new AutoValue_JavaPackageConfigurationProvider(
-        packageSpecifications, javacopts, JavaHelper.detokenizeJavaOptions(javacopts), data);
+    return new AutoValue_JavaPackageConfigurationProvider(packageSpecifications, javacopts, data);
   }
 
   /** Package specifications for which the configuration should be applied. */
   abstract ImmutableList<PackageSpecificationProvider> packageSpecifications();
 
-  abstract ImmutableList<String> javacoptsAsList();
-
   /** The javacopts for this configuration. */
-  abstract NestedSet<String> javacopts();
+  abstract ImmutableList<String> javacopts();
 
   abstract NestedSet<Artifact> data();
 
@@ -89,19 +87,10 @@ public abstract class JavaPackageConfigurationProvider
     return matches(label);
   }
 
-  @StarlarkMethod(
-      name = "javac_opts",
-      parameters = {@Param(name = "as_depset", defaultValue = "False", named = true)},
-      documented = false,
-      useStarlarkThread = true)
-  public StarlarkValue starlarkJavacOpts(boolean asDepset, StarlarkThread starlarkThread)
-      throws EvalException {
+  @StarlarkMethod(name = "javac_opts", documented = false, useStarlarkThread = true)
+  public Sequence<String> starlarkJavacOpts(StarlarkThread starlarkThread) throws EvalException {
     checkPrivateAccess(starlarkThread);
-    if (asDepset) {
-      return Depset.of(String.class, javacopts());
-    } else {
-      return StarlarkList.immutableCopyOf(javacoptsAsList());
-    }
+    return StarlarkList.immutableCopyOf(javacopts());
   }
 
   @StarlarkMethod(name = "data", documented = false, useStarlarkThread = true)

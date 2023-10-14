@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.devtools.build.lib.actions.Artifact;
 import com.google.devtools.build.lib.actions.RunfilesSupplier;
-import com.google.devtools.build.lib.analysis.config.BuildConfigurationValue.RunfileSymlinksMode;
 import com.google.devtools.build.lib.collect.nestedset.NestedSet;
 import com.google.devtools.build.lib.skyframe.serialization.autocodec.AutoCodec;
 import com.google.devtools.build.lib.vfs.PathFragment;
@@ -40,8 +39,8 @@ public final class SingleRunfilesSupplier implements RunfilesSupplier {
   private final Supplier<Map<PathFragment, Artifact>> runfilesInputs;
   @Nullable private final Artifact manifest;
   @Nullable private final Artifact repoMappingManifest;
-  private final RunfileSymlinksMode runfileSymlinksMode;
   private final boolean buildRunfileLinks;
+  private final boolean runfileLinksEnabled;
 
   /**
    * Same as {@link SingleRunfilesSupplier#SingleRunfilesSupplier(PathFragment, Runfiles, Artifact,
@@ -55,16 +54,16 @@ public final class SingleRunfilesSupplier implements RunfilesSupplier {
       PathFragment runfilesDir,
       Runfiles runfiles,
       @Nullable Artifact repoMappingManifest,
-      RunfileSymlinksMode runfileSymlinksMode,
-      boolean buildRunfileLinks) {
+      boolean buildRunfileLinks,
+      boolean runfileLinksEnabled) {
     return new SingleRunfilesSupplier(
         runfilesDir,
         runfiles,
-        /* runfilesCachingEnabled= */ true,
-        /* manifest= */ null,
+        /*runfilesCachingEnabled=*/ true,
+        /*manifest=*/ null,
         repoMappingManifest,
-        runfileSymlinksMode,
-        buildRunfileLinks);
+        buildRunfileLinks,
+        runfileLinksEnabled);
   }
 
   /**
@@ -75,8 +74,8 @@ public final class SingleRunfilesSupplier implements RunfilesSupplier {
    * @param manifest runfiles' associated runfiles manifest artifact, if present. Important: this
    *     parameter will be used to filter the resulting spawn's inputs to not poison downstream
    *     caches.
-   * @param runfileSymlinksMode how to create runfile symlinks
-   * @param buildRunfileLinks whether runfile symlinks should be created during the build
+   * @param buildRunfileLinks whether runfile symlinks are created during build
+   * @param runfileLinksEnabled whether it's allowed to create runfile symlinks
    */
   @AutoCodec.Instantiator
   public SingleRunfilesSupplier(
@@ -84,16 +83,16 @@ public final class SingleRunfilesSupplier implements RunfilesSupplier {
       Runfiles runfiles,
       @Nullable Artifact manifest,
       @Nullable Artifact repoMappingManifest,
-      RunfileSymlinksMode runfileSymlinksMode,
-      boolean buildRunfileLinks) {
+      boolean buildRunfileLinks,
+      boolean runfileLinksEnabled) {
     this(
         runfilesDir,
         runfiles,
-        /* runfilesCachingEnabled= */ false,
+        /*runfilesCachingEnabled=*/ false,
         manifest,
         repoMappingManifest,
-        runfileSymlinksMode,
-        buildRunfileLinks);
+        buildRunfileLinks,
+        runfileLinksEnabled);
   }
 
   private SingleRunfilesSupplier(
@@ -102,8 +101,8 @@ public final class SingleRunfilesSupplier implements RunfilesSupplier {
       boolean runfilesCachingEnabled,
       @Nullable Artifact manifest,
       @Nullable Artifact repoMappingManifest,
-      RunfileSymlinksMode runfileSymlinksMode,
-      boolean buildRunfileLinks) {
+      boolean buildRunfileLinks,
+      boolean runfileLinksEnabled) {
     this(
         runfilesDir,
         runfiles,
@@ -111,11 +110,11 @@ public final class SingleRunfilesSupplier implements RunfilesSupplier {
             ? new RunfilesCacher(runfiles, repoMappingManifest)
             : () ->
                 runfiles.getRunfilesInputs(
-                    /* eventHandler= */ null, /* location= */ null, repoMappingManifest),
+                    /*eventHandler=*/ null, /*location=*/ null, repoMappingManifest),
         manifest,
         repoMappingManifest,
-        runfileSymlinksMode,
-        buildRunfileLinks);
+        buildRunfileLinks,
+        runfileLinksEnabled);
   }
 
   private SingleRunfilesSupplier(
@@ -124,16 +123,16 @@ public final class SingleRunfilesSupplier implements RunfilesSupplier {
       Supplier<Map<PathFragment, Artifact>> runfilesInputs,
       @Nullable Artifact manifest,
       @Nullable Artifact repoMappingManifest,
-      RunfileSymlinksMode runfileSymlinksMode,
-      boolean buildRunfileLinks) {
+      boolean buildRunfileLinks,
+      boolean runfileLinksEnabled) {
     checkArgument(!runfilesDir.isAbsolute());
     this.runfilesDir = checkNotNull(runfilesDir);
     this.runfiles = checkNotNull(runfiles);
     this.runfilesInputs = checkNotNull(runfilesInputs);
     this.manifest = manifest;
     this.repoMappingManifest = repoMappingManifest;
-    this.runfileSymlinksMode = runfileSymlinksMode;
     this.buildRunfileLinks = buildRunfileLinks;
+    this.runfileLinksEnabled = runfileLinksEnabled;
   }
 
   @Override
@@ -157,17 +156,13 @@ public final class SingleRunfilesSupplier implements RunfilesSupplier {
   }
 
   @Override
-  @Nullable
-  public RunfileSymlinksMode getRunfileSymlinksMode(PathFragment runfilesDir) {
-    if (this.runfilesDir.equals(runfilesDir)) {
-      return runfileSymlinksMode;
-    }
-    return null;
+  public boolean isBuildRunfileLinks(PathFragment runfilesDir) {
+    return buildRunfileLinks && this.runfilesDir.equals(runfilesDir);
   }
 
   @Override
-  public boolean isBuildRunfileLinks(PathFragment runfilesDir) {
-    return buildRunfileLinks && this.runfilesDir.equals(runfilesDir);
+  public boolean isRunfileLinksEnabled(PathFragment runfilesDir) {
+    return runfileLinksEnabled && this.runfilesDir.equals(runfilesDir);
   }
 
   @Override
@@ -180,8 +175,8 @@ public final class SingleRunfilesSupplier implements RunfilesSupplier {
             runfilesInputs,
             manifest,
             repoMappingManifest,
-            runfileSymlinksMode,
-            buildRunfileLinks);
+            buildRunfileLinks,
+            runfileLinksEnabled);
   }
 
   /** Softly caches the result of {@link Runfiles#getRunfilesInputs}. */

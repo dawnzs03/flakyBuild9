@@ -890,18 +890,14 @@ class SkyFunctionEnvironment extends AbstractSkyFunctionEnvironment
       valueWithMetadata = ValueWithMetadata.normal(value, errorInfo, events);
     }
     GroupedDeps temporaryDirectDeps = primaryEntry.getTemporaryDirectDeps();
-    ImmutableSet<SkyKey> resetDeps = primaryEntry.getResetDirectDeps();
-    if (!oldDeps.isEmpty() || !resetDeps.isEmpty()) {
-      // Remove the rdep on this entry for each of 1) its old deps from a prior evaluation that are
-      // no longer direct deps and 2) reset deps that were not requested again post-restart.
+    if (!oldDeps.isEmpty()) {
+      // Remove the rdep on this entry for each of its old deps that is no longer a direct dep.
       ImmutableList<SkyKey> depsToRemove =
-          ImmutableList.copyOf(
-              Sets.difference(Sets.union(oldDeps, resetDeps), temporaryDirectDeps.toSet()));
+          ImmutableList.copyOf(Sets.difference(oldDeps, temporaryDirectDeps.toSet()));
       NodeBatch oldDepEntries =
           evaluatorContext.getGraph().getBatch(skyKey, Reason.RDEP_REMOVAL, depsToRemove);
       for (SkyKey key : depsToRemove) {
-        NodeEntry oldDepEntry = checkNotNull(oldDepEntries.get(key), key);
-        oldDepEntry.removeReverseDep(skyKey);
+        oldDepEntries.get(key).removeReverseDep(skyKey);
       }
     }
 
@@ -1204,7 +1200,7 @@ class SkyFunctionEnvironment extends AbstractSkyFunctionEnvironment
             .getGraphInconsistencyReceiver()
             .noteInconsistencyAndMaybeThrow(
                 env.skyKey, allMissingDeps, Inconsistency.ALREADY_DECLARED_CHILD_MISSING);
-        throw new UndonePreviouslyRequestedDeps(allMissingDeps);
+        throw new UndonePreviouslyRequestedDeps(ImmutableList.copyOf(allMissingDeps));
       }
     }
 

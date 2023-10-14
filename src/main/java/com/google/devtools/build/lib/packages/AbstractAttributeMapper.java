@@ -62,7 +62,7 @@ public abstract class AbstractAttributeMapper implements AttributeMap {
     if (value instanceof Attribute.ComputedDefault) {
       value = ((Attribute.ComputedDefault) value).getDefault(this);
     } else if (value instanceof Attribute.LateBoundDefault) {
-      value = ((Attribute.LateBoundDefault<?, ?>) value).getDefault(rule);
+      value = ((Attribute.LateBoundDefault<?, ?>) value).getDefault();
     } else if (value instanceof SelectorList) {
       throw new IllegalArgumentException(
           String.format(

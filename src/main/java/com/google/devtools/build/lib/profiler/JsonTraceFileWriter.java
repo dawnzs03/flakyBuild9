@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.devtools.build.lib.profiler;
 
+
 import com.google.common.base.Preconditions;
 import com.google.devtools.build.lib.analysis.BlazeVersionInfo;
 import com.google.devtools.build.lib.profiler.Profiler.TaskData;
@@ -48,8 +49,7 @@ class JsonTraceFileWriter implements Runnable {
   private static final long SLIM_PROFILE_MAXIMAL_DURATION_NS = Duration.ofMillis(250).toNanos();
 
   private static final TaskData POISON_PILL =
-      new TaskData(
-          /* threadId= */ 0, /* startTimeNanos= */ 0, /* eventType= */ null, "poison pill");
+      new TaskData(/* startTimeNanos= */ 0, /* eventType= */ null, "poison pill");
 
   JsonTraceFileWriter(
       OutputStream outStream,

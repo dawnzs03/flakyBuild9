@@ -21,7 +21,6 @@ import com.google.devtools.build.skydoc.rendering.proto.StardocOutputProtos.Attr
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import net.starlark.java.eval.Dict;
 import net.starlark.java.eval.EvalException;
 import net.starlark.java.eval.Module;
@@ -31,7 +30,9 @@ import net.starlark.java.eval.Starlark;
 import net.starlark.java.eval.StarlarkInt;
 import net.starlark.java.eval.StarlarkThread;
 
-/** Fake implementation of {@link StarlarkAttrModuleApi}. */
+/**
+ * Fake implementation of {@link StarlarkAttrModuleApi}.
+ */
 public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
 
   @Override
@@ -43,7 +44,11 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
       StarlarkThread thread)
       throws EvalException {
     return new FakeDescriptor(
-        AttributeType.INT, toTrimmedString(doc), mandatory, ImmutableList.of(), defaultInt);
+        AttributeType.INT,
+        Starlark.toJavaOptional(doc, String.class),
+        mandatory,
+        ImmutableList.of(),
+        defaultInt);
   }
 
   @Override
@@ -56,7 +61,7 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
       throws EvalException {
     return new FakeDescriptor(
         AttributeType.STRING,
-        toTrimmedString(doc),
+        Starlark.toJavaOptional(doc, String.class),
         mandatory,
         ImmutableList.of(),
         defaultString != null ? "\"" + defaultString + "\"" : null);
@@ -82,7 +87,11 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
       allNameGroups = allProviderNameGroups(providers, thread);
     }
     return new FakeDescriptor(
-        AttributeType.LABEL, toTrimmedString(doc), mandatory, allNameGroups, defaultO);
+        AttributeType.LABEL,
+        Starlark.toJavaOptional(doc, String.class),
+        mandatory,
+        allNameGroups,
+        defaultO);
   }
 
   @Override
@@ -91,7 +100,7 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
       throws EvalException {
     return new FakeDescriptor(
         AttributeType.STRING_LIST,
-        toTrimmedString(doc),
+        Starlark.toJavaOptional(doc, String.class),
         mandatory,
         ImmutableList.of(),
         defaultList);
@@ -106,7 +115,11 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
       StarlarkThread thread)
       throws EvalException {
     return new FakeDescriptor(
-        AttributeType.INT_LIST, toTrimmedString(doc), mandatory, ImmutableList.of(), defaultList);
+        AttributeType.INT_LIST,
+        Starlark.toJavaOptional(doc, String.class),
+        mandatory,
+        ImmutableList.of(),
+        defaultList);
   }
 
   @Override
@@ -128,7 +141,11 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
       allNameGroups = allProviderNameGroups(providers, thread);
     }
     return new FakeDescriptor(
-        AttributeType.LABEL_LIST, toTrimmedString(doc), mandatory, allNameGroups, defaultList);
+        AttributeType.LABEL_LIST,
+        Starlark.toJavaOptional(doc, String.class),
+        mandatory,
+        allNameGroups,
+        defaultList);
   }
 
   @Override
@@ -151,7 +168,7 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
     }
     return new FakeDescriptor(
         AttributeType.LABEL_STRING_DICT,
-        toTrimmedString(doc),
+        Starlark.toJavaOptional(doc, String.class),
         mandatory,
         allNameGroups,
         defaultList);
@@ -162,7 +179,7 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
       Boolean defaultO, Object doc, Boolean mandatory, StarlarkThread thread) throws EvalException {
     return new FakeDescriptor(
         AttributeType.BOOLEAN,
-        toTrimmedString(doc),
+        Starlark.toJavaOptional(doc, String.class),
         mandatory,
         ImmutableList.of(),
         Boolean.TRUE.equals(defaultO) ? "True" : "False");
@@ -172,7 +189,11 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
   public Descriptor outputAttribute(Object doc, Boolean mandatory, StarlarkThread thread)
       throws EvalException {
     return new FakeDescriptor(
-        AttributeType.OUTPUT, toTrimmedString(doc), mandatory, ImmutableList.of(), "");
+        AttributeType.OUTPUT,
+        Starlark.toJavaOptional(doc, String.class),
+        mandatory,
+        ImmutableList.of(),
+        "");
   }
 
   @Override
@@ -180,7 +201,11 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
       Boolean allowEmpty, Object doc, Boolean mandatory, StarlarkThread thread)
       throws EvalException {
     return new FakeDescriptor(
-        AttributeType.OUTPUT_LIST, toTrimmedString(doc), mandatory, ImmutableList.of(), "");
+        AttributeType.OUTPUT_LIST,
+        Starlark.toJavaOptional(doc, String.class),
+        mandatory,
+        ImmutableList.of(),
+        "");
   }
 
   @Override
@@ -188,7 +213,11 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
       Boolean allowEmpty, Dict<?, ?> defaultO, Object doc, Boolean mandatory, StarlarkThread thread)
       throws EvalException {
     return new FakeDescriptor(
-        AttributeType.STRING_DICT, toTrimmedString(doc), mandatory, ImmutableList.of(), defaultO);
+        AttributeType.STRING_DICT,
+        Starlark.toJavaOptional(doc, String.class),
+        mandatory,
+        ImmutableList.of(),
+        defaultO);
   }
 
   @Override
@@ -197,7 +226,7 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
       throws EvalException {
     return new FakeDescriptor(
         AttributeType.STRING_LIST_DICT,
-        toTrimmedString(doc),
+        Starlark.toJavaOptional(doc, String.class),
         mandatory,
         ImmutableList.of(),
         defaultO);
@@ -207,11 +236,11 @@ public class FakeStarlarkAttrModuleApi implements StarlarkAttrModuleApi {
   public Descriptor licenseAttribute(
       Object defaultO, Object doc, Boolean mandatory, StarlarkThread thread) throws EvalException {
     return new FakeDescriptor(
-        AttributeType.STRING_LIST, toTrimmedString(doc), mandatory, ImmutableList.of(), defaultO);
-  }
-
-  private static Optional<String> toTrimmedString(Object doc) {
-    return Starlark.toJavaOptional(doc, String.class).map(Starlark::trimDocString);
+        AttributeType.STRING_LIST,
+        Starlark.toJavaOptional(doc, String.class),
+        mandatory,
+        ImmutableList.of(),
+        defaultO);
   }
 
   @Override

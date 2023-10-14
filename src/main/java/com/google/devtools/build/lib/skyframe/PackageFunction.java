@@ -119,7 +119,6 @@ public class PackageFunction implements SkyFunction {
 
   private final ActionOnIOExceptionReadingBuildFile actionOnIOExceptionReadingBuildFile;
 
-  private final boolean shouldUseRepoDotBazel;
   private final GlobbingStrategy globbingStrategy;
 
   private final Function<SkyKey, ThreadStateReceiver> threadStateReceiverFactoryForMetrics;
@@ -183,7 +182,6 @@ public class PackageFunction implements SkyFunction {
       @Nullable BzlLoadFunction bzlLoadFunctionForInlining,
       @Nullable PackageProgressReceiver packageProgress,
       ActionOnIOExceptionReadingBuildFile actionOnIOExceptionReadingBuildFile,
-      boolean shouldUseRepoDotBazel,
       GlobbingStrategy globbingStrategy,
       Function<SkyKey, ThreadStateReceiver> threadStateReceiverFactoryForMetrics) {
     this.bzlLoadFunctionForInlining = bzlLoadFunctionForInlining;
@@ -193,7 +191,6 @@ public class PackageFunction implements SkyFunction {
     this.numPackagesSuccessfullyLoaded = numPackagesSuccessfullyLoaded;
     this.packageProgress = packageProgress;
     this.actionOnIOExceptionReadingBuildFile = actionOnIOExceptionReadingBuildFile;
-    this.shouldUseRepoDotBazel = shouldUseRepoDotBazel;
     this.globbingStrategy = globbingStrategy;
     this.threadStateReceiverFactoryForMetrics = threadStateReceiverFactoryForMetrics;
   }
@@ -1245,26 +1242,22 @@ public class PackageFunction implements SkyFunction {
         (IgnoredPackagePrefixesValue)
             env.getValue(IgnoredPackagePrefixesValue.key(packageId.getRepository()));
     RepoFileValue repoFileValue;
-    if (shouldUseRepoDotBazel) {
-      try {
-        repoFileValue =
-            (RepoFileValue)
-                env.getValueOrThrow(
-                    RepoFileValue.key(packageId.getRepository()),
-                    IOException.class,
-                    BadRepoFileException.class);
-      } catch (IOException | BadRepoFileException e) {
-        throw PackageFunctionException.builder()
-            .setType(PackageFunctionException.Type.BUILD_FILE_CONTAINS_ERRORS)
-            .setPackageIdentifier(packageId)
-            .setTransience(Transience.PERSISTENT)
-            .setException(e)
-            .setMessage("bad REPO.bazel file")
-            .setPackageLoadingCode(PackageLoading.Code.BAD_REPO_FILE)
-            .build();
-      }
-    } else {
-      repoFileValue = RepoFileValue.EMPTY;
+    try {
+      repoFileValue =
+          (RepoFileValue)
+              env.getValueOrThrow(
+                  RepoFileValue.key(packageId.getRepository()),
+                  IOException.class,
+                  BadRepoFileException.class);
+    } catch (IOException | BadRepoFileException e) {
+      throw PackageFunctionException.builder()
+          .setType(PackageFunctionException.Type.BUILD_FILE_CONTAINS_ERRORS)
+          .setPackageIdentifier(packageId)
+          .setTransience(Transience.PERSISTENT)
+          .setException(e)
+          .setMessage("bad REPO.bazel file")
+          .setPackageLoadingCode(PackageLoading.Code.BAD_REPO_FILE)
+          .build();
     }
     if (env.valuesMissing()) {
       return null;

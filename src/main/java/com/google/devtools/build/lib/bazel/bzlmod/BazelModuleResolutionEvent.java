@@ -36,9 +36,4 @@ public abstract class BazelModuleResolutionEvent implements Postable {
 
   public abstract ImmutableTable<ModuleExtensionId, ModuleKey, ModuleExtensionUsage>
       getExtensionUsagesById();
-
-  @Override
-  public boolean storeForReplay() {
-    return true;
-  }
 }

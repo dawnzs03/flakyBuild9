@@ -54,7 +54,6 @@ import com.google.devtools.build.lib.packages.Type.ConversionException;
 import com.google.devtools.build.lib.skyframe.serialization.autocodec.AutoCodec;
 import com.google.devtools.build.lib.skyframe.serialization.autocodec.AutoCodec.VisibleForSerialization;
 import com.google.devtools.build.lib.skyframe.serialization.autocodec.SerializationConstant;
-import com.google.devtools.build.lib.starlarkbuildapi.StarlarkSubruleApi;
 import com.google.devtools.build.lib.util.HashCodes;
 import com.google.devtools.build.lib.util.StringUtil;
 import com.google.devtools.build.lib.vfs.PathFragment;
@@ -770,8 +769,6 @@ public class RuleClass {
         AdvertisedProviderSet.builder();
     private StarlarkCallable configuredTargetFunction = null;
     private BuildSetting buildSetting = null;
-
-    private ImmutableList<? extends StarlarkSubruleApi> subrules = ImmutableList.of();
     private Function<? super Rule, Map<String, Label>> externalBindingsFunction =
         NO_EXTERNAL_BINDINGS;
     private Function<? super Rule, ? extends List<String>> toolchainsToRegisterFunction =
@@ -949,8 +946,7 @@ public class RuleClass {
           execGroups,
           outputFileKind,
           ImmutableList.copyOf(attributes.values()),
-          buildSetting,
-          subrules);
+          buildSetting);
     }
 
     private static void checkAttributes(
@@ -1270,12 +1266,6 @@ public class RuleClass {
     @CanIgnoreReturnValue
     public Builder setBuildSetting(BuildSetting buildSetting) {
       this.buildSetting = buildSetting;
-      return this;
-    }
-
-    @CanIgnoreReturnValue
-    public Builder setSubrules(ImmutableList<? extends StarlarkSubruleApi> subrules) {
-      this.subrules = subrules;
       return this;
     }
 
@@ -1632,12 +1622,8 @@ public class RuleClass {
   @Nullable private final BuildSetting buildSetting;
 
   /**
-   * The subrules associated with this rule. Empty for all rule classes except Starlark-defined
-   * rules that explicitly pass {@code subrules = [...]} to their {@code rule()} declaration
+   * Returns the extra bindings a workspace function adds to the WORKSPACE file.
    */
-  private final ImmutableSet<? extends StarlarkSubruleApi> subrules;
-
-  /** Returns the extra bindings a workspace function adds to the WORKSPACE file. */
   private final Function<? super Rule, Map<String, Label>> externalBindingsFunction;
 
   /** Returns the toolchains a workspace function wants to have registered in the WORKSPACE file. */
@@ -1729,8 +1715,7 @@ public class RuleClass {
       Map<String, ExecGroup> execGroups,
       OutputFile.Kind outputFileKind,
       ImmutableList<Attribute> attributes,
-      @Nullable BuildSetting buildSetting,
-      ImmutableList<? extends StarlarkSubruleApi> subrules) {
+      @Nullable BuildSetting buildSetting) {
     this.name = name;
     this.callstack = callstack;
     this.key = key;
@@ -1766,7 +1751,7 @@ public class RuleClass {
     this.executionPlatformConstraints = ImmutableSet.copyOf(executionPlatformConstraints);
     this.execGroups = ImmutableMap.copyOf(execGroups);
     this.buildSetting = buildSetting;
-    this.subrules = ImmutableSet.copyOf(subrules);
+
     // Create the index and collect non-configurable attributes while doing some validation checks.
     Preconditions.checkState(
         !attributes.isEmpty() && attributes.get(0).equals(NAME_ATTRIBUTE),
@@ -1982,13 +1967,11 @@ public class RuleClass {
       Package.Builder pkgBuilder,
       Label ruleLabel,
       AttributeValues<T> attributeValues,
-      boolean failOnUnknownAttributes,
       EventHandler eventHandler,
       List<StarlarkThread.CallStackEntry> callstack)
       throws LabelSyntaxException, InterruptedException, CannotPrecomputeDefaultsException {
     Rule rule = pkgBuilder.createRule(ruleLabel, this, callstack);
-    populateRuleAttributeValues(
-        rule, pkgBuilder, attributeValues, failOnUnknownAttributes, eventHandler);
+    populateRuleAttributeValues(rule, pkgBuilder, attributeValues, eventHandler);
     checkAspectAllowedValues(rule, eventHandler);
     rule.populateOutputFiles(eventHandler, pkgBuilder);
     checkForDuplicateLabels(rule, eventHandler);
@@ -2011,7 +1994,7 @@ public class RuleClass {
       ImplicitOutputsFunction implicitOutputsFunction)
       throws InterruptedException, CannotPrecomputeDefaultsException {
     Rule rule = pkgBuilder.createRule(ruleLabel, this, callstack.toLocation(), callstack.next());
-    populateRuleAttributeValues(rule, pkgBuilder, attributeValues, true, NullEventHandler.INSTANCE);
+    populateRuleAttributeValues(rule, pkgBuilder, attributeValues, NullEventHandler.INSTANCE);
     rule.populateOutputFilesUnchecked(pkgBuilder, implicitOutputsFunction);
     return rule;
   }
@@ -2027,7 +2010,6 @@ public class RuleClass {
       Rule rule,
       Package.Builder pkgBuilder,
       AttributeValues<T> attributeValues,
-      boolean failOnUnknownAttributes,
       EventHandler eventHandler)
       throws InterruptedException, CannotPrecomputeDefaultsException {
 
@@ -2036,7 +2018,6 @@ public class RuleClass {
             rule,
             pkgBuilder.getLabelConverter(),
             attributeValues,
-            failOnUnknownAttributes,
             pkgBuilder.getListInterner(),
             eventHandler);
     populateDefaultRuleAttributeValues(rule, pkgBuilder, definedAttrIndices, eventHandler);
@@ -2059,7 +2040,6 @@ public class RuleClass {
       Rule rule,
       LabelConverter labelConverter,
       AttributeValues<T> attributeValues,
-      boolean failOnUnknownAttributes,
       Interner<ImmutableList<?>> listInterner,
       EventHandler eventHandler) {
     BitSet definedAttrIndices = new BitSet();
@@ -2067,7 +2047,7 @@ public class RuleClass {
       String attributeName = attributeValues.getName(attributeAccessor);
       Object attributeValue = attributeValues.getValue(attributeAccessor);
       // Ignore all None values.
-      if (attributeValue == Starlark.NONE && !failOnUnknownAttributes) {
+      if (attributeValue == Starlark.NONE) {
         continue;
       }
 
@@ -2089,15 +2069,10 @@ public class RuleClass {
             eventHandler);
         continue;
       }
-      // Ignore all None values (after reporting an error)
-      if (attributeValue == Starlark.NONE) {
-        continue;
-      }
-
       Attribute attr = getAttribute(attrIndex);
 
       if (attributeName.equals("licenses") && ignoreLicenses) {
-        rule.setAttributeValue(attr, License.NO_LICENSE, /* explicit= */ false);
+        rule.setAttributeValue(attr, License.NO_LICENSE, /*explicit=*/ false);
         definedAttrIndices.set(attrIndex);
         continue;
       }
@@ -2258,7 +2233,7 @@ public class RuleClass {
       // EventHandler, any errors that might occur during the function's evaluation can
       // be discovered and propagated here.
       Object valueToSet;
-      Object defaultValue = attr.getDefaultValue(null);
+      Object defaultValue = attr.getDefaultValue();
       if (defaultValue instanceof StarlarkComputedDefaultTemplate) {
         StarlarkComputedDefaultTemplate template = (StarlarkComputedDefaultTemplate) defaultValue;
         valueToSet = template.computePossibleValues(attr, rule, eventHandler);
@@ -2453,7 +2428,7 @@ public class RuleClass {
             // By this point the AspectDefinition has been created and values assigned.
             if (attrOfAspect.checkAllowedValues()) {
               PredicateWithMessage<Object> allowedValues = attrOfAspect.getAllowedValues();
-              Object value = attrOfAspect.getDefaultValue(null);
+              Object value = attrOfAspect.getDefaultValue();
               if (!allowedValues.apply(value)) {
                 if (RawAttributeMapper.of(rule).isConfigurable(attrOfAspect.getName())) {
                   rule.reportError(
@@ -2673,10 +2648,5 @@ public class RuleClass {
     }
     // END-INTERNAL
     return false;
-  }
-
-  public ImmutableSet<? extends StarlarkSubruleApi> getSubrules() {
-    Preconditions.checkState(isStarlark());
-    return subrules;
   }
 }

@@ -41,7 +41,6 @@ import com.google.devtools.build.lib.vfs.Path;
 import com.google.devtools.build.lib.view.test.TestStatus.BlazeTestStatus;
 import com.google.devtools.build.lib.view.test.TestStatus.FailedTestCasesStatus;
 import com.google.devtools.build.lib.view.test.TestStatus.TestCase;
-import com.google.devtools.build.lib.view.test.TestStatus.TestCase.Status;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
@@ -219,18 +218,7 @@ public class TestSummary implements Comparable<TestSummary>, BuildEventWithOrder
       if (testCase.getStatus() != TestCase.Status.PASSED) {
         this.summary.failedTestCases.add(testCase);
       }
-
-      if (testCase.getStatus() == Status.PASSED) {
-        this.summary.passedTestCases.add(testCase);
-      }
-
       return 1;
-    }
-
-    public Builder addPassedTestCases(List<TestCase> testCases) {
-      checkMutation(testCases);
-      summary.passedTestCases.addAll(testCases);
-      return this;
     }
 
     @CanIgnoreReturnValue
@@ -408,7 +396,6 @@ public class TestSummary implements Comparable<TestSummary>, BuildEventWithOrder
   private boolean ranRemotely;
   private boolean wasUnreportedWrongSize;
   private List<TestCase> failedTestCases = new ArrayList<>();
-  private final List<TestCase> passedTestCases = new ArrayList<>();
   private List<Path> passedLogs = new ArrayList<>();
   private List<Path> failedLogs = new ArrayList<>();
   private List<String> warnings = new ArrayList<>();
@@ -518,10 +505,6 @@ public class TestSummary implements Comparable<TestSummary>, BuildEventWithOrder
 
   public List<TestCase> getFailedTestCases() {
     return failedTestCases;
-  }
-
-  public List<TestCase> getPassedTestCases() {
-    return passedTestCases;
   }
 
   public List<Path> getCoverageFiles() {

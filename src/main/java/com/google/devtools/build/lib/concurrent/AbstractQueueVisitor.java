@@ -258,9 +258,7 @@ public class AbstractQueueVisitor implements QuiescingExecutor {
 
   @Override
   public final void awaitQuiescence(boolean interruptWorkers) throws InterruptedException {
-    if (catastrophe != null) {
-      Throwables.throwIfUnchecked(catastrophe);
-    }
+    Throwables.propagateIfPossible(catastrophe);
     try {
       synchronized (zeroRemainingTasks) {
         while (remainingTasks.get() != 0 && !jobsMustBeStopped) {
@@ -275,19 +273,6 @@ public class AbstractQueueVisitor implements QuiescingExecutor {
     }
 
     awaitTermination(interruptWorkers);
-  }
-
-  @Override
-  public final void awaitQuiescenceWithoutShutdown(boolean interruptWorkers)
-      throws InterruptedException {
-    if (catastrophe != null) {
-      Throwables.throwIfUnchecked(catastrophe);
-    }
-    synchronized (zeroRemainingTasks) {
-      while (remainingTasks.get() != 0 && !jobsMustBeStopped) {
-        zeroRemainingTasks.wait();
-      }
-    }
   }
 
   /** Schedules a call. Called in a worker thread. */

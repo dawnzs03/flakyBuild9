@@ -336,6 +336,11 @@ public final class BzlmodTestUtil {
       return this;
     }
 
+    public TestTagBuilder setLocation(String file, int row, int column) {
+      location = Location.fromFileLineColumn(file, row, column);
+      return this;
+    }
+
     public Tag build() {
       return Tag.builder()
           .setTagName(tagName)

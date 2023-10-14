@@ -95,9 +95,6 @@ public final class SourceManifestAction extends AbstractFileWriteAction
      * @return
      */
     boolean isRemotable();
-
-    /** Whether the manifest includes absolute paths to artifacts. */
-    boolean emitsAbsolutePaths();
   }
 
   /** The strategy we use to write manifest entries. */
@@ -257,7 +254,7 @@ public final class SourceManifestAction extends AbstractFileWriteAction
       Fingerprint fp) {
     fp.addString(GUID);
     fp.addBoolean(remotableSourceManifestActions);
-    runfiles.fingerprint(actionKeyContext, fp, manifestWriter.emitsAbsolutePaths());
+    runfiles.fingerprint(actionKeyContext, fp);
     fp.addBoolean(repoMappingManifest != null);
     if (repoMappingManifest != null) {
       fp.addPath(repoMappingManifest.getExecPath());
@@ -268,9 +265,7 @@ public final class SourceManifestAction extends AbstractFileWriteAction
   public String describeKey() {
     return String.format(
         "GUID: %s\nremotableSourceManifestActions: %s\nrunfiles: %s\n",
-        GUID,
-        remotableSourceManifestActions,
-        runfiles.describeFingerprint(manifestWriter.emitsAbsolutePaths()));
+        GUID, remotableSourceManifestActions, runfiles.describeFingerprint());
   }
 
   /** Supported manifest writing strategies. */
@@ -316,11 +311,6 @@ public final class SourceManifestAction extends AbstractFileWriteAction
         // There is little gain to remoting these, since they include absolute path names inline.
         return false;
       }
-
-      @Override
-      public boolean emitsAbsolutePaths() {
-        return true;
-      }
     },
 
     /**
@@ -355,11 +345,6 @@ public final class SourceManifestAction extends AbstractFileWriteAction
       public boolean isRemotable() {
         // Source-only symlink manifest has root-relative paths and does not include absolute paths.
         return true;
-      }
-
-      @Override
-      public boolean emitsAbsolutePaths() {
-        return false;
       }
     }
   }

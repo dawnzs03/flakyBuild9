@@ -215,20 +215,20 @@ public class CcToolchainAttributesProvider extends NativeInfo implements HasCcTo
       this.licensesProvider = null;
     }
     // TODO(b/65835260): Remove this conditional once j2objc can learn the toolchain type.
-    if (ruleContext.attributes().has(CcToolchainRule.CC_TOOLCHAIN_TYPE_ATTRIBUTE_NAME)) {
+    if (ruleContext.attributes().has(CcToolchain.CC_TOOLCHAIN_TYPE_ATTRIBUTE_NAME)) {
       this.toolchainType =
           ruleContext
               .attributes()
-              .get(CcToolchainRule.CC_TOOLCHAIN_TYPE_ATTRIBUTE_NAME, BuildType.LABEL);
+              .get(CcToolchain.CC_TOOLCHAIN_TYPE_ATTRIBUTE_NAME, BuildType.LABEL);
     } else {
       this.toolchainType = null;
     }
     this.allowlistForLayeringCheck =
         Allowlist.fetchPackageSpecificationProvider(
-            ruleContext, CcToolchainRule.ALLOWED_LAYERING_CHECK_FEATURES_ALLOWLIST);
+            ruleContext, CcToolchain.ALLOWED_LAYERING_CHECK_FEATURES_ALLOWLIST);
     this.allowlistForLooseHeaderCheck =
         Allowlist.fetchPackageSpecificationProvider(
-            ruleContext, CcToolchainRule.LOOSE_HEADER_CHECK_ALLOWLIST);
+            ruleContext, CcToolchain.LOOSE_HEADER_CHECK_ALLOWLIST);
     this.ccToolchainBuildVariablesFunc = ccToolchainBuildVariablesFunc;
   }
 

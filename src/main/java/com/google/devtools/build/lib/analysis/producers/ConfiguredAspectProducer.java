@@ -89,7 +89,7 @@ final class ConfiguredAspectProducer
       @Nullable SkyValue untypedValue, @Nullable AspectCreationException error) {
     if (untypedValue != null) {
       var value = (AspectValue) untypedValue;
-      aspectValues.put(value.getAspect().getDescriptor(), value);
+      aspectValues.put(value.getKey().getAspectDescriptor(), value);
       return;
     }
     sink.acceptConfiguredAspectError(error);
@@ -109,8 +109,7 @@ final class ConfiguredAspectProducer
       }
       configuredAspects.add(value);
       if (transitiveState.storeTransitivePackages()) {
-        transitiveState.updateTransitivePackages(
-            value.getKeyForTransitivePackageTracking(), value.getTransitivePackages());
+        transitiveState.updateTransitivePackages(value.getKey(), value.getTransitivePackages());
       }
     }
     try {

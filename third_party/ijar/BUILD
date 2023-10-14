@@ -12,7 +12,7 @@ cc_library(
     srcs = [
         "zip.cc",
     ] + select({
-        "//src/conditions:windows": [
+        "//src:windows": [
             "mapped_file_windows.cc",
         ],
         "//conditions:default": [
@@ -33,7 +33,7 @@ cc_library(
         ":platform_utils",
         ":zlib_client",
     ] + select({
-        "//src/conditions:windows": [
+        "//src:windows": [
             "//src/main/cpp/util:errors",
             "//src/main/cpp/util:filesystem",
             "//src/main/cpp/util:logging",
@@ -106,7 +106,7 @@ filegroup(
         "zlib_client.cc",
         "zlib_client.h",
     ] + select({
-        "//src/conditions:windows": [
+        "//src:windows": [
             "mapped_file_windows.cc",
         ],
         "//conditions:default": [

@@ -258,18 +258,7 @@ public class BuildViewForTesting {
   /** Sets the configuration. Not thread-safe. */
   public void setConfigurationForTesting(
       EventHandler eventHandler, BuildConfigurationValue configuration) {
-    try {
-      skyframeBuildView.setConfiguration(
-          eventHandler,
-          configuration,
-          /* maxDifferencesToShow= */ -1, /* allowAnalysisCacheDiscards */
-          true);
-    } catch (InvalidConfigurationException e) {
-      throw new UnsupportedOperationException(
-          "InvalidConfigurationException was thrown and caught during a test, "
-              + "this case is not yet handled",
-          e);
-    }
+    skyframeBuildView.setConfiguration(eventHandler, configuration, /* maxDifferencesToShow= */ -1);
   }
 
   public ArtifactFactory getArtifactFactory() {

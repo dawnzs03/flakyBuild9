@@ -14,8 +14,7 @@
 
 package com.google.devtools.build.lib.skyframe;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.devtools.build.lib.bugreport.BugReport;
 import com.google.devtools.build.lib.skyframe.serialization.autocodec.AutoCodec;
@@ -26,7 +25,6 @@ import com.google.devtools.build.skyframe.SkyKey;
 import com.google.devtools.build.skyframe.SkyValue;
 import com.google.devtools.build.skyframe.SkyframeLookupResult;
 import java.util.Map;
-import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -82,9 +80,13 @@ public final class ActionEnvironmentFunction implements SkyFunction {
    * if and only if some dependencies from Skyframe still need to be resolved.
    */
   @Nullable
-  public static ImmutableMap<String, String> getEnvironmentView(Environment env, Set<String> keys)
-      throws InterruptedException {
-    var skyframeKeys = keys.stream().map(ActionEnvironmentFunction::key).collect(toImmutableSet());
+  public static ImmutableMap<String, String> getEnvironmentView(
+      Environment env, Iterable<String> keys) throws InterruptedException {
+    ImmutableList.Builder<SkyKey> skyframeKeysBuilder = ImmutableList.builder();
+    for (String key : keys) {
+      skyframeKeysBuilder.add(key(key));
+    }
+    ImmutableList<SkyKey> skyframeKeys = skyframeKeysBuilder.build();
     SkyframeLookupResult values = env.getValuesAndExceptions(skyframeKeys);
     if (env.valuesMissing()) {
       return null;

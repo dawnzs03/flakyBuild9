@@ -18,6 +18,7 @@ import com.google.common.base.Preconditions;
 import com.google.devtools.build.lib.packages.Info;
 import com.google.devtools.build.lib.packages.Provider;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import javax.annotation.Nullable;
 
@@ -61,8 +62,12 @@ public class TransitiveInfoProviderMapBuilder {
   @CanIgnoreReturnValue
   public TransitiveInfoProviderMapBuilder put(Info classObject) {
     Preconditions.checkNotNull(classObject);
+    // TODO(bazel-team): VisibilityProvider should be migrated to Info to avoid the
+    //  PackageSpecificationInfo check. Perhaps as part of a wider effort to migrate all native
+    //  TransitiveInfoProviders to Info.
     Preconditions.checkState(
-        !(classObject instanceof TransitiveInfoProvider),
+        !(classObject instanceof TransitiveInfoProvider)
+            || classObject.getProvider().getPrintableName().equals("PackageSpecificationInfo"),
         "Declared provider %s should not implement TransitiveInfoProvider",
         classObject.getClass());
 
@@ -83,10 +88,22 @@ public class TransitiveInfoProviderMapBuilder {
     return put(TransitiveInfoProviderEffectiveClassHelper.get(provider), provider);
   }
 
+  public TransitiveInfoProviderMapBuilder add(TransitiveInfoProvider... providers) {
+    return addAll(Arrays.asList(providers));
+  }
+
   @CanIgnoreReturnValue
   public TransitiveInfoProviderMapBuilder addAll(TransitiveInfoProviderMap other) {
     for (int i = 0; i < other.getProviderCount(); ++i) {
       providers.put(other.getProviderKeyAt(i), other.getProviderInstanceAt(i));
+    }
+    return this;
+  }
+
+  @CanIgnoreReturnValue
+  public TransitiveInfoProviderMapBuilder addAll(Iterable<TransitiveInfoProvider> providers) {
+    for (TransitiveInfoProvider provider : providers) {
+      add(provider);
     }
     return this;
   }

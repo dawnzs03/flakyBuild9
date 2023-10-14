@@ -47,6 +47,7 @@ import com.google.devtools.build.lib.actions.TotalAndConfiguredTargetOnlyMetric;
 import com.google.devtools.build.lib.analysis.AnalysisFailureEvent;
 import com.google.devtools.build.lib.analysis.AnalysisOperationWatcher;
 import com.google.devtools.build.lib.analysis.AnalysisPhaseCompleteEvent;
+import com.google.devtools.build.lib.analysis.AspectValue;
 import com.google.devtools.build.lib.analysis.CachingAnalysisEnvironment;
 import com.google.devtools.build.lib.analysis.ConfiguredAspect;
 import com.google.devtools.build.lib.analysis.ConfiguredRuleClassProvider;
@@ -65,7 +66,6 @@ import com.google.devtools.build.lib.analysis.config.BuildConfigurationValue;
 import com.google.devtools.build.lib.analysis.config.BuildOptions;
 import com.google.devtools.build.lib.analysis.config.BuildOptions.OptionsDiff;
 import com.google.devtools.build.lib.analysis.config.ConfigConditions;
-import com.google.devtools.build.lib.analysis.config.InvalidConfigurationException;
 import com.google.devtools.build.lib.analysis.config.StarlarkTransitionCache;
 import com.google.devtools.build.lib.analysis.test.AnalysisFailurePropagationException;
 import com.google.devtools.build.lib.analysis.test.CoverageActionFinishedEvent;
@@ -89,7 +89,6 @@ import com.google.devtools.build.lib.packages.Target;
 import com.google.devtools.build.lib.packages.TargetUtils;
 import com.google.devtools.build.lib.profiler.Profiler;
 import com.google.devtools.build.lib.profiler.SilentCloseable;
-import com.google.devtools.build.lib.server.FailureDetails;
 import com.google.devtools.build.lib.skyframe.ArtifactConflictFinder.ConflictException;
 import com.google.devtools.build.lib.skyframe.AspectKeyCreator.AspectKey;
 import com.google.devtools.build.lib.skyframe.AspectKeyCreator.TopLevelAspectsKey;
@@ -111,6 +110,7 @@ import com.google.devtools.build.skyframe.SkyValue;
 import com.google.devtools.build.skyframe.WalkableGraph;
 import com.google.devtools.common.options.OptionDefinition;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -279,11 +279,7 @@ public final class SkyframeBuildView {
   /** Sets the configuration. Not thread-safe. DO NOT CALL except from tests! */
   @VisibleForTesting
   public void setConfiguration(
-      EventHandler eventHandler,
-      BuildConfigurationValue configuration,
-      int maxDifferencesToShow,
-      boolean allowAnalysisCacheDiscards)
-      throws InvalidConfigurationException {
+      EventHandler eventHandler, BuildConfigurationValue configuration, int maxDifferencesToShow) {
     if (skyframeAnalysisWasDiscarded) {
       eventHandler.handle(
           Event.warn(
@@ -294,12 +290,6 @@ public final class SkyframeBuildView {
     } else {
       String diff = describeConfigurationDifference(configuration, maxDifferencesToShow);
       if (diff != null) {
-        if (!allowAnalysisCacheDiscards) {
-          String message = String.format("%s, analysis cache would have been discarded.", diff);
-          throw new InvalidConfigurationException(
-              message,
-              FailureDetails.BuildConfiguration.Code.CONFIGURATION_DISCARDED_ANALYSIS_CACHE);
-        }
         eventHandler.handle(
             Event.warn(
                 diff
@@ -428,7 +418,6 @@ public final class SkyframeBuildView {
             skyframeExecutor.getCyclesReporter(),
             eventHandler,
             keepGoing,
-            skyframeExecutor.tracksStateForIncrementality(),
             eventBus,
             bugReporter);
 
@@ -436,7 +425,7 @@ public final class SkyframeBuildView {
     // Sometimes there are action conflicts, but the actions aren't actually required to run by the
     // build. In such cases, the conflict should still be reported to the user.
     // See OutputArtifactConflictTest#unusedActionsStillConflict.
-    Set<String> reportedArtifactPrefixConflictExceptions = Sets.newHashSet();
+    Collection<Exception> reportedExceptions = Sets.newHashSet();
     for (Entry<ActionAnalysisMetadata, ConflictException> bad : actionConflicts.entrySet()) {
       ConflictException ex = bad.getValue();
       DetailedExitCode detailedExitCode;
@@ -454,7 +443,7 @@ public final class SkyframeBuildView {
         }
       } catch (ArtifactPrefixConflictException apce) {
         detailedExitCode = apce.getDetailedExitCode();
-        if (reportedArtifactPrefixConflictExceptions.add(apce.getMessage())) {
+        if (reportedExceptions.add(apce)) {
           eventHandler.handle(Event.error(apce.getMessage()));
         }
       }
@@ -711,10 +700,9 @@ public final class SkyframeBuildView {
                           skyframeExecutor.getCyclesReporter(),
                           eventHandler,
                           keepGoing,
-                          skyframeExecutor.tracksStateForIncrementality(),
                           eventBus,
                           bugReporter,
-                          /* includeExecutionPhase= */ true)
+                          /*includeExecutionPhase=*/ true)
                       .executionDetailedExitCode());
             }
           }
@@ -737,7 +725,6 @@ public final class SkyframeBuildView {
                       skyframeExecutor.getCyclesReporter(),
                       eventHandler,
                       keepGoing,
-                      skyframeExecutor.tracksStateForIncrementality(),
                       eventBus,
                       bugReporter,
                       /* includeExecutionPhase= */ true)
@@ -782,10 +769,9 @@ public final class SkyframeBuildView {
               skyframeExecutor.getCyclesReporter(),
               eventHandler,
               keepGoing,
-              skyframeExecutor.tracksStateForIncrementality(),
               eventBus,
               bugReporter,
-              /* includeExecutionPhase= */ true);
+              /*includeExecutionPhase=*/ true);
       detailedExitCodes.add(errorProcessingResult.executionDetailedExitCode());
 
       foundActionConflictInLatestCheck = !errorProcessingResult.actionConflicts().isEmpty();
@@ -950,7 +936,7 @@ public final class SkyframeBuildView {
       boolean keepGoing)
       throws ViewCreationFailedException, InterruptedException {
     // ArtifactPrefixConflictExceptions come in pairs, and only one should be reported.
-    Set<String> reportedArtifactPrefixConflictExceptions = Sets.newHashSet();
+    Set<ArtifactPrefixConflictException> reportedExceptions = Sets.newHashSet();
 
     // Sometimes a conflicting action can't be traced to a top level target via
     // TopLevelActionConflictReport. We therefore need to print the errors from the conflicts
@@ -969,7 +955,7 @@ public final class SkyframeBuildView {
                           + "': it will not be built")));
         }
       } catch (ArtifactPrefixConflictException apce) {
-        if (reportedArtifactPrefixConflictExceptions.add(apce.getMessage())) {
+        if (reportedExceptions.add(apce)) {
           eventHandler.handle(Event.error(apce.getMessage()));
         }
       }
@@ -1078,7 +1064,9 @@ public final class SkyframeBuildView {
         TopLevelAspectsValue topLevelAspectsValue =
             (TopLevelAspectsValue)
                 skyframeExecutor.getDoneSkyValueForIntrospection(topLevelAspectsKey);
-        aspectKeysBuilder.addAll(topLevelAspectsValue.getTopLevelAspectsMap().keySet());
+        topLevelAspectsValue
+            .getTopLevelAspectsValues()
+            .forEach(aspectValue -> aspectKeysBuilder.add(aspectValue.getKey()));
       } catch (FailureToRetrieveIntrospectedValueException e) {
         // It could happen that the analysis of TopLevelAspectKey wasn't complete: either its own
         // analysis failed, or another error was raise in --nokeep_going mode. In that case, it
@@ -1145,7 +1133,9 @@ public final class SkyframeBuildView {
         continue;
       }
       TopLevelAspectsValue topLevelAspectsValue = (TopLevelAspectsValue) value.getWrappedSkyValue();
-      aspects.putAll(topLevelAspectsValue.getTopLevelAspectsMap());
+      for (AspectValue aspectValue : topLevelAspectsValue.getTopLevelAspectsValues()) {
+        aspects.put(aspectValue.getKey(), aspectValue);
+      }
     }
     return aspects.buildOrThrow();
   }

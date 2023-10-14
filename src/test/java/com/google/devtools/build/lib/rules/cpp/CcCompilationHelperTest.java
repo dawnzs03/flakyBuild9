@@ -43,6 +43,7 @@ public final class CcCompilationHelperTest extends BuildViewTestCase {
     CcToolchainProvider ccToolchain =
         CppHelper.getToolchainUsingDefaultCcToolchainAttribute(ruleContext);
     FdoContext fdoContext = ccToolchain.getFdoContext();
+    Artifact grepIncludes = getBinArtifact("grep_includes", target);
     NullPointerTester tester =
         new NullPointerTester()
             .setDefault(RuleContext.class, ruleContext)
@@ -52,6 +53,7 @@ public final class CcCompilationHelperTest extends BuildViewTestCase {
             .setDefault(BuildConfigurationValue.class, ruleContext.getConfiguration())
             .setDefault(FdoContext.class, fdoContext)
             .setDefault(Label.class, ruleContext.getLabel())
+            .setDefault(Artifact.class, grepIncludes)
             .setDefault(CcCompilationOutputs.class, CcCompilationOutputs.builder().build());
     tester.testConstructors(CcCompilationHelper.class, Visibility.PACKAGE);
     tester.testAllPublicInstanceMethods(
