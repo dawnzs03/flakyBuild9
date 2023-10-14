@@ -35,8 +35,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
-import java.security.KeyStoreException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyStore;
@@ -70,9 +68,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.TrustManager;
 
-public class DefaultSslEngineFactory implements SslEngineFactory {
+public final class DefaultSslEngineFactory implements SslEngineFactory {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultSslEngineFactory.class);
     public static final String PEM_TYPE = "PEM";
@@ -258,22 +255,17 @@ public class DefaultSslEngineFactory implements SslEngineFactory {
             }
 
             String tmfAlgorithm = this.tmfAlgorithm != null ? this.tmfAlgorithm : TrustManagerFactory.getDefaultAlgorithm();
-            TrustManager[] trustManagers = getTrustManagers(truststore, tmfAlgorithm);
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+            KeyStore ts = truststore == null ? null : truststore.get();
+            tmf.init(ts);
 
-            sslContext.init(keyManagers, trustManagers, this.secureRandomImplementation);
+            sslContext.init(keyManagers, tmf.getTrustManagers(), this.secureRandomImplementation);
             log.debug("Created SSL context with keystore {}, truststore {}, provider {}.",
                     keystore, truststore, sslContext.getProvider().getName());
             return sslContext;
         } catch (Exception e) {
             throw new KafkaException(e);
         }
-    }
-
-    protected TrustManager[] getTrustManagers(SecurityStore truststore, String tmfAlgorithm) throws NoSuchAlgorithmException, KeyStoreException {
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
-        KeyStore ts = truststore == null ? null : truststore.get();
-        tmf.init(ts);
-        return tmf.getTrustManagers();
     }
 
     // Visibility to override for testing

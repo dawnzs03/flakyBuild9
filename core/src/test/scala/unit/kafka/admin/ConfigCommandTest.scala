@@ -44,10 +44,6 @@ class ConfigCommandTest extends Logging {
   private val zkConnect = "localhost:2181"
   private val dummyAdminZkClient = new DummyAdminZkClient(null)
 
-  private val zookeeperBootstrap = Array("--zookeeper", zkConnect)
-  private val brokerBootstrap = Array("--bootstrap-server", "localhost:9092")
-  private val controllerBootstrap = Array("--bootstrap-controller", "localhost:9093")
-
   @Test
   def shouldExitWithNonZeroStatusOnArgError(): Unit = {
     assertNonZeroStatusExit(Array("--blah"))
@@ -55,28 +51,32 @@ class ConfigCommandTest extends Logging {
 
   @Test
   def shouldExitWithNonZeroStatusOnZkCommandWithTopicsEntity(): Unit = {
-    assertNonZeroStatusExit(zookeeperBootstrap  ++ Array(
+    assertNonZeroStatusExit(Array(
+      "--zookeeper", zkConnect,
       "--entity-type", "topics",
       "--describe"))
   }
 
   @Test
   def shouldExitWithNonZeroStatusOnZkCommandWithClientsEntity(): Unit = {
-    assertNonZeroStatusExit(zookeeperBootstrap ++ Array(
+    assertNonZeroStatusExit(Array(
+      "--zookeeper", zkConnect,
       "--entity-type", "clients",
       "--describe"))
   }
 
   @Test
   def shouldExitWithNonZeroStatusOnZkCommandWithIpsEntity(): Unit = {
-    assertNonZeroStatusExit(zookeeperBootstrap ++ Array(
+    assertNonZeroStatusExit(Array(
+      "--zookeeper", zkConnect,
       "--entity-type", "ips",
       "--describe"))
   }
 
   @Test
   def shouldExitWithNonZeroStatusAlterUserQuotaWithoutEntityName(): Unit = {
-    assertNonZeroStatusExit(brokerBootstrap ++ Array(
+    assertNonZeroStatusExit(Array(
+      "--bootstrap-server", "localhost:9092",
       "--entity-type", "users",
       "--alter", "--add-config", "consumer_byte_rate=20000"))
   }
@@ -88,12 +88,6 @@ class ConfigCommandTest extends Logging {
       "--entity-type", "brokers",
       "--entity-name", "1",
       "--describe"))
-  }
-
-  @Test
-  def shouldExitWithNonZeroStatusIfBothBootstrapServerAndBootstrapControllerGiven(): Unit = {
-    assertNonZeroStatusExit(brokerBootstrap ++ controllerBootstrap ++ Array(
-      "--describe", "--broker-defaults" ))
   }
 
   @Test
@@ -125,96 +119,66 @@ class ConfigCommandTest extends Logging {
 
   @Test
   def shouldFailParseArgumentsForClientsEntityTypeUsingZookeeper(): Unit = {
-    assertThrows(classOf[IllegalArgumentException], () => testArgumentParse(zookeeperBootstrap, "clients"))
+    assertThrows(classOf[IllegalArgumentException], () => testArgumentParse("clients", zkConfig = true))
   }
 
   @Test
-  def shouldParseArgumentsForClientsEntityTypeWithBrokerBootstrap(): Unit = {
-    testArgumentParse(brokerBootstrap, "clients")
-  }
-
-  @Test
-  def shouldParseArgumentsForClientsEntityTypeWithControllerBootstrap(): Unit = {
-    testArgumentParse(controllerBootstrap, "clients")
+  def shouldParseArgumentsForClientsEntityType(): Unit = {
+    testArgumentParse("clients", zkConfig = false)
   }
 
   @Test
   def shouldParseArgumentsForUsersEntityTypeUsingZookeeper(): Unit = {
-    testArgumentParse(zookeeperBootstrap, "users")
+    testArgumentParse("users", zkConfig = true)
   }
 
   @Test
-  def shouldParseArgumentsForUsersEntityTypeWithBrokerBootstrap(): Unit = {
-    testArgumentParse(brokerBootstrap, "users")
-  }
-
-  @Test
-  def shouldParseArgumentsForUsersEntityTypeWithControllerBootstrap(): Unit = {
-    testArgumentParse(controllerBootstrap, "users")
+  def shouldParseArgumentsForUsersEntityType(): Unit = {
+    testArgumentParse("users", zkConfig = false)
   }
 
   @Test
   def shouldFailParseArgumentsForTopicsEntityTypeUsingZookeeper(): Unit = {
-    assertThrows(classOf[IllegalArgumentException], () => testArgumentParse(zookeeperBootstrap, "topics"))
+    assertThrows(classOf[IllegalArgumentException], () => testArgumentParse("topics", zkConfig = true))
   }
 
   @Test
-  def shouldParseArgumentsForTopicsEntityTypeWithBrokerBootstrap(): Unit = {
-    testArgumentParse(brokerBootstrap, "topics")
-  }
-
-  @Test
-  def shouldParseArgumentsForTopicsEntityTypeWithControllerBootstrap(): Unit = {
-    testArgumentParse(controllerBootstrap, "topics")
+  def shouldParseArgumentsForTopicsEntityType(): Unit = {
+    testArgumentParse("topics", zkConfig = false)
   }
 
   @Test
   def shouldParseArgumentsForBrokersEntityTypeUsingZookeeper(): Unit = {
-    testArgumentParse(zookeeperBootstrap, "brokers")
+    testArgumentParse("brokers", zkConfig = true)
   }
 
   @Test
-  def shouldParseArgumentsForBrokersEntityTypeWithBrokerBootstrap(): Unit = {
-    testArgumentParse(brokerBootstrap, "brokers")
+  def shouldParseArgumentsForBrokersEntityType(): Unit = {
+    testArgumentParse("brokers", zkConfig = false)
   }
 
   @Test
-  def shouldParseArgumentsForBrokersEntityTypeWithControllerBootstrap(): Unit = {
-    testArgumentParse(controllerBootstrap, "brokers")
-  }
-
-  @Test
-  def shouldParseArgumentsForBrokerLoggersEntityTypeWithBrokerBootstrap(): Unit = {
-    testArgumentParse(brokerBootstrap, "broker-loggers")
-  }
-
-  @Test
-  def shouldParseArgumentsForBrokerLoggersEntityTypeWithControllerBootstrap(): Unit = {
-    testArgumentParse(controllerBootstrap, "broker-loggers")
+  def shouldParseArgumentsForBrokerLoggersEntityType(): Unit = {
+    testArgumentParse("broker-loggers", zkConfig = false)
   }
 
   @Test
   def shouldFailParseArgumentsForIpEntityTypeUsingZookeeper(): Unit = {
-    assertThrows(classOf[IllegalArgumentException], () => testArgumentParse(zookeeperBootstrap, "ips"))
+    assertThrows(classOf[IllegalArgumentException], () => testArgumentParse("ips", zkConfig = true))
   }
 
   @Test
-  def shouldParseArgumentsForIpEntityTypeWithBrokerBootstrap(): Unit = {
-    testArgumentParse(brokerBootstrap, "ips")
+  def shouldParseArgumentsForIpEntityType(): Unit = {
+    testArgumentParse("ips", zkConfig = false)
   }
 
-  @Test
-  def shouldParseArgumentsForIpEntityTypeWithControllerBootstrap(): Unit = {
-    testArgumentParse(controllerBootstrap, "ips")
-  }
-
-  def testArgumentParse(
-    bootstrapArguments: Array[String],
-    entityType: String
-  ): Unit = {
+  def testArgumentParse(entityType: String, zkConfig: Boolean): Unit = {
     val shortFlag: String = s"--${entityType.dropRight(1)}"
 
-    val connectOpts = (bootstrapArguments(0), bootstrapArguments(1))
+    val connectOpts = if (zkConfig)
+      ("--zookeeper", zkConnect)
+    else
+      ("--bootstrap-server", "localhost:9092")
 
     // Should parse correctly
     var createOpts = new ConfigCommandOptions(Array(connectOpts._1, connectOpts._2,

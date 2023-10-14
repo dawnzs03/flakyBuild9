@@ -150,7 +150,7 @@ class KafkaServer(
 
   var autoTopicCreationManager: AutoTopicCreationManager = _
 
-  var clientToControllerChannelManager: NodeToControllerChannelManager = _
+  var clientToControllerChannelManager: BrokerToControllerChannelManager = _
 
   var alterPartitionManager: AlterPartitionManager = _
 
@@ -307,7 +307,7 @@ class KafkaServer(
         tokenCache = new DelegationTokenCache(ScramMechanism.mechanismNames)
         credentialProvider = new CredentialProvider(ScramMechanism.mechanismNames, tokenCache)
 
-        clientToControllerChannelManager = NodeToControllerChannelManager(
+        clientToControllerChannelManager = BrokerToControllerChannelManager(
           controllerNodeProvider = controllerNodeProvider,
           time = time,
           metrics = metrics,
@@ -319,7 +319,7 @@ class KafkaServer(
         clientToControllerChannelManager.start()
 
         /* start forwarding manager */
-        var autoTopicCreationChannel = Option.empty[NodeToControllerChannelManager]
+        var autoTopicCreationChannel = Option.empty[BrokerToControllerChannelManager]
         if (enableForwarding) {
           this.forwardingManager = Some(ForwardingManager(clientToControllerChannelManager))
           autoTopicCreationChannel = Some(clientToControllerChannelManager)
@@ -402,7 +402,7 @@ class KafkaServer(
           )
           val controllerNodes = RaftConfig.voterConnectionsToNodes(controllerQuorumVotersFuture.get()).asScala
           val quorumControllerNodeProvider = RaftControllerNodeProvider(raftManager, config, controllerNodes)
-          val brokerToQuorumChannelManager = NodeToControllerChannelManager(
+          val brokerToQuorumChannelManager = BrokerToControllerChannelManager(
             controllerNodeProvider = quorumControllerNodeProvider,
             time = time,
             metrics = metrics,
@@ -629,16 +629,8 @@ class KafkaServer(
 
   protected def createReplicaManager(isShuttingDown: AtomicBoolean): ReplicaManager = {
     val addPartitionsLogContext = new LogContext(s"[AddPartitionsToTxnManager broker=${config.brokerId}]")
-    val addPartitionsToTxnNetworkClient = NetworkUtils.buildNetworkClient("AddPartitionsManager", config, metrics, time, addPartitionsLogContext)
-    val addPartitionsToTxnManager = new AddPartitionsToTxnManager(
-      config,
-      addPartitionsToTxnNetworkClient,
-      metadataCache,
-      // The transaction coordinator is not created at this point so we must
-      // use a lambda here.
-      transactionalId => transactionCoordinator.partitionFor(transactionalId),
-      time
-    )
+    val addPartitionsToTxnNetworkClient: NetworkClient = NetworkUtils.buildNetworkClient("AddPartitionsManager", config, metrics, time, addPartitionsLogContext)
+    val addPartitionsToTxnManager: AddPartitionsToTxnManager = new AddPartitionsToTxnManager(config, addPartitionsToTxnNetworkClient, time)
 
     new ReplicaManager(
       metrics = metrics,

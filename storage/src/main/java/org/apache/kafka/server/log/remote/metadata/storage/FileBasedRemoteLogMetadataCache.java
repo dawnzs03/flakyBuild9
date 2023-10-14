@@ -38,7 +38,6 @@ public class FileBasedRemoteLogMetadataCache extends RemoteLogMetadataCache {
     private final RemoteLogMetadataSnapshotFile snapshotFile;
     private final TopicIdPartition topicIdPartition;
 
-    @SuppressWarnings("this-escape")
     public FileBasedRemoteLogMetadataCache(TopicIdPartition topicIdPartition,
                                            Path partitionDir) {
         if (!partitionDir.toFile().exists() || !partitionDir.toFile().isDirectory()) {
@@ -55,7 +54,7 @@ public class FileBasedRemoteLogMetadataCache extends RemoteLogMetadataCache {
         }
     }
 
-    protected final void loadRemoteLogSegmentMetadata(RemoteLogMetadataSnapshotFile.Snapshot snapshot) {
+    protected void loadRemoteLogSegmentMetadata(RemoteLogMetadataSnapshotFile.Snapshot snapshot) {
         log.info("Loading snapshot for partition {} is: {}", topicIdPartition, snapshot);
         for (RemoteLogSegmentMetadataSnapshot metadataSnapshot : snapshot.remoteLogSegmentMetadataSnapshots()) {
             switch (metadataSnapshot.state()) {

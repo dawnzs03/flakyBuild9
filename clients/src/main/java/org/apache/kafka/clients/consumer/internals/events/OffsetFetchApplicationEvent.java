@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class OffsetFetchApplicationEvent extends CompletableApplicationEvent<Map<TopicPartition, OffsetAndMetadata>> {
-
     private final Set<TopicPartition> partitions;
 
     public OffsetFetchApplicationEvent(final Set<TopicPartition> partitions) {
@@ -56,9 +55,10 @@ public class OffsetFetchApplicationEvent extends CompletableApplicationEvent<Map
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" +
-                toStringBase() +
-                ", partitions=" + partitions +
+        return "OffsetFetchApplicationEvent{" +
+                "partitions=" + partitions +
+                ", future=" + future +
+                ", type=" + type +
                 '}';
     }
 }

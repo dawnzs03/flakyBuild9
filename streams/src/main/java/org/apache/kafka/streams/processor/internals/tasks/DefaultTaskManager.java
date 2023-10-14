@@ -16,7 +16,6 @@
  */
 package org.apache.kafka.streams.processor.internals.tasks;
 
-import java.util.concurrent.locks.Condition;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.apache.kafka.common.utils.LogContext;
@@ -57,7 +56,6 @@ public class DefaultTaskManager implements TaskManager {
     private final TasksRegistry tasks;
 
     private final Lock tasksLock = new ReentrantLock();
-    private final Condition tasksCondition = tasksLock.newCondition();
     private final List<TaskId> lockedTasks = new ArrayList<>();
     private final Map<TaskId, StreamsException> uncaughtExceptions = new HashMap<>();
     private final Map<TaskId, TaskExecutor> assignedTasks = new HashMap<>();
@@ -72,7 +70,6 @@ public class DefaultTaskManager implements TaskManager {
         }
     }
 
-    @SuppressWarnings("this-escape")
     public DefaultTaskManager(final Time time,
                               final String clientId,
                               final TasksRegistry tasks,
@@ -111,7 +108,7 @@ public class DefaultTaskManager implements TaskManager {
 
                     assignedTasks.put(task.id(), executor);
 
-                    log.debug("Assigned task {} to executor {}", task.id(), executor.name());
+                    log.info("Assigned {} to executor {}", task.id(), executor.name());
 
                     return (StreamTask) task;
                 }
@@ -119,41 +116,6 @@ public class DefaultTaskManager implements TaskManager {
 
             return null;
         });
-    }
-
-    @Override
-    public void awaitProcessableTasks() throws InterruptedException {
-        final boolean interrupted = returnWithTasksLocked(() -> {
-            for (final Task task : tasks.activeTasks()) {
-                if (!assignedTasks.containsKey(task.id()) &&
-                    !lockedTasks.contains(task.id()) &&
-                    canProgress((StreamTask) task, time.milliseconds())
-                ) {
-                    log.debug("Await unblocked: returning early from await since a processable task {} was found", task.id());
-                    return false;
-                }
-            }
-            try {
-                log.debug("Await blocking");
-                tasksCondition.await();
-            } catch (final InterruptedException ignored) {
-                // we interrupt the thread for shut down and pause.
-                // we can ignore this exception.
-                log.debug("Await unblocked: Interrupted while waiting for processable tasks");
-                return true;
-            }
-            log.debug("Await unblocked: Woken up to check for processable tasks");
-            return false;
-        });
-
-        if (interrupted) {
-            throw new InterruptedException();
-        }
-    }
-
-    public void signalProcessableTasks() {
-        log.debug("Waking up task executors");
-        executeWithTasksLocked(tasksCondition::signalAll);
     }
 
     @Override
@@ -170,8 +132,7 @@ public class DefaultTaskManager implements TaskManager {
 
             assignedTasks.remove(task.id());
 
-            log.debug("Unassigned {} from executor {}", task.id(), executor.name());
-            tasksCondition.signalAll();
+            log.info("Unassigned {} from executor {}", task.id(), executor.name());
         });
     }
 
@@ -227,11 +188,7 @@ public class DefaultTaskManager implements TaskManager {
 
     @Override
     public void unlockTasks(final Set<TaskId> taskIds) {
-        executeWithTasksLocked(() -> {
-            lockedTasks.removeAll(taskIds);
-            log.debug("Waking up task executors");
-            tasksCondition.signalAll();
-        });
+        executeWithTasksLocked(() -> lockedTasks.removeAll(taskIds));
     }
 
     @Override
@@ -245,8 +202,6 @@ public class DefaultTaskManager implements TaskManager {
             for (final StreamTask task : tasksToAdd) {
                 tasks.addTask(task);
             }
-            log.debug("Waking up task executors");
-            tasksCondition.signalAll();
         });
 
         log.info("Added tasks {} to the task manager to process", tasksToAdd);
@@ -306,10 +261,11 @@ public class DefaultTaskManager implements TaskManager {
             return result;
         });
 
-        log.debug("Drained {} uncaught exceptions", returnValue.size());
+        log.info("Drained {} uncaught exceptions", returnValue.size());
 
         return returnValue;
     }
+
 
     private void executeWithTasksLocked(final Runnable action) {
         tasksLock.lock();

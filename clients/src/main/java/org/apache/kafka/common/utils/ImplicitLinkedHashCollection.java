@@ -553,7 +553,6 @@ public class ImplicitLinkedHashCollection<E extends ImplicitLinkedHashCollection
      * @param iter                  We will add all the elements accessible through this iterator
      *                              to the set.
      */
-    @SuppressWarnings("this-escape")
     public ImplicitLinkedHashCollection(Iterator<E> iter) {
         clear(0);
         while (iter.hasNext()) {

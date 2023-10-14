@@ -1777,7 +1777,8 @@ class KafkaService(KafkaPathResolverMixin, JmxMixin, Service):
         node = self.nodes[0]
 
         cmd = fix_opts_for_new_jvm(node)
-        cmd += self.path.script("kafka-get-offsets.sh", node)
+        cmd += self.path.script("kafka-run-class.sh", node)
+        cmd += " kafka.tools.GetOffsetShell"
         cmd += " --bootstrap-server %s" % self.bootstrap_servers(self.security_protocol)
 
         if time:

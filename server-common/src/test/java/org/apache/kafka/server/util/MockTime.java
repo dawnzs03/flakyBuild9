@@ -30,7 +30,6 @@ public class MockTime extends org.apache.kafka.common.utils.MockTime {
         this(System.currentTimeMillis(), System.nanoTime());
     }
 
-    @SuppressWarnings("this-escape")
     public MockTime(long currentTimeMs, long currentHiResTimeNs) {
         super(0L, currentTimeMs, currentHiResTimeNs);
         scheduler = new MockScheduler(this);

@@ -50,7 +50,7 @@ import static org.apache.kafka.streams.state.TimestampedBytesStore.convertToTime
 public class RocksDBTimestampedStore extends RocksDBStore implements TimestampedBytesStore {
     private static final Logger log = LoggerFactory.getLogger(RocksDBTimestampedStore.class);
 
-    public RocksDBTimestampedStore(final String name,
+    RocksDBTimestampedStore(final String name,
                             final String metricsScope) {
         super(name, metricsScope);
     }

@@ -435,7 +435,7 @@ public class GlobalStateManagerImpl implements GlobalStateManager {
         return Collections.unmodifiableMap(checkpointFileCache);
     }
 
-    public final String changelogFor(final String storeName) {
+    public String changelogFor(final String storeName) {
         return storeToChangelogTopic.get(storeName);
     }
 }

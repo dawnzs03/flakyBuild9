@@ -49,7 +49,8 @@ public enum TransactionState {
     }
 
     public static TransactionState parse(String name) {
-        return NAME_TO_ENUM.getOrDefault(name, UNKNOWN);
+        TransactionState state = NAME_TO_ENUM.get(name);
+        return state == null ? UNKNOWN : state;
     }
 
 }

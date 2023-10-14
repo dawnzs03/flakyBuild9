@@ -33,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@SuppressWarnings("this-escape")
 public class DefaultSslEngineFactoryTest {
 
     /*
@@ -195,17 +194,13 @@ public class DefaultSslEngineFactoryTest {
 
     private static final Password KEY_PASSWORD = new Password("key-password");
 
-    private DefaultSslEngineFactory factory = sslEngineFactory();
+    private DefaultSslEngineFactory factory = new DefaultSslEngineFactory();
     Map<String, Object> configs = new HashMap<>();
 
     @BeforeEach
     public void setUp() {
-        factory = sslEngineFactory();
+        factory = new DefaultSslEngineFactory();
         configs.put(SslConfigs.SSL_PROTOCOL_CONFIG, "TLSv1.2");
-    }
-
-    protected DefaultSslEngineFactory sslEngineFactory() {
-        return new DefaultSslEngineFactory();
     }
 
     @Test

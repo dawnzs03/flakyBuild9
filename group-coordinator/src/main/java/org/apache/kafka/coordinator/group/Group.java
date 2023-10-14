@@ -17,7 +17,6 @@
 package org.apache.kafka.coordinator.group;
 
 import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.common.message.ListGroupsResponseData;
 
 /**
  * Interface common for all groups.
@@ -48,16 +47,6 @@ public interface Group {
      * @return The {{@link GroupType}}'s String representation.
      */
     String stateAsString();
-
-    /**
-     * @return The {{@link GroupType}}'s String representation based on the committed offset.
-     */
-    String stateAsString(long committedOffset);
-
-    /**
-     * @return the group formatted as a list group response based on the committed offset.
-     */
-    public ListGroupsResponseData.ListedGroup asListedGroup(long committedOffset);
 
     /**
      * @return The group id.

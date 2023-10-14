@@ -19,15 +19,13 @@ package org.apache.kafka.clients.consumer.internals.events;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.clients.consumer.internals.CommitRequestManager;
 import org.apache.kafka.clients.consumer.internals.ConsumerMetadata;
+import org.apache.kafka.clients.consumer.internals.NoopBackgroundEvent;
 import org.apache.kafka.clients.consumer.internals.RequestManagers;
 import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 
@@ -49,7 +47,7 @@ public class ApplicationEventProcessor {
 
     public boolean process(final ApplicationEvent event) {
         Objects.requireNonNull(event);
-        switch (event.type()) {
+        switch (event.type) {
             case NOOP:
                 return process((NoopApplicationEvent) event);
             case COMMIT:
@@ -62,14 +60,8 @@ public class ApplicationEventProcessor {
                 return process((NewTopicsMetadataUpdateRequestEvent) event);
             case ASSIGNMENT_CHANGE:
                 return process((AssignmentChangeApplicationEvent) event);
-            case TOPIC_METADATA:
-                return process((TopicMetadataApplicationEvent) event);
             case LIST_OFFSETS:
                 return process((ListOffsetsApplicationEvent) event);
-            case RESET_POSITIONS:
-                return processResetPositionsEvent();
-            case VALIDATE_POSITIONS:
-                return processValidatePositionsEvent();
         }
         return false;
     }
@@ -82,7 +74,7 @@ public class ApplicationEventProcessor {
      * @param event a {@link NoopApplicationEvent}
      */
     private boolean process(final NoopApplicationEvent event) {
-        return backgroundEventQueue.add(new NoopBackgroundEvent(event.message()));
+        return backgroundEventQueue.add(new NoopBackgroundEvent(event.message));
     }
 
     private boolean process(final PollApplicationEvent event) {
@@ -91,7 +83,7 @@ public class ApplicationEventProcessor {
         }
 
         CommitRequestManager manager = requestManagers.commitRequestManager.get();
-        manager.updateAutoCommitTimer(event.pollTimeMs());
+        manager.updateAutoCommitTimer(event.pollTimeMs);
         return true;
     }
 
@@ -105,7 +97,13 @@ public class ApplicationEventProcessor {
         }
 
         CommitRequestManager manager = requestManagers.commitRequestManager.get();
-        event.chain(manager.addOffsetCommitRequest(event.offsets()));
+        manager.addOffsetCommitRequest(event.offsets()).whenComplete((r, e) -> {
+            if (e != null) {
+                event.future().completeExceptionally(e);
+                return;
+            }
+            event.future().complete(null);
+        });
         return true;
     }
 
@@ -130,8 +128,8 @@ public class ApplicationEventProcessor {
             return false;
         }
         CommitRequestManager manager = requestManagers.commitRequestManager.get();
-        manager.updateAutoCommitTimer(event.currentTimeMs());
-        manager.maybeAutoCommit(event.offsets());
+        manager.updateAutoCommitTimer(event.currentTimeMs);
+        manager.maybeAutoCommit(event.offsets);
         return true;
     }
 
@@ -139,23 +137,6 @@ public class ApplicationEventProcessor {
         final CompletableFuture<Map<TopicPartition, OffsetAndTimestamp>> future =
                 requestManagers.offsetsRequestManager.fetchOffsets(event.timestampsToSearch(),
                         event.requireTimestamps());
-        event.chain(future);
-        return true;
-    }
-
-    private boolean processResetPositionsEvent() {
-        requestManagers.offsetsRequestManager.resetPositionsIfNeeded();
-        return true;
-    }
-
-    private boolean processValidatePositionsEvent() {
-        requestManagers.offsetsRequestManager.validatePositionsIfNeeded();
-        return true;
-    }
-
-    private boolean process(final TopicMetadataApplicationEvent event) {
-        final CompletableFuture<Map<String, List<PartitionInfo>>> future =
-            this.requestManagers.topicMetadataRequestManager.requestTopicMetadata(Optional.of(event.topic()));
         event.chain(future);
         return true;
     }

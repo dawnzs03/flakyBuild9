@@ -658,6 +658,7 @@ class TransactionStateManagerTest {
       any(),
       any(),
       any(),
+      any(),
       any()
     )
 
@@ -703,6 +704,7 @@ class TransactionStateManagerTest {
       any(),
       any(),
       any(),
+      any(),
       any()
     )
 
@@ -742,6 +744,7 @@ class TransactionStateManagerTest {
       any(),
       any(),
       any[Option[ReentrantLock]],
+      any(),
       any(),
       any(),
       any(),
@@ -800,6 +803,7 @@ class TransactionStateManagerTest {
       any(),
       any(),
       any[Option[ReentrantLock]],
+      any(),
       any(),
       any(),
       any(),
@@ -950,6 +954,7 @@ class TransactionStateManagerTest {
       recordsCapture.capture(),
       callbackCapture.capture(),
       any[Option[ReentrantLock]],
+      any(),
       any(),
       any(),
       any(),
@@ -1105,8 +1110,9 @@ class TransactionStateManagerTest {
       any(),
       any(),
       any(),
-      any()
-    )).thenAnswer(_ => capturedArgument.getValue.apply(
+      any(),
+      any())
+    ).thenAnswer(_ => capturedArgument.getValue.apply(
       Map(new TopicPartition(TRANSACTION_STATE_TOPIC_NAME, partitionId) ->
         new PartitionResponse(error, 0L, RecordBatch.NO_TIMESTAMP, 0L)))
     )

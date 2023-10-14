@@ -46,8 +46,8 @@ import java.util.concurrent.{CompletableFuture, TimeUnit, TimeoutException}
 @ExtendWith(value = Array(classOf[ClusterTestExtensions]))
 class BrokerRegistrationRequestTest {
 
-  def brokerToControllerChannelManager(clusterInstance: ClusterInstance): NodeToControllerChannelManager = {
-    NodeToControllerChannelManager(
+  def brokerToControllerChannelManager(clusterInstance: ClusterInstance): BrokerToControllerChannelManager = {
+    BrokerToControllerChannelManager(
       new ControllerNodeProvider() {
         def node: Option[Node] = Some(new Node(
           clusterInstance.anyControllerSocketServer().config.nodeId,
@@ -76,7 +76,7 @@ class BrokerRegistrationRequestTest {
   }
 
   def sendAndReceive[T <: AbstractRequest, R <: AbstractResponse](
-    channelManager: NodeToControllerChannelManager,
+    channelManager: BrokerToControllerChannelManager,
     reqBuilder: AbstractRequest.Builder[T],
     timeoutMs: Int
   ): R = {
@@ -91,7 +91,7 @@ class BrokerRegistrationRequestTest {
   }
 
   def registerBroker(
-    channelManager: NodeToControllerChannelManager,
+    channelManager: BrokerToControllerChannelManager,
     clusterId: String,
     brokerId: Int,
     zkEpoch: Option[Long],
@@ -121,7 +121,7 @@ class BrokerRegistrationRequestTest {
   }
 
 
-  def createTopics(channelManager: NodeToControllerChannelManager,
+  def createTopics(channelManager: BrokerToControllerChannelManager,
                    topicName: String): Errors = {
     val createTopics = new CreateTopicsRequestData()
     createTopics.setTopics(new CreateTopicsRequestData.CreatableTopicCollection())

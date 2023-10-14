@@ -60,7 +60,7 @@ class AlterPartitionManagerTest {
   val metrics = new Metrics
   val brokerId = 1
 
-  var brokerToController: NodeToControllerChannelManager = _
+  var brokerToController: BrokerToControllerChannelManager = _
 
   val tp0 = new TopicIdPartition(topicId, 0, topic)
   val tp1 = new TopicIdPartition(topicId, 1, topic)
@@ -68,7 +68,7 @@ class AlterPartitionManagerTest {
 
   @BeforeEach
   def setup(): Unit = {
-    brokerToController = mock(classOf[NodeToControllerChannelManager])
+    brokerToController = mock(classOf[BrokerToControllerChannelManager])
   }
 
   @ParameterizedTest
@@ -433,7 +433,7 @@ class AlterPartitionManagerTest {
     val controlledEpoch = 0
     val brokerEpoch = 2
     val scheduler = new MockScheduler(time)
-    val brokerToController = Mockito.mock(classOf[NodeToControllerChannelManager])
+    val brokerToController = Mockito.mock(classOf[BrokerToControllerChannelManager])
     val alterPartitionManager = new DefaultAlterPartitionManager(
       brokerToController,
       scheduler,
@@ -500,7 +500,7 @@ class AlterPartitionManagerTest {
     val controlledEpoch = 0
     val brokerEpoch = 2
     val scheduler = new MockScheduler(time)
-    val brokerToController = Mockito.mock(classOf[NodeToControllerChannelManager])
+    val brokerToController = Mockito.mock(classOf[BrokerToControllerChannelManager])
     val alterPartitionManager = new DefaultAlterPartitionManager(
       brokerToController,
       scheduler,
@@ -557,7 +557,7 @@ class AlterPartitionManagerTest {
   }
 
   private def verifySendRequest(
-    brokerToController: NodeToControllerChannelManager,
+    brokerToController: BrokerToControllerChannelManager,
     expectedRequest: ArgumentMatcher[AbstractRequest.Builder[_ <: AbstractRequest]]
   ): ControllerRequestCompletionHandler = {
     val callbackCapture = ArgumentCaptor.forClass(classOf[ControllerRequestCompletionHandler])

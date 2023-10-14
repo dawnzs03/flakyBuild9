@@ -118,7 +118,6 @@ public class MockAdminClient extends AdminClient {
         private Map<String, Short> minSupportedFeatureLevels = Collections.emptyMap();
         private Map<String, Short> maxSupportedFeatureLevels = Collections.emptyMap();
 
-        @SuppressWarnings("this-escape")
         public Builder() {
             numBrokers(1);
         }
@@ -218,7 +217,6 @@ public class MockAdminClient extends AdminClient {
             Collections.emptyMap());
     }
 
-    @SuppressWarnings("this-escape")
     private MockAdminClient(
         List<Node> brokers,
         Node controller,
@@ -252,7 +250,7 @@ public class MockAdminClient extends AdminClient {
         this.maxSupportedFeatureLevels = new HashMap<>(maxSupportedFeatureLevels);
     }
 
-    public synchronized void controller(Node controller) {
+    synchronized public void controller(Node controller) {
         if (!brokers.contains(controller))
             throw new IllegalArgumentException("The controller node must be in the list of brokers");
         this.controller = controller;

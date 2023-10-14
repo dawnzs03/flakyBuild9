@@ -41,7 +41,7 @@ public class CoordinatorResult<T, U> {
     /**
      * The future to complete once the records are committed.
      */
-    private final CompletableFuture<Void> appendFuture;
+    private final CompletableFuture<T> appendFuture;
 
     /**
      * Constructs a Result with records and a response.
@@ -64,7 +64,7 @@ public class CoordinatorResult<T, U> {
      */
     public CoordinatorResult(
         List<U> records,
-        CompletableFuture<Void> appendFuture
+        CompletableFuture<T> appendFuture
     ) {
         this(records, null, appendFuture);
     }
@@ -79,7 +79,7 @@ public class CoordinatorResult<T, U> {
     public CoordinatorResult(
         List<U> records,
         T response,
-        CompletableFuture<Void> appendFuture
+        CompletableFuture<T> appendFuture
     ) {
         this.records = Objects.requireNonNull(records);
         this.response = response;
@@ -114,7 +114,7 @@ public class CoordinatorResult<T, U> {
     /**
      * @return The append-future.
      */
-    public CompletableFuture<Void> appendFuture() {
+    public CompletableFuture<T> appendFuture() {
         return appendFuture;
     }
 

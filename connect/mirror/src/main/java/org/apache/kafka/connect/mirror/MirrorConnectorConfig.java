@@ -116,7 +116,6 @@ public abstract class MirrorConnectorConfig extends AbstractConfig {
 
     private final ReplicationPolicy replicationPolicy;
 
-    @SuppressWarnings("this-escape")
     protected MirrorConnectorConfig(ConfigDef configDef, Map<String, String> props) {
         super(configDef, props, true);
         replicationPolicy = getConfiguredInstance(REPLICATION_POLICY_CLASS, ReplicationPolicy.class);

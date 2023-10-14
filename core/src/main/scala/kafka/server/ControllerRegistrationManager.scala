@@ -21,10 +21,11 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import kafka.utils.Logging
 import org.apache.kafka.clients.ClientResponse
 import org.apache.kafka.common.Uuid
+import org.apache.kafka.common.message.ControllerRegistrationRequestData.ListenerCollection
 import org.apache.kafka.common.message.ControllerRegistrationRequestData
 import org.apache.kafka.common.protocol.Errors
 import org.apache.kafka.common.requests.{ControllerRegistrationRequest, ControllerRegistrationResponse}
-import org.apache.kafka.metadata.{ListenerInfo, VersionRange}
+import org.apache.kafka.metadata.VersionRange
 import org.apache.kafka.common.utils.{ExponentialBackoff, LogContext, Time}
 import org.apache.kafka.image.loader.LoaderManifest
 import org.apache.kafka.image.{MetadataDelta, MetadataImage}
@@ -44,20 +45,22 @@ import scala.jdk.CollectionConverters._
  * each variable, most mutable state can be accessed only from that event queue thread.
  */
 class ControllerRegistrationManager(
-  val nodeId: Int,
+  val config: KafkaConfig,
   val clusterId: String,
   val time: Time,
   val threadNamePrefix: String,
   val supportedFeatures: util.Map[String, VersionRange],
   val incarnationId: Uuid,
-  val listenerInfo: ListenerInfo,
+  val listenerPortOverrides: Map[String, Int] = Map(),
   val resendExponentialBackoff: ExponentialBackoff = new ExponentialBackoff(100, 2, 120000L, 0.02)
 ) extends Logging with MetadataPublisher {
   override def name(): String = "ControllerRegistrationManager"
 
+  val nodeId: Int = config.nodeId
+
   private def logPrefix(): String = {
     val builder = new StringBuilder("[ControllerRegistrationManager")
-    builder.append(" id=").append(nodeId)
+    builder.append(" id=").append(config.nodeId)
     builder.append(" incarnation=").append(incarnationId)
     builder.append("] ")
     builder.toString()
@@ -66,6 +69,18 @@ class ControllerRegistrationManager(
   val logContext = new LogContext(logPrefix())
 
   this.logIdent = logContext.logPrefix()
+
+  val listenerCollection = {
+    val collection = new ListenerCollection()
+    config.controllerListeners.foreach(endPoint => {
+      collection.add(new ControllerRegistrationRequestData.Listener().
+        setHost(endPoint.host).
+        setName(endPoint.listenerName.value()).
+        setPort(listenerPortOverrides.getOrElse(endPoint.listenerName.value(), endPoint.port)).
+        setSecurityProtocol(endPoint.securityProtocol.id))
+    })
+    collection
+  }
 
   /**
    * True if there is a pending RPC. Only read or written from the event queue thread.
@@ -98,7 +113,7 @@ class ControllerRegistrationManager(
    * The channel manager, or null if this manager has not been started yet.  This variable
    * can only be read or written from the event queue thread.
    */
-  private var _channelManager: NodeToControllerChannelManager = _
+  private var _channelManager: BrokerToControllerChannelManager = _
 
   /**
    * The event queue.
@@ -127,7 +142,7 @@ class ControllerRegistrationManager(
    *
    * @param channelManager                The channel manager to use.
    */
-  def start(channelManager: NodeToControllerChannelManager): Unit = {
+  def start(channelManager: BrokerToControllerChannelManager): Unit = {
     eventQueue.append(() => {
       try {
         info(s"initialized channel manager.")
@@ -224,7 +239,7 @@ class ControllerRegistrationManager(
       setControllerId(nodeId).
       setFeatures(features).
       setIncarnationId(incarnationId).
-      setListeners(listenerInfo.toControllerRegistrationRequest())
+      setListeners(listenerCollection)
     info(s"sendControllerRegistration: attempting to send $data")
     _channelManager.sendRequest(new ControllerRegistrationRequest.Builder(data),
       new RegistrationResponseHandler())

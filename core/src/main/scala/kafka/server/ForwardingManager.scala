@@ -83,7 +83,7 @@ trait ForwardingManager {
 
 object ForwardingManager {
   def apply(
-    channelManager: NodeToControllerChannelManager
+    channelManager: BrokerToControllerChannelManager
   ): ForwardingManager = {
     new ForwardingManagerImpl(channelManager)
   }
@@ -104,7 +104,7 @@ object ForwardingManager {
 }
 
 class ForwardingManagerImpl(
-  channelManager: NodeToControllerChannelManager
+  channelManager: BrokerToControllerChannelManager
 ) extends ForwardingManager with Logging {
 
   override def forwardRequest(

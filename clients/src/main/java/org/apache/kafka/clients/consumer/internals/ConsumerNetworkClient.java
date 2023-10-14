@@ -586,7 +586,7 @@ public class ConsumerNetworkClient implements Closeable {
     public void tryConnect(Node node) {
         lock.lock();
         try {
-            NetworkClientUtils.tryConnect(client, node, time);
+            client.ready(node, time.milliseconds());
         } finally {
             lock.unlock();
         }

@@ -142,7 +142,7 @@ public class SourceTaskOffsetCommitterTest {
 
         committers.put(taskId, taskFuture);
         try (LogCaptureAppender logCaptureAppender = LogCaptureAppender.createAndRegister(SourceTaskOffsetCommitter.class)) {
-            logCaptureAppender.setClassLoggerToTrace(SourceTaskOffsetCommitter.class);
+            LogCaptureAppender.setClassLoggerToTrace(SourceTaskOffsetCommitter.class);
             committer.remove(taskId);
             assertTrue(logCaptureAppender.getEvents().stream().anyMatch(e -> e.getLevel().equals("TRACE")));
         }

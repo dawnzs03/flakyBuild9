@@ -199,11 +199,6 @@ public class ZkClusterInvocationContext implements TestTemplateInvocationContext
         }
 
         @Override
-        public String bootstrapControllers() {
-            throw new RuntimeException("Cannot use --bootstrap-controller with ZK-based clusters.");
-        }
-
-        @Override
         public Collection<SocketServer> brokerSocketServers() {
             return servers()
                     .map(KafkaServer::socketServer)
@@ -343,7 +338,7 @@ public class ZkClusterInvocationContext implements TestTemplateInvocationContext
                 .orElseThrow(() -> new IllegalArgumentException("Unknown brokerId " + brokerId));
         }
 
-        public Stream<KafkaServer> servers() {
+        private Stream<KafkaServer> servers() {
             return JavaConverters.asJavaCollection(clusterReference.get().servers()).stream();
         }
     }

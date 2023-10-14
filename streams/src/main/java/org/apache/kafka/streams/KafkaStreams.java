@@ -865,7 +865,6 @@ public class KafkaStreams implements AutoCloseable {
         this(topologyMetadata, applicationConfigs, clientSupplier, Time.SYSTEM);
     }
 
-    @SuppressWarnings("this-escape")
     private KafkaStreams(final TopologyMetadata topologyMetadata,
                          final StreamsConfig applicationConfigs,
                          final KafkaClientSupplier clientSupplier,

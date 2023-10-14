@@ -185,7 +185,6 @@ class AuthHelper(authorizer: Option[Authorizer]) {
       setClusterId(clusterId).
       setControllerId(effectiveControllerId).
       setClusterAuthorizedOperations(clusterAuthorizedOperations).
-      setBrokers(nodes).
-      setEndpointType(expectedEndpointType.id())
+      setBrokers(nodes)
   }
 }

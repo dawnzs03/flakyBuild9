@@ -42,7 +42,6 @@ public class MockScheduler implements Scheduler, MockTime.Listener {
      */
     private final TreeMap<Long, List<KafkaFutureImpl<Long>>> waiters = new TreeMap<>();
 
-    @SuppressWarnings("this-escape")
     public MockScheduler(MockTime time) {
         this.time = time;
         time.addListener(this);
