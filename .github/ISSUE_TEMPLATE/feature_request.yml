@@ -1,62 +1,58 @@
-name: Feature request
-description: Suggest a new feature
-labels: ["type: feature request", "untriaged"]
-assignees:
-  - pavank1992
-  - sgowroji
-  - iancha1992
-body:
-  - type: markdown
-    attributes:
-      value: >
-        **Attention:** if this is a _question_ about how to build / test / query / deploy using
-        Bazel, or a _discussion starter_, please start a new thread at Bazel's
-        [GitHub Discussions](https://github.com/bazelbuild/bazel/discussions), send it to
-        bazel-discuss@googlegroups.com, or discuss on [Bazel Slack](https://slack.bazel.build/)
-        instead!
-  - type: textarea
-    id: desc
-    attributes:
-      label: >
-        Description of the feature request:
-  - type: textarea
-    id: problem
-    attributes:
-      label: >
-        What underlying problem are you trying to solve with this feature?
-  - type: input
-    id: os
-    attributes:
-      label: >
-        Which operating system are you running Bazel on?
-  - type: input
-    id: version
-    attributes:
-      label: >
-        What is the output of `bazel info release`?
-  - type: textarea
-    id: version-follow-up
-    attributes:
-      label: >
-        If `bazel info release` returns `development version` or `(@non-git)`, tell us how you built
-        Bazel.
-  - type: textarea
-    id: source
-    attributes:
-      label: >
-        What's the output of `git remote get-url origin; git rev-parse master; git rev-parse HEAD` ?
-      render: text
-  - type: textarea
-    id: relevant-info
-    attributes:
-      label: Have you found anything relevant by searching the web?
-      description: >
-        Places to look:
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
-         * StackOverflow: http://stackoverflow.com/questions/tagged/bazel
-         * GitHub issues: https://github.com/bazelbuild/bazel/issues
-         * Email threads on https://groups.google.com/forum/#!forum/bazel-discuss
+
+name: Feature Request
+title: "[Feature] New feature title"
+description: Suggest an idea for this project.
+labels: [ "type/new feature" ]
+body:
   - type: textarea
-    id: extras
     attributes:
-      label: Any other information, logs, or outputs that you want to share?
+      label: Is Your Feature Request Related to a Problem?
+      description: Please Describe It.
+      placeholder: >
+        A clear and concise description of what the problem is.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Describe the Solution You'd Like
+      description: Describe how you solved it.
+      placeholder: >
+        A clear and concise description of what you want to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Describe Alternatives You've Considered
+      description: Describe your solution
+      placeholder: >
+        A clear and concise description of any alternative solutions or features you've considered.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Additional Context
+      description: Additional context.
+      placeholder: >
+        Add any other context about the problem here.
+    validations:
+      required: false
