@@ -41,9 +41,7 @@ import java.util.List;
 
 import static org.elasticsearch.core.IOUtils.WINDOWS;
 import static org.elasticsearch.xpack.searchablesnapshots.cache.full.CacheService.resolveSnapshotCache;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.not;
 
 public class FrozenIndexInputTests extends AbstractSearchableSnapshotsTestCase {
 
@@ -132,13 +130,6 @@ public class FrozenIndexInputTests extends AbstractSearchableSnapshotsTestCase {
 
             final byte[] result = randomReadAndSlice(indexInput, fileData.length);
             assertArrayEquals(fileData, result);
-
-            // validate clone copies cache file object
-            indexInput.seek(randomLongBetween(0, fileData.length - 1));
-            FrozenIndexInput clone = (FrozenIndexInput) indexInput.clone();
-            assertThat(clone.cacheFile(), not(equalTo(((FrozenIndexInput) indexInput).cacheFile())));
-            assertThat(clone.getFilePointer(), equalTo(indexInput.getFilePointer()));
-
             indexInput.close();
         }
     }

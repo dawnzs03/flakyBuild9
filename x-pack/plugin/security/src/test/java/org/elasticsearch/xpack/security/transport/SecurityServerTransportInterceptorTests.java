@@ -570,7 +570,7 @@ public class SecurityServerTransportInterceptorTests extends ESTestCase {
                 logger,
                 DeleteIndexAction.NAME,
                 randomBoolean(),
-                threadPool.executor(randomBoolean() ? ThreadPool.Names.SAME : ThreadPool.Names.GENERIC),
+                randomBoolean() ? ThreadPool.Names.SAME : ThreadPool.Names.GENERIC,
                 (request, channel, task) -> fail("should fail at destructive operations check to trigger listener failure"),
                 Map.of(
                     profileName,

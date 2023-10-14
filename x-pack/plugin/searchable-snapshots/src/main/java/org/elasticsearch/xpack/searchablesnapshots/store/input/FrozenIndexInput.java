@@ -25,7 +25,7 @@ import org.elasticsearch.xpack.searchablesnapshots.store.SearchableSnapshotDirec
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-public final class FrozenIndexInput extends MetadataCachingIndexInput {
+public class FrozenIndexInput extends MetadataCachingIndexInput {
 
     private static final Logger logger = LogManager.getLogger(FrozenIndexInput.class);
 
@@ -92,14 +92,6 @@ public final class FrozenIndexInput extends MetadataCachingIndexInput {
             footerBlobCacheByteRange
         );
         this.cacheFile = cacheFile.copy();
-    }
-
-    /**
-     * Clone constructor, will mark this as cloned.
-     */
-    private FrozenIndexInput(FrozenIndexInput input) {
-        super(input);
-        this.cacheFile = input.cacheFile.copy();
     }
 
     @Override
@@ -204,13 +196,4 @@ public final class FrozenIndexInput extends MetadataCachingIndexInput {
         );
     }
 
-    @Override
-    public FrozenIndexInput clone() {
-        return new FrozenIndexInput(this);
-    }
-
-    // for tests only
-    SharedBlobCacheService<CacheKey>.CacheFile cacheFile() {
-        return cacheFile;
-    }
 }

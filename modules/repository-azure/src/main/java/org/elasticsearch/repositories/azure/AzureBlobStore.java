@@ -263,8 +263,7 @@ public class AzureBlobStore implements BlobStore {
         throw exception;
     }
 
-    @Override
-    public void deleteBlobsIgnoringIfNotExists(Iterator<String> blobs) throws IOException {
+    void deleteBlobs(Iterator<String> blobs) throws IOException {
         if (blobs.hasNext() == false) {
             return;
         }
