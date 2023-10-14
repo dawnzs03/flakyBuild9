@@ -192,11 +192,12 @@ public class StreamsProducer {
 
         oldProducerTotalBlockedTime += totalBlockedTime(producer);
         final long start = time.nanoseconds();
-        close();
+        producer.close();
         final long closeTime = time.nanoseconds() - start;
         oldProducerTotalBlockedTime += closeTime;
 
         producer = clientSupplier.getProducer(eosV2ProducerConfigs);
+        transactionInitialized = false;
     }
 
     private double getMetricValue(final Map<MetricName, ? extends Metric> metrics,
@@ -370,8 +371,6 @@ public class StreamsProducer {
 
     void close() {
         producer.close();
-        transactionInFlight = false;
-        transactionInitialized = false;
     }
 
     // for testing only

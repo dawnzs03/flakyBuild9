@@ -182,26 +182,21 @@ public class OffsetMetadataManagerTest {
             List<OffsetFetchRequestData.OffsetFetchRequestTopics> topics,
             long committedOffset
         ) {
-            OffsetFetchResponseData.OffsetFetchResponseGroup response = offsetMetadataManager.fetchOffsets(
-                new OffsetFetchRequestData.OffsetFetchRequestGroup()
-                    .setGroupId(groupId)
-                    .setTopics(topics),
+            return offsetMetadataManager.fetchOffsets(
+                groupId,
+                topics,
                 committedOffset
             );
-            assertEquals(groupId, response.groupId());
-            return response.topics();
         }
 
         public List<OffsetFetchResponseData.OffsetFetchResponseTopics> fetchAllOffsets(
             String groupId,
             long committedOffset
         ) {
-            OffsetFetchResponseData.OffsetFetchResponseGroup response = offsetMetadataManager.fetchAllOffsets(
-                new OffsetFetchRequestData.OffsetFetchRequestGroup().setGroupId(groupId),
+            return offsetMetadataManager.fetchAllOffsets(
+                groupId,
                 committedOffset
             );
-            assertEquals(groupId, response.groupId());
-            return response.topics();
         }
 
         public List<MockCoordinatorTimer.ExpiredTimeout<Void, Record>> sleep(long ms) {

@@ -187,7 +187,12 @@ class UnifiedLog(@volatile var logStartOffset: Long,
   }
 
   def remoteLogEnabled(): Boolean = {
-    UnifiedLog.isRemoteLogEnabled(remoteStorageSystemEnable, config, topicPartition.topic())
+    // Remote log is enabled only for non-compact and non-internal topics
+    remoteStorageSystemEnable &&
+      !(config.compact || Topic.isInternal(topicPartition.topic())
+        || TopicBasedRemoteLogMetadataManagerConfig.REMOTE_LOG_METADATA_TOPIC_NAME.equals(topicPartition.topic())
+        || Topic.CLUSTER_METADATA_TOPIC_NAME.equals(topicPartition.topic())) &&
+      config.remoteStorageEnable()
   }
 
   /**
@@ -1877,17 +1882,6 @@ object UnifiedLog extends Logging {
 
   val UnknownOffset = LocalLog.UnknownOffset
 
-  def isRemoteLogEnabled(remoteStorageSystemEnable: Boolean,
-                         config: LogConfig,
-                         topic: String): Boolean = {
-    // Remote log is enabled only for non-compact and non-internal topics
-    remoteStorageSystemEnable &&
-      !(config.compact || Topic.isInternal(topic)
-        || TopicBasedRemoteLogMetadataManagerConfig.REMOTE_LOG_METADATA_TOPIC_NAME.equals(topic)
-        || Topic.CLUSTER_METADATA_TOPIC_NAME.equals(topic)) &&
-      config.remoteStorageEnable()
-  }
-
   def apply(dir: File,
             config: LogConfig,
             logStartOffset: Long,
@@ -1917,7 +1911,6 @@ object UnifiedLog extends Logging {
       s"[UnifiedLog partition=$topicPartition, dir=${dir.getParent}] ")
     val producerStateManager = new ProducerStateManager(topicPartition, dir,
       maxTransactionTimeoutMs, producerStateManagerConfig, time)
-    val isRemoteLogEnabled = UnifiedLog.isRemoteLogEnabled(remoteStorageSystemEnable, config, topicPartition.topic)
     val offsets = new LogLoader(
       dir,
       topicPartition,
@@ -1931,8 +1924,7 @@ object UnifiedLog extends Logging {
       recoveryPoint,
       leaderEpochCache,
       producerStateManager,
-      numRemainingSegments,
-      isRemoteLogEnabled,
+      numRemainingSegments
     ).load()
     val localLog = new LocalLog(dir, config, segments, offsets.recoveryPoint,
       offsets.nextOffsetMetadata, scheduler, time, topicPartition, logDirFailureChannel)
