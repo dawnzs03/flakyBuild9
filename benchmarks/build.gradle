@@ -21,7 +21,6 @@ base {
 }
 
 tasks.named("test").configure { enabled = false }
-tasks.named("javadoc").configure { enabled = false }
 
 configurations {
   expression

@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 /**
  * The type defined for the field in the pattern.
  */
-public enum GrokCaptureType {
+enum GrokCaptureType {
     STRING {
         @Override
         <T> T nativeExtracter(int[] backRefs, NativeExtracterMap<T> map) {

@@ -11,7 +11,6 @@ package org.elasticsearch.test.cluster;
 import org.elasticsearch.test.cluster.util.Version;
 
 import java.io.Closeable;
-import java.io.InputStream;
 
 /**
  * A handle to an {@link ElasticsearchCluster}.
@@ -128,9 +127,4 @@ public interface ClusterHandle extends Closeable {
      * Cleans up any resources created by this cluster.
      */
     void close();
-
-    /**
-     * Returns an {@link InputStream} for the given node log.
-     */
-    InputStream getNodeLog(int index, LogType logType);
 }

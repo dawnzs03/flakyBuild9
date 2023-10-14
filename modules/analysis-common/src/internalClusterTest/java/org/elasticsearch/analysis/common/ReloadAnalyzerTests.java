@@ -40,52 +40,25 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFa
 
 public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
 
-    public static final String SYNONYM_ANALYZER_NAME = "synonym_analyzer";
-    public static final String SYNONYM_GRAPH_ANALYZER_NAME = "synonym_graph_analyzer";
-    public static final String INDEX_NAME = "test";
-
     @Override
     protected Collection<Class<? extends Plugin>> getPlugins() {
         return Arrays.asList(CommonAnalysisPlugin.class);
     }
 
     public void testSynonymsUpdateable() throws IOException {
-        Path synonymsFile = setupSynonyms();
+        String synonymsFileName = "synonyms.txt";
+        Path synonymsFile = setupResourceFile(synonymsFileName, "foo, baz");
 
-        updateSynonyms(synonymsFile, false);
-
-        checkAnalyzerTokens(List.of("foo", "baz", "buzz"));
-
-        SearchResponse response = client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")).get();
-        assertHitCount(response, 1L);
-        response = client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")).get();
-        assertHitCount(response, 1L);
-    }
-
-    public void testSynonymsAreNotUpdatedOnPreview() throws IOException {
-        Path synonymsFile = setupSynonyms();
-
-        updateSynonyms(synonymsFile, true);
-
-        checkAnalyzerTokens(List.of("foo", "baz"));
-
-        SearchResponse response = client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")).get();
-        assertHitCount(response, 1L);
-        response = client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")).get();
-        assertHitCount(response, 0L);
-    }
-
-    private Path setupSynonyms() throws IOException {
-        final String synonymsFileName = "synonyms.txt";
-        final Path synonymsFile = setupResourceFile(synonymsFileName, "foo, baz");
-
+        final String indexName = "test";
+        final String synonymAnalyzerName = "synonym_analyzer";
+        final String synonymGraphAnalyzerName = "synonym_graph_analyzer";
         assertAcked(
-            indicesAdmin().prepareCreate(INDEX_NAME)
+            indicesAdmin().prepareCreate(indexName)
                 .setSettings(
-                    indexSettings(5, 0).put("analysis.analyzer." + SYNONYM_ANALYZER_NAME + ".tokenizer", "standard")
-                        .putList("analysis.analyzer." + SYNONYM_ANALYZER_NAME + ".filter", "lowercase", "synonym_filter")
-                        .put("analysis.analyzer." + SYNONYM_GRAPH_ANALYZER_NAME + ".tokenizer", "standard")
-                        .putList("analysis.analyzer." + SYNONYM_GRAPH_ANALYZER_NAME + ".filter", "lowercase", "synonym_graph_filter")
+                    indexSettings(5, 0).put("analysis.analyzer." + synonymAnalyzerName + ".tokenizer", "standard")
+                        .putList("analysis.analyzer." + synonymAnalyzerName + ".filter", "lowercase", "synonym_filter")
+                        .put("analysis.analyzer." + synonymGraphAnalyzerName + ".tokenizer", "standard")
+                        .putList("analysis.analyzer." + synonymGraphAnalyzerName + ".filter", "lowercase", "synonym_graph_filter")
                         .put("analysis.filter.synonym_filter.type", "synonym")
                         .put("analysis.filter.synonym_filter.updateable", "true")
                         .put("analysis.filter.synonym_filter.synonyms_path", synonymsFileName)
@@ -93,20 +66,20 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
                         .put("analysis.filter.synonym_graph_filter.updateable", "true")
                         .put("analysis.filter.synonym_graph_filter.synonyms_path", synonymsFileName)
                 )
-                .setMapping("field", "type=text,analyzer=standard,search_analyzer=" + SYNONYM_ANALYZER_NAME)
+                .setMapping("field", "type=text,analyzer=standard,search_analyzer=" + synonymAnalyzerName)
         );
 
-        client().prepareIndex(INDEX_NAME).setId("1").setSource("field", "Foo").get();
-        assertNoFailures(indicesAdmin().prepareRefresh(INDEX_NAME).execute().actionGet());
+        client().prepareIndex(indexName).setId("1").setSource("field", "Foo").get();
+        assertNoFailures(indicesAdmin().prepareRefresh(indexName).execute().actionGet());
 
-        SearchResponse response = client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")).get();
+        SearchResponse response = client().prepareSearch(indexName).setQuery(QueryBuilders.matchQuery("field", "baz")).get();
         assertHitCount(response, 1L);
-        response = client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")).get();
+        response = client().prepareSearch(indexName).setQuery(QueryBuilders.matchQuery("field", "buzz")).get();
         assertHitCount(response, 0L);
 
         {
-            for (String analyzerName : new String[] { SYNONYM_ANALYZER_NAME, SYNONYM_GRAPH_ANALYZER_NAME }) {
-                Response analyzeResponse = indicesAdmin().prepareAnalyze(INDEX_NAME, "foo").setAnalyzer(analyzerName).get();
+            for (String analyzerName : new String[] { synonymAnalyzerName, synonymGraphAnalyzerName }) {
+                Response analyzeResponse = indicesAdmin().prepareAnalyze(indexName, "foo").setAnalyzer(analyzerName).get();
                 assertEquals(2, analyzeResponse.getTokens().size());
                 Set<String> tokens = new HashSet<>();
                 analyzeResponse.getTokens().stream().map(AnalyzeToken::getTerm).forEach(t -> tokens.add(t));
@@ -115,10 +88,6 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
             }
         }
 
-        return synonymsFile;
-    }
-
-    private void updateSynonyms(Path synonymsFile, boolean preview) throws IOException {
         // now update synonyms file and trigger reloading
         try (
             PrintWriter out = new PrintWriter(
@@ -129,54 +98,61 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
         }
         ReloadAnalyzersResponse reloadResponse = client().execute(
             ReloadAnalyzerAction.INSTANCE,
-            new ReloadAnalyzersRequest(null, preview, INDEX_NAME)
+            new ReloadAnalyzersRequest(null, indexName)
         ).actionGet();
         assertNoFailures(reloadResponse);
-        Set<String> reloadedAnalyzers = reloadResponse.getReloadDetails().get(INDEX_NAME).getReloadedAnalyzers();
+        Set<String> reloadedAnalyzers = reloadResponse.getReloadDetails().get(indexName).getReloadedAnalyzers();
         assertEquals(2, reloadedAnalyzers.size());
-        assertTrue(reloadedAnalyzers.contains(SYNONYM_ANALYZER_NAME));
-        assertTrue(reloadedAnalyzers.contains(SYNONYM_GRAPH_ANALYZER_NAME));
-    }
+        assertTrue(reloadedAnalyzers.contains(synonymAnalyzerName));
+        assertTrue(reloadedAnalyzers.contains(synonymGraphAnalyzerName));
 
-    private void checkAnalyzerTokens(Collection<String> expectedTokens) {
-        for (String analyzerName : new String[] { SYNONYM_ANALYZER_NAME, SYNONYM_GRAPH_ANALYZER_NAME }) {
-            Response analyzeResponse = indicesAdmin().prepareAnalyze(INDEX_NAME, "foo").setAnalyzer(analyzerName).get();
-            assertEquals(expectedTokens.size(), analyzeResponse.getTokens().size());
-            Set<String> tokens = new HashSet<>();
-            analyzeResponse.getTokens().stream().map(AnalyzeToken::getTerm).forEach(t -> tokens.add(t));
-            assertTrue(tokens.containsAll(expectedTokens));
+        {
+            for (String analyzerName : new String[] { synonymAnalyzerName, synonymGraphAnalyzerName }) {
+                Response analyzeResponse = indicesAdmin().prepareAnalyze(indexName, "foo").setAnalyzer(analyzerName).get();
+                assertEquals(3, analyzeResponse.getTokens().size());
+                Set<String> tokens = new HashSet<>();
+                analyzeResponse.getTokens().stream().map(AnalyzeToken::getTerm).forEach(t -> tokens.add(t));
+                assertTrue(tokens.contains("foo"));
+                assertTrue(tokens.contains("baz"));
+                assertTrue(tokens.contains("buzz"));
+            }
         }
+
+        response = client().prepareSearch(indexName).setQuery(QueryBuilders.matchQuery("field", "baz")).get();
+        assertHitCount(response, 1L);
+        response = client().prepareSearch(indexName).setQuery(QueryBuilders.matchQuery("field", "buzz")).get();
+        assertHitCount(response, 1L);
     }
 
     public void testSynonymsInMultiplexerUpdateable() throws FileNotFoundException, IOException {
         String synonymsFileName = "synonyms.txt";
         Path synonymsFile = setupResourceFile(synonymsFileName, "foo, baz");
 
-        final String INDEX_NAME = "test";
-        final String SYNONYM_ANALYZER_NAME = "synonym_in_multiplexer_analyzer";
+        final String indexName = "test";
+        final String synonymAnalyzerName = "synonym_in_multiplexer_analyzer";
         assertAcked(
-            indicesAdmin().prepareCreate(INDEX_NAME)
+            indicesAdmin().prepareCreate(indexName)
                 .setSettings(
-                    indexSettings(5, 0).put("analysis.analyzer." + SYNONYM_ANALYZER_NAME + ".tokenizer", "whitespace")
-                        .putList("analysis.analyzer." + SYNONYM_ANALYZER_NAME + ".filter", "my_multiplexer")
+                    indexSettings(5, 0).put("analysis.analyzer." + synonymAnalyzerName + ".tokenizer", "whitespace")
+                        .putList("analysis.analyzer." + synonymAnalyzerName + ".filter", "my_multiplexer")
                         .put("analysis.filter.synonym_filter.type", "synonym")
                         .put("analysis.filter.synonym_filter.updateable", "true")
                         .put("analysis.filter.synonym_filter.synonyms_path", synonymsFileName)
                         .put("analysis.filter.my_multiplexer.type", "multiplexer")
                         .putList("analysis.filter.my_multiplexer.filters", "synonym_filter")
                 )
-                .setMapping("field", "type=text,analyzer=standard,search_analyzer=" + SYNONYM_ANALYZER_NAME)
+                .setMapping("field", "type=text,analyzer=standard,search_analyzer=" + synonymAnalyzerName)
         );
 
-        client().prepareIndex(INDEX_NAME).setId("1").setSource("field", "foo").get();
-        assertNoFailures(indicesAdmin().prepareRefresh(INDEX_NAME).execute().actionGet());
+        client().prepareIndex(indexName).setId("1").setSource("field", "foo").get();
+        assertNoFailures(indicesAdmin().prepareRefresh(indexName).execute().actionGet());
 
-        SearchResponse response = client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")).get();
+        SearchResponse response = client().prepareSearch(indexName).setQuery(QueryBuilders.matchQuery("field", "baz")).get();
         assertHitCount(response, 1L);
-        response = client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")).get();
+        response = client().prepareSearch(indexName).setQuery(QueryBuilders.matchQuery("field", "buzz")).get();
         assertHitCount(response, 0L);
 
-        Response analyzeResponse = indicesAdmin().prepareAnalyze(INDEX_NAME, "foo").setAnalyzer(SYNONYM_ANALYZER_NAME).get();
+        Response analyzeResponse = indicesAdmin().prepareAnalyze(indexName, "foo").setAnalyzer(synonymAnalyzerName).get();
         assertEquals(2, analyzeResponse.getTokens().size());
         final Set<String> tokens = new HashSet<>();
         analyzeResponse.getTokens().stream().map(AnalyzeToken::getTerm).forEach(t -> tokens.add(t));
@@ -193,14 +169,14 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
         }
         ReloadAnalyzersResponse reloadResponse = client().execute(
             ReloadAnalyzerAction.INSTANCE,
-            new ReloadAnalyzersRequest(null, false, INDEX_NAME)
+            new ReloadAnalyzersRequest(null, indexName)
         ).actionGet();
         assertNoFailures(reloadResponse);
-        Set<String> reloadedAnalyzers = reloadResponse.getReloadDetails().get(INDEX_NAME).getReloadedAnalyzers();
+        Set<String> reloadedAnalyzers = reloadResponse.getReloadDetails().get(indexName).getReloadedAnalyzers();
         assertEquals(1, reloadedAnalyzers.size());
-        assertTrue(reloadedAnalyzers.contains(SYNONYM_ANALYZER_NAME));
+        assertTrue(reloadedAnalyzers.contains(synonymAnalyzerName));
 
-        analyzeResponse = indicesAdmin().prepareAnalyze(INDEX_NAME, "foo").setAnalyzer(SYNONYM_ANALYZER_NAME).get();
+        analyzeResponse = indicesAdmin().prepareAnalyze(indexName, "foo").setAnalyzer(synonymAnalyzerName).get();
         assertEquals(3, analyzeResponse.getTokens().size());
         tokens.clear();
         analyzeResponse.getTokens().stream().map(AnalyzeToken::getTerm).forEach(t -> tokens.add(t));
@@ -208,9 +184,9 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
         assertTrue(tokens.contains("baz"));
         assertTrue(tokens.contains("buzz"));
 
-        response = client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")).get();
+        response = client().prepareSearch(indexName).setQuery(QueryBuilders.matchQuery("field", "baz")).get();
         assertHitCount(response, 1L);
-        response = client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")).get();
+        response = client().prepareSearch(indexName).setQuery(QueryBuilders.matchQuery("field", "buzz")).get();
         assertHitCount(response, 1L);
     }
 
@@ -233,12 +209,12 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
             out.println("foo, baz");
         }
 
-        final String INDEX_NAME = "test";
+        final String indexName = "test";
         final String analyzerName = "my_synonym_analyzer";
 
         MapperException ex = expectThrows(
             MapperException.class,
-            () -> indicesAdmin().prepareCreate(INDEX_NAME)
+            () -> indicesAdmin().prepareCreate(indexName)
                 .setSettings(
                     indexSettings(5, 0).put("analysis.analyzer." + analyzerName + ".tokenizer", "standard")
                         .putList("analysis.analyzer." + analyzerName + ".filter", "lowercase", "synonym_filter")
@@ -259,7 +235,7 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
         // same for synonym filters in multiplexer chain
         ex = expectThrows(
             MapperException.class,
-            () -> indicesAdmin().prepareCreate(INDEX_NAME)
+            () -> indicesAdmin().prepareCreate(indexName)
                 .setSettings(
                     indexSettings(5, 0).put("analysis.analyzer." + analyzerName + ".tokenizer", "whitespace")
                         .putList("analysis.analyzer." + analyzerName + ".filter", "my_multiplexer")
@@ -284,10 +260,10 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
         String fileName = "example_word_list.txt";
         Path file = setupResourceFile(fileName, "running");
 
-        final String INDEX_NAME = "test";
+        final String indexName = "test";
         final String analyzerName = "keyword_maker_analyzer";
         assertAcked(
-            indicesAdmin().prepareCreate(INDEX_NAME)
+            indicesAdmin().prepareCreate(indexName)
                 .setSettings(
                     indexSettings(5, 0).put("analysis.analyzer." + analyzerName + ".tokenizer", "whitespace")
                         .putList("analysis.analyzer." + analyzerName + ".filter", "keyword_marker_filter", "stemmer")
@@ -315,10 +291,10 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
 
         ReloadAnalyzersResponse reloadResponse = client().execute(
             ReloadAnalyzerAction.INSTANCE,
-            new ReloadAnalyzersRequest(null, false, INDEX_NAME)
+            new ReloadAnalyzersRequest(null, indexName)
         ).actionGet();
         assertNoFailures(reloadResponse);
-        Set<String> reloadedAnalyzers = reloadResponse.getReloadDetails().get(INDEX_NAME).getReloadedAnalyzers();
+        Set<String> reloadedAnalyzers = reloadResponse.getReloadDetails().get(indexName).getReloadedAnalyzers();
         assertEquals(1, reloadedAnalyzers.size());
         assertTrue(reloadedAnalyzers.contains(analyzerName));
 

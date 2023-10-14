@@ -438,14 +438,6 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
         assertChunkActiveOrEvicted(entry);
 
         // existing item, check if we need to promote item
-        if (now - entry.lastAccessed >= minTimeDelta) {
-            maybePromote(now, entry);
-        }
-
-        return entry.chunk;
-    }
-
-    private void maybePromote(long now, Entry<CacheFileRegion> entry) {
         synchronized (this) {
             if (now - entry.lastAccessed >= minTimeDelta && entry.freq + 1 < maxFreq && entry.chunk.isEvicted() == false) {
                 unlink(entry);
@@ -454,6 +446,8 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
                 pushEntryToBack(entry);
             }
         }
+
+        return entry.chunk;
     }
 
     private void assignToSlot(Entry<CacheFileRegion> entry, int freeSlot) {
@@ -608,10 +602,12 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
             long now = threadPool.relativeTimeInMillis();
             for (int i = 0; i < maxFreq; i++) {
                 for (Entry<CacheFileRegion> entry = freqs[i]; entry != null; entry = entry.next) {
-                    if (entry.freq > 0 && now - entry.lastAccessed >= 2 * minTimeDelta) {
-                        unlink(entry);
-                        entry.freq--;
-                        pushEntryToBack(entry);
+                    if (now - entry.lastAccessed >= 2 * minTimeDelta) {
+                        if (entry.freq > 0) {
+                            unlink(entry);
+                            entry.freq--;
+                            pushEntryToBack(entry);
+                        }
                     }
                 }
             }
@@ -692,7 +688,7 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
         Entry<T> prev;
         Entry<T> next;
         int freq;
-        volatile long lastAccessed;
+        long lastAccessed;
 
         Entry(T chunk, long lastAccessed) {
             this.chunk = chunk;

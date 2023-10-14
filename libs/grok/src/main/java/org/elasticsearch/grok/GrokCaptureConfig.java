@@ -43,7 +43,7 @@ public final class GrokCaptureConfig {
     /**
      * The type defined for the field in the pattern.
      */
-    public GrokCaptureType type() {
+    GrokCaptureType type() {
         return type;
     }
 

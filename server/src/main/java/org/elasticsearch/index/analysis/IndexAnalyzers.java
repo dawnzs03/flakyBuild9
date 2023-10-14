@@ -95,8 +95,7 @@ public interface IndexAnalyzers extends Closeable {
     /**
      * Reload any analyzers that have reloadable components
      */
-    default List<String> reload(AnalysisRegistry analysisRegistry, IndexSettings indexSettings, String resource, boolean preview)
-        throws IOException {
+    default List<String> reload(AnalysisRegistry analysisRegistry, IndexSettings indexSettings, String resource) throws IOException {
         return List.of();
     }
 
@@ -136,8 +135,7 @@ public interface IndexAnalyzers extends Closeable {
             }
 
             @Override
-            public List<String> reload(AnalysisRegistry registry, IndexSettings indexSettings, String resource, boolean preview)
-                throws IOException {
+            public List<String> reload(AnalysisRegistry registry, IndexSettings indexSettings, String resource) throws IOException {
 
                 List<NamedAnalyzer> reloadableAnalyzers = analyzers.values()
                     .stream()
@@ -148,18 +146,16 @@ public interface IndexAnalyzers extends Closeable {
                     return List.of();
                 }
 
-                if (preview == false) {
-                    final Map<String, TokenizerFactory> tokenizerFactories = registry.buildTokenizerFactories(indexSettings);
-                    final Map<String, CharFilterFactory> charFilterFactories = registry.buildCharFilterFactories(indexSettings);
-                    final Map<String, TokenFilterFactory> tokenFilterFactories = registry.buildTokenFilterFactories(indexSettings);
-                    final Map<String, Settings> settings = indexSettings.getSettings().getGroups("index.analysis.analyzer");
+                final Map<String, TokenizerFactory> tokenizerFactories = registry.buildTokenizerFactories(indexSettings);
+                final Map<String, CharFilterFactory> charFilterFactories = registry.buildCharFilterFactories(indexSettings);
+                final Map<String, TokenFilterFactory> tokenFilterFactories = registry.buildTokenFilterFactories(indexSettings);
+                final Map<String, Settings> settings = indexSettings.getSettings().getGroups("index.analysis.analyzer");
 
-                    for (NamedAnalyzer analyzer : reloadableAnalyzers) {
-                        String name = analyzer.name();
-                        Settings analyzerSettings = settings.get(name);
-                        ReloadableCustomAnalyzer reloadableAnalyzer = (ReloadableCustomAnalyzer) analyzer.analyzer();
-                        reloadableAnalyzer.reload(name, analyzerSettings, tokenizerFactories, charFilterFactories, tokenFilterFactories);
-                    }
+                for (NamedAnalyzer analyzer : reloadableAnalyzers) {
+                    String name = analyzer.name();
+                    Settings analyzerSettings = settings.get(name);
+                    ReloadableCustomAnalyzer reloadableAnalyzer = (ReloadableCustomAnalyzer) analyzer.analyzer();
+                    reloadableAnalyzer.reload(name, analyzerSettings, tokenizerFactories, charFilterFactories, tokenFilterFactories);
                 }
 
                 return reloadableAnalyzers.stream().map(NamedAnalyzer::name).toList();

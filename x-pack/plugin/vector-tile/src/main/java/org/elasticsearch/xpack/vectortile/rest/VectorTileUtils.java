@@ -64,16 +64,8 @@ class VectorTileUtils {
             // guard for null values
             return;
         }
-        if (value instanceof Byte || value instanceof Short) {
-            // mvt does not support byte and short data types
-            value = ((Number) value).intValue();
-        }
         feature.addTags(layerProps.addKey(key));
-        int valIndex = layerProps.addValue(value);
-        if (valIndex < 0) {
-            throw new IllegalArgumentException("Unsupported vector tile type for field [" + key + "] : " + value.getClass().getName());
-        }
-        feature.addTags(valIndex);
+        feature.addTags(layerProps.addValue(value));
     }
 
     /**
