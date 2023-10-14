@@ -53,5 +53,5 @@ jobs:
             merge conflicts, please update it with the latest from trunk (or appropriate release branch)
             <p>
             If this PR is no longer valid or desired, please feel free to close it. If no activity
-            occurs in the next 30 days, it will be automatically closed.
+            occurrs in the next 30 days, it will be automatically closed.
           
