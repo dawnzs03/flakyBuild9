@@ -104,15 +104,6 @@ static RCTRootViewSizeFlexibility convertToRootViewSizeFlexibility(RCTSurfaceSiz
   return self;
 }
 
-- (instancetype)initWithSurface:(id<RCTSurfaceProtocol>)surface
-{
-  if (self = [super initWithSurface:surface
-                    sizeMeasureMode:RCTSurfaceSizeMeasureModeWidthExact | RCTSurfaceSizeMeasureModeHeightExact]) {
-    [surface start];
-  }
-  return self;
-}
-
 - (BOOL)hasBridge
 {
   return _bridge != nil;

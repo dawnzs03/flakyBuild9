@@ -435,8 +435,6 @@ void Binding::installFabricUIManager(
       getFeatureFlagValue("doNotSwapLeftAndRightOnAndroidInLTR");
   CoreFeatures::enableCleanParagraphYogaNode =
       getFeatureFlagValue("enableCleanParagraphYogaNode");
-  CoreFeatures::enableDefaultAsyncBatchedPriority =
-      getFeatureFlagValue("enableDefaultAsyncBatchedPriority");
 
   // RemoveDelete mega-op
   ShadowViewMutation::PlatformSupportsRemoveDeleteTreeInstruction =

@@ -12,8 +12,11 @@ import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.annotations.ReactPropGroup;
 import java.util.Map;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.modules.junit4.rule.PowerMockRule;
 import org.robolectric.RobolectricTestRunner;
 
 /**
@@ -21,8 +24,11 @@ import org.robolectric.RobolectricTestRunner;
  * correct
  */
 @RunWith(RobolectricTestRunner.class)
+@PowerMockIgnore({"org.mockito.*", "org.robolectric.*", "androidx.*", "android.*"})
 @Ignore // TODO T14964130
 public class ReactPropForShadowNodeSpecTest {
+
+  @Rule public PowerMockRule rule = new PowerMockRule();
 
   private static class BaseViewManager extends ViewManager {
 

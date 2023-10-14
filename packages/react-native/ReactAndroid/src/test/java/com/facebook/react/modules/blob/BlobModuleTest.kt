@@ -12,7 +12,6 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.ReactTestHelper
-import com.facebook.react.bridge.WritableMap
 import java.nio.ByteBuffer
 import java.util.UUID
 import kotlin.random.Random
@@ -21,25 +20,32 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.MockedStatic
-import org.mockito.Mockito.mockStatic
+import org.powermock.api.mockito.PowerMockito.mockStatic
+import org.powermock.api.mockito.PowerMockito.`when` as whenever
+import org.powermock.core.classloader.annotations.PowerMockIgnore
+import org.powermock.core.classloader.annotations.PrepareForTest
+import org.powermock.modules.junit4.rule.PowerMockRule
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+@PrepareForTest(Arguments::class)
 @RunWith(RobolectricTestRunner::class)
+@PowerMockIgnore("org.mockito.*", "org.robolectric.*", "androidx.*", "android.*")
 @Config(manifest = Config.NONE)
 class BlobModuleTest {
   private lateinit var bytes: ByteArray
   private lateinit var blobId: String
   private lateinit var blobModule: BlobModule
-  private lateinit var arguments: MockedStatic<Arguments>
+
+  @get:Rule var rule = PowerMockRule()
 
   @Before
   fun prepareModules() {
-    arguments = mockStatic(Arguments::class.java)
-    arguments.`when`<WritableMap> { Arguments.createMap() }.thenAnswer { JavaOnlyMap() }
+    mockStatic(Arguments::class.java)
+    whenever(Arguments.createMap()).thenAnswer { JavaOnlyMap() }
 
     bytes = ByteArray(120)
     Random.Default.nextBytes(bytes)
@@ -51,7 +57,6 @@ class BlobModuleTest {
   @After
   fun cleanUp() {
     blobModule.remove(blobId)
-    arguments.close()
   }
 
   @Test

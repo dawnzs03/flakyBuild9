@@ -20,7 +20,7 @@ module.exports = {
   setupFiles: ['./packages/react-native/jest/local-setup.js'],
   fakeTimers: {
     enableGlobally: true,
-    legacyFakeTimers: false,
+    legacyFakeTimers: true,
   },
   snapshotFormat: {
     escapeString: true,

@@ -42,7 +42,7 @@ class JSPointerDispatcherTest {
 
   @Before
   fun setupViewHierarchy() {
-    val ctx: Context = RuntimeEnvironment.getApplication()
+    val ctx: Context = RuntimeEnvironment.application
     root = LinearLayout(ctx)
     val childView = TextView(ctx)
     childView.append("Hello, world!")

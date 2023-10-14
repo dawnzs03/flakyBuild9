@@ -42,11 +42,11 @@ import javax.annotation.Nullable;
 @Nullsafe(Nullsafe.Mode.LOCAL)
 class BridgelessReactContext extends ReactApplicationContext implements EventDispatcherProvider {
 
-  private final ReactHostImpl mReactHost;
+  private final ReactHost mReactHost;
   private final AtomicReference<String> mSourceURL = new AtomicReference<>();
   private final String TAG = this.getClass().getSimpleName();
 
-  BridgelessReactContext(Context context, ReactHostImpl host) {
+  BridgelessReactContext(Context context, ReactHost host) {
     super(context);
     mReactHost = host;
   }
@@ -104,11 +104,11 @@ class BridgelessReactContext extends ReactApplicationContext implements EventDis
   }
 
   private static class BridgelessJSModuleInvocationHandler implements InvocationHandler {
-    private final ReactHostImpl mReactHost;
+    private final ReactHost mReactHost;
     private final Class<? extends JavaScriptModule> mJSModuleInterface;
 
     public BridgelessJSModuleInvocationHandler(
-        ReactHostImpl reactHost, Class<? extends JavaScriptModule> jsModuleInterface) {
+        ReactHost reactHost, Class<? extends JavaScriptModule> jsModuleInterface) {
       mReactHost = reactHost;
       mJSModuleInterface = jsModuleInterface;
     }

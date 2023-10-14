@@ -17,8 +17,6 @@ import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.bridge.WritableArray
-import com.facebook.react.bridge.WritableMap
 import com.facebook.react.common.MapBuilder
 import com.facebook.react.uimanager.UIManagerModule
 import com.facebook.react.uimanager.events.Event
@@ -27,28 +25,33 @@ import com.facebook.react.uimanager.events.RCTEventEmitter
 import kotlin.collections.Map
 import kotlin.math.abs
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.eq
-import org.mockito.MockedStatic
 import org.mockito.Mockito.atMost
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
-import org.mockito.Mockito.`when` as whenever
+import org.powermock.api.mockito.PowerMockito.mockStatic
+import org.powermock.api.mockito.PowerMockito.`when` as whenever
+import org.powermock.core.classloader.annotations.PowerMockIgnore
+import org.powermock.core.classloader.annotations.PrepareForTest
+import org.powermock.modules.junit4.rule.PowerMockRule
 import org.robolectric.RobolectricTestRunner
 
 /** Tests the animated nodes graph traversal algorithm from {@link NativeAnimatedNodesManager}. */
+@PrepareForTest(Arguments::class)
 @RunWith(RobolectricTestRunner::class)
+@PowerMockIgnore("org.mockito.*", "org.robolectric.*", "androidx.*", "android.*")
 class NativeAnimatedNodeTraversalTest {
+  @get:Rule var rule = PowerMockRule()
 
   private var frameTimeNanos: Long = 0L
   private lateinit var reactApplicationContextMock: ReactApplicationContext
@@ -56,7 +59,6 @@ class NativeAnimatedNodeTraversalTest {
   private lateinit var uiManagerMock: UIManagerModule
   private lateinit var eventDispatcherMock: EventDispatcher
   private lateinit var nativeAnimatedNodesManager: NativeAnimatedNodesManager
-  private lateinit var arguments: MockedStatic<Arguments>
 
   private fun nextFrameTime(): Long {
     frameTimeNanos += FRAME_LEN_NANOS
@@ -65,9 +67,9 @@ class NativeAnimatedNodeTraversalTest {
 
   @Before
   fun setUp() {
-    arguments = mockStatic(Arguments::class.java)
-    arguments.`when`<WritableArray> { Arguments.createArray() }.thenAnswer { JavaOnlyArray() }
-    arguments.`when`<WritableMap> { Arguments.createMap() }.thenAnswer { JavaOnlyMap() }
+    mockStatic(Arguments::class.java)
+    whenever(Arguments.createArray()).thenAnswer { JavaOnlyArray() }
+    whenever(Arguments.createMap()).thenAnswer { JavaOnlyMap() }
 
     frameTimeNanos = INITIAL_FRAME_TIME_NANOS
 
@@ -114,11 +116,6 @@ class NativeAnimatedNodeTraversalTest {
       "on${arg.substring(3)}"
     }
     nativeAnimatedNodesManager = NativeAnimatedNodesManager(reactApplicationContextMock)
-  }
-
-  @After
-  fun tearDown() {
-    arguments.close()
   }
 
   /**

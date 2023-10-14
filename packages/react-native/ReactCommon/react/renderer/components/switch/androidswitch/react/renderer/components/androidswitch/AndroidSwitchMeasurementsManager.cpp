@@ -19,7 +19,7 @@ Size AndroidSwitchMeasurementsManager::measure(
     SurfaceId surfaceId,
     LayoutConstraints layoutConstraints) const {
   {
-    std::scoped_lock lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     if (hasBeenMeasured_) {
       return cachedMeasurement_;
     }
@@ -58,7 +58,7 @@ Size AndroidSwitchMeasurementsManager::measure(
       minimumSize.height,
       maximumSize.height));
 
-  std::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   cachedMeasurement_ = measurement;
   return measurement;
 }

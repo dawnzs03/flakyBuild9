@@ -22,16 +22,6 @@ using DispatchEvent = std::function<void(
     ReactEventPriority priority,
     const EventPayload &payload)>;
 
-using PointerIdentifier = int32_t;
-using CaptureTargetOverrideRegistry =
-    std::unordered_map<PointerIdentifier, ShadowNode::Weak>;
-
-// Helper struct to package a PointerEvent and SharedEventTarget together
-struct PointerEventTarget {
-  PointerEvent event;
-  SharedEventTarget target;
-};
-
 class PointerEventsProcessor final {
  public:
   void interceptPointerEvent(
@@ -40,28 +30,7 @@ class PointerEventsProcessor final {
       std::string const &type,
       ReactEventPriority priority,
       PointerEvent const &event,
-      DispatchEvent const &eventDispatcher,
-      UIManager const &uiManager);
-
-  void setPointerCapture(
-      PointerIdentifier pointerId,
-      ShadowNode::Shared const &shadowNode);
-  void releasePointerCapture(
-      PointerIdentifier pointerId,
-      ShadowNode const *shadowNode);
-  bool hasPointerCapture(
-      PointerIdentifier pointerId,
-      ShadowNode const *shadowNode);
-
- private:
-  void processPendingPointerCapture(
-      PointerEvent const &event,
-      jsi::Runtime &runtime,
-      DispatchEvent const &eventDispatcher,
-      UIManager const &uiManager);
-
-  CaptureTargetOverrideRegistry pendingPointerCaptureTargetOverrides_;
-  CaptureTargetOverrideRegistry activePointerCaptureTargetOverrides_;
+      DispatchEvent const &eventDispatcher);
 };
 
 } // namespace facebook::react

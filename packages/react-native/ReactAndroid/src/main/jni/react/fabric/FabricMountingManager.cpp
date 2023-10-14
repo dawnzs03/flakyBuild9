@@ -250,7 +250,7 @@ void FabricMountingManager::executeMount(
     const MountingTransaction &transaction) {
   SystraceSection section("FabricMountingManager::executeMount");
 
-  std::scoped_lock lock(commitMutex_);
+  std::lock_guard<std::recursive_mutex> lock(commitMutex_);
   auto finishTransactionStartTime = telemetryTimePointNow();
 
   auto env = jni::Environment::current();
@@ -274,16 +274,10 @@ void FabricMountingManager::executeMount(
     std::lock_guard allocatedViewsLock(allocatedViewsMutex_);
 
     auto allocatedViewsIterator = allocatedViewRegistry_.find(surfaceId);
-    auto defaultAllocatedViews = butter::set<Tag>{};
-    // Do not remove `defaultAllocatedViews` or initialize `butter::set<Tag>{}`
-    // inline in below ternary expression -
-    // if falsy operand is a value type, the compiler will decide the expression
-    // to be a value type, an unnecessary (sometimes expensive) copy will happen
-    // as a result.
-    const auto &allocatedViewTags =
+    auto const &allocatedViewTags =
         allocatedViewsIterator != allocatedViewRegistry_.end()
         ? allocatedViewsIterator->second
-        : defaultAllocatedViews;
+        : butter::set<Tag>{};
     if (allocatedViewsIterator == allocatedViewRegistry_.end()) {
       LOG(ERROR) << "Executing commit after surface was stopped!";
     }

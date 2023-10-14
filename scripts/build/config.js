@@ -11,82 +11,56 @@
 
 /*::
 import type {BabelCoreOptions} from '@babel/core';
-*/
 
-const {ModuleResolutionKind} = require('typescript');
-
-/*::
 export type BuildOptions = $ReadOnly<{
-  // The target runtime to compile for.
   target: 'node',
-
-  // Whether to emit Flow definition files (.js.flow) (default: true).
-  emitFlowDefs?: boolean,
-
-  // Whether to emit TypeScript definition files (.d.ts) (default: false).
-  emitTypeScriptDefs?: boolean,
 }>;
 
 export type BuildConfig = $ReadOnly<{
-  // The packages to include for build and their build options.
   packages: $ReadOnly<{[packageName: string]: BuildOptions}>,
 }>;
 */
 
-/**
- * - BUILD CONFIG -
- *
- * Add packages here to configure them as part of the monorepo `yarn build`
- * setup. These must use a consistent package structure and (today) target
- * Node.js packages only.
- */
+const TARGET_NODE_VERSION = '18';
+
 const buildConfig /*: BuildConfig */ = {
+  // The packages to include for build and their build options
   packages: {
-    'community-cli-plugin': {
-      target: 'node',
-    },
-    'dev-middleware': {
-      target: 'node',
-      emitTypeScriptDefs: true,
-    },
+    'dev-middleware': {target: 'node'},
   },
 };
-
-const defaultBuildOptions = {
-  emitFlowDefs: true,
-  emitTypeScriptDefs: false,
-};
-
-function getBuildOptions(
-  packageName /*: $Keys<BuildConfig['packages']> */,
-) /*: Required<BuildOptions> */ {
-  return {
-    ...defaultBuildOptions,
-    ...buildConfig.packages[packageName],
-  };
-}
 
 function getBabelConfig(
   packageName /*: $Keys<BuildConfig['packages']> */,
 ) /*: BabelCoreOptions */ {
-  const {target} = getBuildOptions(packageName);
-
-  switch (target) {
-    case 'node':
-      return require('./babel/node.config.js');
-  }
-}
-
-function getTypeScriptCompilerOptions(
-  packageName /*: $Keys<BuildConfig['packages']> */,
-) /*: Object */ {
-  const {target} = getBuildOptions(packageName);
+  const {target} = buildConfig.packages[packageName];
 
   switch (target) {
     case 'node':
       return {
-        ...require('@tsconfig/node18/tsconfig.json').compilerOptions,
-        moduleResolution: ModuleResolutionKind.NodeJs,
+        presets: [
+          '@babel/preset-flow',
+          [
+            '@babel/preset-env',
+            {
+              targets: {
+                node: TARGET_NODE_VERSION,
+              },
+            },
+          ],
+        ],
+        plugins: [
+          [
+            'transform-define',
+            {
+              'process.env.BUILD_EXCLUDE_BABEL_REGISTER': true,
+            },
+          ],
+          [
+            'minify-dead-code-elimination',
+            {keepFnName: true, keepFnArgs: true, keepClassName: true},
+          ],
+        ],
       };
   }
 }
@@ -94,6 +68,4 @@ function getTypeScriptCompilerOptions(
 module.exports = {
   buildConfig,
   getBabelConfig,
-  getBuildOptions,
-  getTypeScriptCompilerOptions,
 };

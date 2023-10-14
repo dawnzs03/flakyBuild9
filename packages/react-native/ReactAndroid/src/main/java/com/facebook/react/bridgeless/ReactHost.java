@@ -50,7 +50,7 @@ import com.facebook.react.devsupport.DisabledDevSupportManager;
 import com.facebook.react.devsupport.interfaces.DevSupportManager;
 import com.facebook.react.fabric.ComponentFactory;
 import com.facebook.react.fabric.FabricUIManager;
-import com.facebook.react.interfaces.ReactHost;
+import com.facebook.react.interfaces.ReactHostInterface;
 import com.facebook.react.interfaces.TaskInterface;
 import com.facebook.react.interfaces.exceptionmanager.ReactJsExceptionHandler;
 import com.facebook.react.interfaces.fabric.ReactSurface;
@@ -83,7 +83,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @ThreadSafe
 @Nullsafe(Nullsafe.Mode.LOCAL)
-public class ReactHostImpl implements ReactHost {
+public class ReactHost implements ReactHostInterface {
 
   // TODO T61403233 Make this configurable by product code
   private static final boolean DEV = ReactBuildConfig.DEBUG;
@@ -99,8 +99,7 @@ public class ReactHostImpl implements ReactHost {
   private final Executor mBGExecutor;
   private final Executor mUIExecutor;
   private final QueueThreadExceptionHandler mQueueThreadExceptionHandler;
-  private final Set<ReactSurfaceImpl> mAttachedSurfaces =
-      Collections.synchronizedSet(new HashSet<>());
+  private final Set<ReactSurface> mAttachedSurfaces = Collections.synchronizedSet(new HashSet<>());
   private final MemoryPressureRouter mMemoryPressureRouter;
   private final boolean mAllowPackagerServerAccess;
   private final boolean mUseDevSupport;
@@ -126,7 +125,7 @@ public class ReactHostImpl implements ReactHost {
   private MemoryPressureListener mMemoryPressureListener;
   private @Nullable DefaultHardwareBackBtnHandler mDefaultHardwareBackBtnHandler;
 
-  public ReactHostImpl(
+  public ReactHost(
       Context context,
       ReactHostDelegate delegate,
       ComponentFactory componentFactory,
@@ -144,7 +143,7 @@ public class ReactHostImpl implements ReactHost {
         useDevSupport);
   }
 
-  public ReactHostImpl(
+  public ReactHost(
       Context context,
       ReactHostDelegate delegate,
       ComponentFactory componentFactory,
@@ -159,7 +158,7 @@ public class ReactHostImpl implements ReactHost {
     mBGExecutor = bgExecutor;
     mUIExecutor = uiExecutor;
     mReactJsExceptionHandler = reactJsExceptionHandler;
-    mQueueThreadExceptionHandler = ReactHostImpl.this::handleHostException;
+    mQueueThreadExceptionHandler = ReactHost.this::handleHostException;
     mMemoryPressureRouter = new MemoryPressureRouter(context);
     mMemoryPressureListener =
         level ->
@@ -170,7 +169,7 @@ public class ReactHostImpl implements ReactHost {
     if (DEV) {
       mDevSupportManager =
           new BridgelessDevSupportManager(
-              ReactHostImpl.this, mContext, mReactHostDelegate.getJsMainModulePath());
+              ReactHost.this, mContext, mReactHostDelegate.getJsMainModulePath());
     } else {
       mDevSupportManager = new DisabledDevSupportManager();
     }
@@ -202,7 +201,7 @@ public class ReactHostImpl implements ReactHost {
 
   /** Initialize and run a React Native surface in a background without mounting real views. */
   /* package */
-  TaskInterface<Void> prerenderSurface(final ReactSurfaceImpl surface) {
+  TaskInterface<Void> prerenderSurface(final ReactSurface surface) {
     final String method = "prerenderSurface(surfaceId = " + surface.getSurfaceID() + ")";
     log(method, "Schedule");
 
@@ -222,7 +221,7 @@ public class ReactHostImpl implements ReactHost {
    * @return A Task that will complete when startSurface has been called.
    */
   /** package */
-  TaskInterface<Void> startSurface(final ReactSurfaceImpl surface) {
+  TaskInterface<Void> startSurface(final ReactSurface surface) {
     final String method = "startSurface(surfaceId = " + surface.getSurfaceID() + ")";
     log(method, "Schedule");
 
@@ -242,7 +241,7 @@ public class ReactHostImpl implements ReactHost {
    * @return A Task that will complete when stopSurface has been called.
    */
   /** package */
-  TaskInterface<Void> stopSurface(final ReactSurfaceImpl surface) {
+  TaskInterface<Void> stopSurface(final ReactSurface surface) {
     final String method = "stopSurface(surfaceId = " + surface.getSurfaceID() + ")";
     log(method, "Schedule");
 
@@ -624,7 +623,7 @@ public class ReactHostImpl implements ReactHost {
         });
   }
 
-  /* package */ void attachSurface(ReactSurfaceImpl surface) {
+  /* package */ void attachSurface(ReactSurface surface) {
     final String method = "attachSurface(surfaceId = " + surface.getSurfaceID() + ")";
     log(method);
 
@@ -633,7 +632,7 @@ public class ReactHostImpl implements ReactHost {
     }
   }
 
-  /* package */ void detachSurface(ReactSurfaceImpl surface) {
+  /* package */ void detachSurface(ReactSurface surface) {
     final String method = "detachSurface(surfaceId = " + surface.getSurfaceID() + ")";
     log(method);
 
@@ -642,7 +641,7 @@ public class ReactHostImpl implements ReactHost {
     }
   }
 
-  /* package */ boolean isSurfaceAttached(ReactSurfaceImpl surface) {
+  /* package */ boolean isSurfaceAttached(ReactSurface surface) {
     synchronized (mAttachedSurfaces) {
       return mAttachedSurfaces.contains(surface);
     }
@@ -650,7 +649,7 @@ public class ReactHostImpl implements ReactHost {
 
   /* package */ boolean isSurfaceWithModuleNameAttached(String moduleName) {
     synchronized (mAttachedSurfaces) {
-      for (ReactSurfaceImpl surface : mAttachedSurfaces) {
+      for (ReactSurface surface : mAttachedSurfaces) {
         if (surface.getModuleName().equals(moduleName)) {
           return true;
         }
@@ -800,7 +799,7 @@ public class ReactHostImpl implements ReactHost {
     return mBridgelessReactContextRef.getOrCreate(
         () -> {
           log(method, "Creating BridgelessReactContext");
-          return new BridgelessReactContext(mContext, ReactHostImpl.this);
+          return new BridgelessReactContext(mContext, ReactHost.this);
         });
   }
 
@@ -866,7 +865,7 @@ public class ReactHostImpl implements ReactHost {
           ReactMarker.logMarker(
               ReactMarkerConstants.REACT_BRIDGELESS_LOADING_START, BRIDGELESS_MARKER_INSTANCE_KEY);
 
-          return getJsBundleLoader()
+          return getJSBundleLoader()
               .onSuccess(
                   task -> {
                     final JSBundleLoader bundleLoader = task.getResult();
@@ -963,7 +962,7 @@ public class ReactHostImpl implements ReactHost {
           final BridgelessReactContext reactContext = getOrCreateReactContext();
           final DevSupportManager devSupportManager = getDevSupportManager();
 
-          return getJsBundleLoader()
+          return getJSBundleLoader()
               .onSuccess(
                   task -> {
                     final JSBundleLoader bundleLoader = task.getResult();
@@ -1030,7 +1029,7 @@ public class ReactHostImpl implements ReactHost {
         });
   }
 
-  private Task<JSBundleLoader> getJsBundleLoader() {
+  private Task<JSBundleLoader> getJSBundleLoader() {
     final String method = "getJSBundleLoader()";
     log(method);
 
@@ -1043,7 +1042,7 @@ public class ReactHostImpl implements ReactHost {
                   // Since metro is running, fetch the JS bundle from the server
                   return loadJSBundleFromMetro();
                 }
-                return Task.forResult(mReactHostDelegate.getJsBundleLoader());
+                return Task.forResult(mReactHostDelegate.getJSBundleLoader());
               },
               mBGExecutor);
     } else {
@@ -1058,7 +1057,7 @@ public class ReactHostImpl implements ReactHost {
        * throws an exception, the task will fault, and we'll go through the ReactHost error
        * reporting pipeline.
        */
-      return Task.call(() -> mReactHostDelegate.getJsBundleLoader());
+      return Task.call(() -> mReactHostDelegate.getJSBundleLoader());
     }
   }
 
@@ -1182,7 +1181,7 @@ public class ReactHostImpl implements ReactHost {
 
                     log(method, "Stopping all React Native surfaces");
                     synchronized (mAttachedSurfaces) {
-                      for (ReactSurfaceImpl surface : mAttachedSurfaces) {
+                      for (ReactSurface surface : mAttachedSurfaces) {
                         if (reactInstance != null) {
                           reactInstance.stopSurface(surface);
                         }
@@ -1244,7 +1243,7 @@ public class ReactHostImpl implements ReactHost {
                       log(method, "Restarting previously running React Native Surfaces");
 
                       synchronized (mAttachedSurfaces) {
-                        for (ReactSurfaceImpl surface : mAttachedSurfaces) {
+                        for (ReactSurface surface : mAttachedSurfaces) {
                           reactInstance.startSurface(surface);
                         }
                       }
@@ -1406,7 +1405,7 @@ public class ReactHostImpl implements ReactHost {
             // Restart any attached surfaces
             log(method, "Restarting Surfaces");
             synchronized (mAttachedSurfaces) {
-              for (ReactSurfaceImpl surface : mAttachedSurfaces) {
+              for (ReactSurface surface : mAttachedSurfaces) {
                 reactInstance.startSurface(surface);
               }
             }
@@ -1477,7 +1476,7 @@ public class ReactHostImpl implements ReactHost {
          */
         log(method, "Stopping surfaces");
         synchronized (mAttachedSurfaces) {
-          for (ReactSurfaceImpl surface : mAttachedSurfaces) {
+          for (ReactSurface surface : mAttachedSurfaces) {
             instance.stopSurface(surface);
             surface.clear();
           }

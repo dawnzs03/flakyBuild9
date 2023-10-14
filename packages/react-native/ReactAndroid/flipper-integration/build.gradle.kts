@@ -8,10 +8,10 @@
 import org.jetbrains.kotlin.gradle.plugin.extraProperties
 
 plugins {
-  alias(libs.plugins.android.library)
-  alias(libs.plugins.kotlin.android)
+  id("com.android.library")
   id("maven-publish")
   id("signing")
+  id("org.jetbrains.kotlin.android")
 }
 
 group = "com.facebook.react"
@@ -29,18 +29,18 @@ repositories {
 }
 
 android {
-  compileSdk = libs.versions.compileSdk.get().toInt()
-  buildToolsVersion = libs.versions.buildTools.get()
+  compileSdk = 33
+  buildToolsVersion = "33.0.1"
   namespace = "com.facebook.react.flipper"
 
-  defaultConfig { minSdk = libs.versions.minSdk.get().toInt() }
+  defaultConfig { minSdk = 21 }
 
   compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
   }
 
-  kotlin { jvmToolchain(17) }
+  kotlin { jvmToolchain(11) }
 
   dependencies {
     implementation(project(":packages:react-native:ReactAndroid"))

@@ -32,10 +32,10 @@ import javax.annotation.Nullable;
 @Nullsafe(Nullsafe.Mode.LOCAL)
 class BridgelessDevSupportManager extends DevSupportManagerBase {
 
-  private final ReactHostImpl mReactHost;
+  private final ReactHost mReactHost;
 
   public BridgelessDevSupportManager(
-      ReactHostImpl host, Context context, @Nullable String packagerPathForJSBundleName) {
+      ReactHost host, Context context, @Nullable String packagerPathForJSBundleName) {
     super(
         context.getApplicationContext(),
         createInstanceDevHelper(host),
@@ -96,7 +96,7 @@ class BridgelessDevSupportManager extends DevSupportManagerBase {
     mReactHost.reload("BridgelessDevSupportManager.handleReloadJS()");
   }
 
-  private static ReactInstanceDevHelper createInstanceDevHelper(final ReactHostImpl reactHost) {
+  private static ReactInstanceDevHelper createInstanceDevHelper(final ReactHost reactHost) {
     return new ReactInstanceDevHelper() {
       @Override
       public void onReloadWithJSDebugger(JavaJSExecutor.Factory proxyExecutorFactory) {
