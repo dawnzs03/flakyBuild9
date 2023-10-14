@@ -20,47 +20,36 @@ package org.keycloak.theme;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author <a href="mailto:wadahiro@gmail.com">Hiroyuki Wada</a>
  */
 public class PropertiesUtilTest {
 
-    String valueWithUmlaut = "Umlaut: \u00E4\u00F6\u00FC";
-
-    String key = "key";
-
-    String propertyLine = key + "=" + valueWithUmlaut;
-
     @Test
-    public void testEncodingIso() throws Exception {
-        testWithEncoding(StandardCharsets.ISO_8859_1);
+    public void testDetectEncoding() throws Exception {
+        Charset encoding = PropertiesUtil.detectEncoding(new ByteArrayInputStream("# encoding: utf-8\nkey=value".getBytes()));
+        assertEquals(Charset.forName("utf-8"), encoding);
+
+        encoding = PropertiesUtil.detectEncoding(new ByteArrayInputStream("# encoding: Shift_JIS\nkey=value".getBytes()));
+        assertEquals(Charset.forName("Shift_JIS"), encoding);
     }
 
     @Test
-    public void testEncodingUtf8() throws Exception {
-        testWithEncoding(StandardCharsets.UTF_8);
-    }
+    public void testDefaultEncoding() throws Exception {
+        Charset encoding = PropertiesUtil.detectEncoding(new ByteArrayInputStream("key=value".getBytes()));
+        assertEquals(Charset.forName("ISO-8859-1"), encoding);
 
-    @Test
-    public void testIfValueContainsSpecialCharacters() {
-        assertNotEquals(valueWithUmlaut.getBytes(StandardCharsets.UTF_8), valueWithUmlaut.getBytes(StandardCharsets.ISO_8859_1));
-    }
+        encoding = PropertiesUtil.detectEncoding(new ByteArrayInputStream("# encoding: unknown\nkey=value".getBytes()));
+        assertEquals(Charset.forName("ISO-8859-1"), encoding);
 
-    private void testWithEncoding(Charset charset) throws IOException {
-        Properties p = new Properties();
-        try (InputStream stream = new ByteArrayInputStream(propertyLine.getBytes(charset))) {
-            PropertiesUtil.readCharsetAware(p, stream);
-        }
-        assertEquals(p.get(key), valueWithUmlaut);
-    }
+        encoding = PropertiesUtil.detectEncoding(new ByteArrayInputStream("\n# encoding: utf-8\nkey=value".getBytes()));
+        assertEquals(Charset.forName("ISO-8859-1"), encoding);
 
+        encoding = PropertiesUtil.detectEncoding(new ByteArrayInputStream("".getBytes()));
+        assertEquals(Charset.forName("ISO-8859-1"), encoding);
+    }
 }

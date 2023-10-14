@@ -33,8 +33,6 @@ jobs:
 
       - id: conditional
         uses: ./.github/actions/conditional
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
   java:
     name: CodeQL Java
@@ -48,7 +46,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2.21.4
+        uses: github/codeql-action/init@v2.21.0
         with:
           languages: java
 
@@ -56,11 +54,14 @@ jobs:
         uses: ./.github/actions/build-keycloak
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2.21.4
+        uses: github/codeql-action/analyze@v2.21.0
         with:
           wait-for-processing: true
         env:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
+
+      - id: check
+        uses: ./.github/actions/checks-success
 
   themes:
     name: CodeQL Themes
@@ -74,7 +75,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2.21.4
+        uses: github/codeql-action/init@v2.21.0
         env:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
         with:
@@ -82,21 +83,32 @@ jobs:
           source-root: themes/src/main/
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2.21.4
+        uses: github/codeql-action/analyze@v2.21.0
         with:
           wait-for-processing: true
         env:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
 
+      - id: check
+        uses: ./.github/actions/checks-success
+
   check:
     name: Status Check - CodeQL
     if: always()
-    needs:
-      - java
-      - themes
+    needs: [conditional, java, themes]
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/status-check
+
+      - name: CodeQL Java
+        uses: ./.github/actions/checks-job-pass
         with:
-          jobs: ${{ toJSON(needs) }}
+          required: ${{ needs.conditional.outputs.java }}
+          conclusion: ${{ needs.java.outputs.conclusion }}
+
+      - name: CodeQL Themes
+        uses: ./.github/actions/checks-job-pass
+        with:
+          required: ${{ needs.conditional.outputs.themes }}
+          conclusion: ${{ needs.themes.outputs.conclusion }}

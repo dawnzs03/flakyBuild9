@@ -18,9 +18,9 @@
     "none": "Ingen"
   },
   "flow": {
-    "browser": "Nettleserflyt",
-    "registration": "Registreringsflyt",
-    "direct grant": "Direct Grant Flyt"
+    "browserFlow": "Nettleserflyt",
+    "registrationFlow": "Registreringsflyt",
+    "directGrantFlow": "Direct Grant Flyt"
   },
   "edit": "Rediger",
   "flowType": "Type av flyt",

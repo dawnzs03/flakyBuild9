@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 
 import org.keycloak.operator.Constants;
@@ -77,12 +78,11 @@ public abstract class OperatorManagedResource<T extends HasMetadata> {
                         throw ex;
                     }
                 }
-                Log.debugf("Successfully created or updated resource: %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(),
-                        resource.getMetadata().getName());
+                Log.debugf("Successfully created or updated resource: %s", resource);
                 return resource;
             } catch (Exception e) {
-                Log.errorf("Failed to create or update resource %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(),
-                        resource.getMetadata().getName());
+                Log.error("Failed to create or update resource");
+                Log.error(Serialization.asYaml(resource));
                 throw KubernetesClientException.launderThrowable(e);
             }
         });
@@ -100,12 +100,6 @@ public abstract class OperatorManagedResource<T extends HasMetadata> {
         labels = Optional.ofNullable(labels).orElse(new LinkedHashMap<>());
         labels.putAll(Constants.DEFAULT_LABELS);
         labels.put(Constants.INSTANCE_LABEL, instanceName);
-        return labels;
-    }
-
-    public static Map<String, String> allInstanceLabels(HasMetadata primary) {
-        var labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
-        labels.put(Constants.INSTANCE_LABEL, primary.getMetadata().getName());
         return labels;
     }
 

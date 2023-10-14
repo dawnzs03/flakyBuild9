@@ -11,7 +11,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.OAuth2Constants.*;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
 import static org.keycloak.testsuite.broker.BrokerTestTools.*;
@@ -46,21 +45,21 @@ public class KcOidcBrokerUiLocalesWithIdpHintTest extends AbstractBrokerTest {
 
         waitForPage(driver, "belépés ide", true); // sign in to
 
-        assertThat("Driver should be on the provider realm page right now",
+        Assert.assertThat("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + bc.providerRealmName() + "/"));
 
-        assertThat(UI_LOCALES_PARAM + "=" + HUNGARIAN.toLanguageTag() + " should be part of the url",
+        Assert.assertThat(UI_LOCALES_PARAM + "=" + HUNGARIAN.toLanguageTag() + " should be part of the url",
             driver.getCurrentUrl(), containsString(UI_LOCALES_PARAM + "=" + HUNGARIAN.toLanguageTag()));
-        assertThat("The provider realm should be in Hungarian because the ui_locales is passed",
+        Assert.assertThat("The provider realm should be in Hungarian because the ui_locales is passed",
             driver.getPageSource(), containsString("Jelentkezzen be a fiókjába")); // Sign in to your account
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
         waitForPage(driver, "felhasználói fiók adatok módosítása", false); // update account information
 
-        assertThat("The consumer realm should be in Hungarian even after the redirect from the IDP.",
+        Assert.assertThat("The consumer realm should be in Hungarian even after the redirect from the IDP.",
                 driver.getPageSource(), containsString("Felhasználói fiók adatok módosítása"));// update account information
 
-        assertThat("We must be on correct realm right now",
+        Assert.assertThat("We must be on correct realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
 
         log.debug("Updating info on updateAccount page");

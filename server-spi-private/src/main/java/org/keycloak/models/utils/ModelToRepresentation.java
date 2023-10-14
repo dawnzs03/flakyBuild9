@@ -35,7 +35,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -548,7 +547,7 @@ public class ModelToRepresentation {
         rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
         rep.setDefaultLocale(realm.getDefaultLocale());
         if (internal) {
-            exportAuthenticationFlows(session, realm, rep);
+            exportAuthenticationFlows(realm, rep);
             exportRequiredActions(realm, rep);
             exportGroups(realm, rep);
         }
@@ -587,10 +586,10 @@ public class ModelToRepresentation {
         rep.setGroups(toGroupHierarchy(realm, true).collect(Collectors.toList()));
     }
 
-    public static void exportAuthenticationFlows(KeycloakSession session, RealmModel realm, RealmRepresentation rep) {
+    public static void exportAuthenticationFlows(RealmModel realm, RealmRepresentation rep) {
         List<AuthenticationFlowRepresentation> authenticationFlows = realm.getAuthenticationFlowsStream()
                 .sorted(AuthenticationFlowModel.AuthenticationFlowComparator.SINGLETON)
-                .map(flow -> toRepresentation(session, realm, flow))
+                .map(flow -> toRepresentation(realm, flow))
                 .collect(Collectors.toList());
         rep.setAuthenticationFlows(authenticationFlows);
 
@@ -796,22 +795,14 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static IdentityProviderRepresentation toBriefRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
+    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
         IdentityProviderRepresentation providerRep = new IdentityProviderRepresentation();
 
-        // brief representation means IDs, names and enabled
         providerRep.setInternalId(identityProviderModel.getInternalId());
         providerRep.setProviderId(identityProviderModel.getProviderId());
         providerRep.setAlias(identityProviderModel.getAlias());
         providerRep.setDisplayName(identityProviderModel.getDisplayName());
         providerRep.setEnabled(identityProviderModel.isEnabled());
-
-        return providerRep;
-    }
-
-    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
-        IdentityProviderRepresentation providerRep = toBriefRepresentation(realm, identityProviderModel);
-
         providerRep.setLinkOnly(identityProviderModel.isLinkOnly());
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
@@ -883,7 +874,7 @@ public class ModelToRepresentation {
         return consentRep;
     }
 
-    public static AuthenticationFlowRepresentation toRepresentation(KeycloakSession session, RealmModel realm, AuthenticationFlowModel model) {
+    public static AuthenticationFlowRepresentation toRepresentation(RealmModel realm, AuthenticationFlowModel model) {
         AuthenticationFlowRepresentation rep = new AuthenticationFlowRepresentation();
         rep.setId(model.getId());
         rep.setBuiltIn(model.isBuiltIn());
@@ -892,14 +883,14 @@ public class ModelToRepresentation {
         rep.setAlias(model.getAlias());
         rep.setDescription(model.getDescription());
         rep.setAuthenticationExecutions(realm.getAuthenticationExecutionsStream(model.getId())
-                .map(e -> toRepresentation(session, realm, e)).collect(Collectors.toList()));
+                .map(e -> toRepresentation(realm, e)).collect(Collectors.toList()));
         return rep;
     }
 
-    public static AuthenticationExecutionExportRepresentation toRepresentation(KeycloakSession session, RealmModel realm, AuthenticationExecutionModel model) {
+    public static AuthenticationExecutionExportRepresentation toRepresentation(RealmModel realm, AuthenticationExecutionModel model) {
         AuthenticationExecutionExportRepresentation rep = new AuthenticationExecutionExportRepresentation();
         if (model.getAuthenticatorConfig() != null) {
-            AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, model.getAuthenticatorConfig());
+            AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(model.getAuthenticatorConfig());
             rep.setAuthenticatorConfig(config.getAlias());
         }
         rep.setAuthenticator(model.getAuthenticator());

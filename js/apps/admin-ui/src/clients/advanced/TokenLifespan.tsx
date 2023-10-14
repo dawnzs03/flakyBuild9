@@ -24,6 +24,7 @@ type TokenLifespanProps = {
 };
 
 const inherited = "tokenLifespan.inherited";
+const never = "tokenLifespan.never";
 const expires = "tokenLifespan.expires";
 
 export const TokenLifespan = ({
@@ -41,8 +42,8 @@ export const TokenLifespan = ({
 
   const { control } = useFormContext();
   const isExpireSet = (value: string | number) =>
-    typeof value === "number" ||
-    (typeof value === "string" && value !== "") ||
+    (typeof value === "number" && value !== -1) ||
+    (typeof value === "string" && value !== "" && value !== "-1") ||
     focused;
 
   return (
@@ -72,28 +73,30 @@ export const TokenLifespan = ({
                   setOpen(false);
                 }}
                 selections={[
-                  isExpireSet(field.value) ? t(expires) : t(inherited),
+                  isExpireSet(field.value)
+                    ? t(expires)
+                    : field.value === ""
+                    ? t(inherited)
+                    : t(never),
                 ]}
               >
                 <SelectOption value="">{t(inherited)}</SelectOption>
+                <SelectOption value={-1}>{t(never)}</SelectOption>
                 <SelectOption value={60}>{t(expires)}</SelectOption>
               </Select>
             </SplitItem>
             <SplitItem>
-              <TimeSelector
-                validated={
-                  isExpireSet(field.value) && field.value! < 1
-                    ? "warning"
-                    : "default"
-                }
-                units={units}
-                value={field.value === "" ? defaultValue : field.value}
-                onChange={field.onChange}
-                onFocus={onFocus}
-                onBlur={onBlur}
-                min={1}
-                isDisabled={!isExpireSet(field.value)}
-              />
+              {field.value !== "-1" && field.value !== -1 && (
+                <TimeSelector
+                  units={units}
+                  value={field.value === "" ? defaultValue : field.value}
+                  onChange={field.onChange}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                  min={1}
+                  isDisabled={field.value === ""}
+                />
+              )}
             </SplitItem>
           </Split>
         )}

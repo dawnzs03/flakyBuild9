@@ -18,7 +18,6 @@
 package org.keycloak.authentication.requiredactions;
 
 import org.keycloak.Config;
-import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
@@ -104,10 +103,6 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;
-        }
-
-        if ("on".equals(formData.getFirst("logout-sessions"))) {
-            AuthenticatorUtil.logoutOtherSessions(context);
         }
 
         if (!CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel)) {

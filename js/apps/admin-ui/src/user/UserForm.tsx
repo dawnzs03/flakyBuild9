@@ -97,7 +97,6 @@ export const UserForm = ({
   const { addAlert, addError } = useAlerts();
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users");
-  const canViewFederationLink = hasAccess("view-realm");
 
   const {
     handleSubmit,
@@ -210,7 +209,7 @@ export const UserForm = ({
         label="requiredUserActions"
         help="users-help:requiredUserActions"
       />
-      {(user?.federationLink || user?.origin) && canViewFederationLink && (
+      {(user?.federationLink || user?.origin) && (
         <FormGroup
           label={t("federationLink")}
           labelIcon={

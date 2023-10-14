@@ -123,7 +123,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=../../../../src/test/resources/keystore" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=keystore" })
     @Order(10)
     void testMissingSmallRyeKeyStorePasswordProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;

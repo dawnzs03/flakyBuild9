@@ -4,14 +4,13 @@ export default function useSetTimeout() {
   const didUnmountRef = useRef(false);
   const { current: scheduledTimers } = useRef(new Set<number>());
 
-  useEffect(() => {
-    didUnmountRef.current = false;
-
-    return () => {
+  useEffect(
+    () => () => {
       didUnmountRef.current = true;
       clearAll();
-    };
-  }, []);
+    },
+    [],
+  );
 
   function clearAll() {
     scheduledTimers.forEach((timer) => clearTimeout(timer));

@@ -31,7 +31,6 @@ import jakarta.ws.rs.core.Response;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
@@ -82,7 +81,7 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
 
-        assertThat(response.getErrorDescription(), containsString("Responder's certificate is not authorized to sign OCSP responses"));
+        Assert.assertThat(response.getErrorDescription(), containsString("Responder's certificate is not authorized to sign OCSP responses"));
     }
 
     @Test
@@ -121,7 +120,7 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
 
-        assertThat(response.getErrorDescription(), containsString("Certificate's been revoked."));
+        Assert.assertThat(response.getErrorDescription(), containsString("Certificate's been revoked."));
     }
 
     @Before

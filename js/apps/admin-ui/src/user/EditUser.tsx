@@ -15,10 +15,6 @@ import { useNavigate } from "react-router-dom";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import {
-  KeyValueType,
-  keyValueToArray,
-} from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import {
   RoutableTabs,
@@ -149,18 +145,13 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
   useUpdateEffect(() => userForm.reset(user), [user]);
 
   const save = async (formUser: UserRepresentation) => {
-    const attributes =
-      "key" in (formUser.attributes?.[0] || [])
-        ? keyValueToArray(formUser.attributes as KeyValueType[])
-        : user.attributes;
     try {
       await adminClient.users.update(
         { id: user.id! },
         {
-          ...user,
           ...formUser,
           username: formUser.username?.trim(),
-          attributes,
+          attributes: { ...user.attributes, ...formUser.attributes },
         },
       );
       addAlert(t("userSaved"), AlertVariant.success);
@@ -267,7 +258,7 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
                   title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
                   {...attributesTab}
                 >
-                  <UserAttributes user={user} save={save} />
+                  <UserAttributes user={user} />
                 </Tab>
               )}
               <Tab

@@ -44,7 +44,6 @@ import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import static org.junit.Assert.assertFalse;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -151,7 +150,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Check in LDAP, that johnkeycloak does not have pwdLastSet set to 0
-        assertThat(getPwdLastSetOfJohn(), Matchers.greaterThan(0L));
+        Assert.assertThat(getPwdLastSetOfJohn(), Matchers.greaterThan(0L));
 
         // Check in admin REST API, that johnkeycloak does not have required action on him
         johnRep = john.toRepresentation();
@@ -187,7 +186,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         });
 
         // Check in LDAP, that johnkeycloak does not have pwdLastSet set to 0
-        assertThat(getPwdLastSetOfJohn(), Matchers.greaterThan(0L));
+        Assert.assertThat(getPwdLastSetOfJohn(), Matchers.greaterThan(0L));
 
         // Check in admin REST API, that johnkeycloak does not have required action on him
         johnRep = john.toRepresentation();
@@ -232,7 +231,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Check in LDAP, that johnkeycloak does not have pwdLastSet set to 0
-        assertThat(getPwdLastSetOfJohn(), Matchers.greaterThan(0L));
+        Assert.assertThat(getPwdLastSetOfJohn(), Matchers.greaterThan(0L));
 
         // Check in admin REST API, that johnkeycloak does not have required action on him
         johnRep = john.toRepresentation();
@@ -265,7 +264,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
 
         // Check in LDAP, that johnkeycloak has pwdLastSet set attribute set in MSAD to bigger value than 0. Previous update of requiredAction did not updated LDAP
         long pwdLastSetFromLDAP = getPwdLastSetOfJohn();
-        assertThat(pwdLastSetFromLDAP, Matchers.greaterThan(0L));
+        Assert.assertThat(pwdLastSetFromLDAP, Matchers.greaterThan(0L));
 
         // Login as johnkeycloak and update password after login
         loginPage.open();

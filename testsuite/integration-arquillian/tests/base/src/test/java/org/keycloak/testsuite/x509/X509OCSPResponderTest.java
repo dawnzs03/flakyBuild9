@@ -33,7 +33,6 @@ import jakarta.ws.rs.core.Response;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
@@ -91,7 +90,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
 
-        assertThat(response.getErrorDescription(), containsString("Certificate's been revoked."));
+        Assert.assertThat(response.getErrorDescription(), containsString("Certificate's been revoked."));
     }
 
     @Test
@@ -121,7 +120,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
             assertEquals("invalid_request", response.getError());
 
             // the ocsp signer cert is issued by the same CA but no OCSP-Signing extension so error
-            assertThat(response.getErrorDescription(), containsString("Responder's certificate not valid for signing OCSP responses"));
+            Assert.assertThat(response.getErrorDescription(), containsString("Responder's certificate not valid for signing OCSP responses"));
         } finally {
             oauth.httpClient(previous);
         }

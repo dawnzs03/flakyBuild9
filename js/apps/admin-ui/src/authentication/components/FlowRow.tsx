@@ -82,7 +82,6 @@ export const FlowRow = ({
                   <FlowTitle
                     id={execution.id}
                     key={execution.id}
-                    alias={execution.alias!}
                     title={execution.displayName!}
                   />
                 )}
@@ -90,7 +89,7 @@ export const FlowRow = ({
                   <>
                     {execution.displayName} <br />{" "}
                     <Text component={TextVariants.small}>
-                      {execution.alias} {execution.description}
+                      {execution.description}
                     </Text>
                   </>
                 )}

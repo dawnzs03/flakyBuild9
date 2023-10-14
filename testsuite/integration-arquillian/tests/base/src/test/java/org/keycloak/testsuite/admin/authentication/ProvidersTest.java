@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -240,7 +239,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
     private void compareProviders(List<Map<String, Object>> expected, List<Map<String, Object>> actual) {
         Assert.assertEquals("Providers count", expected.size(), actual.size());
         // compare ignoring list and map impl types
-        assertThat(normalizeResults(actual), is(normalizeResults(expected)));
+        Assert.assertThat(normalizeResults(actual), is(normalizeResults(expected)));
     }
 
     private List<Map<String, Object>> normalizeResults(List<Map<String, Object>> list) {

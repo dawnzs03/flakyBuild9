@@ -13,12 +13,8 @@ export class WhoAmI extends Resource<{ realm?: string }> {
     });
   }
 
-  public find = this.makeRequest<
-    { currentRealm: string },
-    WhoAmIRepresentation
-  >({
+  public find = this.makeRequest<{}, WhoAmIRepresentation>({
     method: "GET",
     path: "/whoami",
-    queryParamKeys: ["currentRealm"],
   });
 }

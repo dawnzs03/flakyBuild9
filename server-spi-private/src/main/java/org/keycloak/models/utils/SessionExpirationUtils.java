@@ -21,7 +21,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.utils.StringUtil;
 
 /**
  * <p>Shared methods to calculate the session expiration and idle.</p>
@@ -93,29 +92,30 @@ public class SessionExpirationUtils {
             long clientSessionCreated, long userSessionCreated, RealmModel realm, ClientModel client) {
         long timestamp = -1;
         if (offline) {
-            long clientOfflineSessionMaxLifespan = getClientAttributeTimeout(client, OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN);
-            if (realm.isOfflineSessionMaxLifespanEnabled() || clientOfflineSessionMaxLifespan > 0) {
-                if (clientOfflineSessionMaxLifespan > 0) {
-                    clientOfflineSessionMaxLifespan = TimeUnit.SECONDS.toMillis(clientOfflineSessionMaxLifespan);
+            if (realm.isOfflineSessionMaxLifespanEnabled()) {
+                long clientOfflineSessionMaxLifespan = TimeUnit.SECONDS.toMillis(getOfflineSessionMaxLifespan(realm));
+
+                String clientOfflineSessionMaxLifespanPerClient = client == null? null : client.getAttribute(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN);
+                if (clientOfflineSessionMaxLifespanPerClient != null && !clientOfflineSessionMaxLifespanPerClient.trim().isEmpty()) {
+                    clientOfflineSessionMaxLifespan = TimeUnit.SECONDS.toMillis(Long.parseLong(clientOfflineSessionMaxLifespanPerClient));
                 } else if (realm.getClientOfflineSessionMaxLifespan() > 0) {
                     clientOfflineSessionMaxLifespan = TimeUnit.SECONDS.toMillis(realm.getClientOfflineSessionMaxLifespan());
-                } else {
-                    clientOfflineSessionMaxLifespan = TimeUnit.SECONDS.toMillis(getOfflineSessionMaxLifespan(realm));
                 }
+
                 timestamp = clientSessionCreated + clientOfflineSessionMaxLifespan;
 
                 long userSessionExpires = calculateUserSessionMaxLifespanTimestamp(offline, isRememberMe, userSessionCreated, realm);
 
-                timestamp = userSessionExpires > 0? Math.min(timestamp, userSessionExpires) : timestamp;
+                timestamp = Math.min(timestamp, userSessionExpires);
             }
         } else {
             long clientSessionMaxLifespan = TimeUnit.SECONDS.toMillis(getSsoSessionMaxLifespan(realm));
             if (isRememberMe) {
                 clientSessionMaxLifespan = Math.max(clientSessionMaxLifespan, TimeUnit.SECONDS.toMillis(realm.getSsoSessionMaxLifespanRememberMe()));
             }
-            long clientSessionMaxLifespanPerClient = getClientAttributeTimeout(client, OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN);
-            if (clientSessionMaxLifespanPerClient > 0) {
-                clientSessionMaxLifespan = TimeUnit.SECONDS.toMillis(clientSessionMaxLifespanPerClient);
+            String clientSessionMaxLifespanPerClient = client == null? null : client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN);
+            if (clientSessionMaxLifespanPerClient != null && !clientSessionMaxLifespanPerClient.trim().isEmpty()) {
+                clientSessionMaxLifespan = TimeUnit.SECONDS.toMillis(Long.parseLong(clientSessionMaxLifespanPerClient));
             } else if (realm.getClientSessionMaxLifespan() > 0) {
                 clientSessionMaxLifespan = TimeUnit.SECONDS.toMillis(realm.getClientSessionMaxLifespan());
             }
@@ -144,9 +144,9 @@ public class SessionExpirationUtils {
         long timestamp;
         if (offline) {
             long clientOfflineSessionIdleTimeout = TimeUnit.SECONDS.toMillis(getOfflineSessionIdleTimeout(realm));
-            long clientOfflineSessionIdleTimeoutPerClient = getClientAttributeTimeout(client, OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT);
-            if (clientOfflineSessionIdleTimeoutPerClient > 0) {
-                clientOfflineSessionIdleTimeout = TimeUnit.SECONDS.toMillis(clientOfflineSessionIdleTimeoutPerClient);
+            String clientOfflineSessionIdleTimeoutPerClient = client == null? null : client.getAttribute(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT);
+            if (clientOfflineSessionIdleTimeoutPerClient != null && !clientOfflineSessionIdleTimeoutPerClient.trim().isEmpty()) {
+                clientOfflineSessionIdleTimeout = TimeUnit.SECONDS.toMillis(Long.parseLong(clientOfflineSessionIdleTimeoutPerClient));
             } else if (realm.getClientOfflineSessionIdleTimeout() > 0) {
                 clientOfflineSessionIdleTimeout = TimeUnit.SECONDS.toMillis(realm.getClientOfflineSessionIdleTimeout());
             }
@@ -157,9 +157,9 @@ public class SessionExpirationUtils {
             if (isRememberMe) {
                 clientSessionIdleTimeout = Math.max(clientSessionIdleTimeout, TimeUnit.SECONDS.toMillis(realm.getSsoSessionIdleTimeoutRememberMe()));
             }
-            long clientSessionIdleTimeoutPerClient = getClientAttributeTimeout(client, OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT);
-            if (clientSessionIdleTimeoutPerClient > 0) {
-                clientSessionIdleTimeout = TimeUnit.SECONDS.toMillis(clientSessionIdleTimeoutPerClient);
+            String clientSessionIdleTimeoutPerClient = client == null? null : client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT);
+            if (clientSessionIdleTimeoutPerClient != null && !clientSessionIdleTimeoutPerClient.trim().isEmpty()) {
+                clientSessionIdleTimeout = TimeUnit.SECONDS.toMillis(Long.parseLong(clientSessionIdleTimeoutPerClient));
             } else if (realm.getClientSessionIdleTimeout() > 0){
                 clientSessionIdleTimeout = TimeUnit.SECONDS.toMillis(realm.getClientSessionIdleTimeout());
             }
@@ -199,19 +199,5 @@ public class SessionExpirationUtils {
             idle = Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT;
         }
         return idle;
-    }
-
-    private static long getClientAttributeTimeout(ClientModel client, String attr) {
-        if (client != null) {
-            final String value = client.getAttribute(attr);
-            if (StringUtil.isNotBlank(value)) {
-                try {
-                    return Long.parseLong(value);
-                } catch (NumberFormatException e) {
-                    // no-op
-                }
-            }
-        }
-        return -1;
     }
 }

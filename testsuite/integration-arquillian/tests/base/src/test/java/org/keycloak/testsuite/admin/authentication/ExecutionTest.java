@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -97,7 +96,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
         AuthenticatorConfigRepresentation updated = authMgmtResource.getAuthenticatorConfig(authConfigRep.getId());
 
-        assertThat(updated.getConfig().values(), hasItems("test-updated", "skip"));
+        Assert.assertThat(updated.getConfig().values(), hasItems("test-updated", "skip"));
     }
 
     @Test

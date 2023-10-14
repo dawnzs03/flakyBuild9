@@ -33,7 +33,6 @@ import java.io.FileNotFoundException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -81,14 +80,6 @@ public class CRDTest {
         kc.getMetadata().getAnnotations().put("x", "y");
         kc = client.resource(kc).serverSideApply();
         assertThat(kc.getMetadata().getAnnotations()).containsEntry("x", "y");
-    }
-
-    @Test
-    public void testKeycloakWithDefaultReplicas() {
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
-        kc.getSpec().setInstances(null);
-
-        assertThat(client.resource(kc).create().getSpec().getInstances()).isNull();
     }
 
     private <T extends HasMetadata> void roundTrip(String resourceFile, Class<T> type) {

@@ -38,7 +38,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USER_ATTRIBUTE;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SERIALNUMBER_ISSUERDN;
@@ -106,7 +105,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         loginConfirmationPage.open();
 
-        assertThat(loginPage.getError(), containsString("Certificate validation's failed.\n" +
+        Assert.assertThat(loginPage.getError(), containsString("Certificate validation's failed.\n" +
                 "Certificate revoked or incorrect."));
     }
 
@@ -136,7 +135,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
             // Verify there is an error message
             Assert.assertNotNull(loginPage.getError());
 
-            assertThat(loginPage.getError(), containsString("Certificate validation's failed."));
+            Assert.assertThat(loginPage.getError(), containsString("Certificate validation's failed."));
         } finally {
             testingClient.testing().reenableTruststoreSpi();
         }
@@ -293,7 +292,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         loginPage.open();
 
-        assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
+        Assert.assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
 
         loginPage.login("test-user@localhost", "password");
 
@@ -313,7 +312,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginConfirmationPage.open();
         loginPage.assertCurrent();
 
-        assertThat(loginPage.getInfoMessage(), containsString("X509 client authentication has not been configured yet"));
+        Assert.assertThat(loginPage.getInfoMessage(), containsString("X509 client authentication has not been configured yet"));
         // Continue with form based login
         loginPage.login("test-user@localhost", "password");
 
@@ -345,7 +344,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         // Verify there is an error message
         Assert.assertNotNull(loginPage.getError());
 
-        assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
+        Assert.assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
         events.expectLogin()
                 .user((String) null)
                 .session((String) null)
@@ -422,7 +421,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         // Verify there is an error message
         Assert.assertNotNull(loginPage.getError());
 
-        assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
+        Assert.assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .user((String) null)
@@ -459,7 +458,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
             Assert.assertNotNull(loginPage.getError());
 
-            assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed.\nUser is disabled"));
+            Assert.assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed.\nUser is disabled"));
 
             events.expectLogin()
                     .user(userId)
@@ -529,7 +528,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginConfirmationPage.open();
         loginPage.assertCurrent();
 
-        assertThat(loginPage.getInfoMessage(), containsString("X509 client authentication has not been configured yet"));
+        Assert.assertThat(loginPage.getInfoMessage(), containsString("X509 client authentication has not been configured yet"));
         loginPage.assertCurrent();
 
         // Now setup certificate and login with certificate in existing authenticationSession (Not 100% same scenario as KEYCLOAK-5466, but very similar)
@@ -547,20 +546,20 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginConfirmationPage.open();
 
         log.debug("check if on confirm page");
-        assertThat(loginConfirmationPage.getSubjectDistinguishedNameText(), startsWith("EMAILADDRESS=test-user@localhost"));
+        Assert.assertThat(loginConfirmationPage.getSubjectDistinguishedNameText(), startsWith("EMAILADDRESS=test-user@localhost"));
         log.debug("check if locale is EN");
-        assertThat(loginConfirmationPage.getLanguageDropdownText(), is(equalTo("English")));
+        Assert.assertThat(loginConfirmationPage.getLanguageDropdownText(), is(equalTo("English")));
 
         log.debug("change locale to DE");
         loginConfirmationPage.openLanguage("Deutsch");
         log.debug("check if locale is DE");
-        assertThat(loginConfirmationPage.getLanguageDropdownText(), is(equalTo("Deutsch")));
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("X509 Client Zertifikat:"));
+        Assert.assertThat(loginConfirmationPage.getLanguageDropdownText(), is(equalTo("Deutsch")));
+        Assert.assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("X509 Client Zertifikat:"));
 
         log.debug("confirm cert");
         loginConfirmationPage.confirm();
 
         log.debug("check if logged in");
-        assertThat(appPage.getRequestType(), is(equalTo(AppPage.RequestType.AUTH_RESPONSE)));
+        Assert.assertThat(appPage.getRequestType(), is(equalTo(AppPage.RequestType.AUTH_RESPONSE)));
     }
 }

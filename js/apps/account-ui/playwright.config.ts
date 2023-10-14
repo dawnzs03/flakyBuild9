@@ -11,9 +11,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   use: {
-    baseURL: process.env.CI
-      ? "http://localhost:8080/realms/master/account/"
-      : "http://localhost:8080/",
+    baseURL: "http://localhost:8080/",
     trace: "on-first-retry",
   },
 
@@ -21,13 +19,13 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /.auth\.setup\.ts/ },
     {
-      name: "import test realm",
-      testMatch: /test-realm\.setup\.ts/,
-      teardown: "del test realm",
+      name: "import realm",
+      testMatch: /import\.setup\.ts/,
+      teardown: "del realm",
     },
     {
-      name: "del test realm",
-      testMatch: /test-realm\.teardown\.ts/,
+      name: "del realm",
+      testMatch: /import\.teardown\.ts/,
     },
     {
       name: "chromium",
@@ -50,9 +48,9 @@ export default defineConfig({
     },
 
     {
-      name: "resources",
+      name: "photoz realm chromium",
       use: { ...devices["Desktop Chrome"] },
-      dependencies: ["import test realm"],
+      dependencies: ["import realm"],
       testMatch: ["**/*my-resources.spec.ts"],
     },
   ],

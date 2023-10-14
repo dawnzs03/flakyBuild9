@@ -85,10 +85,8 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     @Override
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
         try {
-            log.infof("Deploying archive %s to quarkus container", archive.getName());
             deployArchiveToServer(archive);
             restartServer();
-            log.infof("Deployed archive %s and restarted quarkus container", archive.getName());
         } catch (Exception e) {
             throw new DeploymentException(e.getMessage(), e);
         }
@@ -98,7 +96,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
     @Override
     public void undeploy(Archive<?> archive) throws DeploymentException {
-        log.infof("Undeploying archive %s from quarkus container", archive.getName());
         File wrkDir = configuration.getProvidersPath().resolve("providers").toFile();
         try {
             if (isWindows()) {
@@ -107,7 +104,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             }
             Files.deleteIfExists(wrkDir.toPath().resolve(archive.getName()));
             restartServer();
-            log.infof("Undeployed archive %s and restarted quarkus container", archive.getName());
         } catch (Exception e) {
             throw new DeploymentException(e.getMessage(), e);
         }

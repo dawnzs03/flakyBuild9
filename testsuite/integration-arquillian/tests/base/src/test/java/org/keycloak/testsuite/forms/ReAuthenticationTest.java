@@ -53,7 +53,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
@@ -283,7 +282,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         assertInfoMessageAboutReAuthenticate(true);
 
         // Check there is NO password field
-        assertThat(true, is(driver.findElements(By.id("password")).isEmpty()));
+        Assert.assertThat(true, is(driver.findElements(By.id("password")).isEmpty()));
 
         // Github present, Google hidden
         assertSocialButtonsPresent(true, false);
@@ -317,19 +316,19 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
 
     private void assertUsernameFieldAndOtherFields(boolean expectPresent) {
-        assertThat(expectPresent, is(loginPage.isUsernameInputPresent()));
-        assertThat(expectPresent, is(loginPage.isRegisterLinkPresent()));
-        assertThat(expectPresent, is(loginPage.isRememberMeCheckboxPresent()));
+        Assert.assertThat(expectPresent, is(loginPage.isUsernameInputPresent()));
+        Assert.assertThat(expectPresent, is(loginPage.isRegisterLinkPresent()));
+        Assert.assertThat(expectPresent, is(loginPage.isRememberMeCheckboxPresent()));
     }
 
     private void assertSocialButtonsPresent(boolean expectGithubPresent, boolean expectGooglePresent) {
-        assertThat(expectGithubPresent, is(loginPage.isSocialButtonPresent("github")));
-        assertThat(expectGooglePresent, is(loginPage.isSocialButtonPresent("google")));
+        Assert.assertThat(expectGithubPresent, is(loginPage.isSocialButtonPresent("github")));
+        Assert.assertThat(expectGooglePresent, is(loginPage.isSocialButtonPresent("google")));
     }
 
     private void assertInfoMessageAboutReAuthenticate(boolean expectPresent) {
         Matcher<String> expectedInfo = expectPresent ? is("Please re-authenticate to continue") : Matchers.nullValue(String.class);
-        assertThat(loginPage.getInfoMessage(), expectedInfo);
+        Assert.assertThat(loginPage.getInfoMessage(), expectedInfo);
     }
 
 }

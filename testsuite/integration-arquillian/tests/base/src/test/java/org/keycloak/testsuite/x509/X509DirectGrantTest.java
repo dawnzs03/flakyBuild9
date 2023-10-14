@@ -43,7 +43,6 @@ import jakarta.ws.rs.core.Response;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USER_ATTRIBUTE;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN;
@@ -95,7 +94,7 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_request", response.getError());
-        assertThat(response.getErrorDescription(), containsString("X509 certificate authentication's failed."));
+        Assert.assertThat(response.getErrorDescription(), containsString("X509 certificate authentication's failed."));
     }
 
     @Test
@@ -145,7 +144,7 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_request", response.getError());
-        assertThat(response.getErrorDescription(), containsString("Key Usage bit 'dataEncipherment' is not set."));
+        Assert.assertThat(response.getErrorDescription(), containsString("Key Usage bit 'dataEncipherment' is not set."));
         events.clear();
     }
 
@@ -243,7 +242,7 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_request", response.getError());
-        assertThat(response.getErrorDescription(), containsString("Certificate has been revoked, certificate's subject:"));
+        Assert.assertThat(response.getErrorDescription(), containsString("Certificate has been revoked, certificate's subject:"));
 
     }
 
@@ -288,7 +287,7 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_request", response.getError());
-        assertThat(response.getErrorDescription(), containsString("has expired on:"));
+        Assert.assertThat(response.getErrorDescription(), containsString("has expired on:"));
     }
 
     private void loginForceTemporaryAccountLock() throws Exception {

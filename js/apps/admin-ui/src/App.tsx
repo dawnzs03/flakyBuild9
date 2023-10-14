@@ -22,9 +22,9 @@ import { AuthWall } from "./root/AuthWall";
 export const mainPageContentId = "kc-main-content-page-container";
 
 const AppContexts = ({ children }: PropsWithChildren) => (
-  <RealmsProvider>
-    <RealmContextProvider>
-      <WhoAmIContextProvider>
+  <WhoAmIContextProvider>
+    <RealmsProvider>
+      <RealmContextProvider>
         <RecentRealmsProvider>
           <AccessContextProvider>
             <Help>
@@ -34,9 +34,9 @@ const AppContexts = ({ children }: PropsWithChildren) => (
             </Help>
           </AccessContextProvider>
         </RecentRealmsProvider>
-      </WhoAmIContextProvider>
-    </RealmContextProvider>
-  </RealmsProvider>
+      </RealmContextProvider>
+    </RealmsProvider>
+  </WhoAmIContextProvider>
 );
 
 export const App = () => {

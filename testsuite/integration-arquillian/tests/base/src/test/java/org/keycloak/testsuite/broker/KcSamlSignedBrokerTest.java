@@ -53,7 +53,7 @@ import org.w3c.dom.NodeList;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
@@ -68,13 +68,13 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
         KeysMetadataRepresentation providerKeysMetadata = adminClient.realm(bc.providerRealmName()).keys().getKeyMetadata();
 
         String providerSigCert = KeyUtils.findActiveSigningKey(adminClient.realm(bc.providerRealmName()), Algorithm.RS256).getCertificate();
-        assertThat(providerSigCert, Matchers.notNullValue());
+        Assert.assertThat(providerSigCert, Matchers.notNullValue());
 
         String consumerEncCert = KeyUtils.findActiveEncryptingKey(adminClient.realm(bc.consumerRealmName()), Algorithm.RSA_OAEP).getCertificate();
-        assertThat(consumerEncCert, Matchers.notNullValue());
+        Assert.assertThat(consumerEncCert, Matchers.notNullValue());
 
         String consumerSigCert = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName()), Algorithm.RS256).getCertificate();
-        assertThat(consumerSigCert, Matchers.notNullValue());
+        Assert.assertThat(consumerSigCert, Matchers.notNullValue());
 
         try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
             .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.toString(signedAssertion || signedDocument))
@@ -232,8 +232,8 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
 
           .getSamlResponse(Binding.POST);       // Response from consumer IdP
 
-        assertThat(samlResponse, Matchers.notNullValue());
-        assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        Assert.assertThat(samlResponse, Matchers.notNullValue());
+        Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
     @Test
@@ -259,7 +259,7 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
             List<ClientRepresentation> clientRepresentationList = super.createProviderClients();
 
             String consumerCert = KeyUtils.findActiveSigningKey(adminClient.realm(consumerRealmName()), Algorithm.RS256).getCertificate();
-            assertThat(consumerCert, Matchers.notNullValue());
+            Assert.assertThat(consumerCert, Matchers.notNullValue());
 
             for (ClientRepresentation client : clientRepresentationList) {
                 client.setClientAuthenticatorType("client-secret");
@@ -286,7 +286,7 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
             IdentityProviderRepresentation result = super.setUpIdentityProvider(syncMode);
 
             String providerCert = KeyUtils.findActiveSigningKey(adminClient.realm(providerRealmName()), Algorithm.RS256).getCertificate();
-            assertThat(providerCert, Matchers.notNullValue());
+            Assert.assertThat(providerCert, Matchers.notNullValue());
 
             Map<String, String> config = result.getConfig();
 
@@ -440,10 +440,10 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
         // Verifies that an AuthnRequest contains the KeyInfo/X509Data element when
         // client AuthnRequest signature is requested
         String providerCert = KeyUtils.findActiveSigningKey(adminClient.realm(bc.providerRealmName()), Algorithm.RS256).getCertificate();
-        assertThat(providerCert, Matchers.notNullValue());
+        Assert.assertThat(providerCert, Matchers.notNullValue());
 
         String consumerCert = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName()), Algorithm.RS256).getCertificate();
-        assertThat(consumerCert, Matchers.notNullValue());
+        Assert.assertThat(consumerCert, Matchers.notNullValue());
 
         try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
             .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.toString(true))
@@ -474,15 +474,15 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
                     {
                         // Find the Signature element
                         Element signatureElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), XMLSignature.XMLNS, "Signature");
-                        assertThat("Signature element not found in request document", signatureElement, Matchers.notNullValue());
+                        Assert.assertThat("Signature element not found in request document", signatureElement, Matchers.notNullValue());
 
                         // Find the KeyInfo element
                         Element keyInfoElement = DocumentUtil.getDirectChildElement(signatureElement, XMLSignature.XMLNS, "KeyInfo");
-                        assertThat("KeyInfo element not found in request Signature element", keyInfoElement, Matchers.notNullValue());
+                        Assert.assertThat("KeyInfo element not found in request Signature element", keyInfoElement, Matchers.notNullValue());
 
                         // Find the X509Data element
                         Element x509DataElement = DocumentUtil.getDirectChildElement(keyInfoElement, XMLSignature.XMLNS, "X509Data");
-                        assertThat("X509Data element not found in request Signature/KeyInfo element", x509DataElement, Matchers.notNullValue());
+                        Assert.assertThat("X509Data element not found in request Signature/KeyInfo element", x509DataElement, Matchers.notNullValue());
                     }
                     catch (Exception ex)
                     {

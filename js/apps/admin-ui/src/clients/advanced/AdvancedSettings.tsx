@@ -132,11 +132,7 @@ export const AdvancedSettings = ({
             name={convertAttributeNameToForm(
               "attributes.client.offline.session.max.lifespan",
             )}
-            defaultValue={
-              realm?.offlineSessionMaxLifespanEnabled
-                ? realm?.offlineSessionMaxLifespan
-                : undefined
-            }
+            defaultValue={realm?.offlineSessionMaxLifespan}
             units={["minute", "day", "hour"]}
           />
 

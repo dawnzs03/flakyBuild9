@@ -48,12 +48,7 @@ public class LegacyAttributes extends DefaultAttributes {
 
     @Override
     protected boolean isIncludeAttributeIfNotProvided(AttributeMetadata metadata) {
-        if (UserModel.LOCALE.equals(metadata.getName())) {
-            // locale is an internal attribute and should be updated as a regular attribute
-            return false;
-        }
-
-        // user api expects that attributes are not updated if not provided when in legacy mode
-        return UserProfileContext.USER_API.equals(context);
+        // user api expects that built-in attributes are not updated if not provided when in legacy mode
+        return UserProfileContext.USER_API.equals(context) && !isRootAttribute(metadata.getName());
     }
 }

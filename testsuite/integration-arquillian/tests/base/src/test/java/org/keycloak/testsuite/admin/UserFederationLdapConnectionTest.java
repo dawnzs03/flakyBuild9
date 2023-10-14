@@ -34,8 +34,6 @@ import org.keycloak.testsuite.util.LDAPRule;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -147,7 +145,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
             "false", null, "false", LDAPConstants.AUTH_TYPE_SIMPLE);
 
         List<LDAPCapabilityRepresentation> ldapCapabilities = realm.ldapServerCapabilities(config);
-        assertThat(ldapCapabilities, Matchers.hasItem(new LDAPCapabilityRepresentation(PasswordModifyRequest.PASSWORD_MODIFY_OID, LDAPCapabilityRepresentation.CapabilityType.EXTENSION)));
+        Assert.assertThat(ldapCapabilities, Matchers.hasItem(new LDAPCapabilityRepresentation(PasswordModifyRequest.PASSWORD_MODIFY_OID, LDAPCapabilityRepresentation.CapabilityType.EXTENSION)));
 
         // Query the rootDSE failure
         try {

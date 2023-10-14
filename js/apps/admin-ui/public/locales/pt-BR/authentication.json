@@ -18,9 +18,9 @@
     "none": "Nenhum"
   },
   "flow": {
-    "browser": "Fluxo de browser",
-    "registration": "Fluxo de registro",
-    "direct grant": "Fluxo de Direct Grant"
+    "browserFlow": "Fluxo de browser",
+    "registrationFlow": "Fluxo de registro",
+    "directGrantFlow": "Fluxo de Direct Grant"
   },
   "edit": "Editar",
   "flowType": "Flow Type",

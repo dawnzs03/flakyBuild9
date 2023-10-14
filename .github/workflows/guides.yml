@@ -19,6 +19,10 @@ on:
 
 
 
+
+
+
+
 jobs:
 
   conditional:
@@ -32,8 +36,6 @@ jobs:
 
       - id: conditional
         uses: ./.github/actions/conditional
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     name: Build
@@ -47,14 +49,33 @@ jobs:
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
 
+  check-set-status:
+    name: Set check conclusion
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    outputs:
+      conclusion: ${{ steps.check.outputs.conclusion }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: check
+        uses: ./.github/actions/checks-success
+
   check:
     name: Status Check - Keycloak Guides
     if: always()
     needs:
-      - build
+      - conditional
+      - check-set-status
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/status-check
+
+      - name: Check status
+        uses: ./.github/actions/checks-job-pass
         with:
-          jobs: ${{ toJSON(needs) }}
+          required: ${{ needs.conditional.outputs.guides == 'true' && needs.conditional.outputs.ci != 'true' }}
+          conclusion: ${{ needs.check-set-status.outputs.conclusion }}

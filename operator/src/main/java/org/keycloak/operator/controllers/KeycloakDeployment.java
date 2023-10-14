@@ -60,9 +60,8 @@ import java.util.stream.Stream;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> {
+public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> implements StatusUpdater<KeycloakStatusAggregator> {
 
-    public static final String OPTIMIZED_ARG = "--optimized";
     private final Config operatorConfig;
     private final KeycloakDistConfigurator distConfigurator;
 
@@ -227,13 +226,13 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> {
             containerBuilder.withArgs("--verbose", "start");
         }
         if (customImage.isPresent()) {
-            containerBuilder.addToArgs(OPTIMIZED_ARG);
+            containerBuilder.addToArgs("--optimized");
         }
 
         // probes
         var tlsConfigured = isTlsConfigured(keycloakCR);
         var protocol = !tlsConfigured ? "HTTP" : "HTTPS";
-        var kcPort = KeycloakServiceDependentResource.getServicePort(tlsConfigured, keycloakCR);
+        var kcPort = KeycloakService.getServicePort(keycloakCR);
 
         // Relative path ends with '/'
         var kcRelativePath = Optional.ofNullable(readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY))
@@ -242,8 +241,9 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> {
 
         if (!containerBuilder.hasReadinessProbe()) {
             containerBuilder.withNewReadinessProbe()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(3)
+                .withInitialDelaySeconds(20)
+                .withPeriodSeconds(2)
+                .withFailureThreshold(250)
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(kcPort)
@@ -253,25 +253,15 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> {
         }
         if (!containerBuilder.hasLivenessProbe()) {
             containerBuilder.withNewLivenessProbe()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(3)
+                .withInitialDelaySeconds(20)
+                .withPeriodSeconds(2)
+                .withFailureThreshold(150)
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(kcPort)
                 .withPath(kcRelativePath + "health/live")
                 .endHttpGet()
                 .endLivenessProbe();
-        }
-        if (!containerBuilder.hasStartupProbe()) {
-            containerBuilder.withNewStartupProbe()
-                .withPeriodSeconds(1)
-                .withFailureThreshold(600)
-                .withNewHttpGet()
-                .withScheme(protocol)
-                .withNewPort(kcPort)
-                .withPath(kcRelativePath + "health/started")
-                .endHttpGet()
-                .endStartupProbe();
         }
 
         // add in ports - there's no merging being done here
@@ -365,6 +355,7 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> {
         return envVars;
     }
 
+    @Override
     public void updateStatus(KeycloakStatusAggregator status) {
         status.apply(b -> b.withSelector(Utils.toSelectorString(getInstanceLabels())));
         validatePodTemplate(status);
@@ -428,13 +419,9 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> {
         return new ArrayList<>(ret);
     }
 
-    public static String getName(Keycloak keycloak) {
-        return keycloak.getMetadata().getName();
-    }
-
     @Override
     public String getName() {
-        return getName(keycloakCR);
+        return keycloakCR.getMetadata().getName();
     }
 
     public void migrateDeployment(StatefulSet previousDeployment, StatefulSet reconciledDeployment) {

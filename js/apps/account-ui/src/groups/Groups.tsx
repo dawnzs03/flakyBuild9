@@ -96,7 +96,7 @@ const Groups = () => {
               <DataListItemCells
                 dataListCells={[
                   <DataListCell
-                    data-testid={`group[${appIndex}].name`}
+                    id={`${appIndex}-group-name`}
                     width={2}
                     key={"name-" + appIndex}
                   >

@@ -33,6 +33,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
@@ -106,7 +107,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -1136,24 +1136,11 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void circumfixSearch() {
+    public void circumfixSearchNotSupported() {
         createUsers();
 
         List<UserRepresentation> users = realm.users().search("u*name", null, null);
-        assertThat(users, hasSize(9));
-    }
-
-    @Test
-    public void wildcardSearch() {
-        createUser("0user\\\\0", "email0@emal");
-        createUser("1user\\\\", "email1@emal");
-        createUser("2user\\\\%", "email2@emal");
-        createUser("3user\\\\*", "email3@emal");
-        createUser("4user\\\\_", "email4@emal");
-
-        assertThat(realm.users().search("*", null, null), hasSize(5));
-        assertThat(realm.users().search("*user\\", null, null), hasSize(5));
-        assertThat(realm.users().search("\"2user\\\\%\"", null, null), hasSize(1));
+        assertThat(users, hasSize(0));
     }
 
     @Test
@@ -2330,32 +2317,6 @@ public class UserTest extends AbstractAdminTest {
             Assert.assertEquals("User exists with same username or email", error.getErrorMessage());
             assertAdminEvents.assertEmpty();
         }
-    }
-
-    @Test
-    public void testKeepRootAttributeWhenOtherAttributesAreSet() {
-        String random = UUID.randomUUID().toString();
-        String userName = String.format("username-%s", random);
-        String email = String.format("my@mail-%s.com", random);
-        UserRepresentation user = new UserRepresentation();
-        user.setUsername(userName);
-        user.setEmail(email);
-        String userId = createUser(user);
-
-        UserRepresentation created = realm.users().get(userId).toRepresentation();
-        assertThat(created.getEmail(), equalTo(email));
-        assertThat(created.getUsername(), equalTo(userName));
-        assertThat(created.getAttributes(), Matchers.nullValue());
-
-        UserRepresentation update = new UserRepresentation();
-        update.setId(userId);
-        update.setAttributes(Map.of("phoneNumber", List.of("123")));
-        updateUser(realm.users().get(userId), update);
-
-        UserRepresentation updated = realm.users().get(userId).toRepresentation();
-        assertThat(updated.getUsername(), equalTo(userName));
-        assertThat(updated.getAttributes(), equalTo(Map.of("phoneNumber", List.of("123"))));
-        assertThat(updated.getEmail(), equalTo(email));
     }
 
     @Test
