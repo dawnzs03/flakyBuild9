@@ -16,6 +16,7 @@
  */
 package org.apache.kafka.connect.mirror;
 
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
@@ -74,7 +75,7 @@ class OffsetSyncStore implements AutoCloseable {
         try {
             consumer = MirrorUtils.newConsumer(config.offsetSyncsTopicConsumerConfig());
             admin = new TopicAdmin(
-                    config.offsetSyncsTopicAdminConfig(),
+                    config.offsetSyncsTopicAdminConfig().get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG),
                     config.forwardingAdmin(config.offsetSyncsTopicAdminConfig()));
             store = createBackingStore(config, consumer, admin);
         } catch (Throwable t) {
