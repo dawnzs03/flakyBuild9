@@ -558,6 +558,7 @@ class ReplicaManager(val config: KafkaConfig,
     // Second remove deleted partitions from the partition map. Fetchers rely on the
     // ReplicaManager to get Partition's information so they must be stopped first.
     val partitionsToDelete = mutable.Set.empty[TopicPartition]
+    val remotePartitionsToDelete = mutable.Set.empty[TopicPartition]
     partitionsToStop.foreach { stopPartition =>
       val topicPartition = stopPartition.topicPartition
       if (stopPartition.deleteLocalLog) {
@@ -574,6 +575,9 @@ class ReplicaManager(val config: KafkaConfig,
         }
         partitionsToDelete += topicPartition
       }
+      if (stopPartition.deleteRemoteLog)
+        remotePartitionsToDelete += topicPartition
+
       // If we were the leader, we may have some operations still waiting for completion.
       // We force completion to prevent them from timing out.
       completeDelayedFetchOrProduceRequests(topicPartition)
@@ -587,9 +591,13 @@ class ReplicaManager(val config: KafkaConfig,
     }
     remoteLogManager.foreach { rlm =>
       // exclude the partitions with offline/error state
-      val partitions = partitionsToStop.filterNot(sp => errorMap.contains(sp.topicPartition)).toSet.asJava
-      if (!partitions.isEmpty) {
-        rlm.stopPartitions(partitions, (tp, e) => errorMap.put(tp, e))
+      errorMap.keySet.foreach(remotePartitionsToDelete.remove)
+      if (remotePartitionsToDelete.nonEmpty) {
+        rlm.stopPartitions(remotePartitionsToDelete.asJava, true, (tp, e) => errorMap.put(tp, e))
+      }
+      val remotePartitionsToNotDelete = partitions.diff(remotePartitionsToDelete)
+      if (remotePartitionsToNotDelete.nonEmpty) {
+        rlm.stopPartitions(remotePartitionsToNotDelete.asJava, false, (tp, e) => errorMap.put(tp, e))
       }
     }
     errorMap

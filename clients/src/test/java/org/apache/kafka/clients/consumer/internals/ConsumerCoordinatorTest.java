@@ -144,7 +144,6 @@ public abstract class ConsumerCoordinatorTest {
     private final int sessionTimeoutMs = 10000;
     private final int heartbeatIntervalMs = 5000;
     private final long retryBackoffMs = 100;
-    private final long retryBackoffMaxMs = 1000;
     private final int autoCommitIntervalMs = 2000;
     private final int requestTimeoutMs = 30000;
     private final int throttleMs = 10;
@@ -196,7 +195,7 @@ public abstract class ConsumerCoordinatorTest {
     public void setup() {
         LogContext logContext = new LogContext();
         this.subscriptions = new SubscriptionState(logContext, OffsetResetStrategy.EARLIEST);
-        this.metadata = new ConsumerMetadata(0, 0, Long.MAX_VALUE, false,
+        this.metadata = new ConsumerMetadata(0, Long.MAX_VALUE, false,
                 false, subscriptions, logContext, new ClusterResourceListeners());
         this.client = new MockClient(time, metadata);
         this.client.updateMetadata(metadataResponse);
@@ -221,7 +220,6 @@ public abstract class ConsumerCoordinatorTest {
                                         groupId,
                                         groupInstanceId,
                                         retryBackoffMs,
-                                        retryBackoffMaxMs,
                                         !groupInstanceId.isPresent());
     }
 
@@ -1284,7 +1282,7 @@ public abstract class ConsumerCoordinatorTest {
 
         // Refresh the metadata again. Since there have been no changes since the last refresh, it won't trigger
         // rebalance again.
-        metadata.requestUpdate(true);
+        metadata.requestUpdate();
         consumerClient.poll(time.timer(Long.MAX_VALUE));
         assertFalse(coordinator.rejoinNeededOrPending());
     }
@@ -1331,7 +1329,7 @@ public abstract class ConsumerCoordinatorTest {
 
             // Refresh the metadata again. Since there have been no changes since the last refresh, it won't trigger
             // rebalance again.
-            metadata.requestUpdate(true);
+            metadata.requestUpdate();
             consumerClient.poll(time.timer(Long.MAX_VALUE));
             assertFalse(coordinator.rejoinNeededOrPending());
         }
@@ -2228,7 +2226,7 @@ public abstract class ConsumerCoordinatorTest {
     }
 
     private void testInternalTopicInclusion(boolean includeInternalTopics) {
-        metadata = new ConsumerMetadata(0, 0, Long.MAX_VALUE, includeInternalTopics,
+        metadata = new ConsumerMetadata(0, Long.MAX_VALUE, includeInternalTopics,
                 false, subscriptions, new LogContext(), new ClusterResourceListeners());
         client = new MockClient(time, metadata);
         try (ConsumerCoordinator coordinator = buildCoordinator(rebalanceConfig, new Metrics(), assignors, false, subscriptions)) {

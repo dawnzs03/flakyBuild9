@@ -231,11 +231,6 @@ public class ConsumerConfig extends AbstractConfig {
     public static final String RETRY_BACKOFF_MS_CONFIG = CommonClientConfigs.RETRY_BACKOFF_MS_CONFIG;
 
     /**
-     * <code>retry.backoff.max.ms</code>
-     */
-    public static final String RETRY_BACKOFF_MAX_MS_CONFIG = CommonClientConfigs.RETRY_BACKOFF_MAX_MS_CONFIG;
-
-    /**
      * <code>metrics.sample.window.ms</code>
      */
     public static final String METRICS_SAMPLE_WINDOW_MS_CONFIG = CommonClientConfigs.METRICS_SAMPLE_WINDOW_MS_CONFIG;
@@ -471,16 +466,10 @@ public class ConsumerConfig extends AbstractConfig {
                                         CommonClientConfigs.RECONNECT_BACKOFF_MAX_MS_DOC)
                                 .define(RETRY_BACKOFF_MS_CONFIG,
                                         Type.LONG,
-                                        CommonClientConfigs.DEFAULT_RETRY_BACKOFF_MS,
+                                        100L,
                                         atLeast(0L),
                                         Importance.LOW,
                                         CommonClientConfigs.RETRY_BACKOFF_MS_DOC)
-                                .define(RETRY_BACKOFF_MAX_MS_CONFIG,
-                                        Type.LONG,
-                                        CommonClientConfigs.DEFAULT_RETRY_BACKOFF_MAX_MS,
-                                        atLeast(0L),
-                                        Importance.LOW,
-                                        CommonClientConfigs.RETRY_BACKOFF_MAX_MS_DOC)
                                 .define(AUTO_OFFSET_RESET_CONFIG,
                                         Type.STRING,
                                         OffsetResetStrategy.LATEST.toString(),
@@ -619,7 +608,6 @@ public class ConsumerConfig extends AbstractConfig {
     @Override
     protected Map<String, Object> postProcessParsedConfig(final Map<String, Object> parsedValues) {
         CommonClientConfigs.postValidateSaslMechanismConfig(this);
-        CommonClientConfigs.warnDisablingExponentialBackoff(this);
         Map<String, Object> refinedConfigs = CommonClientConfigs.postProcessReconnectBackoffConfigs(this, parsedValues);
         maybeOverrideClientId(refinedConfigs);
         return refinedConfigs;
@@ -639,9 +627,9 @@ public class ConsumerConfig extends AbstractConfig {
         }
     }
 
-    public static Map<String, Object> appendDeserializerToConfig(Map<String, Object> configs,
-                                                                 Deserializer<?> keyDeserializer,
-                                                                 Deserializer<?> valueDeserializer) {
+    protected static Map<String, Object> appendDeserializerToConfig(Map<String, Object> configs,
+                                                                    Deserializer<?> keyDeserializer,
+                                                                    Deserializer<?> valueDeserializer) {
         // validate deserializer configuration, if the passed deserializer instance is null, the user must explicitly set a valid deserializer configuration value
         Map<String, Object> newConfigs = new HashMap<>(configs);
         if (keyDeserializer != null)

@@ -226,7 +226,7 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
             protocol = null;
         }
 
-        this.metadata.requestUpdate(true);
+        this.metadata.requestUpdate();
     }
 
     // package private for testing
@@ -550,7 +550,7 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
                     // refresh metadata before re-joining the group as long as the refresh backoff time has
                     // passed.
                     if (this.metadata.timeToAllowUpdate(timer.currentTimeMs()) == 0) {
-                        this.metadata.requestUpdate(true);
+                        this.metadata.requestUpdate();
                     }
 
                     if (!client.ensureFreshMetadata(timer)) {
@@ -1004,7 +1004,6 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
             pendingCommittedOffsetRequest = null;
         }
 
-        long attempts = 0L;
         do {
             if (!ensureCoordinatorReady(timer)) return null;
 
@@ -1026,7 +1025,7 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
                 } else if (!future.isRetriable()) {
                     throw future.exception();
                 } else {
-                    timer.sleep(retryBackoff.backoff(attempts++));
+                    timer.sleep(rebalanceConfig.retryBackoffMs);
                 }
             } else {
                 return null;
@@ -1181,7 +1180,6 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
             return invokePendingAsyncCommits(timer);
         }
 
-        long attempts = 0L;
         do {
             if (coordinatorUnknownAndUnreadySync(timer)) {
                 return false;
@@ -1204,7 +1202,7 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
             if (future.failed() && !future.isRetriable())
                 throw future.exception();
 
-            timer.sleep(retryBackoff.backoff(attempts++));
+            timer.sleep(rebalanceConfig.retryBackoffMs);
         } while (timer.notExpired());
 
         return false;
@@ -1243,7 +1241,6 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
             return true;
         }
 
-        long attempts = 0L;
         do {
             ensureCoordinatorReady(timer);
             client.poll(timer);
@@ -1253,7 +1250,7 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
                 return true;
             }
 
-            timer.sleep(retryBackoff.backoff(attempts++));
+            timer.sleep(rebalanceConfig.retryBackoffMs);
         } while (timer.notExpired());
 
         return false;

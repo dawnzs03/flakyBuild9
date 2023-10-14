@@ -823,17 +823,9 @@ public class GenericGroup implements Group {
 
     /**
      * Validates the OffsetFetch request.
-     *
-     * @param memberId              The member id. This is not provided for generic groups.
-     * @param memberEpoch           The member epoch for consumer groups. This is not provided for generic groups.
-     * @param lastCommittedOffset   The last committed offsets in the timeline.
      */
     @Override
-    public void validateOffsetFetch(
-        String memberId,
-        int memberEpoch,
-        long lastCommittedOffset
-    ) throws GroupIdNotFoundException {
+    public void validateOffsetFetch() throws GroupIdNotFoundException {
         if (isInState(DEAD)) {
             throw new GroupIdNotFoundException(String.format("Group %s is in dead state.", groupId));
         }

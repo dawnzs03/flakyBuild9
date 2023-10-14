@@ -32,8 +32,6 @@ import org.apache.kafka.common.utils.{MockTime, Utils}
 import org.apache.kafka.storage.internals.log.{AppendOrigin, CompletedTxn, LogFileUtils, LogOffsetMetadata, ProducerAppendInfo, ProducerStateEntry, ProducerStateManager, ProducerStateManagerConfig, TxnMetadata, VerificationStateEntry}
 import org.junit.jupiter.api.Assertions._
 import org.junit.jupiter.api.{AfterEach, BeforeEach, Test}
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.{mock, when}
 
 import java.util
@@ -1139,14 +1137,9 @@ class ProducerStateManagerTest {
     verifyEntry(producerId, updatedEntryOldEpoch, 2, 1)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testThrowOutOfOrderSequenceWithVerificationSequenceCheck(dynamicallyDisable: Boolean): Unit = {
+  @Test
+  def testThrowOutOfOrderSequenceWithVerificationSequenceCheck(): Unit = {
     val originalEntry = stateManager.maybeCreateVerificationStateEntry(producerId, 0, 0)
-
-    // Even if we dynamically disable, we should still execute the sequence check if we have an entry
-    if (dynamicallyDisable)
-      producerStateManagerConfig.setTransactionVerificationEnabled(false)
 
     // Trying to append with a higher sequence should fail
     assertThrows(classOf[OutOfOrderSequenceException], () => append(stateManager, producerId, 0, 4, offset = 0, isTransactional = true))

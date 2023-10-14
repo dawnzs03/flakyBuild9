@@ -16,9 +16,7 @@
  */
 package org.apache.kafka.clients.consumer.internals;
 
-import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.GroupRebalanceConfig;
-import org.apache.kafka.common.utils.ExponentialBackoff;
 import org.apache.kafka.common.utils.LogContext;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.common.utils.Timer;
@@ -39,8 +37,6 @@ public final class Heartbeat {
 
     private volatile long lastHeartbeatSend = 0L;
     private volatile boolean heartbeatInFlight = false;
-    private volatile long heartbeatAttempts = 0L;
-    private ExponentialBackoff retryBackoff;
 
     public Heartbeat(GroupRebalanceConfig config,
                      Time time) {
@@ -52,10 +48,6 @@ public final class Heartbeat {
         this.sessionTimer = time.timer(config.sessionTimeoutMs);
         this.maxPollIntervalMs = config.rebalanceTimeoutMs;
         this.pollTimer = time.timer(maxPollIntervalMs);
-        this.retryBackoff = new ExponentialBackoff(rebalanceConfig.retryBackoffMs,
-                CommonClientConfigs.RETRY_BACKOFF_EXP_BASE,
-                rebalanceConfig.retryBackoffMaxMs,
-                CommonClientConfigs.RETRY_BACKOFF_JITTER);
 
         final LogContext logContext = new LogContext("[Heartbeat groupID=" + config.groupId + "] ");
         this.log = logContext.logger(getClass());
@@ -90,7 +82,7 @@ public final class Heartbeat {
     void failHeartbeat() {
         update(time.milliseconds());
         heartbeatInFlight = false;
-        heartbeatTimer.reset(retryBackoff.backoff(heartbeatAttempts++));
+        heartbeatTimer.reset(rebalanceConfig.retryBackoffMs);
 
         log.trace("Heartbeat failed, reset the timer to {}ms remaining", heartbeatTimer.remainingMs());
     }
@@ -98,7 +90,6 @@ public final class Heartbeat {
     void receiveHeartbeat() {
         update(time.milliseconds());
         heartbeatInFlight = false;
-        heartbeatAttempts = 0L;
         sessionTimer.reset(rebalanceConfig.sessionTimeoutMs);
     }
 

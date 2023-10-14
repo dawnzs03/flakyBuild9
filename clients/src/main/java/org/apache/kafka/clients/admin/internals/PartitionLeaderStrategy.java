@@ -42,15 +42,9 @@ public class PartitionLeaderStrategy implements AdminApiLookupStrategy<TopicPart
     };
 
     private final Logger log;
-    private final boolean tolerateUnknownTopics;
 
     public PartitionLeaderStrategy(LogContext logContext) {
-        this(logContext, true);
-    }
-
-    public PartitionLeaderStrategy(LogContext logContext, boolean tolerateUnknownTopics) {
         this.log = logContext.logger(PartitionLeaderStrategy.class);
-        this.tolerateUnknownTopics = tolerateUnknownTopics;
     }
 
     @Override
@@ -70,7 +64,6 @@ public class PartitionLeaderStrategy implements AdminApiLookupStrategy<TopicPart
         return new MetadataRequest.Builder(request);
     }
 
-    @SuppressWarnings("fallthrough")
     private void handleTopicError(
         String topic,
         Errors topicError,
@@ -79,12 +72,6 @@ public class PartitionLeaderStrategy implements AdminApiLookupStrategy<TopicPart
     ) {
         switch (topicError) {
             case UNKNOWN_TOPIC_OR_PARTITION:
-                if (!tolerateUnknownTopics) {
-                    log.error("Received unknown topic error for topic {}", topic, topicError.exception());
-                    failAllPartitionsForTopic(topic, requestPartitions, failed, tp -> topicError.exception(
-                            "Failed to fetch metadata for partition " + tp + " because metadata for topic `" + topic + "` could not be found"));
-                    break;
-                }
             case LEADER_NOT_AVAILABLE:
             case BROKER_NOT_AVAILABLE:
                 log.debug("Metadata request for topic {} returned topic-level error {}. Will retry",
@@ -137,7 +124,6 @@ public class PartitionLeaderStrategy implements AdminApiLookupStrategy<TopicPart
             case LEADER_NOT_AVAILABLE:
             case BROKER_NOT_AVAILABLE:
             case KAFKA_STORAGE_ERROR:
-            case UNKNOWN_TOPIC_OR_PARTITION:
                 log.debug("Metadata request for partition {} returned partition-level error {}. Will retry",
                     topicPartition, partitionError);
                 break;

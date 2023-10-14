@@ -16,12 +16,14 @@
  */
 package org.apache.kafka.metadata.migration;
 
+import org.apache.kafka.clients.ApiVersions;
+import org.apache.kafka.clients.NodeApiVersions;
+import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicIdPartition;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.metadata.BrokerRegistrationChangeRecord;
 import org.apache.kafka.common.metadata.ConfigRecord;
-import org.apache.kafka.common.metadata.FeatureLevelRecord;
 import org.apache.kafka.common.metadata.RegisterBrokerRecord;
 import org.apache.kafka.common.utils.MockTime;
 import org.apache.kafka.common.utils.Time;
@@ -47,10 +49,10 @@ import org.apache.kafka.metadata.RecordTestUtils;
 import org.apache.kafka.raft.LeaderAndEpoch;
 import org.apache.kafka.raft.OffsetAndEpoch;
 import org.apache.kafka.server.common.ApiMessageAndVersion;
-import org.apache.kafka.server.common.MetadataVersion;
 import org.apache.kafka.server.fault.MockFaultHandler;
 import org.apache.kafka.test.TestUtils;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -81,9 +83,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KRaftMigrationDriverTest {
-    private final static QuorumFeatures QUORUM_FEATURES = new QuorumFeatures(4,
+    List<Node> controllerNodes = Arrays.asList(
+        new Node(4, "host4", 0),
+        new Node(5, "host5", 0),
+        new Node(6, "host6", 0)
+    );
+    ApiVersions apiVersions = new ApiVersions();
+    QuorumFeatures quorumFeatures = QuorumFeatures.create(4,
+        apiVersions,
         QuorumFeatures.defaultFeatureMap(),
-        Arrays.asList(4, 5, 6));
+        controllerNodes);
 
     static class MockControllerMetrics extends QuorumControllerMetrics {
         final AtomicBoolean closed = new AtomicBoolean(false);
@@ -117,10 +126,17 @@ public class KRaftMigrationDriverTest {
             .setZkRecordConsumer(new NoOpRecordConsumer())
             .setInitialZkLoadHandler(metadataPublisher -> { })
             .setFaultHandler(new MockFaultHandler("test"))
-            .setQuorumFeatures(QUORUM_FEATURES)
+            .setQuorumFeatures(quorumFeatures)
             .setConfigSchema(KafkaConfigSchema.EMPTY)
             .setControllerMetrics(metrics)
             .setTime(mockTime);
+    }
+
+    @BeforeEach
+    public void setup() {
+        apiVersions.update("4", new NodeApiVersions(Collections.emptyList(), Collections.emptyList(), true));
+        apiVersions.update("5", new NodeApiVersions(Collections.emptyList(), Collections.emptyList(), true));
+        apiVersions.update("6", new NodeApiVersions(Collections.emptyList(), Collections.emptyList(), true));
     }
 
     static class NoOpRecordConsumer implements ZkRecordConsumer {
@@ -229,9 +245,8 @@ public class KRaftMigrationDriverTest {
      * Don't send RPCs to brokers for every metadata change, only when brokers or topics change.
      * This is a regression test for KAFKA-14668
      */
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    public void testOnlySendNeededRPCsToBrokers(boolean registerControllers) throws Exception {
+    @Test
+    public void testOnlySendNeededRPCsToBrokers() throws Exception {
         CountingMetadataPropagator metadataPropagator = new CountingMetadataPropagator();
         CapturingConfigMigrationClient configClient = new CapturingConfigMigrationClient();
         CapturingMigrationClient migrationClient = CapturingMigrationClient.newBuilder()
@@ -248,7 +263,6 @@ public class KRaftMigrationDriverTest {
             MetadataDelta delta = new MetadataDelta(image);
 
             driver.start();
-            setupDeltaForMigration(delta, registerControllers);
             delta.replay(ZkMigrationState.PRE_MIGRATION.toRecord().message());
             delta.replay(zkBrokerRecord(1));
             delta.replay(zkBrokerRecord(2));
@@ -329,7 +343,6 @@ public class KRaftMigrationDriverTest {
         try (KRaftMigrationDriver driver = builder.build()) {
             MetadataImage image = MetadataImage.EMPTY;
             MetadataDelta delta = new MetadataDelta(image);
-            setupDeltaForMigration(delta, true);
 
             driver.start();
             delta.replay(ZkMigrationState.PRE_MIGRATION.toRecord().message());
@@ -356,48 +369,11 @@ public class KRaftMigrationDriverTest {
         }
     }
 
-    private void setupDeltaForMigration(
-        MetadataDelta delta,
-        boolean registerControllers
-    ) {
-        if (registerControllers) {
-            delta.replay(new FeatureLevelRecord().
-                    setName(MetadataVersion.FEATURE_NAME).
-                    setFeatureLevel(MetadataVersion.IBP_3_7_IV0.featureLevel()));
-            for (int id : QUORUM_FEATURES.quorumNodeIds()) {
-                delta.replay(RecordTestUtils.createTestControllerRegistration(id, true));
-            }
-        } else {
-            delta.replay(new FeatureLevelRecord().
-                    setName(MetadataVersion.FEATURE_NAME).
-                    setFeatureLevel(MetadataVersion.IBP_3_6_IV2.featureLevel()));
-        }
-    }
-
-    private void setupDeltaWithControllerRegistrations(
-        MetadataDelta delta,
-        List<Integer> notReadyIds,
-        List<Integer> readyIds
-    ) {
-        delta.replay(new FeatureLevelRecord().
-            setName(MetadataVersion.FEATURE_NAME).
-            setFeatureLevel(MetadataVersion.IBP_3_7_IV0.featureLevel()));
-        delta.replay(ZkMigrationState.PRE_MIGRATION.toRecord().message());
-        for (int id : notReadyIds) {
-            delta.replay(RecordTestUtils.createTestControllerRegistration(id, false));
-        }
-        for (int id : readyIds) {
-            delta.replay(RecordTestUtils.createTestControllerRegistration(id, true));
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    public void testShouldNotMoveToNextStateIfControllerNodesAreNotReadyToMigrate(
-        boolean allNodePresent
-    ) throws Exception {
+    @Test
+    public void testShouldNotMoveToNextStateIfControllerNodesAreNotReadyToMigrate() throws Exception {
         CountingMetadataPropagator metadataPropagator = new CountingMetadataPropagator();
         CapturingMigrationClient migrationClient = CapturingMigrationClient.newBuilder().setBrokersInZk(1).build();
+        apiVersions.remove("6");
 
         KRaftMigrationDriver.Builder builder = defaultTestBuilder()
             .setZkMigrationClient(migrationClient)
@@ -407,11 +383,7 @@ public class KRaftMigrationDriverTest {
             MetadataDelta delta = new MetadataDelta(image);
 
             driver.start();
-            if (allNodePresent) {
-                setupDeltaWithControllerRegistrations(delta, Arrays.asList(4, 5, 6), Arrays.asList());
-            } else {
-                setupDeltaWithControllerRegistrations(delta, Arrays.asList(), Arrays.asList(4, 5));
-            }
+            delta.replay(ZkMigrationState.PRE_MIGRATION.toRecord().message());
             delta.replay(zkBrokerRecord(1));
             MetadataProvenance provenance = new MetadataProvenance(100, 1, 1);
             image = delta.apply(provenance);
@@ -421,24 +393,16 @@ public class KRaftMigrationDriverTest {
             driver.onControllerChange(newLeader);
             driver.onMetadataUpdate(delta, image, logDeltaManifestBuilder(provenance, newLeader).build());
 
-            // Not all controller nodes are ready. So we should stay at WAIT_FOR_CONTROLLER_QUORUM state.
+            // Current apiVersions are missing the controller node 6, should stay at WAIT_FOR_CONTROLLER_QUORUM state
             TestUtils.waitForCondition(() -> driver.migrationState().get(1, TimeUnit.MINUTES).equals(MigrationDriverState.WAIT_FOR_CONTROLLER_QUORUM),
                 "Waiting for KRaftMigrationDriver to enter WAIT_FOR_CONTROLLER_QUORUM state");
 
-            // Controller nodes don't have zkMigrationReady set. Should still stay at WAIT_FOR_CONTROLLER_QUORUM state.
+            // Current apiVersions of node 6 has no zkMigrationReady set, should still stay at WAIT_FOR_CONTROLLER_QUORUM state
+            apiVersions.update("6", NodeApiVersions.create());
             assertEquals(MigrationDriverState.WAIT_FOR_CONTROLLER_QUORUM, driver.migrationState().get(1, TimeUnit.MINUTES));
 
-            // Update so that all controller nodes are zkMigrationReady. Now we should be able to move to the next state.
-            delta = new MetadataDelta(image);
-            setupDeltaWithControllerRegistrations(delta, Arrays.asList(), Arrays.asList(4, 5, 6));
-            image = delta.apply(new MetadataProvenance(200, 1, 2));
-            driver.onMetadataUpdate(delta, image, new LogDeltaManifest.Builder().
-                    provenance(image.provenance()).
-                    leaderAndEpoch(newLeader).
-                    numBatches(1).
-                    elapsedNs(100).
-                    numBytes(42).
-                    build());
+            // all controller nodes are zkMigrationReady, should be able to move to next state
+            apiVersions.update("6", new NodeApiVersions(Collections.emptyList(), Collections.emptyList(), true));
             TestUtils.waitForCondition(() -> driver.migrationState().get(1, TimeUnit.MINUTES).equals(MigrationDriverState.DUAL_WRITE),
                 "Waiting for KRaftMigrationDriver to enter DUAL_WRITE state");
         }
@@ -543,7 +507,6 @@ public class KRaftMigrationDriverTest {
             MetadataDelta delta = new MetadataDelta(image);
 
             driver.start();
-            setupDeltaForMigration(delta, true);
             delta.replay(ZkMigrationState.PRE_MIGRATION.toRecord().message());
             delta.replay(zkBrokerRecord(0));
             delta.replay(zkBrokerRecord(1));
@@ -597,7 +560,6 @@ public class KRaftMigrationDriverTest {
             MetadataDelta delta = new MetadataDelta(image);
 
             driver.start();
-            setupDeltaForMigration(delta, true);
             delta.replay(ZkMigrationState.PRE_MIGRATION.toRecord().message());
             delta.replay(zkBrokerRecord(0));
             delta.replay(zkBrokerRecord(1));
@@ -651,7 +613,6 @@ public class KRaftMigrationDriverTest {
             MetadataDelta delta = new MetadataDelta(image);
 
             driver.start();
-            setupDeltaForMigration(delta, true);
             delta.replay(ZkMigrationState.PRE_MIGRATION.toRecord().message());
             delta.replay(zkBrokerRecord(0));
             delta.replay(zkBrokerRecord(1));
@@ -717,7 +678,6 @@ public class KRaftMigrationDriverTest {
             MetadataDelta delta = new MetadataDelta(image);
 
             driver.start();
-            setupDeltaForMigration(delta, true);
             delta.replay(ZkMigrationState.PRE_MIGRATION.toRecord().message());
             delta.replay(zkBrokerRecord(1));
             delta.replay(zkBrokerRecord(2));

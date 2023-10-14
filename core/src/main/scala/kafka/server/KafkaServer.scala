@@ -506,18 +506,17 @@ class KafkaServer(
             KafkaServer.MIN_INCREMENTAL_FETCH_SESSION_EVICTION_MS))
 
         // Start RemoteLogManager before broker start serving the requests.
-        remoteLogManagerOpt.foreach { rlm =>
+        remoteLogManagerOpt.foreach(rlm => {
           val listenerName = config.remoteLogManagerConfig.remoteLogMetadataManagerListenerName()
           if (listenerName != null) {
             brokerInfo.broker.endPoints
               .find(e => e.listenerName.equals(ListenerName.normalised(listenerName)))
-              .orElse(throw new ConfigException(RemoteLogManagerConfig.REMOTE_LOG_METADATA_MANAGER_LISTENER_NAME_PROP,
-                listenerName, "Should be set as a listener name within valid broker listener name list: "
-                  + brokerInfo.broker.endPoints.map(_.listenerName).mkString(",")))
+              .orElse(throw new ConfigException(RemoteLogManagerConfig.REMOTE_LOG_METADATA_MANAGER_LISTENER_NAME_PROP +
+                " should be set as a listener name within valid broker listener name list."))
               .foreach(e => rlm.onEndPointCreated(e))
           }
           rlm.startup()
-        }
+        })
 
         /* start processing requests */
         val zkSupport = ZkSupport(adminManager, kafkaController, zkClient, forwardingManager, metadataCache, brokerEpochManager)
