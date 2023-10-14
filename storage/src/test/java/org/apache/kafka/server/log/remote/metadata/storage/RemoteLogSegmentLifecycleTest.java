@@ -482,7 +482,7 @@ public class RemoteLogSegmentLifecycleTest {
 
         @Override
         public void close() throws IOException {
-            super.close();
+            tearDown();
         }
 
     }

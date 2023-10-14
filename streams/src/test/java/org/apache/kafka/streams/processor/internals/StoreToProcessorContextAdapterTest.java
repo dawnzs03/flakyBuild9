@@ -21,21 +21,21 @@ import org.apache.kafka.streams.processor.PunctuationType;
 import org.apache.kafka.streams.processor.Punctuator;
 import org.apache.kafka.streams.processor.StateStoreContext;
 import org.apache.kafka.streams.processor.To;
+import org.easymock.EasyMockRunner;
+import org.easymock.Mock;
+import org.easymock.MockType;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.assertThrows;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
 
 import java.time.Duration;
 
-@RunWith(MockitoJUnitRunner.StrictStubs.class)
+@RunWith(EasyMockRunner.class)
 public class StoreToProcessorContextAdapterTest {
-    @Mock
+    @Mock(MockType.NICE)
     private StateStoreContext delegate;
     private ProcessorContext context;
-    @Mock
+    @Mock(MockType.NICE)
     private Punctuator punctuator;
 
     @Before
@@ -43,63 +43,63 @@ public class StoreToProcessorContextAdapterTest {
         context = StoreToProcessorContextAdapter.adapt(delegate);
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnCurrentSystemTime() {
-        assertThrows(UnsupportedOperationException.class, () -> context.currentSystemTimeMs());
+        context.currentSystemTimeMs();
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnCurrentStreamTime() {
-        assertThrows(UnsupportedOperationException.class, () -> context.currentStreamTimeMs());
+        context.currentStreamTimeMs();
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnGetStateStore() {
-        assertThrows(UnsupportedOperationException.class, () -> context.getStateStore("store"));
+        context.getStateStore("store");
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnScheduleWithDuration() {
-        assertThrows(UnsupportedOperationException.class, () -> context.schedule(Duration.ZERO, PunctuationType.WALL_CLOCK_TIME, punctuator));
+        context.schedule(Duration.ZERO, PunctuationType.WALL_CLOCK_TIME, punctuator);
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnForward() {
-        assertThrows(UnsupportedOperationException.class, () -> context.forward("key", "value"));
+        context.forward("key", "value");
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnForwardWithTo() {
-        assertThrows(UnsupportedOperationException.class, () -> context.forward("key", "value", To.all()));
+        context.forward("key", "value", To.all());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnCommit() {
-        assertThrows(UnsupportedOperationException.class, () -> context.commit());
+        context.commit();
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnTopic() {
-        assertThrows(UnsupportedOperationException.class, () -> context.topic());
+        context.topic();
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnPartition() {
-        assertThrows(UnsupportedOperationException.class, () -> context.partition());
+        context.partition();
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnOffset() {
-        assertThrows(UnsupportedOperationException.class, () -> context.offset());
+        context.offset();
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnHeaders() {
-        assertThrows(UnsupportedOperationException.class, () -> context.headers());
+        context.headers();
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void shouldThrowOnTimestamp() {
-        assertThrows(UnsupportedOperationException.class, () -> context.timestamp());
+        context.timestamp();
     }
 }

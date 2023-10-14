@@ -29,10 +29,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BuiltInPartitionerTest {
@@ -196,11 +194,5 @@ public class BuiltInPartitionerTest {
             assertEquals(expectedFrequencies[i] * numberOfCycles, frequencies[i],
                 "Partition " + i + " was chosen " + frequencies[i] + " times");
         }
-    }
-
-    @Test
-    void testStickyBatchSizeMoreThatZero() {
-        assertThrows(IllegalArgumentException.class, () -> new BuiltInPartitioner(logContext, TOPIC_A, 0));
-        assertDoesNotThrow(() -> new BuiltInPartitioner(logContext, TOPIC_A, 1));
     }
 }

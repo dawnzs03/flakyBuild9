@@ -102,9 +102,9 @@ public class LogConfig extends AbstractConfig {
 
     public static class RemoteLogConfig {
 
-        public final boolean remoteStorageEnable;
-        public final long localRetentionMs;
-        public final long localRetentionBytes;
+        private final boolean remoteStorageEnable;
+        private final long localRetentionMs;
+        private final long localRetentionBytes;
 
         private RemoteLogConfig(LogConfig config) {
             this.remoteStorageEnable = config.getBoolean(TopicConfig.REMOTE_LOG_STORAGE_ENABLE_CONFIG);
@@ -548,26 +548,21 @@ public class LogConfig extends AbstractConfig {
      * @param props The properties to be validated
      */
     private static void validateTopicLogConfigValues(Map<?, ?> props,
-                                                    boolean isRemoteLogStorageSystemEnabled) {
+                                                     boolean isRemoteLogStorageSystemEnabled) {
         validateValues(props);
         boolean isRemoteLogStorageEnabled = (Boolean) props.get(TopicConfig.REMOTE_LOG_STORAGE_ENABLE_CONFIG);
         if (isRemoteLogStorageEnabled) {
-            validateRemoteStorageOnlyIfSystemEnabled(props, isRemoteLogStorageSystemEnabled, false);
+            validateRemoteStorageOnlyIfSystemEnabled(isRemoteLogStorageSystemEnabled);
             validateNoRemoteStorageForCompactedTopic(props);
             validateRemoteStorageRetentionSize(props);
             validateRemoteStorageRetentionTime(props);
         }
     }
 
-    public static void validateRemoteStorageOnlyIfSystemEnabled(Map<?, ?> props, boolean isRemoteLogStorageSystemEnabled, boolean isReceivingConfigFromStore) {
-        boolean isRemoteLogStorageEnabled = (Boolean) props.get(TopicConfig.REMOTE_LOG_STORAGE_ENABLE_CONFIG);
-        if (isRemoteLogStorageEnabled && !isRemoteLogStorageSystemEnabled) {
-            if (isReceivingConfigFromStore) {
-                throw new ConfigException("You have to delete all topics with the property remote.storage.enable=true before disabling tiered storage cluster-wide");
-            } else {
-                throw new ConfigException("Tiered Storage functionality is disabled in the broker. " +
-                        "Topic cannot be configured with remote log storage.");
-            }
+    private static void validateRemoteStorageOnlyIfSystemEnabled(boolean isRemoteLogStorageSystemEnabled) {
+        if (!isRemoteLogStorageSystemEnabled) {
+            throw new ConfigException("Tiered Storage functionality is disabled in the broker. " +
+                    "Topic cannot be configured with remote log storage.");
         }
     }
 

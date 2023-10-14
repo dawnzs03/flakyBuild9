@@ -306,13 +306,19 @@ public final class LocalTieredStorage implements RemoteStorageManager {
     public Optional<CustomMetadata> copyLogSegmentData(final RemoteLogSegmentMetadata metadata, final LogSegmentData data)
             throws RemoteStorageException {
         Callable<Optional<CustomMetadata>> callable = () -> {
-            final LocalTieredStorageEvent.Builder eventBuilder = newEventBuilder(COPY_SEGMENT, metadata);
+            final RemoteLogSegmentId id = metadata.remoteLogSegmentId();
+            final LocalTieredStorageEvent.Builder eventBuilder = newEventBuilder(COPY_SEGMENT, id);
             RemoteLogSegmentFileset fileset = null;
+
             try {
                 fileset = openFileset(storageDirectory, metadata);
-                logger.info("Offloading log segment for {} from segment={}", metadata.topicIdPartition(), data.logSegment());
+
+                logger.info("Offloading log segment for {} from segment={}", id.topicIdPartition(), data.logSegment());
+
                 fileset.copy(transferer, data);
+
                 storageListeners.onStorageEvent(eventBuilder.withFileset(fileset).build());
+
             } catch (final Exception e) {
                 // Keep the storage in a consistent state, i.e. a segment stored should always have with its
                 // associated offset and time indexes stored as well. Here, delete any file which was copied
@@ -321,11 +327,14 @@ public final class LocalTieredStorage implements RemoteStorageManager {
                 if (fileset != null) {
                     fileset.delete();
                 }
+
                 storageListeners.onStorageEvent(eventBuilder.withException(e).build());
                 throw e;
             }
+
             return Optional.empty();
         };
+
         return wrap(callable);
     }
 
@@ -492,6 +501,10 @@ public final class LocalTieredStorage implements RemoteStorageManager {
 
     String getStorageDirectoryRoot() throws RemoteStorageException {
         return wrap(() -> storageDirectory.getAbsolutePath());
+    }
+
+    private LocalTieredStorageEvent.Builder newEventBuilder(final EventType type, final RemoteLogSegmentId segId) {
+        return LocalTieredStorageEvent.newBuilder(brokerId, type, eventTimestamp.incrementAndGet(), segId);
     }
 
     private LocalTieredStorageEvent.Builder newEventBuilder(final EventType type, final RemoteLogSegmentMetadata md) {
