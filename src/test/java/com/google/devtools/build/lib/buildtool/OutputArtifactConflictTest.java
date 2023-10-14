@@ -661,11 +661,10 @@ public class OutputArtifactConflictTest extends BuildIntegrationTestCase {
     assertThat(eventListener.eventIds.get(0).getAspect()).isEqualTo("//x:aspect.bzl%my_aspect");
   }
 
-  // There exists a discrepancy between skymeld and noskymeld modes in case of --keep_going.
-  // noskymeld: bazel would stop at the end of the analysis phase and build nothing.
-  // skymeld: we either finish building one of the 2 conflicting artifacts, or none at all.
-  //
-  // The overall build would still fail in both cases.
+  // There exists a discrepancy between --experimental_merged_skyframe_analysis_execution and
+  // otherwise in case of --keep_going. The version with merged phases would still build one of the
+  // 2 conflicting targets, while the one without would stop at the end of the analysis phase and
+  // build nothing. The overall build would still fail.
   @Test
   public void testTwoConflictingTargets_keepGoing_behaviorDifferences(
       @TestParameter boolean mergedAnalysisExecution) throws Exception {
@@ -680,8 +679,8 @@ public class OutputArtifactConflictTest extends BuildIntegrationTestCase {
     Path outputXYY = Iterables.getOnlyElement(getArtifacts("//x/y:y")).getPath();
 
     if (mergedAnalysisExecution) {
-      // Verify that these 2 conflicting artifacts can't both exist.
-      assertThat(outputXYY.isFile() && outputXY.isFile()).isFalse();
+      // Verify that one and only one of the output artifacts from these 2 targets were built.
+      assertThat((outputXY.isDirectory() && outputXYY.isFile()) ^ outputXY.isFile()).isTrue();
     } else {
       // Verify that none of the output artifacts were built.
       assertThat(outputXY.exists()).isFalse();
