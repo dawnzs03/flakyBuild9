@@ -20,7 +20,6 @@ import org.apache.kafka.clients.ClientResponse;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.protocol.ApiKeys;
 import org.apache.kafka.common.protocol.Errors;
@@ -68,7 +67,6 @@ public class CommitRequestManagerTest {
     private MockTime time;
     private CoordinatorRequestManager coordinatorRequestManager;
     private Properties props;
-    private Node mockedNode = new Node(1, "host1", 9092);
 
     @BeforeEach
     public void setup() {
@@ -82,17 +80,6 @@ public class CommitRequestManagerTest {
         this.props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, 100);
         this.props.put(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         this.props.put(VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-    }
-
-    @Test
-    public void testPoll_SkipIfCoordinatorUnknown() {
-        CommitRequestManager commitRequestManger = create(false, 0);
-        assertPoll(false, 0, commitRequestManger);
-
-        Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
-        offsets.put(new TopicPartition("t1", 0), new OffsetAndMetadata(0));
-        commitRequestManger.addOffsetCommitRequest(offsets);
-        assertPoll(false, 0, commitRequestManger);
     }
 
     @Test
@@ -123,7 +110,6 @@ public class CommitRequestManagerTest {
     @Test
     public void testPoll_EnsureCorrectInflightRequestBufferSize() {
         CommitRequestManager commitManager = create(false, 100);
-        when(coordinatorRequestManager.coordinator()).thenReturn(Optional.of(mockedNode));
 
         // Create some offset commit requests
         Map<TopicPartition, OffsetAndMetadata> offsets1 = new HashMap<>();
@@ -160,7 +146,6 @@ public class CommitRequestManagerTest {
     @Test
     public void testPoll_EnsureEmptyPendingRequestAfterPoll() {
         CommitRequestManager commitRequestManger = create(true, 100);
-        when(coordinatorRequestManager.coordinator()).thenReturn(Optional.of(mockedNode));
         commitRequestManger.addOffsetCommitRequest(new HashMap<>());
         assertEquals(1, commitRequestManger.unsentOffsetCommitRequests().size());
         commitRequestManger.poll(time.milliseconds());
@@ -207,7 +192,6 @@ public class CommitRequestManagerTest {
     @Test
     public void testOffsetFetchRequest_EnsureDuplicatedRequestSucceed() {
         CommitRequestManager commitRequestManger = create(true, 100);
-        when(coordinatorRequestManager.coordinator()).thenReturn(Optional.of(mockedNode));
         Set<TopicPartition> partitions = new HashSet<>();
         partitions.add(new TopicPartition("t1", 0));
         List<CompletableFuture<Map<TopicPartition, OffsetAndMetadata>>> futures = sendAndVerifyDuplicatedRequests(
@@ -228,8 +212,6 @@ public class CommitRequestManagerTest {
     @MethodSource("exceptionSupplier")
     public void testOffsetFetchRequest_ErroredRequests(final Errors error, final boolean isRetriable) {
         CommitRequestManager commitRequestManger = create(true, 100);
-        when(coordinatorRequestManager.coordinator()).thenReturn(Optional.of(mockedNode));
-
         Set<TopicPartition> partitions = new HashSet<>();
         partitions.add(new TopicPartition("t1", 0));
         List<CompletableFuture<Map<TopicPartition, OffsetAndMetadata>>> futures = sendAndVerifyDuplicatedRequests(
@@ -273,7 +255,6 @@ public class CommitRequestManagerTest {
     @MethodSource("partitionDataErrorSupplier")
     public void testOffsetFetchRequest_PartitionDataError(final Errors error, final boolean isRetriable) {
         CommitRequestManager commitRequestManger = create(true, 100);
-        when(coordinatorRequestManager.coordinator()).thenReturn(Optional.of(mockedNode));
         Set<TopicPartition> partitions = new HashSet<>();
         TopicPartition tp1 = new TopicPartition("t1", 2);
         TopicPartition tp2 = new TopicPartition("t2", 3);
@@ -335,20 +316,8 @@ public class CommitRequestManagerTest {
     }
 
     private List<CompletableFuture<ClientResponse>> assertPoll(
-        final int numRes,
-        final CommitRequestManager manager) {
-        return assertPoll(true, numRes, manager);
-    }
-
-    private List<CompletableFuture<ClientResponse>> assertPoll(
-        final boolean coordinatorDiscovered,
-        final int numRes,
-        final CommitRequestManager manager) {
-        if (coordinatorDiscovered) {
-            when(coordinatorRequestManager.coordinator()).thenReturn(Optional.of(mockedNode));
-        } else {
-            when(coordinatorRequestManager.coordinator()).thenReturn(Optional.empty());
-        }
+            final int numRes,
+            final CommitRequestManager manager) {
         NetworkClientDelegate.PollResult res = manager.poll(time.milliseconds());
         assertEquals(numRes, res.unsentRequests.size());
 
