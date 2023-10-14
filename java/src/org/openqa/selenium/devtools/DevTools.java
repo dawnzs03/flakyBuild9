@@ -62,14 +62,6 @@ public class DevTools implements Closeable {
 
   public void disconnectSession() {
     if (cdpSession != null) {
-      try {
-        // ensure network interception does cancel the wait for responses
-        getDomains().network().disable();
-      } catch (Exception e) {
-        // Exceptions should not prevent closing the connection and the web driver
-        LOG.log(Level.WARNING, "Exception while disabling network", e);
-      }
-
       SessionID id = cdpSession;
       cdpSession = null;
       try {
@@ -79,7 +71,7 @@ public class DevTools implements Closeable {
             timeout);
       } catch (Exception e) {
         // Exceptions should not prevent closing the connection and the web driver
-        LOG.log(Level.WARNING, "Exception while detaching from target", e);
+        LOG.warning("Exception while detaching from target: " + e.getMessage());
       }
     }
   }
