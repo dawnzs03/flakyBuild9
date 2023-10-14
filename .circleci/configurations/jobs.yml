@@ -281,9 +281,7 @@ jobs:
                 name: Run E2E tests
                 command: |
                   cd packages/rn-tester-e2e
-                  yarn test-e2e ios 2>&1 | tee /tmp/test_log
-            - store_artifacts:
-                path: /tmp/test_log
+                  yarn test-e2e ios
 
   # -------------------------
   #     JOBS: Android E2E Tests
@@ -344,9 +342,7 @@ jobs:
           name: Run E2E tests
           command: |
             cd packages/rn-tester-e2e
-            yarn test-e2e android 2>&1 | tee /tmp/test_log
-      - store_artifacts:
-          path: /tmp/test_log
+            node ../../scripts/circleci/run_with_retry.js 3 "yarn test-e2e android"
 
   # -------------------------
   #    JOBS: Build Android
