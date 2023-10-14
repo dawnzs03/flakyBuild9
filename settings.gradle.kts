@@ -17,15 +17,14 @@ include(
     ":packages:react-native:ReactAndroid",
     ":packages:react-native:ReactAndroid:flipper-integration",
     ":packages:react-native:ReactAndroid:hermes-engine",
-    ":packages:react-native:ReactAndroid:external-artifacts",
-    ":packages:rn-tester:android:app")
+    ":packages:react-native:ReactAndroid:external-artifacts")
 
-includeBuild("packages/react-native-gradle-plugin/")
-
-dependencyResolutionManagement {
-  versionCatalogs {
-    create("libs") { from(files("packages/react-native/gradle/libs.versions.toml")) }
-  }
+// If the ./packages folder exists, then we're inside the React Native repository.
+// If not, a users is consuming this project for a build from source.
+if (File("${rootDir}/packages").exists()) {
+  include(":packages:rn-tester:android:app")
+  // Include this to enable codegen Gradle plugin.
+  includeBuild("packages/react-native-gradle-plugin/")
 }
 
 rootProject.name = "react-native-github"

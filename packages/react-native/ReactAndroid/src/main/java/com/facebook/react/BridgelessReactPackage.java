@@ -5,10 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.facebook.react.bridgeless;
+package com.facebook.react;
 
 import com.facebook.infer.annotation.Nullsafe;
-import com.facebook.react.TurboReactPackage;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.devsupport.LogBoxModule;
@@ -37,12 +36,12 @@ import java.util.Map;
       LogBoxModule.class,
       DeviceEventManagerModule.class,
     })
-class CoreReactPackage extends TurboReactPackage {
+public class BridgelessReactPackage extends TurboReactPackage {
 
   private DevSupportManager mDevSupportManager;
   private DefaultHardwareBackBtnHandler mHardwareBackBtnHandler;
 
-  public CoreReactPackage(
+  public BridgelessReactPackage(
       DevSupportManager devSupportManager, DefaultHardwareBackBtnHandler hardwareBackBtnHandler) {
     mDevSupportManager = devSupportManager;
     mHardwareBackBtnHandler = hardwareBackBtnHandler;

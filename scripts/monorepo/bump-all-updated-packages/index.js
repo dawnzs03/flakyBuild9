@@ -25,7 +25,6 @@ const {
 const forEachPackage = require('../for-each-package');
 const checkForGitChanges = require('../check-for-git-changes');
 const bumpPackageVersion = require('./bump-package-version');
-const detectPackageUnreleasedChanges = require('./bump-utils');
 
 const ROOT_LOCATION = path.join(__dirname, '..', '..', '..');
 
@@ -63,15 +62,34 @@ const buildExecutor =
       return;
     }
 
-    if (
-      !detectPackageUnreleasedChanges(
-        packageRelativePathFromRoot,
-        packageName,
-        ROOT_LOCATION,
-      )
-    ) {
+    const hashOfLastCommitInsidePackage = exec(
+      `git log -n 1 --format=format:%H -- ${packageRelativePathFromRoot}`,
+      {cwd: ROOT_LOCATION, silent: true},
+    ).stdout.trim();
+
+    const hashOfLastCommitThatChangedVersion = exec(
+      `git log -G\\"version\\": --format=format:%H -n 1 -- ${packageRelativePathFromRoot}/package.json`,
+      {cwd: ROOT_LOCATION, silent: true},
+    ).stdout.trim();
+
+    if (hashOfLastCommitInsidePackage === hashOfLastCommitThatChangedVersion) {
+      echo(
+        `\uD83D\uDD0E No changes for package ${chalk.green(
+          packageName,
+        )} since last version bump`,
+      );
+
       return;
     }
+
+    echo(`\uD83D\uDCA1 Found changes for ${chalk.yellow(packageName)}:`);
+    exec(
+      `git log --pretty=oneline ${hashOfLastCommitThatChangedVersion}..${hashOfLastCommitInsidePackage} ${packageRelativePathFromRoot}`,
+      {
+        cwd: ROOT_LOCATION,
+      },
+    );
+    echo();
 
     await inquirer
       .prompt([

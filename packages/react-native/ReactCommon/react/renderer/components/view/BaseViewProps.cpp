@@ -190,16 +190,7 @@ BaseViewProps::BaseViewProps(
                     rawProps,
                     "removeClippedSubviews",
                     sourceProps.removeClippedSubviews,
-                    false)),
-      experimental_layoutConformance(
-          CoreFeatures::enablePropIteratorSetter
-              ? sourceProps.experimental_layoutConformance
-              : convertRawProp(
-                    context,
-                    rawProps,
-                    "experimental_layoutConformance",
-                    sourceProps.experimental_layoutConformance,
-                    {})) {}
+                    false)) {}
 
 #define VIEW_EVENT_CASE(eventType)                      \
   case CONSTEXPR_RAW_PROPS_KEY_HASH("on" #eventType): { \
@@ -242,7 +233,6 @@ void BaseViewProps::setProp(
     RAW_SET_PROP_SWITCH_CASE_BASIC(onLayout);
     RAW_SET_PROP_SWITCH_CASE_BASIC(collapsable);
     RAW_SET_PROP_SWITCH_CASE_BASIC(removeClippedSubviews);
-    RAW_SET_PROP_SWITCH_CASE_BASIC(experimental_layoutConformance);
     // events field
     VIEW_EVENT_CASE(PointerEnter);
     VIEW_EVENT_CASE(PointerEnterCapture);

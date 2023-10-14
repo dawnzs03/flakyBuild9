@@ -273,8 +273,6 @@ const validAttributesForNonEventProps = {
   position: true,
 
   style: ReactNativeStyleAttributes,
-
-  experimental_layoutConformance: true,
 };
 
 // Props for bubbling and direct events

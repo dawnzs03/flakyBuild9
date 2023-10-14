@@ -8,6 +8,7 @@
 package com.facebook.react.turbomodule.core.interfaces
 
 import com.facebook.react.bridge.NativeModule
+import java.util.Collection
 
 /**
  * Interface to allow for creating and retrieving NativeModules. Why is this this class prefixed

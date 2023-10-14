@@ -115,11 +115,9 @@ YogaLayoutableShadowNode::YogaLayoutableShadowNode(
               .yogaNode_.isDirty() == yogaNode_.isDirty() &&
       "Yoga node must inherit dirty flag.");
 
-  if (!getTraits().check(ShadowNodeTraits::Trait::LeafYogaNode)) {
-    for (auto &child : getChildren()) {
-      if (auto layoutableChild = traitCast<YogaLayoutableShadowNode>(child)) {
-        yogaLayoutableChildren_.push_back(layoutableChild);
-      }
+  for (auto &child : getChildren()) {
+    if (auto layoutableChild = traitCast<YogaLayoutableShadowNode>(child)) {
+      yogaLayoutableChildren_.push_back(layoutableChild);
     }
   }
 
@@ -138,15 +136,6 @@ YogaLayoutableShadowNode::YogaLayoutableShadowNode(
   if (getTraits().check(ShadowNodeTraits::Trait::DirtyYogaNode) ||
       getTraits().check(ShadowNodeTraits::Trait::MeasurableYogaNode)) {
     yogaNode_.setDirty(true);
-  }
-
-  // We do not need to reconfigure this subtree before the next layout pass if
-  // the previous node with the same props and children has already been
-  // configured.
-  if (!fragment.props && !fragment.children) {
-    yogaTreeHasBeenConfigured_ =
-        static_cast<YogaLayoutableShadowNode const &>(sourceShadowNode)
-            .yogaTreeHasBeenConfigured_;
   }
 
   if (fragment.props) {
@@ -447,85 +436,6 @@ void YogaLayoutableShadowNode::updateYogaProps() {
   return result;
 }
 
-void YogaLayoutableShadowNode::configureYogaTree(
-    float pointScaleFactor,
-    YGErrata defaultErrata,
-    bool swapLeftAndRight) {
-  ensureUnsealed();
-
-  // Set state on our own Yoga node
-  YGErrata errata = resolveErrata(defaultErrata);
-  YGConfigSetErrata(&yogaConfig_, errata);
-  YGConfigSetPointScaleFactor(&yogaConfig_, pointScaleFactor);
-
-  // TODO: `swapLeftAndRight` modified backing props and cannot be undone
-  if (swapLeftAndRight) {
-    swapStyleLeftAndRight();
-  }
-
-  yogaTreeHasBeenConfigured_ = true;
-
-  // Recursively propagate the configuration to child nodes. If a child was
-  // already configured as part of a previous ShadowTree generation, we only
-  // need to reconfigure it if the context values passed to the Node have
-  // changed.
-  for (size_t i = 0; i < yogaLayoutableChildren_.size(); i++) {
-    const auto &child = *yogaLayoutableChildren_[i];
-    auto childLayoutMetrics = child.getLayoutMetrics();
-    auto childErrata =
-        YGConfigGetErrata(const_cast<YGConfigRef>(&child.yogaConfig_));
-
-    if (child.yogaTreeHasBeenConfigured_ &&
-        childLayoutMetrics.pointScaleFactor == pointScaleFactor &&
-        childLayoutMetrics.wasLeftAndRightSwapped == swapLeftAndRight &&
-        childErrata == child.resolveErrata(errata)) {
-      continue;
-    }
-
-    if (doesOwn(child)) {
-      auto &mutableChild = const_cast<YogaLayoutableShadowNode &>(child);
-      mutableChild.configureYogaTree(
-          pointScaleFactor, child.resolveErrata(errata), swapLeftAndRight);
-    } else {
-      cloneChildInPlace(i).configureYogaTree(
-          pointScaleFactor, errata, swapLeftAndRight);
-    }
-  }
-}
-
-YGErrata YogaLayoutableShadowNode::resolveErrata(YGErrata defaultErrata) const {
-  if (auto viewShadowNode = traitCast<ViewShadowNode const *>(this)) {
-    const auto &props = viewShadowNode->getConcreteProps();
-    switch (props.experimental_layoutConformance) {
-      case LayoutConformance::Classic:
-        return YGErrataAll;
-      case LayoutConformance::Strict:
-        return YGErrataNone;
-      case LayoutConformance::Undefined:
-        return defaultErrata;
-    }
-  }
-
-  return defaultErrata;
-}
-
-YogaLayoutableShadowNode &YogaLayoutableShadowNode::cloneChildInPlace(
-    int32_t layoutableChildIndex) {
-  ensureUnsealed();
-
-  const auto &childNode = *yogaLayoutableChildren_[layoutableChildIndex];
-
-  // TODO: Why does this not use `ShadowNodeFragment::statePlaceholder()` like
-  // `adoptYogaChild()`?
-  auto clonedChildNode = childNode.clone(
-      {ShadowNodeFragment::propsPlaceholder(),
-       ShadowNodeFragment::childrenPlaceholder(),
-       childNode.getState()});
-
-  replaceChild(childNode, clonedChildNode, layoutableChildIndex);
-  return static_cast<YogaLayoutableShadowNode &>(*clonedChildNode);
-}
-
 void YogaLayoutableShadowNode::setSize(Size size) const {
   ensureUnsealed();
 
@@ -574,19 +484,16 @@ void YogaLayoutableShadowNode::layoutTree(
     LayoutConstraints layoutConstraints) {
   ensureUnsealed();
 
-  SystraceSection s1("YogaLayoutableShadowNode::layoutTree");
-
-  bool swapLeftAndRight = layoutContext.swapLeftAndRightInRTL &&
-      (layoutConstraints.layoutDirection == LayoutDirection::RightToLeft ||
-       !CoreFeatures::doNotSwapLeftAndRightOnAndroidInLTR);
-
-  {
-    SystraceSection s2("YogaLayoutableShadowNode::configureYogaTree");
-    configureYogaTree(
-        layoutContext.pointScaleFactor,
-        YGErrataAll /*defaultErrata*/,
-        swapLeftAndRight);
-  }
+  /*
+   * In Yoga, every single Yoga Node has to have a (non-null) pointer to
+   * Yoga Config (this config can be shared between many nodes),
+   * so every node can be individually configured. This does *not* mean
+   * however that Yoga consults with every single Yoga Node Config for every
+   * config parameter. Especially in case of `pointScaleFactor`,
+   * the only value in the config of the root node is taken into account
+   * (and this is by design).
+   */
+  YGConfigSetPointScaleFactor(&yogaConfig_, layoutContext.pointScaleFactor);
 
   auto minimumSize = layoutConstraints.minimumSize;
   auto maximumSize = layoutConstraints.maximumSize;
@@ -644,17 +551,25 @@ void YogaLayoutableShadowNode::layoutTree(
 
   threadLocalLayoutContext = layoutContext;
 
+  if (CoreFeatures::doNotSwapLeftAndRightOnAndroidInLTR) {
+    if (layoutConstraints.layoutDirection == LayoutDirection::RightToLeft &&
+        layoutContext.swapLeftAndRightInRTL) {
+      swapLeftAndRightInTree(*this);
+    }
+  } else {
+    if (layoutContext.swapLeftAndRightInRTL) {
+      swapLeftAndRightInTree(*this);
+    }
+  }
+
   {
-    SystraceSection s3("YogaLayoutableShadowNode::YGNodeCalculateLayout");
+    SystraceSection s("YogaLayoutableShadowNode::YGNodeCalculateLayout");
     YGNodeCalculateLayout(&yogaNode_, ownerWidth, ownerHeight, direction);
   }
 
-  // Update layout metrics for root node. Updated for children in
-  // YogaLayoutableShadowNode::layout
   if (yogaNode_.getHasNewLayout()) {
     auto layoutMetrics = layoutMetricsFromYogaNode(yogaNode_);
     layoutMetrics.pointScaleFactor = layoutContext.pointScaleFactor;
-    layoutMetrics.wasLeftAndRightSwapped = swapLeftAndRight;
     setLayoutMetrics(layoutMetrics);
     yogaNode_.setHasNewLayout(false);
   }
@@ -702,10 +617,6 @@ void YogaLayoutableShadowNode::layout(LayoutContext layoutContext) {
 
       auto newLayoutMetrics = layoutMetricsFromYogaNode(*childYogaNode);
       newLayoutMetrics.pointScaleFactor = layoutContext.pointScaleFactor;
-      newLayoutMetrics.wasLeftAndRightSwapped =
-          layoutContext.swapLeftAndRightInRTL &&
-          (newLayoutMetrics.layoutDirection == LayoutDirection::RightToLeft ||
-           !CoreFeatures::doNotSwapLeftAndRightOnAndroidInLTR);
 
       // Child node's layout has changed. When a node is added to
       // `affectedNodes`, onLayout event is called on the component. Comparing
@@ -772,13 +683,22 @@ void YogaLayoutableShadowNode::layout(LayoutContext layoutContext) {
 #pragma mark - Yoga Connectors
 
 YGNode *YogaLayoutableShadowNode::yogaNodeCloneCallbackConnector(
-    YGNode * /*oldYogaNode*/,
+    YGNode *oldYogaNode,
     YGNode *parentYogaNode,
     int childIndex) {
   SystraceSection s("YogaLayoutableShadowNode::yogaNodeCloneCallbackConnector");
 
+  // At this point it is guaranteed that all shadow nodes associated with yoga
+  // nodes are `YogaLayoutableShadowNode` subclasses.
   auto &parentNode = shadowNodeFromContext(parentYogaNode);
-  return &parentNode.cloneChildInPlace(childIndex).yogaNode_;
+  auto &oldNode = shadowNodeFromContext(oldYogaNode);
+
+  auto clonedNode = oldNode.clone(
+      {ShadowNodeFragment::propsPlaceholder(),
+       ShadowNodeFragment::childrenPlaceholder(),
+       oldNode.getState()});
+  parentNode.replaceChild(oldNode, clonedNode, childIndex);
+  return &traitCast<YogaLayoutableShadowNode &>(*clonedNode).yogaNode_;
 }
 
 YGSize YogaLayoutableShadowNode::yogaNodeMeasureCallbackConnector(
@@ -839,10 +759,10 @@ YGConfig &YogaLayoutableShadowNode::initializeYogaConfig(
     const YGConfigRef previousConfig) {
   YGConfigSetCloneNodeFunc(
       &config, YogaLayoutableShadowNode::yogaNodeCloneCallbackConnector);
+  YGConfigSetErrata(&config, YGErrataAll);
   if (previousConfig != nullptr) {
     YGConfigSetPointScaleFactor(
         &config, YGConfigGetPointScaleFactor(previousConfig));
-    YGConfigSetErrata(&config, YGConfigGetErrata(previousConfig));
   }
 
 #ifdef RN_DEBUG_YOGA_LOGGER
@@ -853,11 +773,16 @@ YGConfig &YogaLayoutableShadowNode::initializeYogaConfig(
 
 #pragma mark - RTL left and right swapping
 
-void YogaLayoutableShadowNode::swapStyleLeftAndRight() {
-  ensureUnsealed();
+void YogaLayoutableShadowNode::swapLeftAndRightInTree(
+    YogaLayoutableShadowNode const &shadowNode) {
+  swapLeftAndRightInYogaStyleProps(shadowNode);
+  swapLeftAndRightInViewProps(shadowNode);
 
-  swapLeftAndRightInYogaStyleProps(*this);
-  swapLeftAndRightInViewProps(*this);
+  for (auto &child : shadowNode.yogaLayoutableChildren_) {
+    if (!child->doesOwn(shadowNode)) {
+      swapLeftAndRightInTree(*child);
+    }
+  }
 }
 
 void YogaLayoutableShadowNode::swapLeftAndRightInYogaStyleProps(
@@ -968,6 +893,22 @@ void YogaLayoutableShadowNode::swapLeftAndRightInViewProps(
 void YogaLayoutableShadowNode::ensureConsistency() const {
   ensureYogaChildrenLookFine();
   ensureYogaChildrenAlignment();
+  ensureYogaChildrenOwnersConsistency();
+}
+
+void YogaLayoutableShadowNode::ensureYogaChildrenOwnersConsistency() const {
+#ifdef REACT_NATIVE_DEBUG
+  // Checking that all Yoga node children have the same `owner`.
+  // The owner might be not equal to the `yogaNode_` though.
+  auto &yogaChildren = yogaNode_.getChildren();
+
+  if (!yogaChildren.empty()) {
+    auto owner = yogaChildren.at(0)->getOwner();
+    for (auto const &child : yogaChildren) {
+      react_native_assert(child->getOwner() == owner);
+    }
+  }
+#endif
 }
 
 void YogaLayoutableShadowNode::ensureYogaChildrenLookFine() const {

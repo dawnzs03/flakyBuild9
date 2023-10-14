@@ -57,7 +57,7 @@ public class RNTesterReactHostDelegate implements ReactHostDelegate {
   }
 
   @Override
-  public String getJsMainModulePath() {
+  public String getJSMainModulePath() {
     return "js/RNTesterApp.android";
   }
 
@@ -78,7 +78,7 @@ public class RNTesterReactHostDelegate implements ReactHostDelegate {
   }
 
   @Override
-  public JSEngineInstance getJsEngineInstance() {
+  public JSEngineInstance getJSEngineInstance() {
     if (mReactHost.getJSEngineResolutionAlgorithm() == JSEngineResolutionAlgorithm.JSC) {
       return new JSCInstance();
     } else {

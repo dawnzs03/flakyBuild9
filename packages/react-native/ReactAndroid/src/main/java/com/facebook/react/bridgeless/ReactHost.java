@@ -169,7 +169,7 @@ public class ReactHost implements ReactHostInterface {
     if (DEV) {
       mDevSupportManager =
           new BridgelessDevSupportManager(
-              ReactHost.this, mContext, mReactHostDelegate.getJsMainModulePath());
+              ReactHost.this, mContext, mReactHostDelegate.getJSMainModulePath());
     } else {
       mDevSupportManager = new DisabledDevSupportManager();
     }
