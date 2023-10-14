@@ -32,7 +32,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.slf4j.{Logger, LoggerFactory}
 
-import java.io.{File, FileInputStream, IOException}
+import java.io.{File, FileInputStream}
 import java.nio.file.Files
 import java.util
 import java.util.Collections
@@ -91,11 +91,7 @@ class RemoteIndexCacheTest {
     Utils.closeQuietly(cache, "RemoteIndexCache created for unit test")
     // best effort to delete the per-test resource. Even if we don't delete, it is ok because the parent directory
     // will be deleted at the end of test.
-    try {
-      Utils.delete(logDir)
-    } catch {
-      case _: IOException => // ignore
-    }
+    Utils.delete(logDir)
     // Verify no lingering threads. It is important to have this as the very last statement in the @aftereach
     // because this may throw an exception and prevent cleanup after it
     TestUtils.assertNoNonDaemonThreads(REMOTE_LOG_INDEX_CACHE_CLEANER_THREAD)
