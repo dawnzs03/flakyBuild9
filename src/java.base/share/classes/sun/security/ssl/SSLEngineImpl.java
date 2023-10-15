@@ -1270,12 +1270,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                     Map.Entry<Byte, ByteBuffer> me =
                             context.delegatedActions.poll();
                     if (me != null) {
-                        try {
-                            context.dispatch(me.getKey(), me.getValue());
-                        } catch (Exception e) {
-                            throw context.conContext.fatal(Alert.INTERNAL_ERROR,
-                                    "Unhandled exception", e);
-                        }
+                        context.dispatch(me.getKey(), me.getValue());
                     }
                 }
                 return null;

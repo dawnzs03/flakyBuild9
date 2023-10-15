@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,8 @@ public class ObjectSynchronizer {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type objectSynchronizerType = db.lookupType("ObjectSynchronizer");
-    Type monitorListType = db.lookupType("MonitorList");
-    Address monitorListAddr = objectSynchronizerType.getField("_in_use_list").getStaticFieldAddress();
-    inUseListHead = monitorListType.getAddressField("_head").getAddress(monitorListAddr);
+    Type type = db.lookupType("ObjectSynchronizer");
+    inUseList = type.getAddressField("_in_use_list").getValue();
   }
 
   public long identityHashValueFor(Oop obj) {
@@ -72,7 +70,11 @@ public class ObjectSynchronizer {
   }
 
   public static Iterator objectMonitorIterator() {
-    return new ObjectMonitorIterator();
+    if (inUseList != null) {
+      return new ObjectMonitorIterator();
+    } else {
+      return null;
+    }
   }
 
   private static class ObjectMonitorIterator implements Iterator {
@@ -81,23 +83,21 @@ public class ObjectSynchronizer {
     // are not returned by this Iterator.
 
     ObjectMonitorIterator() {
-      mon = inUseListHead == null ? null : new ObjectMonitor(inUseListHead);
+      mon = new ObjectMonitor(inUseList);
     }
 
     public boolean hasNext() {
-      return (mon != null);
+      return (mon.nextOM() != null);
     }
 
     public Object next() {
-      ObjectMonitor ret = mon;
-      if (ret == null) {
+      // advance to next entry
+      Address monAddr = mon.nextOM();
+      if (monAddr == null) {
         throw new NoSuchElementException();
       }
-      // advance to next entry
-      Address nextMon = mon.nextOM();
-      mon = nextMon == null ? null : new ObjectMonitor(nextMon);
-
-      return ret;
+      mon = new ObjectMonitor(monAddr);
+      return mon;
     }
 
     public void remove() {
@@ -107,6 +107,6 @@ public class ObjectSynchronizer {
     private ObjectMonitor mon;
   }
 
-  private static Address inUseListHead;
+  private static Address inUseList;
 
 }

@@ -332,7 +332,6 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   {
     Label L;
     __ ld(t0, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    __ shadd(t0, t0, fp, t0, LogBytesPerWord);
     // maximal sp for current fp (stack grows negative)
     // check if frame is complete
     __ bge(t0, sp, L);
@@ -714,9 +713,7 @@ void TemplateInterpreterGenerator::lock_method() {
   __ sub(t0, sp, fp);
   __ srai(t0, t0, Interpreter::logStackElementSize);
   __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
-  __ sub(t0, esp, fp);
-  __ srai(t0, t0, Interpreter::logStackElementSize);
-  __ sd(t0, monitor_block_top);  // set new monitor block top
+  __ sd(esp, monitor_block_top);  // set new monitor block top
   // store object
   __ sd(x10, Address(esp, BasicObjectLock::obj_offset()));
   __ mv(c_rarg1, esp); // object address
@@ -748,8 +745,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ add(sp, sp, - 12 * wordSize);
   }
   __ sd(xbcp, Address(sp, wordSize));
-  __ mv(t0, frame::interpreter_frame_initial_sp_offset);
-  __ sd(t0, Address(sp, 0));
+  __ sd(esp, Address(sp, 0));
 
   if (ProfileInterpreter) {
     Label method_data_continue;

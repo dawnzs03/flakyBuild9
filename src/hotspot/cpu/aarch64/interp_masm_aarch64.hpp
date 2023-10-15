@@ -176,8 +176,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void push(RegSet regs, Register stack) { ((MacroAssembler*)this)->push(regs, stack); }
 
   void empty_expression_stack() {
-    ldr(rscratch1, Address(rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    lea(esp, Address(rfp, rscratch1, Address::lsl(LogBytesPerWord)));
+    ldr(esp, Address(rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
     // null last_sp until next java call
     str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
   }

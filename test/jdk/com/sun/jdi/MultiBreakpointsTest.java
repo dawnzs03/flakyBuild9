@@ -143,7 +143,7 @@ class MultiBreakpointsTarg {
         //
         //final String threadName = "DebuggeeThread: " + num;
         final String threadName = "" + num;
-        Thread thrd = DebuggeeWrapper.newThread(() -> {
+        Thread thrd = TestScaffold.newThread(() -> {
                     synchronized( isr ) {
                         boolean done = false;
                         try {

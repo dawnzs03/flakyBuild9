@@ -50,12 +50,12 @@ class ClassesByName2Targ {
         System.out.println("Howdy!");
         try {
 
-            Thread zero = DebuggeeWrapper.newThread (() -> {
+            Thread zero = TestScaffold.newThread (() -> {
                         System.setProperty("java.awt.headless", "true");
                         java.awt.Toolkit tk = java.awt.Toolkit.getDefaultToolkit();
                 }, "ZERO");
 
-            Thread one = DebuggeeWrapper.newThread (() -> {
+            Thread one = TestScaffold.newThread (() -> {
                         try {
                             java.security.KeyPairGenerator keyGen =
                                 java.security.KeyPairGenerator.getInstance("DSA", "SUN");
@@ -64,7 +64,7 @@ class ClassesByName2Targ {
                         }
                 }, "ONE");
 
-            Thread two = DebuggeeWrapper.newThread (() -> {
+            Thread two = TestScaffold.newThread (() -> {
                     try {
                         String s = String.format("%02x", 0xff);
                     } catch (Exception e) {
