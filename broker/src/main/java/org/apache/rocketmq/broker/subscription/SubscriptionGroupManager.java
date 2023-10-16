@@ -40,101 +40,79 @@ import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 
 public class SubscriptionGroupManager extends ConfigManager {
-    protected static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+    private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
-    protected ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupTable =
+    private ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupTable =
         new ConcurrentHashMap<>(1024);
 
     private ConcurrentMap<String, ConcurrentMap<String, Integer>> forbiddenTable =
         new ConcurrentHashMap<>(4);
 
     private final DataVersion dataVersion = new DataVersion();
-    protected transient BrokerController brokerController;
+    private transient BrokerController brokerController;
 
     public SubscriptionGroupManager() {
         this.init();
     }
 
     public SubscriptionGroupManager(BrokerController brokerController) {
-        this(brokerController, true);
-    }
-
-    public SubscriptionGroupManager(BrokerController brokerController, boolean init) {
         this.brokerController = brokerController;
-        if (init) {
-            init();
-        }
+        this.init();
     }
 
-    protected void init() {
+    private void init() {
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
             subscriptionGroupConfig.setGroupName(MixAll.TOOLS_CONSUMER_GROUP);
-            putSubscriptionGroupConfig(subscriptionGroupConfig);
+            this.subscriptionGroupTable.put(MixAll.TOOLS_CONSUMER_GROUP, subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
             subscriptionGroupConfig.setGroupName(MixAll.FILTERSRV_CONSUMER_GROUP);
-            putSubscriptionGroupConfig(subscriptionGroupConfig);
+            this.subscriptionGroupTable.put(MixAll.FILTERSRV_CONSUMER_GROUP, subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
             subscriptionGroupConfig.setGroupName(MixAll.SELF_TEST_CONSUMER_GROUP);
-            putSubscriptionGroupConfig(subscriptionGroupConfig);
+            this.subscriptionGroupTable.put(MixAll.SELF_TEST_CONSUMER_GROUP, subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
             subscriptionGroupConfig.setGroupName(MixAll.ONS_HTTP_PROXY_GROUP);
             subscriptionGroupConfig.setConsumeBroadcastEnable(true);
-            putSubscriptionGroupConfig(subscriptionGroupConfig);
+            this.subscriptionGroupTable.put(MixAll.ONS_HTTP_PROXY_GROUP, subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
             subscriptionGroupConfig.setGroupName(MixAll.CID_ONSAPI_PULL_GROUP);
             subscriptionGroupConfig.setConsumeBroadcastEnable(true);
-            putSubscriptionGroupConfig(subscriptionGroupConfig);
+            this.subscriptionGroupTable.put(MixAll.CID_ONSAPI_PULL_GROUP, subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
             subscriptionGroupConfig.setGroupName(MixAll.CID_ONSAPI_PERMISSION_GROUP);
             subscriptionGroupConfig.setConsumeBroadcastEnable(true);
-            putSubscriptionGroupConfig(subscriptionGroupConfig);
+            this.subscriptionGroupTable.put(MixAll.CID_ONSAPI_PERMISSION_GROUP, subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
             subscriptionGroupConfig.setGroupName(MixAll.CID_ONSAPI_OWNER_GROUP);
             subscriptionGroupConfig.setConsumeBroadcastEnable(true);
-            putSubscriptionGroupConfig(subscriptionGroupConfig);
+            this.subscriptionGroupTable.put(MixAll.CID_ONSAPI_OWNER_GROUP, subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
             subscriptionGroupConfig.setGroupName(MixAll.CID_SYS_RMQ_TRANS);
             subscriptionGroupConfig.setConsumeBroadcastEnable(true);
-            putSubscriptionGroupConfig(subscriptionGroupConfig);
+            this.subscriptionGroupTable.put(MixAll.CID_SYS_RMQ_TRANS, subscriptionGroupConfig);
         }
-    }
-
-    protected SubscriptionGroupConfig putSubscriptionGroupConfig(SubscriptionGroupConfig subscriptionGroupConfig) {
-        return this.subscriptionGroupTable.put(subscriptionGroupConfig.getGroupName(), subscriptionGroupConfig);
-    }
-
-    protected SubscriptionGroupConfig putSubscriptionGroupConfigIfAbsent(SubscriptionGroupConfig subscriptionGroupConfig) {
-        return this.subscriptionGroupTable.putIfAbsent(subscriptionGroupConfig.getGroupName(), subscriptionGroupConfig);
-    }
-
-    protected SubscriptionGroupConfig getSubscriptionGroupConfig(String groupName) {
-        return this.subscriptionGroupTable.get(groupName);
-    }
-
-    protected SubscriptionGroupConfig removeSubscriptionGroupConfig(String groupName) {
-        return this.subscriptionGroupTable.remove(groupName);
     }
 
     public void updateSubscriptionGroupConfig(final SubscriptionGroupConfig config) {
@@ -149,7 +127,7 @@ public class SubscriptionGroupManager extends ConfigManager {
 
         config.setAttributes(finalAttributes);
 
-        SubscriptionGroupConfig old = putSubscriptionGroupConfig(config);
+        SubscriptionGroupConfig old = this.subscriptionGroupTable.put(config.getGroupName(), config);
         if (old != null) {
             log.info("update subscription group config, old: {} new: {}", old, config);
         } else {
@@ -240,7 +218,7 @@ public class SubscriptionGroupManager extends ConfigManager {
     }
 
     public void disableConsume(final String groupName) {
-        SubscriptionGroupConfig old = getSubscriptionGroupConfig(groupName);
+        SubscriptionGroupConfig old = this.subscriptionGroupTable.get(groupName);
         if (old != null) {
             old.setConsumeEnable(false);
             long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
@@ -249,7 +227,7 @@ public class SubscriptionGroupManager extends ConfigManager {
     }
 
     public SubscriptionGroupConfig findSubscriptionGroupConfig(final String group) {
-        SubscriptionGroupConfig subscriptionGroupConfig = getSubscriptionGroupConfig(group);
+        SubscriptionGroupConfig subscriptionGroupConfig = this.subscriptionGroupTable.get(group);
         if (null == subscriptionGroupConfig) {
             if (brokerController.getBrokerConfig().isAutoCreateSubscriptionGroup() || MixAll.isSysConsumerGroup(group)) {
                 if (group.length() > Validators.CHARACTER_MAX_LENGTH || TopicValidator.isTopicOrGroupIllegal(group)) {
@@ -257,7 +235,7 @@ public class SubscriptionGroupManager extends ConfigManager {
                 }
                 subscriptionGroupConfig = new SubscriptionGroupConfig();
                 subscriptionGroupConfig.setGroupName(group);
-                SubscriptionGroupConfig preConfig = putSubscriptionGroupConfigIfAbsent(subscriptionGroupConfig);
+                SubscriptionGroupConfig preConfig = this.subscriptionGroupTable.putIfAbsent(group, subscriptionGroupConfig);
                 if (null == preConfig) {
                     log.info("auto create a subscription group, {}", subscriptionGroupConfig.toString());
                 }
@@ -327,7 +305,7 @@ public class SubscriptionGroupManager extends ConfigManager {
     }
 
     public void deleteSubscriptionGroupConfig(final String groupName) {
-        SubscriptionGroupConfig old = removeSubscriptionGroupConfig(groupName);
+        SubscriptionGroupConfig old = this.subscriptionGroupTable.remove(groupName);
         this.forbiddenTable.remove(groupName);
         if (old != null) {
             log.info("delete subscription group OK, subscription group:{}", old);
@@ -339,12 +317,8 @@ public class SubscriptionGroupManager extends ConfigManager {
         }
     }
 
-
     public void setSubscriptionGroupTable(ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupTable) {
-        this.subscriptionGroupTable.clear();
-        for (String key : subscriptionGroupTable.keySet()) {
-            putSubscriptionGroupConfig(subscriptionGroupTable.get(key));
-        }
+        this.subscriptionGroupTable = subscriptionGroupTable;
     }
 
     public boolean containsSubscriptionGroup(String group) {
