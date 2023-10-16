@@ -5,7 +5,7 @@ import {
   CardTitle,
   Title,
 } from "@patternfly/react-core";
-import { PropsWithChildren, useId } from "react";
+import { PropsWithChildren } from "react";
 
 import "./form-panel.css";
 
@@ -21,10 +21,8 @@ export const FormPanel = ({
   scrollId,
   className,
 }: PropsWithChildren<FormPanelProps>) => {
-  const id = useId();
-
   return (
-    <Card id={id} className={className} isFlat>
+    <Card className={className} isFlat>
       <CardHeader className="kc-form-panel__header">
         <CardTitle tabIndex={0}>
           <Title
