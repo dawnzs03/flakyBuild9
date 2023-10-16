@@ -81,7 +81,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.keycloak.util.JsonSerialization;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 
 /**
  *
@@ -593,11 +593,11 @@ public class ExportImportUtil {
         Assert.assertNotNull(authzResource);
 
         List<ResourceRepresentation> resources = authzResource.resources().resources();
-        assertThat(resources.stream().map(ResourceRepresentation::getName).collect(Collectors.toList()),
+        Assert.assertThat(resources.stream().map(ResourceRepresentation::getName).collect(Collectors.toList()),
                 Matchers.containsInAnyOrder("Default Resource", "test"));
 
         List<PolicyRepresentation> policies = authzResource.policies().policies();
-        assertThat(policies.stream().map(PolicyRepresentation::getName).collect(Collectors.toList()),
+        Assert.assertThat(policies.stream().map(PolicyRepresentation::getName).collect(Collectors.toList()),
                 Matchers.containsInAnyOrder("User Policy", "Default Permission", "test-permission"));
     }
 

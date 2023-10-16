@@ -1,5 +1,4 @@
 <#import "template.ftl" as layout>
-<#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('email'); section>
     <#if section = "header">
         ${msg("updateEmailTitle")}
@@ -28,8 +27,6 @@
                     <div class="${properties.kcFormOptionsWrapperClass!}">
                     </div>
                 </div>
-
-                <@passwordCommons.logoutOtherSessions/>
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <#if isAppInitiatedAction??>

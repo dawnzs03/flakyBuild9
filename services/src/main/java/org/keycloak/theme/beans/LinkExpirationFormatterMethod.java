@@ -5,7 +5,6 @@
  */
 package org.keycloak.theme.beans;
 
-import java.text.MessageFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -14,7 +13,7 @@ import freemarker.template.TemplateMethodModelEx;
 import freemarker.template.TemplateModelException;
 
 /**
- * Method used to format the link expiration time period in emails.
+ * Method used to format link expiration time period in emails.
  *
  * @author Vlastimil Elias (velias at redhat dot com)
  */
@@ -63,6 +62,14 @@ public class LinkExpirationFormatterMethod implements TemplateMethodModelEx {
             }
         }
 
-        return value + " " + MessageFormat.format(messages.getProperty("linkExpirationFormatter.timePeriodUnit." + unitKey), value);
+        return value + " " + getUnitTextFromMessages(unitKey, value);
     }
+
+    protected String getUnitTextFromMessages(String unitKey, long value) {
+        String msg = messages.getProperty("linkExpirationFormatter.timePeriodUnit." + unitKey + "." + value);
+        if (msg != null)
+            return msg;
+        return messages.getProperty("linkExpirationFormatter.timePeriodUnit." + unitKey);
+    }
+
 }

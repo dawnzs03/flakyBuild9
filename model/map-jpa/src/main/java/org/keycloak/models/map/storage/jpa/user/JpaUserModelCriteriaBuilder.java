@@ -42,8 +42,6 @@ import org.keycloak.storage.StorageId;
  */
 public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUserEntity, UserModel, JpaUserModelCriteriaBuilder> {
 
-    private static final char ESCAPE_BACKSLASH = '\\';
-
     public JpaUserModelCriteriaBuilder() {
         super(JpaUserModelCriteriaBuilder::new);
     }
@@ -191,7 +189,7 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaUserModelCriteriaBuilder((cb, query, root) ->
-                        cb.like(root.get("username"), value[0].toString().toLowerCase(), ESCAPE_BACKSLASH)
+                        cb.like(root.get("username"), value[0].toString().toLowerCase())
                     );
 
                 } else {
@@ -205,11 +203,11 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                     return new JpaUserModelCriteriaBuilder((cb, query, root) ->
                         cb.or(
                             cb.and(
-                                cb.like(root.get("usernameWithCase"), value[0].toString(), ESCAPE_BACKSLASH),
+                                cb.like(root.get("usernameWithCase"), value[0].toString()),
                                 cb.ge(root.get("entityVersion"), 2)
                             ),
                             cb.and(
-                                cb.like(root.get("username"), value[0].toString(), ESCAPE_BACKSLASH),
+                                cb.like(root.get("username"), value[0].toString()),
                                 cb.le(root.get("entityVersion"), 1)
                             )
                         )

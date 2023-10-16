@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.lessThan;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 
 /**
  *

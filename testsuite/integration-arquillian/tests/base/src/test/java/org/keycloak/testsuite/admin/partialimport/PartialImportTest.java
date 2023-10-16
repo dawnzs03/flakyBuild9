@@ -413,8 +413,8 @@ public class PartialImportTest extends AbstractAuthTest {
             String id = result.getId();
             UserResource userRsc = testRealmResource().users().get(id);
             UserRepresentation user = userRsc.toRepresentation();
-            assertThat(user.getUsername(), startsWith(USER_PREFIX));
-            assertThat(userIds, hasItem(id));
+            Assert.assertThat(user.getUsername(), startsWith(USER_PREFIX));
+            Assert.assertThat(userIds, hasItem(id));
         }
     }
 

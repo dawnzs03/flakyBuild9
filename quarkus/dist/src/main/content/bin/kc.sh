@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 case "$(uname)" in
     CYGWIN*)
@@ -21,7 +21,9 @@ case "$(uname)" in
         ;;
 esac
 
-RESOLVED_NAME="${RESOLVED_NAME:-"$0"}"
+if [ "x$RESOLVED_NAME" = "x" ]; then
+    RESOLVED_NAME="$0"
+fi
 
 GREP="grep"
 DIRNAME="$(dirname "$RESOLVED_NAME")"
@@ -51,7 +53,7 @@ do
     case "$1" in
       --debug)
           DEBUG_MODE=true
-          if [ -n "$2" ] && expr "$2" : '[0-9]\+$' >/dev/null; then
+          if [ -n "$2" ] && [[ "$2" =~ ^[0-9]+$ ]]; then
               DEBUG_PORT=$2
               shift
           fi
@@ -61,18 +63,22 @@ do
           break
           ;;
       *)
-          case "$1" in
-            start-dev) CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1";;
-            -D*) SERVER_OPTS="$SERVER_OPTS $1";;
-            *) CONFIG_ARGS="$CONFIG_ARGS $1";;
-          esac
+          if [[ $1 = --* || ! $1 =~ ^-D.* ]]; then
+            if [[ "$1" = "start-dev" ]]; then
+              CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1"
+            else
+              CONFIG_ARGS="$CONFIG_ARGS $1"
+            fi
+          else
+            SERVER_OPTS="$SERVER_OPTS $1"
+          fi
           ;;
     esac
     shift
 done
 
-if [ -z "$JAVA" ]; then
-    if [ -n "$JAVA_HOME" ]; then
+if [ "x$JAVA" = "x" ]; then
+    if [ "x$JAVA_HOME" != "x" ]; then
         JAVA="$JAVA_HOME/bin/java"
     else
         JAVA="java"
@@ -82,7 +88,7 @@ fi
 #
 # Specify options to pass to the Java VM.
 #
-if [ -z "$JAVA_OPTS" ]; then
+if [ "x$JAVA_OPTS" = "x" ]; then
    # The defaults set up Keycloak with '-XX:+UseParallelGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90' which proved to provide a good throughput and efficiency in the total memory allocation and CPU overhead.
    # If the memory is not used, it will be freed. See https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers for details.
    # To optimize for large heap sizes or for throughput and better response time due to shorter GC pauses, consider ZGC and Shenandoah GC.
@@ -93,14 +99,14 @@ else
 fi
 
 # See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60
-if [ -z "$JAVA_ADD_OPENS" ]; then
+if [ "x$JAVA_ADD_OPENS" = "x" ]; then
    JAVA_ADD_OPENS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED"
 else
    echo "JAVA_ADD_OPENS already set in environment; overriding default settings with values: $JAVA_ADD_OPENS"
 fi
 JAVA_OPTS="$JAVA_OPTS $JAVA_ADD_OPENS"
 
-if [ -n "$JAVA_OPTS_APPEND" ]; then
+if [ "x$JAVA_OPTS_APPEND" != "x" ]; then
   echo "Appending additional Java properties to JAVA_OPTS: $JAVA_OPTS_APPEND"
   JAVA_OPTS="$JAVA_OPTS $JAVA_OPTS_APPEND"
 fi
@@ -108,7 +114,7 @@ fi
 # Set debug settings if not already set
 if [ "$DEBUG_MODE" = "true" ]; then
     DEBUG_OPT="$(echo "$JAVA_OPTS" | $GREP "\-agentlib:jdwp")"
-    if [ -z "$DEBUG_OPT" ]; then
+    if [ "x$DEBUG_OPT" = "x" ]; then
         JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$DEBUG_PORT,server=y,suspend=$DEBUG_SUSPEND"
     else
         echo "Debug already enabled in JAVA_OPTS, ignoring --debug argument"
@@ -122,12 +128,13 @@ if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
 fi
 
-case "$CONFIG_ARGS" in
-  " build"* | *--optimized* | *-h | *--help*) ;;
-  *)
-    eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS || exit $?
+if [[ (! $CONFIG_ARGS = *"--optimized"*) ]] && [[ ! "$CONFIG_ARGS" == " build"* ]] && [[ ! "$CONFIG_ARGS" == *"-h" ]] && [[ ! "$CONFIG_ARGS" == *"--help"* ]]; then
+    eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS
+    EXIT_CODE=$?
     JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
-    ;;
-esac
+    if [ $EXIT_CODE != 0 ]; then
+      exit $EXIT_CODE
+    fi
+fi
 
 eval exec "'$JAVA'" $JAVA_RUN_OPTS

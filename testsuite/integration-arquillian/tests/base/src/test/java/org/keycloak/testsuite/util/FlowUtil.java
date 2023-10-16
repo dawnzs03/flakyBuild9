@@ -27,8 +27,7 @@ import static org.keycloak.models.utils.DefaultAuthenticationFlows.REGISTRATION_
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW;
 
 public class FlowUtil {
-    private final KeycloakSession session;
-    private final RealmModel realm;
+    private RealmModel realm;
     private AuthenticationFlowModel currentFlow;
     private String flowAlias;
     private int maxPriority = 0;
@@ -43,8 +42,7 @@ public class FlowUtil {
         }
     }
 
-    private FlowUtil(KeycloakSession session, RealmModel realm) {
-        this.session = session;
+    public FlowUtil(RealmModel realm) {
         this.realm = realm;
     }
 
@@ -57,11 +55,11 @@ public class FlowUtil {
     }
 
     public static FlowUtil inCurrentRealm(KeycloakSession session) {
-        return new FlowUtil(session, session.getContext().getRealm());
+        return new FlowUtil(session.getContext().getRealm());
     }
 
     private FlowUtil newFlowUtil(AuthenticationFlowModel flowModel) {
-        FlowUtil subflow = new FlowUtil(session, realm);
+        FlowUtil subflow = new FlowUtil(realm);
         subflow.currentFlow = flowModel;
         return subflow;
     }
@@ -114,7 +112,7 @@ public class FlowUtil {
             realm.removeAuthenticationFlow(foundFlow);
         }
 
-        currentFlow = AuthenticationManagementResource.copyFlow(session, realm, existingBrowserFlow, newFlowAlias);
+        currentFlow = AuthenticationManagementResource.copyFlow(realm, existingBrowserFlow, newFlowAlias);
 
         return this;
     }

@@ -57,7 +57,6 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -927,7 +926,7 @@ public class RepresentationToModel {
     }
 
 
-    public static AuthenticationExecutionModel toModel(KeycloakSession session, RealmModel realm, AuthenticationExecutionRepresentation rep) {
+    public static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationExecutionRepresentation rep) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
         model.setId(rep.getId());
         model.setFlowId(rep.getFlowId());
@@ -939,7 +938,7 @@ public class RepresentationToModel {
         model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
 
         if (rep.getAuthenticatorConfig() != null) {
-            AuthenticatorConfigModel cfg = new DeployedConfigurationsManager(session).getAuthenticatorConfigByAlias(realm, rep.getAuthenticatorConfig());
+            AuthenticatorConfigModel cfg = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
             model.setAuthenticatorConfig(cfg.getId());
         }
         return model;

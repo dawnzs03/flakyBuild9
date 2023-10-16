@@ -86,7 +86,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -1113,8 +1112,8 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             String offlineTokenString = tokenResponse.getRefreshToken();
             RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
 
-            assertThat(tokenResponse.getExpiresIn(), allOf(greaterThanOrEqualTo(59), lessThanOrEqualTo(60)));
-            assertThat(tokenResponse.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(29), lessThanOrEqualTo(30)));
+            Assert.assertThat(tokenResponse.getExpiresIn(), allOf(greaterThanOrEqualTo(59), lessThanOrEqualTo(60)));
+            Assert.assertThat(tokenResponse.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(29), lessThanOrEqualTo(30)));
             assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
 
             String introspectionResponse = oauth.introspectAccessTokenWithClientCredential("test-app", "password",
@@ -1123,7 +1122,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
             Assert.assertEquals(true, jsonNode.get("active").asBoolean());
             Assert.assertEquals("test-user@localhost", jsonNode.get("email").asText());
-            assertThat(jsonNode.get("exp").asInt() - getCurrentTime(),
+            Assert.assertThat(jsonNode.get("exp").asInt() - getCurrentTime(),
                 allOf(greaterThanOrEqualTo(59), lessThanOrEqualTo(60)));
 
         } finally {

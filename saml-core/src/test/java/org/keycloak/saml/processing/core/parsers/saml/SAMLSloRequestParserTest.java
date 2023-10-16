@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.junit.Before;
 import org.w3c.dom.Element;
 import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 
 /**
  * Test class for SAML SLO parser.

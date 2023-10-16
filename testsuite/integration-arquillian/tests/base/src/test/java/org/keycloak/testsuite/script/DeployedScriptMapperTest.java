@@ -25,11 +25,15 @@ import static org.keycloak.testsuite.util.ProtocolMapperUtil.createScriptMapper;
 
 import java.io.IOException;
 
+import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -40,7 +44,6 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -49,13 +52,11 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = SCRIPTS, skipRestart = true)
 public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
 
     private static final String SCRIPT_DEPLOYMENT_NAME = "scripts.jar";
 
-    // Managed to make sure that archive is deployed once in @BeforeClass stage and undeployed once in @AfterClass stage
-    @Deployment(name = SCRIPT_DEPLOYMENT_NAME, managed = true, testable = false)
+    @Deployment(name = SCRIPT_DEPLOYMENT_NAME, managed = false, testable = false)
     @TargetsContainer(AUTH_SERVER_CURRENT)
     public static JavaArchive deploy() throws IOException {
         ScriptProviderDescriptor representation = new ScriptProviderDescriptor();
@@ -73,13 +74,27 @@ public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
         ContainerAssume.assumeNotAuthServerUndertow();
     }
 
+    @ArquillianResource
+    private Deployer deployer;
+
+    @Before
+    public void configureFlows() throws Exception {
+        deployer.deploy(SCRIPT_DEPLOYMENT_NAME);
+        reconnectAdminClient();
+    }
+
+    @After
+    public void onAfter() throws Exception {
+        deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
+        reconnectAdminClient();
+    }
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
 
     }
 
     @Test
-    @DisableFeature(value = SCRIPTS, executeAsLast = false, skipRestart = true)
     public void testScriptMapperNotAvailable() {
         assertFalse(adminClient.serverInfo().getInfo().getProtocolMapperTypes().get(OIDCLoginProtocol.LOGIN_PROTOCOL).stream()
                 .anyMatch(
@@ -87,6 +102,7 @@ public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @EnableFeature(value = SCRIPTS, skipRestart = true, executeAsLast = false)
     public void testTokenScriptMapping() {
         {
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");

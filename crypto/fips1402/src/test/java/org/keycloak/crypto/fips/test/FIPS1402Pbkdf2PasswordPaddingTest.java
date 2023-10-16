@@ -21,7 +21,6 @@ import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.rule.RunInThreadRule;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -110,7 +109,7 @@ public class FIPS1402Pbkdf2PasswordPaddingTest {
         }
 
         logger.infof("Before password verification. BC FIPS approved mode: %b, password: %s", CryptoServicesRegistrar.isInApprovedOnlyMode(), password);
-        assertThat(true, is(pbkdf2HashProvider.verify(password, passwordCred)));
+        Assert.assertThat(true, is(pbkdf2HashProvider.verify(password, passwordCred)));
     }
 
 

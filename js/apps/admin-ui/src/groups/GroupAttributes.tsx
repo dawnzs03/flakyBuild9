@@ -1,10 +1,9 @@
-import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
   AlertVariant,
   PageSection,
   PageSectionVariants,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
@@ -15,9 +14,11 @@ import {
   AttributeForm,
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
-import { arrayToKeyValue } from "../components/key-value-form/key-value-convert";
-import { convertFormValuesToObject, convertToFormValues } from "../util";
-import { useFetch } from "../utils/useFetch";
+import {
+  arrayToKeyValue,
+  keyValueToArray,
+} from "../components/key-value-form/key-value-convert";
+import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";
 
 export const GroupAttributes = () => {
@@ -28,27 +29,27 @@ export const GroupAttributes = () => {
   });
 
   const location = useLocation();
-  const id = getLastId(location.pathname)!;
-  const [currentGroup, setCurrentGroup] = useState<GroupRepresentation>();
+  const id = getLastId(location.pathname);
+  const { currentGroup, subGroups, setSubGroups } = useSubGroups();
 
-  useFetch(
-    () => adminClient.groups.findOne({ id }),
-    (group) => {
-      convertToFormValues(group!, form.setValue);
-      setCurrentGroup(group);
-    },
-    [],
-  );
+  const convertAttributes = (attr?: Record<string, any>) => {
+    return arrayToKeyValue(attr || currentGroup()?.attributes!);
+  };
+
+  useEffect(() => {
+    form.setValue("attributes", convertAttributes());
+  }, [subGroups]);
 
   const save = async (attributeForm: AttributeForm) => {
     try {
-      const attributes = convertFormValuesToObject(attributeForm).attributes;
-      await adminClient.groups.update(
-        { id: id! },
-        { ...currentGroup, attributes },
-      );
+      const group = currentGroup();
+      const attributes = keyValueToArray(attributeForm.attributes!);
+      await adminClient.groups.update({ id: id! }, { ...group, attributes });
 
-      setCurrentGroup({ ...currentGroup, attributes });
+      setSubGroups([
+        ...subGroups.slice(0, subGroups.length - 1),
+        { ...group, attributes },
+      ]);
       addAlert(t("groupUpdated"), AlertVariant.success);
     } catch (error) {
       addError("groups:groupUpdateError", error);
@@ -60,10 +61,10 @@ export const GroupAttributes = () => {
       <AttributesForm
         form={form}
         save={save}
-        fineGrainedAccess={currentGroup?.access?.manage}
+        fineGrainedAccess={currentGroup()?.access?.manage}
         reset={() =>
           form.reset({
-            attributes: arrayToKeyValue(currentGroup?.attributes!),
+            attributes: convertAttributes(),
           })
         }
       />

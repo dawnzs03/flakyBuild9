@@ -69,7 +69,6 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests for Level Of Assurance conditions in authentication flow.
@@ -663,7 +662,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
             // Test client scope was not created in the new realm when feature is disabled
             boolean acrScopeExists = newRealm.clientScopes().findAll().stream()
                     .anyMatch(clientScope -> OIDCLoginProtocolFactory.ACR_SCOPE.equals(clientScope.getName()));
-            assertThat(false, is(acrScopeExists));
+            Assert.assertThat(false, is(acrScopeExists));
         } finally {
             newRealm.remove();
         }
@@ -714,7 +713,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void assertErrorPage(String expectedError) {
-        assertThat(true, is(errorPage.isCurrent()));
+        Assert.assertThat(true, is(errorPage.isCurrent()));
         Assert.assertEquals(expectedError, errorPage.getError());
         events.clear();
     }

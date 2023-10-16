@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import io.fabric8.kubernetes.model.annotation.LabelSelector;
 import io.fabric8.kubernetes.model.annotation.StatusReplicas;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
@@ -70,11 +68,6 @@ public class KeycloakStatus implements ObservedGenerationAware {
             return Optional.empty();
         }
         return conditions.stream().filter(c -> type.equals(c.getType())).findFirst();
-    }
-
-    @JsonIgnore
-    public boolean isReady() {
-        return findCondition(KeycloakStatusCondition.READY).map(KeycloakStatusCondition::getStatus).orElse(false);
     }
 
     @Override

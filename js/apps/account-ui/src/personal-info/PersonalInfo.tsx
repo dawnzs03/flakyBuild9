@@ -4,7 +4,6 @@ import {
   Button,
   ExpandableSection,
   Form,
-  Spinner,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -20,7 +19,7 @@ import { environment } from "../environment";
 import { TFuncKey } from "../i18n";
 import { keycloak } from "../keycloak";
 import { usePromise } from "../utils/usePromise";
-import { UserProfileFields } from "./UserProfileFields";
+import { FormField } from "./FormField";
 
 type FieldError = {
   field: string;
@@ -62,7 +61,7 @@ const PersonalInfo = () => {
       (error as FieldError[]).forEach((e) => {
         const params = Object.assign(
           {},
-          e.params.map((p) => t((isBundleKey(p) ? unWrap(p) : p) as TFuncKey)),
+          e.params.map((p) => (isBundleKey(p) ? unWrap(p) : p)),
         );
         setError(fieldName(e.field) as keyof UserRepresentation, {
           message: t(e.errorMessage as TFuncKey, {
@@ -75,15 +74,13 @@ const PersonalInfo = () => {
     }
   };
 
-  if (!userProfileMetadata) {
-    return <Spinner />;
-  }
-
   return (
     <Page title={t("personalInfo")} description={t("personalInfoDescription")}>
       <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
         <FormProvider {...form}>
-          <UserProfileFields metaData={userProfileMetadata} />
+          {(userProfileMetadata?.attributes || []).map((attribute) => (
+            <FormField key={attribute.name} attribute={attribute} />
+          ))}
         </FormProvider>
         <ActionGroup>
           <Button

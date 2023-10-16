@@ -1,5 +1,4 @@
 <#import "template.ftl" as layout>
-<#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('password','password-confirm'); section>
     <#if section = "header">
         ${msg("updatePasswordTitle")}
@@ -48,7 +47,13 @@
             </div>
 
             <div class="${properties.kcFormGroupClass!}">
-                <@passwordCommons.logoutOtherSessions/>
+                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
+                    <div class="${properties.kcFormOptionsWrapperClass!}">
+                        <div class="checkbox">
+                            <label><input type="checkbox" id="logout-sessions" name="logout-sessions" value="on" checked> ${msg("logoutOtherSessions")}</label>
+                        </div>
+                    </div>
+                </div>
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <#if isAppInitiatedAction??>

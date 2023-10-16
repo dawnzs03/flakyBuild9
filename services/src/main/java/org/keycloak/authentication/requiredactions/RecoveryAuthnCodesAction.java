@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.keycloak.Config;
-import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -92,10 +91,6 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
         generatedUserLabel = httpReqParamsMap.getFirst(FIELD_USER_LABEL_HIDDEN);
 
         RecoveryAuthnCodesCredentialModel credentialModel = createFromValues(generatedCodes, generatedAtTime, generatedUserLabel);
-
-        if ("on".equals(httpReqParamsMap.getFirst("logout-sessions"))) {
-            AuthenticatorUtil.logoutOtherSessions(reqActionContext);
-        }
 
         recoveryCodeCredentialProvider.createCredential(reqActionContext.getRealm(), reqActionContext.getUser(),
                 credentialModel);

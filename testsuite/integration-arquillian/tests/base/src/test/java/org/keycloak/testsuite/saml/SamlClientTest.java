@@ -24,8 +24,6 @@ import org.w3c.dom.Document;
 import java.io.IOException;
 import java.net.URI;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 /**
  *
  * @author mkanis
@@ -49,7 +47,7 @@ public class SamlClientTest extends AbstractSamlTest {
             CloseableHttpResponse response = sendPost(post, client);
             Assert.assertEquals(response.getStatusLine().getStatusCode(), 400);
             String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
-            assertThat(s, Matchers.containsString("Wrong client protocol."));
+            Assert.assertThat(s, Matchers.containsString("Wrong client protocol."));
 
             response.close();
         }

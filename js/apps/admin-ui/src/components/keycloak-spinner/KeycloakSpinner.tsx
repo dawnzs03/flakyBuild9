@@ -1,7 +1,7 @@
-import { Bullseye, Spinner } from "@patternfly/react-core";
+import { Spinner } from "@patternfly/react-core";
 
 export const KeycloakSpinner = () => (
-  <Bullseye>
+  <div className="pf-u-text-align-center">
     <Spinner />
-  </Bullseye>
+  </div>
 );

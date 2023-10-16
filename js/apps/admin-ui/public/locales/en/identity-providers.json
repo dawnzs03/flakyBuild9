@@ -99,7 +99,6 @@
   "logoutUrl": "Logout URL",
   "backchannelLogout": "Backchannel logout",
   "disableUserInfo": "Disable user info",
-  "isAccessTokenJWT": "Access Token is JWT",
   "userInfoUrl": "User Info URL",
   "issuer": "Issuer",
   "scopes": "Scopes",

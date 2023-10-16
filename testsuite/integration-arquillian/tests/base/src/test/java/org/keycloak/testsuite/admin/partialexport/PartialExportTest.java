@@ -26,8 +26,6 @@ import org.hamcrest.Matchers;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.representations.idm.UserRepresentation;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -130,13 +128,13 @@ public class PartialExportTest extends AbstractAdminTest {
         Assert.assertNull("Password should be null", serviceAccount.getCredentials());
         if (rolesExpected) {
             List<String> realmRoles = serviceAccount.getRealmRoles();
-            assertThat("Realm roles are OK", realmRoles, Matchers.containsInAnyOrder("uma_authorization", "user", "offline_access"));
+            Assert.assertThat("Realm roles are OK", realmRoles, Matchers.containsInAnyOrder("uma_authorization", "user", "offline_access"));
 
             Map<String, List<String>> clientRoles = serviceAccount.getClientRoles();
             Assert.assertNotNull("Client roles are exported", clientRoles);
-            assertThat("Client roles for test-app-service-account are OK", clientRoles.get("test-app-service-account"),
+            Assert.assertThat("Client roles for test-app-service-account are OK", clientRoles.get("test-app-service-account"),
                     Matchers.containsInAnyOrder("test-app-service-account", "test-app-service-account-parent"));
-            assertThat("Client roles for account are OK", clientRoles.get("account"),
+            Assert.assertThat("Client roles for account are OK", clientRoles.get("account"),
                     Matchers.containsInAnyOrder("manage-account", "view-profile"));
         } else {
             Assert.assertNull("Service account should be exported without realm roles", serviceAccount.getRealmRoles());
@@ -256,7 +254,7 @@ public class PartialExportTest extends AbstractAdminTest {
         Assert.assertTrue("Client role test-app-allowed-by-scope for test-app-scope", roles.containsKey("test-app-allowed-by-scope"));
 
         roles = collectRoles(clientRoles.get("test-app-service-account"));
-        assertThat("Client roles are OK for test-app-service-account", roles.keySet(),
+        Assert.assertThat("Client roles are OK for test-app-service-account", roles.keySet(),
                 Matchers.containsInAnyOrder("test-app-service-account", "test-app-service-account-parent", "test-app-service-account-child"));
     }
 

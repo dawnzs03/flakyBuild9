@@ -55,7 +55,6 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   private scopesInput = "#scopes";
   private storeTokensSwitch = "#storeTokens";
   private storedTokensReadable = "#storedTokensReadable";
-  private isAccessTokenJWT = "#isAccessTokenJWT";
   private acceptsPromptNoneForwardFromClientSwitch = "#acceptsPromptNone";
   private advancedSettingsToggle = ".pf-c-expandable-section__toggle";
   private passLoginHintSwitch = "#passLoginHint";
@@ -110,11 +109,6 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
   public clickStoredTokensReadableSwitch() {
     cy.get(this.storedTokensReadable).parent().click();
-    return this;
-  }
-
-  public clickIsAccessTokenJWTSwitch() {
-    cy.get(this.isAccessTokenJWT).parent().click();
     return this;
   }
 
@@ -222,11 +216,6 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
   public assertStoredTokensReadableTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(cy.get(this.storedTokensReadable).parent(), isOn);
-    return this;
-  }
-
-  public assertIsAccessTokenJWTTurnedOn(isOn: boolean) {
-    super.assertSwitchStateOn(cy.get(this.isAccessTokenJWT).parent(), isOn);
     return this;
   }
 
@@ -405,8 +394,6 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     this.assertStoreTokensSwitchTurnedOn(true);
     this.clickStoredTokensReadableSwitch();
     this.assertStoredTokensReadableTurnedOn(true);
-    this.clickIsAccessTokenJWTSwitch();
-    this.assertIsAccessTokenJWTTurnedOn(true);
     this.clickTrustEmailSwitch();
     this.assertTrustEmailSwitchTurnedOn(true);
     this.clickAccountLinkingOnlySwitch();
@@ -419,10 +406,8 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     this.selectSyncModeOption(SyncModeOption.legacy);
 
     this.clickRevertBtn();
-    cy.get(this.advancedSettingsToggle).scrollIntoView().click();
     this.assertStoreTokensSwitchTurnedOn(false);
     this.assertStoredTokensReadableTurnedOn(false);
-    this.assertIsAccessTokenJWTTurnedOn(false);
     this.assertTrustEmailSwitchTurnedOn(false);
     this.assertAccountLinkingOnlySwitchTurnedOn(false);
     this.assertHideOnLoginPageSwitchTurnedOn(false);

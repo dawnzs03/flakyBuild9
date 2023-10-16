@@ -11,8 +11,6 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.rule.CryptoInitRule;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -24,7 +22,7 @@ public class DefaultKeyStoreTypesTest {
     @Test
     public void testKeystoreFormats() {
         Set<KeystoreUtil.KeystoreFormat> supportedKeystoreFormats = CryptoIntegration.getProvider().getSupportedKeyStoreTypes().collect(Collectors.toSet());
-        assertThat(supportedKeystoreFormats, Matchers.containsInAnyOrder(
+        Assert.assertThat(supportedKeystoreFormats, Matchers.containsInAnyOrder(
                 KeystoreUtil.KeystoreFormat.JKS,
                 KeystoreUtil.KeystoreFormat.PKCS12,
                 KeystoreUtil.KeystoreFormat.BCFKS));
