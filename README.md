@@ -1,61 +1,72 @@
-# Signal Android 
+<a href="https://jenkins.io">
+    <img width="400" src="https://www.jenkins.io/images/jenkins-logo-title-dark.svg">
+</a>
 
-Signal is a simple, powerful, and secure messenger.
+# About
 
-Signal uses your phone's data connection (WiFi/3G/4G/5G) to communicate securely. Millions of people use Signal every day for free and instantaneous communication anywhere in the world. Send and receive high-fidelity messages, participate in HD voice/video calls, and explore a growing set of new features that help you stay connected. Signal’s advanced privacy-preserving technology is always enabled, so you can focus on sharing the moments that matter with the people who matter to you.
+[![Jenkins Regular Release](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.jenkins.io%2Fchangelog%2Fbadge.json)](https://www.jenkins.io/changelog)
+[![Jenkins LTS Release](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.jenkins.io%2Fchangelog-stable%2Fbadge.json)](https://www.jenkins.io/changelog-stable)
+[![Docker Pulls](https://img.shields.io/docker/pulls/jenkins/jenkins.svg)](https://hub.docker.com/r/jenkins/jenkins/)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3538/badge)](https://bestpractices.coreinfrastructure.org/projects/3538)
 
-Currently available on the Play Store and [signal.org](https://signal.org/android/apk/).
+In a nutshell, Jenkins is the leading open-source automation server.
+Built with Java, it provides over 1,800 [plugins](https://plugins.jenkins.io/) to support automating virtually anything,
+so that humans can spend their time doing things machines cannot.
 
-<a href='https://play.google.com/store/apps/details?id=org.thoughtcrime.securesms&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' height='80px'/></a>
+# What to Use Jenkins for and When to Use It
 
-## Contributing Bug reports
-We use GitHub for bug tracking. Please search the existing issues for your bug and create a new one if the issue is not yet tracked!
+Use Jenkins to automate your development workflow, so you can focus on work that matters most. Jenkins is commonly used for:
 
-https://github.com/signalapp/Signal-Android/issues
+- Building projects
+- Running tests to detect bugs and other issues as soon as they are introduced
+- Static code analysis
+- Deployment
 
-## Joining the Beta
-Want to live life on the bleeding edge and help out with testing?
+Execute repetitive tasks, save time, and optimize your development process with Jenkins.
 
-You can subscribe to Signal Android Beta releases here:
-https://play.google.com/apps/testing/org.thoughtcrime.securesms
+# Downloads
 
-If you're interested in a life of peace and tranquility, stick with the standard releases.
+The Jenkins project provides official distributions as WAR files, Docker images, native packages and installers for platforms including several Linux distributions and Windows.
+See the [Downloads](https://www.jenkins.io/download) page for references.
 
-## Contributing Code
+For all distributions Jenkins offers two release lines:
 
-If you're new to the Signal codebase, we recommend going through our issues and picking out a simple bug to fix (check the "easy" label in our issues) in order to get yourself familiar. Also please have a look at the [CONTRIBUTING.md](https://github.com/signalapp/Signal-Android/blob/main/CONTRIBUTING.md), that might answer some of your questions.
+- [Weekly](https://www.jenkins.io/download/weekly/) -
+  Frequent releases which include all new features, improvements, and bug fixes.
+- [Long-Term Support (LTS)](https://www.jenkins.io/download/lts/) -
+  Older release line which gets periodically updated via bug fix backports.
 
-For larger changes and feature ideas, we ask that you propose it on the [unofficial Community Forum](https://community.signalusers.org) for a high-level discussion with the wider community before implementation.
+Latest releases:
+[![Jenkins Regular Release](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.jenkins.io%2Fchangelog%2Fbadge.json)](https://www.jenkins.io/changelog)
+[![Jenkins LTS Release](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.jenkins.io%2Fchangelog-stable%2Fbadge.json)](https://www.jenkins.io/changelog-stable)
 
-## Contributing Ideas
-Have something you want to say about Signal projects or want to be part of the conversation? Get involved in the [community forum](https://community.signalusers.org).
+# Source
 
-Help
-====
-## Support
-For troubleshooting and questions, please visit our support center!
+Our latest and greatest source of Jenkins can be found on [GitHub](https://github.com/jenkinsci/jenkins). Fork us!
 
-https://support.signal.org/
+# Contributing to Jenkins
 
-## Documentation
-Looking for documentation? Check out the wiki!
+Follow the [contributing guidelines](CONTRIBUTING.md) if you want to propose a change in the Jenkins core.
+For more information about participating in the community and contributing to the Jenkins project,
+see [this page](https://www.jenkins.io/participate/).
 
-https://github.com/signalapp/Signal-Android/wiki
+Documentation for Jenkins core maintainers is in the [maintainers guidelines](docs/MAINTAINERS.adoc).
 
-# Legal things
-## Cryptography Notice
+# News and Website
 
-This distribution includes cryptographic software. The country in which you currently reside may have restrictions on the import, possession, use, and/or re-export to another country, of encryption software.
-BEFORE using any encryption software, please check your country's laws, regulations and policies concerning the import, possession, or use, and re-export of encryption software, to see if this is permitted.
-See <http://www.wassenaar.org/> for more information.
+All information about Jenkins can be found on our [website](https://www.jenkins.io/).
+Follow us on [Twitter](https://twitter.com/jenkinsci) or [LinkedIn](https://www.linkedin.com/company/jenkins-project/).
 
-The U.S. Government Department of Commerce, Bureau of Industry and Security (BIS), has classified this software as Export Commodity Control Number (ECCN) 5D002.C.1, which includes information security software using or performing cryptographic functions with asymmetric algorithms.
-The form and manner of this distribution makes it eligible for export under the License Exception ENC Technology Software Unrestricted (TSU) exception (see the BIS Export Administration Regulations, Section 740.13) for both object code and source code.
+# Governance
 
-## License
+See the [Jenkins Governance Document](https://www.jenkins.io/project/governance/) for information about the project's open governance, our philosophy and values, and development practices.
+Jenkins Code of Conduct can be found [here](https://www.jenkins.io/project/conduct/).
 
-Copyright 2013-2023 Signal
+# Adopters
 
-Licensed under the GNU AGPLv3: https://www.gnu.org/licenses/agpl-3.0.html
+Jenkins is used by millions of users and thousands of companies.
+See [adopters](https://www.jenkins.io/project/adopters/) for the list of Jenkins adopters and their success stories.
 
-Google Play and the Google Play logo are trademarks of Google LLC.
+# License
+
+Jenkins is **licensed** under the **[MIT License](https://github.com/jenkinsci/jenkins/blob/master/LICENSE.txt)**.

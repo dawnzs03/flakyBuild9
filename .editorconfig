@@ -1,8 +1,7 @@
 root = true
 
-[*.{kt,kts}]
+[*.{js, scss, css, hbs}]
+indent_style = space
 indent_size = 2
-ij_kotlin_allow_trailing_comma_on_call_site = false
-ij_kotlin_allow_trailing_comma = false
-ktlint_code_style = intellij_idea
-twitter_compose_allowed_composition_locals=LocalExtendedColors
+trim_trailing_whitespace = true
+insert_final_newline = true
