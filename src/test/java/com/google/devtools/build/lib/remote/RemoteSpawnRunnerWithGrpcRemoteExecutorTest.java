@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import build.bazel.remote.execution.v2.ActionCacheGrpc.ActionCacheImplBase;
 import build.bazel.remote.execution.v2.ActionResult;
+import build.bazel.remote.execution.v2.CacheCapabilities;
 import build.bazel.remote.execution.v2.Command;
 import build.bazel.remote.execution.v2.ContentAddressableStorageGrpc.ContentAddressableStorageImplBase;
 import build.bazel.remote.execution.v2.Digest;
@@ -322,16 +323,17 @@ public class RemoteSpawnRunnerWithGrpcRemoteExecutorTest {
             .setExecutionCapabilities(
                 ExecutionCapabilities.newBuilder().setExecEnabled(true).build())
             .build();
-    channel.setServerCapabilities(caps);
-
     GrpcRemoteExecutor executor =
-        new GrpcRemoteExecutor(channel.retain(), CallCredentialsProvider.NO_CREDENTIALS, retrier);
+        new GrpcRemoteExecutor(
+            caps, channel.retain(), CallCredentialsProvider.NO_CREDENTIALS, retrier);
     CallCredentialsProvider callCredentialsProvider =
         GoogleAuthUtils.newCallCredentialsProvider(null);
     GrpcCacheClient cacheProtocol =
         new GrpcCacheClient(
             channel.retain(), callCredentialsProvider, remoteOptions, retrier, DIGEST_UTIL);
-    remoteCache = new RemoteExecutionCache(cacheProtocol, remoteOptions, DIGEST_UTIL);
+    remoteCache =
+        new RemoteExecutionCache(
+            CacheCapabilities.getDefaultInstance(), cacheProtocol, remoteOptions, DIGEST_UTIL);
     RemoteExecutionService remoteExecutionService =
         new RemoteExecutionService(
             directExecutor(),

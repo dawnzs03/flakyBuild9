@@ -40,11 +40,16 @@ import com.google.devtools.build.lib.analysis.SingleRunfilesSupplier;
 import com.google.devtools.build.lib.analysis.TransitiveInfoCollection;
 import com.google.devtools.build.lib.analysis.actions.LazyWriteNestedSetOfTupleAction;
 import com.google.devtools.build.lib.analysis.config.BuildConfigurationValue;
+import com.google.devtools.build.lib.analysis.configuredtargets.PackageGroupConfiguredTarget;
 import com.google.devtools.build.lib.analysis.test.TestProvider.TestParams;
 import com.google.devtools.build.lib.collect.nestedset.NestedSet;
 import com.google.devtools.build.lib.collect.nestedset.NestedSetBuilder;
 import com.google.devtools.build.lib.collect.nestedset.Order;
+import com.google.devtools.build.lib.packages.PackageSpecification.PackageGroupContents;
 import com.google.devtools.build.lib.packages.TestTimeout;
+import com.google.devtools.build.lib.skyframe.serialization.autocodec.AutoCodec.VisibleForSerialization;
+import com.google.devtools.build.lib.skyframe.serialization.autocodec.SerializationConstant;
+import com.google.devtools.build.lib.util.OS;
 import com.google.devtools.build.lib.util.Pair;
 import com.google.devtools.build.lib.vfs.PathFragment;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -69,6 +74,24 @@ public final class TestActionBuilder {
   // reported source file is the same as the actual source path it will not be included in the file.
   private static final String COVERAGE_REPORTED_TO_ACTUAL_SOURCES_FILE =
       "COVERAGE_REPORTED_TO_ACTUAL_SOURCES_FILE";
+
+  static class EmptyPackageProvider extends PackageGroupConfiguredTarget {
+    EmptyPackageProvider() {
+      // TODO(b/281522692): it's not good to pass a null key here.
+      super(
+          /* actionLookupKey= */ null,
+          (NestedSet<PackageGroupContents>) null,
+          (NestedSet<PackageGroupContents>) null);
+    }
+
+    @Override
+    public NestedSet<PackageGroupContents> getPackageSpecifications() {
+      return NestedSetBuilder.emptySet(Order.STABLE_ORDER);
+    }
+  }
+
+  @VisibleForSerialization @SerializationConstant
+  static final PackageSpecificationProvider EMPTY_PACKAGES_PROVIDER = new EmptyPackageProvider();
 
   private final RuleContext ruleContext;
   private final ImmutableList.Builder<Artifact> additionalTools;
@@ -201,7 +224,11 @@ public final class TestActionBuilder {
     AnalysisEnvironment env = ruleContext.getAnalysisEnvironment();
     ArtifactRoot root = ruleContext.getTestLogsDirectory();
 
-    final boolean isUsingTestWrapperInsteadOfTestSetupScript = ruleContext.isExecutedOnWindows();
+    // TODO(laszlocsomor), TODO(ulfjack): `isExecutedOnWindows` should use the execution platform,
+    // not the host platform. Once Bazel can tell apart these platforms, fix the right side of this
+    // initialization.
+    final boolean isExecutedOnWindows = OS.getCurrent() == OS.WINDOWS;
+    final boolean isUsingTestWrapperInsteadOfTestSetupScript = isExecutedOnWindows;
 
     NestedSetBuilder<Artifact> inputsBuilder = NestedSetBuilder.stableOrder();
     inputsBuilder.addTransitive(
@@ -365,8 +392,8 @@ public final class TestActionBuilder {
               runfilesSupport.getRunfilesDirectoryExecPath(),
               runfilesSupport.getRunfiles(),
               runfilesSupport.getRepoMappingManifest(),
-              runfilesSupport.getRunfileSymlinksMode(),
-              runfilesSupport.isBuildRunfileLinks());
+              runfilesSupport.isBuildRunfileLinks(),
+              runfilesSupport.isRunfilesEnabled());
     } else {
       testRunfilesSupplier = runfilesSupport;
     }
@@ -441,7 +468,7 @@ public final class TestActionBuilder {
                 config,
                 ruleContext.getWorkspaceName(),
                 (!isUsingTestWrapperInsteadOfTestSetupScript
-                        || executionSettings.needsShell(ruleContext.isExecutedOnWindows()))
+                        || executionSettings.needsShell(isExecutedOnWindows))
                     ? ShToolchain.getPathForPlatform(
                         ruleContext.getConfiguration(), ruleContext.getExecutionPlatform())
                     : null,
@@ -454,8 +481,7 @@ public final class TestActionBuilder {
                 MoreObjects.firstNonNull(
                     Allowlist.fetchPackageSpecificationProviderOrNull(
                         ruleContext, "external_network"),
-                    PackageSpecificationProvider.EMPTY),
-                ruleContext.isExecutedOnWindows());
+                    EMPTY_PACKAGES_PROVIDER));
 
         testOutputs.addAll(testRunnerAction.getSpawnOutputs());
         testOutputs.addAll(testRunnerAction.getOutputs());

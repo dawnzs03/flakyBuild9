@@ -40,7 +40,6 @@ java_library(
             "SourceManifestActionTest.java",
             "AnalysisFailureInfoTest.java",
             "config/FeatureSetTest.java",
-            "starlark/StarlarkSubruleTest.java",
         ],
     ),
     deps = [
@@ -86,7 +85,6 @@ java_library(
         "//src/main/java/com/google/devtools/build/lib/analysis:config/fragment",
         "//src/main/java/com/google/devtools/build/lib/analysis:config/fragment_options",
         "//src/main/java/com/google/devtools/build/lib/analysis:config/fragment_registry",
-        "//src/main/java/com/google/devtools/build/lib/analysis:config/invalid_configuration_exception",
         "//src/main/java/com/google/devtools/build/lib/analysis:config/per_label_options",
         "//src/main/java/com/google/devtools/build/lib/analysis:config/run_under",
         "//src/main/java/com/google/devtools/build/lib/analysis:config/run_under_converter",
@@ -120,7 +118,6 @@ java_library(
         "//src/main/java/com/google/devtools/build/lib/analysis:target_and_configuration",
         "//src/main/java/com/google/devtools/build/lib/analysis:test/instrumented_files_info",
         "//src/main/java/com/google/devtools/build/lib/analysis:test/test_configuration",
-        "//src/main/java/com/google/devtools/build/lib/analysis:test/test_progress",
         "//src/main/java/com/google/devtools/build/lib/analysis:test/test_trimming_transition_factory",
         "//src/main/java/com/google/devtools/build/lib/analysis:top_level_artifact_context",
         "//src/main/java/com/google/devtools/build/lib/analysis:transitive_dependency_state",
@@ -473,23 +470,5 @@ test_suite(
         ":PackageGroupBuildViewTest",
         ":RuleConfiguredTargetTest",
         ":SourceManifestActionTest",
-    ],
-)
-
-java_test(
-    name = "StarlarkSubruleTest",
-    srcs = ["starlark/StarlarkSubruleTest.java"],
-    deps = [
-        "//src/main/java/com/google/devtools/build/lib/actions:artifacts",
-        "//src/main/java/com/google/devtools/build/lib/analysis:analysis_cluster",
-        "//src/main/java/com/google/devtools/build/lib/analysis:configured_target",
-        "//src/main/java/com/google/devtools/build/lib/cmdline",
-        "//src/main/java/com/google/devtools/build/lib/packages",
-        "//src/main/java/com/google/devtools/build/lib/starlarkbuildapi",
-        "//src/main/java/net/starlark/java/eval",
-        "//src/test/java/com/google/devtools/build/lib/analysis/util",
-        "//src/test/java/com/google/devtools/build/lib/starlark/util",
-        "//third_party:junit4",
-        "//third_party:truth",
     ],
 )

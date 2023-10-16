@@ -22,7 +22,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.devtools.build.lib.collect.compacthashset.CompactHashSet;
 import com.google.devtools.build.skyframe.KeyToConsolidate.Op;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,9 +39,9 @@ import java.util.Set;
  * consolidated, since their reverse deps will only be retrieved as a whole if they are marked
  * dirty. Thus, we consolidate periodically.
  *
- * <p>{@link IncrementalInMemoryNodeEntry} manages pending reverse dep operations on a marked-dirty
- * or initially evaluating node itself, using similar logic tuned to those cases, and calls into
- * {@link #consolidateDataAndReturnNewElements} when transitioning to done.
+ * <p>{@link InMemoryNodeEntry} manages pending reverse dep operations on a marked-dirty or
+ * initially evaluating node itself, using similar logic tuned to those cases, and calls into {@link
+ * #consolidateDataAndReturnNewElements} when transitioning to done.
  *
  * <p>The storage schema for reverse dependencies of done node entries is:
  *
@@ -68,16 +67,15 @@ abstract class ReverseDepsUtility {
    * {@link Op#ADD} is only delayed if there are already pending delayed ops. Returning {@link
    * Op#CHECK} in this case just makes it easy to distinguish from nodes on their initial build.
    */
-  static Op getOpToStoreBare(AbstractInMemoryNodeEntry<?> entry) {
+  static Op getOpToStoreBare(InMemoryNodeEntry entry) {
     DirtyBuildingState dirtyBuildingState = entry.dirtyBuildingState;
     if (dirtyBuildingState == null) {
       return Op.CHECK;
     }
-    return entry.keepsEdges() && dirtyBuildingState.isIncremental() ? Op.CHECK : Op.ADD;
+    return entry.keepsEdges() && dirtyBuildingState.isDirty() ? Op.CHECK : Op.ADD;
   }
 
-  private static void maybeDelayReverseDepOp(
-      IncrementalInMemoryNodeEntry entry, SkyKey reverseDep, Op op) {
+  private static void maybeDelayReverseDepOp(InMemoryNodeEntry entry, SkyKey reverseDep, Op op) {
     List<Object> consolidations = entry.getReverseDepsDataToConsolidateForReverseDepsUtil();
     int currentReverseDepSize = sizeOf(entry.getReverseDepsRawForReverseDepsUtil());
     if (consolidations == null) {
@@ -111,7 +109,7 @@ abstract class ReverseDepsUtility {
   }
 
   @SuppressWarnings("unchecked") // Cast to List<SkyKey>.
-  static void addReverseDep(IncrementalInMemoryNodeEntry entry, SkyKey newReverseDep) {
+  static void addReverseDep(InMemoryNodeEntry entry, SkyKey newReverseDep) {
     List<Object> dataToConsolidate = entry.getReverseDepsDataToConsolidateForReverseDepsUtil();
     if (dataToConsolidate != null) {
       maybeDelayReverseDepOp(entry, newReverseDep, Op.ADD);
@@ -138,20 +136,19 @@ abstract class ReverseDepsUtility {
   }
 
   /** See {@link #addReverseDep} method. */
-  static void removeReverseDep(IncrementalInMemoryNodeEntry entry, SkyKey reverseDep) {
+  static void removeReverseDep(InMemoryNodeEntry entry, SkyKey reverseDep) {
     maybeDelayReverseDepOp(entry, reverseDep, Op.REMOVE);
   }
 
-  static void removeReverseDepsMatching(
-      IncrementalInMemoryNodeEntry entry, Set<SkyKey> deletedKeys) {
+  static void removeReverseDepsMatching(InMemoryNodeEntry entry, Set<SkyKey> deletedKeys) {
     consolidateData(entry);
     ImmutableSet<SkyKey> currentReverseDeps =
-        ImmutableSet.copyOf(getReverseDeps(entry, /* checkConsistency= */ true));
+        ImmutableSet.copyOf(getReverseDeps(entry, /*checkConsistency=*/ true));
     writeReverseDepsSet(entry, Sets.difference(currentReverseDeps, deletedKeys));
   }
 
   static ImmutableCollection<SkyKey> getReverseDeps(
-      IncrementalInMemoryNodeEntry entry, boolean checkConsistency) {
+      InMemoryNodeEntry entry, boolean checkConsistency) {
     consolidateData(entry);
 
     // TODO(bazel-team): Unfortunately, we need to make a copy here right now to be on the safe side
@@ -175,12 +172,12 @@ abstract class ReverseDepsUtility {
     }
   }
 
-  static Set<SkyKey> returnNewElements(IncrementalInMemoryNodeEntry entry) {
-    return consolidateDataAndReturnNewElements(entry, /* mutateObject= */ false);
+  static Set<SkyKey> returnNewElements(InMemoryNodeEntry entry) {
+    return consolidateDataAndReturnNewElements(entry, /*mutateObject=*/ false);
   }
 
   private static Set<SkyKey> consolidateDataAndReturnNewElements(
-      IncrementalInMemoryNodeEntry entry, boolean mutateObject) {
+      InMemoryNodeEntry entry, boolean mutateObject) {
     List<Object> dataToConsolidate = entry.getReverseDepsDataToConsolidateForReverseDepsUtil();
     if (dataToConsolidate == null) {
       return ImmutableSet.of();
@@ -291,12 +288,11 @@ abstract class ReverseDepsUtility {
     return newReverseDeps;
   }
 
-  @CanIgnoreReturnValue
-  static Set<SkyKey> consolidateDataAndReturnNewElements(IncrementalInMemoryNodeEntry entry) {
-    return consolidateDataAndReturnNewElements(entry, /* mutateObject= */ true);
+  static Set<SkyKey> consolidateDataAndReturnNewElements(InMemoryNodeEntry entry) {
+    return consolidateDataAndReturnNewElements(entry, /*mutateObject=*/ true);
   }
 
-  private static void consolidateData(IncrementalInMemoryNodeEntry entry) {
+  private static void consolidateData(InMemoryNodeEntry entry) {
     List<Object> dataToConsolidate = entry.getReverseDepsDataToConsolidateForReverseDepsUtil();
     if (dataToConsolidate == null) {
       return;
@@ -388,8 +384,7 @@ abstract class ReverseDepsUtility {
     writeReverseDepsSet(entry, reverseDepsAsSet);
   }
 
-  private static void writeReverseDepsSet(
-      IncrementalInMemoryNodeEntry entry, Set<SkyKey> reverseDepsAsSet) {
+  private static void writeReverseDepsSet(InMemoryNodeEntry entry, Set<SkyKey> reverseDepsAsSet) {
     if (!entry.keepsEdges() || reverseDepsAsSet.isEmpty()) {
       entry.setReverseDepsForReverseDepsUtil(ImmutableList.of());
     } else if (reverseDepsAsSet.size() == 1) {
@@ -402,40 +397,34 @@ abstract class ReverseDepsUtility {
   }
 
   private static Set<SkyKey> getReverseDepsSet(
-      IncrementalInMemoryNodeEntry entry, List<SkyKey> reverseDepsAsList) {
+      InMemoryNodeEntry entry, List<SkyKey> reverseDepsAsList) {
     Set<SkyKey> reverseDepsAsSet = CompactHashSet.create(reverseDepsAsList);
-    checkForDuplicates(reverseDepsAsSet, reverseDepsAsList, entry);
+
+    if (reverseDepsAsSet.size() != reverseDepsAsList.size()) {
+      // We're about to crash. Try to print an informative error message.
+      Set<SkyKey> seen = new HashSet<>();
+      List<SkyKey> duplicates = new ArrayList<>();
+      for (SkyKey key : reverseDepsAsList) {
+        if (!seen.add(key)) {
+          duplicates.add(key);
+        }
+      }
+      throw new IllegalStateException(
+          (reverseDepsAsList.size() - reverseDepsAsSet.size())
+              + " duplicates: "
+              + duplicates
+              + " for "
+              + entry);
+    }
     return reverseDepsAsSet;
   }
 
-  static void checkForDuplicates(
-      Set<SkyKey> reverseDepsAsSet, List<SkyKey> reverseDepsAsList, InMemoryNodeEntry entry) {
-    if (reverseDepsAsSet.size() == reverseDepsAsList.size()) {
-      return;
-    }
-    // We're about to crash. Try to print an informative error message.
-    Set<SkyKey> seen = new HashSet<>();
-    List<SkyKey> duplicates = new ArrayList<>();
-    for (SkyKey key : reverseDepsAsList) {
-      if (!seen.add(key)) {
-        duplicates.add(key);
-      }
-    }
-    throw new IllegalStateException(
-        (reverseDepsAsList.size() - reverseDepsAsSet.size())
-            + " duplicate reverse deps: "
-            + duplicates
-            + " for "
-            + entry);
-  }
-
-  static String toString(IncrementalInMemoryNodeEntry entry) {
+  static String toString(InMemoryNodeEntry entry) {
     return MoreObjects.toStringHelper("ReverseDeps")
         .add("reverseDeps", entry.getReverseDepsRawForReverseDepsUtil())
         .add("singleReverseDep", isSingleReverseDep(entry))
         .add("dataToConsolidate", entry.getReverseDepsDataToConsolidateForReverseDepsUtil())
         .toString();
   }
-
   private ReverseDepsUtility() {}
 }

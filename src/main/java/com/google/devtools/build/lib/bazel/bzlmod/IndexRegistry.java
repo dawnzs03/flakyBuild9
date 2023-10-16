@@ -24,9 +24,6 @@ import com.google.devtools.build.lib.bazel.bzlmod.Version.ParseException;
 import com.google.devtools.build.lib.bazel.repository.downloader.DownloadManager;
 import com.google.devtools.build.lib.cmdline.RepositoryName;
 import com.google.devtools.build.lib.events.ExtendedEventHandler;
-import com.google.devtools.build.lib.profiler.Profiler;
-import com.google.devtools.build.lib.profiler.ProfilerTask;
-import com.google.devtools.build.lib.profiler.SilentCloseable;
 import com.google.devtools.build.lib.util.OS;
 import com.google.devtools.build.lib.vfs.PathFragment;
 import com.google.gson.FieldNamingPolicy;
@@ -53,7 +50,6 @@ public class IndexRegistry implements Registry {
   private final DownloadManager downloadManager;
   private final Map<String, String> clientEnv;
   private final Gson gson;
-  private volatile Optional<BazelRegistryJson> bazelRegistryJson;
 
   public IndexRegistry(URI uri, DownloadManager downloadManager, Map<String, String> clientEnv) {
     this.uri = uri;
@@ -84,8 +80,7 @@ public class IndexRegistry implements Registry {
   /** Grabs a file from the given URL. Returns {@link Optional#empty} if the file doesn't exist. */
   private Optional<byte[]> grabFile(String url, ExtendedEventHandler eventHandler)
       throws IOException, InterruptedException {
-    try (SilentCloseable c =
-        Profiler.instance().profile(ProfilerTask.BZLMOD, () -> "download file: " + url)) {
+    try {
       return Optional.of(
           downloadManager.downloadAndReadOneUrl(new URL(url), eventHandler, clientEnv));
     } catch (FileNotFoundException e) {
@@ -146,6 +141,9 @@ public class IndexRegistry implements Registry {
   public RepoSpec getRepoSpec(
       ModuleKey key, RepositoryName repoName, ExtendedEventHandler eventHandler)
       throws IOException, InterruptedException {
+    Optional<BazelRegistryJson> bazelRegistryJson =
+        grabJson(
+            constructUrl(getUrl(), "bazel_registry.json"), BazelRegistryJson.class, eventHandler);
     Optional<SourceJson> sourceJson =
         grabJson(
             constructUrl(
@@ -160,30 +158,12 @@ public class IndexRegistry implements Registry {
     String type = sourceJson.get().type;
     switch (type) {
       case "archive":
-        return createArchiveRepoSpec(sourceJson, getBazelRegistryJson(eventHandler), key, repoName);
+        return createArchiveRepoSpec(sourceJson, bazelRegistryJson, key, repoName);
       case "local_path":
-        return createLocalPathRepoSpec(
-            sourceJson, getBazelRegistryJson(eventHandler), key, repoName);
+        return createLocalPathRepoSpec(sourceJson, bazelRegistryJson, key, repoName);
       default:
         throw new IOException(String.format("Invalid source type for module %s", key));
     }
-  }
-
-  @SuppressWarnings("OptionalAssignedToNull")
-  private Optional<BazelRegistryJson> getBazelRegistryJson(ExtendedEventHandler eventHandler)
-      throws IOException, InterruptedException {
-    if (bazelRegistryJson == null) {
-      synchronized (this) {
-        if (bazelRegistryJson == null) {
-          bazelRegistryJson =
-              grabJson(
-                  constructUrl(getUrl(), "bazel_registry.json"),
-                  BazelRegistryJson.class,
-                  eventHandler);
-        }
-      }
-    }
-    return bazelRegistryJson;
   }
 
   private RepoSpec createLocalPathRepoSpec(

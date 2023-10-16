@@ -13,17 +13,10 @@
 // limitations under the License.
 package com.google.devtools.build.lib.remote.disk;
 
-import static com.google.common.util.concurrent.Futures.immediateFuture;
-import static com.google.devtools.build.lib.remote.util.DigestUtil.isOldStyleDigestFunction;
-
-import build.bazel.remote.execution.v2.ActionCacheUpdateCapabilities;
 import build.bazel.remote.execution.v2.ActionResult;
-import build.bazel.remote.execution.v2.CacheCapabilities;
 import build.bazel.remote.execution.v2.Digest;
 import build.bazel.remote.execution.v2.Directory;
-import build.bazel.remote.execution.v2.SymlinkAbsolutePathStrategy;
 import build.bazel.remote.execution.v2.Tree;
-import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.Futures;
@@ -59,20 +52,10 @@ public class DiskCacheClient implements RemoteCacheClient {
    * @param verifyDownloads whether verify the digest of downloaded content are the same as the
    *     digest used to index that file.
    */
-  public DiskCacheClient(Path root, boolean verifyDownloads, DigestUtil digestUtil)
-      throws IOException {
+  public DiskCacheClient(Path root, boolean verifyDownloads, DigestUtil digestUtil) {
+    this.root = root;
     this.verifyDownloads = verifyDownloads;
     this.digestUtil = digestUtil;
-
-    if (isOldStyleDigestFunction(digestUtil.getDigestFunction())) {
-      this.root = root;
-    } else {
-      this.root =
-          root.getChild(
-              Ascii.toLowerCase(digestUtil.getDigestFunction().getValueDescriptor().getName()));
-    }
-
-    this.root.createDirectoryAndParents();
   }
 
   /** Returns {@code true} if the provided {@code key} is stored in the CAS. */
@@ -98,7 +81,7 @@ public class DiskCacheClient implements RemoteCacheClient {
     } else {
       try (InputStream in = p.getInputStream()) {
         ByteStreams.copy(in, out);
-        return immediateFuture(null);
+        return Futures.immediateFuture(null);
       } catch (IOException e) {
         return Futures.immediateFailedFuture(e);
       }
@@ -118,7 +101,7 @@ public class DiskCacheClient implements RemoteCacheClient {
               Utils.verifyBlobContents(digest, digestOut.digest());
             }
             out.flush();
-            return immediateFuture(null);
+            return Futures.immediateFuture(null);
           } catch (IOException e) {
             return Futures.immediateFailedFuture(e);
           }
@@ -162,20 +145,6 @@ public class DiskCacheClient implements RemoteCacheClient {
   }
 
   @Override
-  public CacheCapabilities getCacheCapabilities() {
-    return CacheCapabilities.newBuilder()
-        .setActionCacheUpdateCapabilities(
-            ActionCacheUpdateCapabilities.newBuilder().setUpdateEnabled(true).build())
-        .setSymlinkAbsolutePathStrategy(SymlinkAbsolutePathStrategy.Value.ALLOWED)
-        .build();
-  }
-
-  @Override
-  public ListenableFuture<String> getAuthority() {
-    return immediateFuture("");
-  }
-
-  @Override
   public ListenableFuture<CachedActionResult> downloadActionResult(
       RemoteActionExecutionContext context, ActionKey actionKey, boolean inlineOutErr) {
     return Futures.transformAsync(
@@ -183,16 +152,16 @@ public class DiskCacheClient implements RemoteCacheClient {
             actionKey, (digest, out) -> download(digest, out, /* isActionCache= */ true)),
         actionResult -> {
           if (actionResult == null) {
-            return immediateFuture(null);
+            return Futures.immediateFuture(null);
           }
 
           try {
             checkActionResult(actionResult);
           } catch (CacheNotFoundException e) {
-            return immediateFuture(null);
+            return Futures.immediateFuture(null);
           }
 
-          return immediateFuture(CachedActionResult.disk(actionResult));
+          return Futures.immediateFuture(CachedActionResult.disk(actionResult));
         },
         MoreExecutors.directExecutor());
   }
@@ -202,7 +171,7 @@ public class DiskCacheClient implements RemoteCacheClient {
       RemoteActionExecutionContext context, ActionKey actionKey, ActionResult actionResult) {
     try (InputStream data = actionResult.toByteString().newInput()) {
       saveFile(actionKey.getDigest().getHash(), data, /* actionResult= */ true);
-      return immediateFuture(null);
+      return Futures.immediateFuture(null);
     } catch (IOException e) {
       return Futures.immediateFailedFuture(e);
     }
@@ -219,7 +188,7 @@ public class DiskCacheClient implements RemoteCacheClient {
     } catch (IOException e) {
       return Futures.immediateFailedFuture(e);
     }
-    return immediateFuture(null);
+    return Futures.immediateFuture(null);
   }
 
   @Override
@@ -230,7 +199,7 @@ public class DiskCacheClient implements RemoteCacheClient {
     } catch (IOException e) {
       return Futures.immediateFailedFuture(e);
     }
-    return immediateFuture(null);
+    return Futures.immediateFuture(null);
   }
 
   @Override
@@ -238,7 +207,7 @@ public class DiskCacheClient implements RemoteCacheClient {
       RemoteActionExecutionContext context, Iterable<Digest> digests) {
     // Both upload and download check if the file exists before doing I/O. So we don't
     // have to do it here.
-    return immediateFuture(ImmutableSet.copyOf(digests));
+    return Futures.immediateFuture(ImmutableSet.copyOf(digests));
   }
 
   protected Path toPathNoSplit(String key) {

@@ -20,6 +20,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.devtools.build.lib.collect.nestedset.NestedSetVisitor;
+import com.google.devtools.build.lib.concurrent.ComparableRunnable;
 import com.google.devtools.build.lib.events.ExtendedEventHandler;
 import com.google.devtools.build.lib.events.Reportable;
 import com.google.devtools.build.skyframe.QueryableGraph.Reason;
@@ -58,9 +59,14 @@ class ParallelEvaluatorContext {
    */
   private final Supplier<NodeEntryVisitor> visitorSupplier;
 
-  /** * Returns a {@link Runnable} given a {@code key} to evaluate. */
+  /**
+   * Returns a {@link Runnable} given a {@code key} to evaluate.
+   *
+   * <p>The returned {@link Runnable} is a {@link ComparableRunnable} so that it can be ordered by a
+   * priority queue.
+   */
   interface RunnableMaker {
-    Runnable make(SkyKey key);
+    ComparableRunnable make(SkyKey key, int priority);
   }
 
   public ParallelEvaluatorContext(
@@ -121,7 +127,7 @@ class ParallelEvaluatorContext {
       NodeEntry entry = checkNotNull(batch.get(parent), parent);
       boolean evaluationRequired = entry.signalDep(version, skyKey);
       if (evaluationRequired || parent.supportsPartialReevaluation()) {
-        getVisitor().enqueueEvaluation(parent, skyKey);
+        getVisitor().enqueueEvaluation(parent, entry.getPriority(), skyKey);
       }
     }
   }

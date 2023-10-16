@@ -384,7 +384,7 @@ public class TreeArtifactValue implements HasDigest, SkyValue {
 
   @Override
   public int hashCode() {
-    return Objects.hash(Arrays.hashCode(digest), archivedRepresentation, materializationExecPath);
+    return Arrays.hashCode(digest);
   }
 
   @Override
@@ -398,10 +398,11 @@ public class TreeArtifactValue implements HasDigest, SkyValue {
     }
 
     TreeArtifactValue that = (TreeArtifactValue) other;
-    return Arrays.equals(digest, that.digest)
-        && childData.equals(that.childData)
-        && Objects.equals(archivedRepresentation, that.archivedRepresentation)
-        && Objects.equals(materializationExecPath, that.materializationExecPath);
+    if (!Arrays.equals(digest, that.digest)) {
+      return false;
+    }
+
+    return childData.equals(that.childData);
   }
 
   @Override

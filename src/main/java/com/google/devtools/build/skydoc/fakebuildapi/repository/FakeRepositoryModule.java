@@ -97,9 +97,7 @@ public class FakeRepositoryModule implements RepositoryModuleApi {
 
     // Only the Builder is passed to RuleInfoWrapper as the rule name is not yet available.
     RuleInfo.Builder ruleInfo = RuleInfo.newBuilder().addAllAttribute(attrInfos);
-    Starlark.toJavaOptional(doc, String.class)
-        .map(Starlark::trimDocString)
-        .ifPresent(ruleInfo::setDocString);
+    Starlark.toJavaOptional(doc, String.class).ifPresent(ruleInfo::setDocString);
     Location loc = thread.getCallerLocation();
     ruleInfoList.add(new RuleInfoWrapper(functionIdentifier, loc, ruleInfo));
     return functionIdentifier;
@@ -129,8 +127,6 @@ public class FakeRepositoryModule implements RepositoryModuleApi {
       Dict<?, ?> tagClasses,
       Object doc,
       Sequence<?> environ,
-      boolean osDependent,
-      boolean archDependent,
       StarlarkThread thread)
       throws EvalException {
     return new Object();

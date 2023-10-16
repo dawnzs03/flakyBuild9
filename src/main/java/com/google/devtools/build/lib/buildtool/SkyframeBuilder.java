@@ -24,7 +24,6 @@ import com.google.common.collect.Sets;
 import com.google.devtools.build.lib.actions.ActionCacheChecker;
 import com.google.devtools.build.lib.actions.ActionExecutionStatusReporter;
 import com.google.devtools.build.lib.actions.ActionInputPrefetcher;
-import com.google.devtools.build.lib.actions.ActionOutputDirectoryHelper;
 import com.google.devtools.build.lib.actions.Artifact;
 import com.google.devtools.build.lib.actions.BuildFailedException;
 import com.google.devtools.build.lib.actions.Executor;
@@ -70,7 +69,6 @@ public class SkyframeBuilder implements Builder {
   private final ModifiedFileSet modifiedOutputFiles;
   private final InputMetadataProvider fileCache;
   private final ActionInputPrefetcher actionInputPrefetcher;
-  private final ActionOutputDirectoryHelper actionOutputDirectoryHelper;
   private final ActionCacheChecker actionCacheChecker;
   private final BugReporter bugReporter;
 
@@ -82,7 +80,6 @@ public class SkyframeBuilder implements Builder {
       ModifiedFileSet modifiedOutputFiles,
       InputMetadataProvider fileCache,
       ActionInputPrefetcher actionInputPrefetcher,
-      ActionOutputDirectoryHelper actionOutputDirectoryHelper,
       BugReporter bugReporter) {
     this.resourceManager = resourceManager;
     this.skyframeExecutor = skyframeExecutor;
@@ -90,7 +87,6 @@ public class SkyframeBuilder implements Builder {
     this.modifiedOutputFiles = modifiedOutputFiles;
     this.fileCache = fileCache;
     this.actionInputPrefetcher = actionInputPrefetcher;
-    this.actionOutputDirectoryHelper = actionOutputDirectoryHelper;
     this.bugReporter = bugReporter;
   }
 
@@ -116,8 +112,7 @@ public class SkyframeBuilder implements Builder {
     skyframeExecutor.detectModifiedOutputFiles(
         modifiedOutputFiles, lastExecutionTimeRange, remoteArtifactChecker, fsvcThreads);
     try (SilentCloseable c = Profiler.instance().profile("configureActionExecutor")) {
-      skyframeExecutor.configureActionExecutor(
-          fileCache, actionInputPrefetcher, actionOutputDirectoryHelper);
+      skyframeExecutor.configureActionExecutor(fileCache, actionInputPrefetcher);
     }
     // Note that executionProgressReceiver accesses builtTargets concurrently (after wrapping in a
     // synchronized collection), so unsynchronized access to this variable is unsafe while it runs.
@@ -263,10 +258,6 @@ public class SkyframeBuilder implements Builder {
 
   InputMetadataProvider getFileCache() {
     return fileCache;
-  }
-
-  ActionOutputDirectoryHelper getActionOutputDirectoryHelper() {
-    return actionOutputDirectoryHelper;
   }
 
   ActionInputPrefetcher getActionInputPrefetcher() {

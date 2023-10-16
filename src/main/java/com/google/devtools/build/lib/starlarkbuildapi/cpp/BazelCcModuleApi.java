@@ -43,7 +43,7 @@ public interface BazelCcModuleApi<
                     ? extends CppConfigurationApi<?>,
                     CcToolchainVariablesT>,
         FeatureConfigurationT extends FeatureConfigurationApi,
-        CompilationContextT extends CcCompilationContextApi<FileT, CppModuleMapT>,
+        CompilationContextT extends CcCompilationContextApi<FileT>,
         CompilationOutputsT extends CcCompilationOutputsApi<FileT>,
         LinkingOutputsT extends CcLinkingOutputsApi<FileT, LtoBackendArtifactsT>,
         LtoBackendArtifactsT extends LtoBackendArtifactsApi<FileT>,

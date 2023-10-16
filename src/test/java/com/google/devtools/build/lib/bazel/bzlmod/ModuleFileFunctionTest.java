@@ -153,7 +153,6 @@ public class ModuleFileFunctionTest extends FoundationTestCase {
                 .put(
                     BzlmodRepoRuleValue.BZLMOD_REPO_RULE,
                     new BzlmodRepoRuleFunction(ruleClassProvider, directories))
-                .put(SkyFunctions.REPO_SPEC, new RepoSpecFunction(registryFactory))
                 .put(
                     SkyFunctions.CLIENT_ENVIRONMENT_VARIABLE,
                     new ClientEnvironmentFunction(new AtomicReference<>(ImmutableMap.of())))
@@ -277,19 +276,6 @@ public class ModuleFileFunctionTest extends FoundationTestCase {
             ImmutableList.of(ModuleFileValue.KEY_FOR_ROOT_MODULE), evaluationContext);
     assertThat(result.hasError()).isTrue();
     assertThat(result.getError().toString()).contains("invalid override for the root module");
-  }
-
-  @Test
-  public void forgotVersion() throws Exception {
-    FakeRegistry registry = registryFactory.newFakeRegistry("/foo");
-    ModuleFileFunction.REGISTRIES.set(differencer, ImmutableList.of(registry.getUrl()));
-
-    SkyKey skyKey = ModuleFileValue.key(createModuleKey("bbb", ""), null);
-    EvaluationResult<ModuleFileValue> result =
-        evaluator.evaluate(ImmutableList.of(skyKey), evaluationContext);
-    assertThat(result.hasError()).isTrue();
-    assertThat(result.getError().toString())
-        .contains("bad bazel_dep on module 'bbb' with no version");
   }
 
   @Test

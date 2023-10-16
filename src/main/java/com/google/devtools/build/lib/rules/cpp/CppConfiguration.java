@@ -14,6 +14,8 @@
 
 package com.google.devtools.build.lib.rules.cpp;
 
+import static com.google.devtools.build.lib.rules.cpp.CcModule.isBuiltIn;
+
 import com.google.common.collect.ImmutableList;
 import com.google.devtools.build.lib.analysis.config.BuildConfigurationValue;
 import com.google.devtools.build.lib.analysis.config.BuildOptions;
@@ -24,12 +26,12 @@ import com.google.devtools.build.lib.analysis.config.InvalidConfigurationExcepti
 import com.google.devtools.build.lib.analysis.config.PerLabelOptions;
 import com.google.devtools.build.lib.analysis.config.RequiresOptions;
 import com.google.devtools.build.lib.analysis.starlark.annotations.StarlarkConfigurationField;
+import com.google.devtools.build.lib.cmdline.BazelModuleContext;
 import com.google.devtools.build.lib.cmdline.Label;
 import com.google.devtools.build.lib.cmdline.LabelSyntaxException;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.Immutable;
 import com.google.devtools.build.lib.events.Event;
 import com.google.devtools.build.lib.events.EventHandler;
-import com.google.devtools.build.lib.packages.BuiltinRestriction;
 import com.google.devtools.build.lib.rules.apple.AppleCommandLineOptions;
 import com.google.devtools.build.lib.starlarkbuildapi.cpp.CppConfigurationApi;
 import com.google.devtools.build.lib.vfs.FileSystemUtils;
@@ -37,6 +39,7 @@ import com.google.devtools.build.lib.vfs.PathFragment;
 import javax.annotation.Nullable;
 import net.starlark.java.annot.StarlarkMethod;
 import net.starlark.java.eval.EvalException;
+import net.starlark.java.eval.Module;
 import net.starlark.java.eval.Sequence;
 import net.starlark.java.eval.Starlark;
 import net.starlark.java.eval.StarlarkList;
@@ -61,6 +64,13 @@ public final class CppConfiguration extends Fragment
 
   /** String constant for CC_FLAGS make variable name */
   public static final String CC_FLAGS_MAKE_VARIABLE_NAME = "CC_FLAGS";
+
+  /**
+   * Packages that can use the extended parameters in CppConfiguration See javadoc for {@link
+   * com.google.devtools.build.lib.rules.cpp.CcModule}
+   */
+  public static final ImmutableList<String> EXPANDED_CC_CONFIGURATION_API_ALLOWLIST =
+      ImmutableList.of();
 
   /** An enumeration of all the tools that comprise a toolchain. */
   public enum Tool {
@@ -281,7 +291,9 @@ public final class CppConfiguration extends Fragment
     this.compilationMode = compilationMode;
     this.collectCodeCoverage = commonOptions.collectCodeCoverage;
     this.isToolConfigurationDoNotUseWillBeRemovedFor129045294 = commonOptions.isExec;
-    this.appleGenerateDsym = cppOptions.appleGenerateDsym;
+    this.appleGenerateDsym =
+        (cppOptions.appleGenerateDsym
+            || (cppOptions.appleEnableAutoDsymDbg && compilationMode == CompilationMode.DBG));
   }
 
   /** Returns the label of the <code>cc_compiler</code> rule for the C++ configuration. */
@@ -884,10 +896,13 @@ public final class CppConfiguration extends Fragment
 
   private static void checkInExpandedApiAllowlist(StarlarkThread thread, String feature)
       throws EvalException {
-    try {
-      BuiltinRestriction.failIfCalledOutsideBuiltins(thread);
-    } catch (EvalException e) {
-      throw Starlark.errorf("%s (feature '%s' in CppConfiguration)", e.getMessage(), feature);
+    String rulePackage =
+        ((BazelModuleContext) Module.ofInnermostEnclosingStarlarkFunction(thread).getClientData())
+            .label()
+            .getPackageName();
+    if (!isBuiltIn(thread) && !EXPANDED_CC_CONFIGURATION_API_ALLOWLIST.contains(rulePackage)) {
+      throw Starlark.errorf(
+          "Rule in '%s' cannot use '%s' in CppConfiguration", rulePackage, feature);
     }
   }
 

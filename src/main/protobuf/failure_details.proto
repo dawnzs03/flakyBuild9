@@ -278,7 +278,7 @@ message BuildProgress {
         [(metadata) = { exit_code: 45 }];
     BES_UPLOAD_RETRY_LIMIT_EXCEEDED_FAILURE = 17
         [(metadata) = { exit_code: 38 }];
-    reserved 1, 2, 18, 20; // For internal use
+    reserved 1, 2, 18; // For internal use
   }
   Code code = 1;
   // Additional data could include the build progress upload endpoint.
@@ -458,7 +458,6 @@ message Execution {
     UNEXPECTED_EXCEPTION = 37 [(metadata) = { exit_code: 1 }];
     reserved 38;
     SOURCE_INPUT_IO_EXCEPTION = 39 [(metadata) = { exit_code: 1 }];
-    SYMLINK_TREE_DELETION_IO_EXCEPTION = 40 [(metadata) = { exit_code: 36 }];
   }
 
   Code code = 1;
@@ -609,7 +608,6 @@ message BuildConfiguration {
     // possibilities in Bazel, so we go with the more straightforward
     // command-line error exit code 2.
     INVALID_OUTPUT_DIRECTORY_MNEMONIC = 11 [(metadata) = { exit_code: 2 }];
-    CONFIGURATION_DISCARDED_ANALYSIS_CACHE = 12 [(metadata) = { exit_code: 2 }];
   }
 
   Code code = 1;
@@ -1199,7 +1197,6 @@ message Analysis {
     CONFIGURED_VALUE_CREATION_FAILED = 18 [(metadata) = { exit_code: 1 }];
     INCOMPATIBLE_TARGET_REQUESTED = 19 [(metadata) = { exit_code: 1 }];
     ANALYSIS_FAILURE_PROPAGATION_FAILED = 20 [(metadata) = { exit_code: 1 }];
-    ANALYSIS_CACHE_DISCARDED = 21 [(metadata) = { exit_code: 1 }];
   }
 
   Code code = 1;

@@ -13,6 +13,8 @@
 // limitations under the License.
 package com.google.devtools.build.lib.analysis.producers;
 
+import static com.google.devtools.build.lib.analysis.config.transitions.ConfigurationTransition.PATCH_TRANSITION_KEY;
+
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -96,7 +98,7 @@ final class TransitionApplier
       return runAfter;
     }
     if (!doesStarlarkTransition) {
-      return new PlatformMappingApplier(
+      return convertOptionsToKeys(
           transition.apply(
               TransitionUtil.restrict(transition, fromConfiguration.getOptions()), eventHandler));
     }
@@ -142,6 +144,22 @@ final class TransitionApplier
       sink.acceptTransitionError(e);
       return runAfter;
     }
+    return convertOptionsToKeys(transitionedOptions);
+  }
+
+  private StateMachine convertOptionsToKeys(Map<String, BuildOptions> transitionedOptions) {
+    // If there is a single, unchanged value, just outputs the original configuration, stripping any
+    // transition key.
+    if (transitionedOptions.size() == 1) {
+      BuildOptions options = transitionedOptions.values().iterator().next();
+      if (options.checksum().equals(fromConfiguration.getOptionsChecksum())) {
+        sink.acceptTransitionedConfigurations(
+            ImmutableMap.of(PATCH_TRANSITION_KEY, fromConfiguration));
+        return runAfter;
+      }
+    }
+
+    // Otherwise, applies a platform mapping to the results.
     return new PlatformMappingApplier(transitionedOptions);
   }
 

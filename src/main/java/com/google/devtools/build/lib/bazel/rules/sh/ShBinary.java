@@ -30,6 +30,7 @@ import com.google.devtools.build.lib.analysis.actions.SymlinkAction;
 import com.google.devtools.build.lib.analysis.test.InstrumentedFilesCollector;
 import com.google.devtools.build.lib.collect.nestedset.NestedSet;
 import com.google.devtools.build.lib.collect.nestedset.NestedSetBuilder;
+import com.google.devtools.build.lib.util.OS;
 import com.google.devtools.build.lib.vfs.PathFragment;
 import javax.annotation.Nullable;
 
@@ -69,7 +70,7 @@ public class ShBinary implements RuleConfiguredTargetFactory {
             ruleContext.getConfiguration().legacyExternalRunfiles());
 
     Artifact mainExecutable =
-        ruleContext.isExecutedOnWindows() ? launcherForWindows(ruleContext, symlink, src) : symlink;
+        (OS.getCurrent() == OS.WINDOWS) ? launcherForWindows(ruleContext, symlink, src) : symlink;
     if (!symlink.equals(mainExecutable)) {
       filesToBuildBuilder.add(mainExecutable);
       runfilesBuilder.addArtifact(symlink);

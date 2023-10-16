@@ -376,6 +376,10 @@ public abstract class AbstractPackageLoader implements PackageLoader {
     return ruleClassProvider;
   }
 
+  public PackageFactory getPackageFactory() {
+    return pkgFactory;
+  }
+
   private static NoSuchPackageException exceptionFromErrorInfo(
       ErrorInfo error, PackageIdentifier pkgId) {
     if (!error.getCycleInfo().isEmpty()) {
@@ -412,8 +416,6 @@ public abstract class AbstractPackageLoader implements PackageLoader {
   protected abstract ExternalPackageHelper getExternalPackageHelper();
 
   protected abstract ActionOnIOExceptionReadingBuildFile getActionOnIOExceptionReadingBuildFile();
-
-  protected abstract boolean shouldUseRepoDotBazel();
 
   private ImmutableMap<SkyFunctionName, SkyFunction> makeFreshSkyFunctions() {
     TimestampGranularityMonitor tsgm = new TimestampGranularityMonitor(BlazeClock.instance());
@@ -494,7 +496,6 @@ public abstract class AbstractPackageLoader implements PackageLoader {
                 /* bzlLoadFunctionForInlining= */ null,
                 /* packageProgress= */ null,
                 getActionOnIOExceptionReadingBuildFile(),
-                shouldUseRepoDotBazel(),
                 // Tell PackageFunction to optimize for our use-case of no incrementality.
                 GlobbingStrategy.NON_SKYFRAME,
                 k -> ThreadStateReceiver.NULL_INSTANCE))

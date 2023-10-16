@@ -63,6 +63,7 @@ public class AndroidResourcesProcessorBuilder {
   private boolean throwOnResourceConflict;
   private String packageUnderTest;
   private boolean isTestWithResources = false;
+  private boolean includeProguardLocationReferences = false;
 
   /**
    * The output zip for resource-processed data binding expressions (i.e. a zip of .xml files).
@@ -130,6 +131,13 @@ public class AndroidResourcesProcessorBuilder {
   @CanIgnoreReturnValue
   public AndroidResourcesProcessorBuilder setMainDexProguardOut(Artifact mainDexProguardCfg) {
     this.mainDexProguardOut = mainDexProguardCfg;
+    return this;
+  }
+
+  @CanIgnoreReturnValue
+  public AndroidResourcesProcessorBuilder setIncludeProguardLocationReferences(
+      boolean includeProguardLocationReferences) {
+    this.includeProguardLocationReferences = includeProguardLocationReferences;
     return this;
   }
 
@@ -225,7 +233,11 @@ public class AndroidResourcesProcessorBuilder {
         dataContext, primaryResources, processedManifest.getPackage());
 
     createAapt2ApkAction(
-        dataContext, databindingProcessedResources, primaryAssets, primaryManifest);
+        dataContext,
+        databindingProcessedResources,
+        primaryAssets,
+        primaryManifest,
+        dataBindingContext.usesAndroidX());
 
     // Wrap the parsed resources
     ParsedAndroidResources parsedResources =
@@ -299,7 +311,8 @@ public class AndroidResourcesProcessorBuilder {
       AndroidDataContext dataContext,
       AndroidResources primaryResources,
       AndroidAssets primaryAssets,
-      StampedAndroidManifest primaryManifest) {
+      StampedAndroidManifest primaryManifest,
+      boolean useDataBindingAndroidX) {
     BusyBoxActionBuilder builder =
         BusyBoxActionBuilder.create(dataContext, "AAPT2_PACKAGE").addAapt();
 
@@ -334,11 +347,13 @@ public class AndroidResourcesProcessorBuilder {
     }
 
     builder.maybeAddFlag("--conditionalKeepRules", conditionalKeepRules);
+    builder.maybeAddFlag("--includeProguardLocationReferences", includeProguardLocationReferences);
     configureCommonFlags(
             dataContext,
             primaryResources,
             primaryAssets,
             primaryManifest,
+            useDataBindingAndroidX,
             builder)
         .buildAndRegister("Processing Android resources", "AndroidAapt2");
   }
@@ -348,6 +363,7 @@ public class AndroidResourcesProcessorBuilder {
       AndroidResources primaryResources,
       AndroidAssets primaryAssets,
       StampedAndroidManifest primaryManifest,
+      boolean useDataBindingAndroidX,
       BusyBoxActionBuilder builder) {
 
     return builder
@@ -381,7 +397,7 @@ public class AndroidResourcesProcessorBuilder {
         // and because its resource filtering is somewhat stricter for locales, and resource
         // processing needs access to densities to add them to the manifest.
         .maybeAddFlag("--resourceConfigs", resourceFilterFactory.getConfigurationFilterString())
-        .addFlag("--useDataBindingAndroidX")
+        .maybeAddFlag("--useDataBindingAndroidX", useDataBindingAndroidX)
         .maybeAddFlag("--densities", resourceFilterFactory.getDensityString())
         .maybeAddVectoredFlag("--uncompressedExtensions", uncompressedExtensions)
         .maybeAddFlag("--useAaptCruncher=no", !crunchPng)

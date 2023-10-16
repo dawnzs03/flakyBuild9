@@ -112,12 +112,10 @@ public enum Order {
 
   private final String starlarkName;
   private final NestedSet<?> emptySet;
-  private final Depset emptyDepset;
 
-  Order(String starlarkName) {
+  private Order(String starlarkName) {
     this.starlarkName = starlarkName;
     this.emptySet = new NestedSet<>(this);
-    this.emptyDepset = new Depset(null, this.emptySet);
   }
 
   @SerializationConstant @AutoCodec.VisibleForSerialization
@@ -150,11 +148,6 @@ public enum Order {
   @SuppressWarnings("unchecked")  // Nested sets are immutable, so a downcast is fine.
   <E> NestedSet<E> emptySet() {
     return (NestedSet<E>) emptySet;
-  }
-
-  /** Returns an empty depset of the given ordering. */
-  Depset emptyDepset() {
-    return emptyDepset;
   }
 
   public String getStarlarkName() {

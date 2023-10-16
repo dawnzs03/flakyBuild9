@@ -14,6 +14,7 @@
 package com.google.devtools.build.lib.rules.java;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.devtools.build.lib.rules.java.JavaInfoBuildHelper.getStrictDepsMode;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
@@ -24,20 +25,19 @@ import com.google.common.collect.Iterables;
 import com.google.devtools.build.lib.actions.Artifact;
 import com.google.devtools.build.lib.analysis.ConfiguredTarget;
 import com.google.devtools.build.lib.analysis.RuleContext;
-import com.google.devtools.build.lib.analysis.config.CoreOptionConverters.StrictDepsMode;
 import com.google.devtools.build.lib.analysis.configuredtargets.AbstractConfiguredTarget;
 import com.google.devtools.build.lib.analysis.configuredtargets.MergedConfiguredTarget;
 import com.google.devtools.build.lib.analysis.platform.ConstraintValueInfo;
 import com.google.devtools.build.lib.analysis.platform.ToolchainInfo;
 import com.google.devtools.build.lib.analysis.starlark.StarlarkActionFactory;
 import com.google.devtools.build.lib.analysis.starlark.StarlarkRuleContext;
+import com.google.devtools.build.lib.cmdline.BazelModuleContext;
 import com.google.devtools.build.lib.cmdline.Label;
 import com.google.devtools.build.lib.cmdline.LabelSyntaxException;
 import com.google.devtools.build.lib.collect.nestedset.Depset;
 import com.google.devtools.build.lib.collect.nestedset.Depset.TypeException;
 import com.google.devtools.build.lib.collect.nestedset.NestedSetBuilder;
 import com.google.devtools.build.lib.collect.nestedset.Order;
-import com.google.devtools.build.lib.packages.BuiltinRestriction;
 import com.google.devtools.build.lib.packages.Info;
 import com.google.devtools.build.lib.packages.NativeInfo;
 import com.google.devtools.build.lib.packages.Provider;
@@ -45,17 +45,18 @@ import com.google.devtools.build.lib.packages.RuleClass.ConfiguredTargetFactory.
 import com.google.devtools.build.lib.packages.StarlarkInfoNoSchema;
 import com.google.devtools.build.lib.packages.StarlarkInfoWithSchema;
 import com.google.devtools.build.lib.packages.semantics.BuildLanguageOptions;
+import com.google.devtools.build.lib.rules.cpp.CcInfo;
 import com.google.devtools.build.lib.rules.cpp.CppFileTypes;
 import com.google.devtools.build.lib.rules.cpp.LibraryToLink;
 import com.google.devtools.build.lib.starlarkbuildapi.core.ProviderApi;
 import com.google.devtools.build.lib.starlarkbuildapi.java.JavaCommonApi;
 import net.starlark.java.eval.EvalException;
+import net.starlark.java.eval.Module;
 import net.starlark.java.eval.Sequence;
 import net.starlark.java.eval.Starlark;
 import net.starlark.java.eval.StarlarkList;
 import net.starlark.java.eval.StarlarkSemantics;
 import net.starlark.java.eval.StarlarkThread;
-import net.starlark.java.eval.StarlarkValue;
 
 /** A module that contains Starlark utilities for Java support. */
 public class JavaStarlarkCommon
@@ -68,28 +69,9 @@ public class JavaStarlarkCommon
         StarlarkRuleContext,
         StarlarkActionFactory> {
 
-  private static final ImmutableSet<BuiltinRestriction.AllowlistEntry>
-      PRIVATE_STARLARKIFACTION_ALLOWLIST =
-          ImmutableSet.of(BuiltinRestriction.allowlistEntry("", "bazel_internal/test_rules"));
+  private static final ImmutableSet<String> PRIVATE_STARLARKIFACTION_ALLOWLIST =
+      ImmutableSet.of("bazel_internal/test");
   private final JavaSemantics javaSemantics;
-
-  private static StrictDepsMode getStrictDepsMode(String strictDepsMode) {
-    switch (strictDepsMode) {
-      case "OFF":
-        return StrictDepsMode.OFF;
-      case "ERROR":
-      case "DEFAULT":
-        return StrictDepsMode.ERROR;
-      case "WARN":
-        return StrictDepsMode.WARN;
-      default:
-        throw new IllegalArgumentException(
-            "StrictDepsMode "
-                + strictDepsMode
-                + " not allowed."
-                + " Only OFF and ERROR values are accepted.");
-    }
-  }
 
   private void checkJavaToolchainIsDeclaredOnRule(RuleContext ruleContext)
       throws EvalException, LabelSyntaxException {
@@ -118,6 +100,106 @@ public class JavaStarlarkCommon
   }
 
   @Override
+  public JavaInfo createJavaCompileAction(
+      StarlarkRuleContext starlarkRuleContext,
+      Sequence<?> sourceJars, // <Artifact> expected
+      Sequence<?> sourceFiles, // <Artifact> expected
+      Artifact outputJar,
+      Object outputSourceJar,
+      Sequence<?> javacOpts, // <String> expected
+      Sequence<?> deps, // <JavaInfo> expected
+      Sequence<?> runtimeDeps, // <JavaInfo> expected
+      Sequence<?> exports, // <JavaInfo> expected
+      Sequence<?> plugins, // <JavaPluginInfo> expected
+      Sequence<?> exportedPlugins, // <JavaPluginInfo> expected
+      Sequence<?> nativeLibraries, // <CcInfo> expected.
+      Sequence<?> annotationProcessorAdditionalInputs, // <Artifact> expected
+      Sequence<?> annotationProcessorAdditionalOutputs, // <Artifact> expected
+      String strictDepsMode,
+      JavaToolchainProvider javaToolchain,
+      Object bootClassPath,
+      Object hostJavabase,
+      Sequence<?> sourcepathEntries, // <Artifact> expected
+      Sequence<?> resources, // <Artifact> expected
+      Sequence<?> resourceJars, // <Artifact> expected
+      Sequence<?> classpathResources, // <Artifact> expected
+      Boolean neverlink,
+      Boolean enableAnnotationProcessing,
+      Boolean enableCompileJarAction,
+      Boolean enableJSpecify,
+      boolean includeCompilationInfo,
+      Object injectingRuleKind,
+      Sequence<?> addExports, // <String> expected
+      Sequence<?> addOpens, // <String> expected
+      StarlarkThread thread)
+      throws EvalException, InterruptedException, RuleErrorException, LabelSyntaxException {
+    checkJavaToolchainIsDeclaredOnRule(starlarkRuleContext.getRuleContext());
+
+    final ImmutableList<JavaPluginInfo> pluginsParam =
+        JavaPluginInfo.wrapSequence(plugins, "plugins");
+    final ImmutableList<JavaPluginInfo> exportedPluginsParam =
+        JavaPluginInfo.wrapSequence(exportedPlugins, "exported_plugins");
+
+    // checks for private API access
+    if (!enableCompileJarAction
+        || !enableJSpecify
+        || !includeCompilationInfo
+        || !classpathResources.isEmpty()
+        || !resourceJars.isEmpty()
+        || injectingRuleKind != Starlark.NONE) {
+      checkPrivateAccess(thread);
+    }
+
+    if (starlarkRuleContext.getRuleContext().useAutoExecGroups()) {
+      String javaToolchainType = javaSemantics.getJavaToolchainType();
+      if (!starlarkRuleContext.getRuleContext().hasToolchainContext(javaToolchainType)) {
+        throw Starlark.errorf(
+            "Action declared for non-existent toolchain '%s'.", javaToolchainType);
+      }
+    }
+
+    return JavaInfoBuildHelper.getInstance()
+        .createJavaCompileAction(
+            starlarkRuleContext,
+            Sequence.cast(sourceJars, Artifact.class, "source_jars"),
+            Sequence.cast(sourceFiles, Artifact.class, "source_files"),
+            outputJar,
+            outputSourceJar == Starlark.NONE ? null : (Artifact) outputSourceJar,
+            Sequence.cast(javacOpts, String.class, "javac_opts"),
+            JavaInfo.wrapSequence(deps, "deps"),
+            JavaInfo.wrapSequence(runtimeDeps, "runtime_deps"),
+            JavaInfo.wrapSequence(exports, "exports"),
+            pluginsParam,
+            exportedPluginsParam,
+            Sequence.cast(nativeLibraries, CcInfo.class, "native_libraries"),
+            Sequence.cast(
+                annotationProcessorAdditionalInputs,
+                Artifact.class,
+                "annotation_processor_additional_inputs"),
+            Sequence.cast(
+                annotationProcessorAdditionalOutputs,
+                Artifact.class,
+                "annotation_processor_additional_outputs"),
+            strictDepsMode,
+            javaToolchain,
+            bootClassPath == Starlark.NONE ? null : (BootClassPathInfo) bootClassPath,
+            ImmutableList.copyOf(Sequence.cast(sourcepathEntries, Artifact.class, "sourcepath")),
+            Sequence.cast(resources, Artifact.class, "resources"),
+            Sequence.cast(resourceJars, Artifact.class, "resource_jars"),
+            Sequence.cast(classpathResources, Artifact.class, "classpath_resources"),
+            neverlink,
+            enableAnnotationProcessing,
+            enableCompileJarAction,
+            enableJSpecify,
+            includeCompilationInfo,
+            javaSemantics,
+            injectingRuleKind,
+            Sequence.cast(addExports, String.class, "add_exports"),
+            Sequence.cast(addOpens, String.class, "add_opens"),
+            thread);
+  }
+
+  @Override
   public void createHeaderCompilationAction(
       StarlarkRuleContext ctx,
       JavaToolchainProvider toolchain,
@@ -130,7 +212,7 @@ public class JavaStarlarkCommon
       Depset directJars,
       Object bootClassPath,
       Depset compileTimeJavaDeps,
-      Depset javacOpts,
+      Sequence<?> javacOpts,
       String strictDepsMode,
       Label targetLabel,
       Object injectingRuleKind,
@@ -158,7 +240,7 @@ public class JavaStarlarkCommon
         new JavaCompilationHelper(
             ctx.getRuleContext(),
             javaSemantics,
-            JavaHelper.tokenizeJavaOptions(Depset.cast(javacOpts, String.class, "javac_opts")),
+            Sequence.cast(javacOpts, String.class, "javac_opts").getImmutableList(),
             attributesBuilder,
             toolchain,
             Sequence.cast(additionalInputs, Artifact.class, "additional_inputs")
@@ -188,7 +270,7 @@ public class JavaStarlarkCommon
       Depset directJars,
       Object bootClassPath,
       Depset compileTimeJavaDeps,
-      Depset javacOpts,
+      Sequence<?> javacOpts,
       String strictDepsMode,
       Label targetLabel,
       Object injectingRuleKind,
@@ -238,7 +320,7 @@ public class JavaStarlarkCommon
         new JavaCompilationHelper(
             ctx.getRuleContext(),
             javaSemantics,
-            JavaHelper.tokenizeJavaOptions(Depset.cast(javacOpts, String.class, "javac_opts")),
+            Sequence.cast(javacOpts, String.class, "javac_opts").getImmutableList(),
             attributesBuilder,
             javaToolchain,
             Sequence.cast(additionalInputs, Artifact.class, "additional_inputs")
@@ -251,15 +333,10 @@ public class JavaStarlarkCommon
   @Override
   // TODO(b/78512644): migrate callers to passing explicit javacopts or using custom toolchains, and
   // delete
-  public StarlarkValue getDefaultJavacOpts(JavaToolchainProvider javaToolchain, boolean asDepset)
+  public ImmutableList<String> getDefaultJavacOpts(JavaToolchainProvider javaToolchain)
       throws EvalException {
     // We don't have a rule context if the default_javac_opts.java_toolchain parameter is set
-    if (asDepset) {
-      return Depset.of(String.class, javaToolchain.getJavacOptions(/* ruleContext= */ null));
-    } else {
-      return StarlarkList.immutableCopyOf(
-          javaToolchain.getJavacOptionsAsList(/* ruleContext= */ null));
-    }
+    return ((JavaToolchainProvider) javaToolchain).getJavacOptions(/* ruleContext= */ null);
   }
 
   @Override
@@ -278,12 +355,13 @@ public class JavaStarlarkCommon
   }
 
   @Override
-  public String getTargetKind(Object target, StarlarkThread thread) throws EvalException {
+  public String getTargetKind(Object target, boolean dereferenceAliases, StarlarkThread thread)
+      throws EvalException {
     checkPrivateAccess(thread);
     if (target instanceof MergedConfiguredTarget) {
       target = ((MergedConfiguredTarget) target).getBaseConfiguredTarget();
     }
-    if (target instanceof ConfiguredTarget) {
+    if (dereferenceAliases && target instanceof ConfiguredTarget) {
       target = ((ConfiguredTarget) target).getActual();
     }
     if (target instanceof AbstractConfiguredTarget) {
@@ -293,7 +371,13 @@ public class JavaStarlarkCommon
   }
 
   protected static void checkPrivateAccess(StarlarkThread thread) throws EvalException {
-    BuiltinRestriction.failIfCalledOutsideAllowlist(thread, PRIVATE_STARLARKIFACTION_ALLOWLIST);
+    Label label =
+        ((BazelModuleContext) Module.ofInnermostEnclosingStarlarkFunction(thread).getClientData())
+            .label();
+    if (!PRIVATE_STARLARKIFACTION_ALLOWLIST.contains(label.getPackageName())
+        && !label.getPackageIdentifier().getRepository().getName().equals("_builtins")) {
+      throw Starlark.errorf("Rule in '%s' cannot use private API", label.getPackageName());
+    }
   }
 
   @Override
@@ -410,14 +494,6 @@ public class JavaStarlarkCommon
       throws EvalException, RuleErrorException {
     checkPrivateAccess(thread);
     return JavaInfo.PROVIDER.wrap(javaInfo);
-  }
-
-  @Override
-  public Sequence<String> internJavacOpts(Object javacOpts) throws EvalException {
-    ImmutableList<String> interned =
-        JavaCompilationHelper.internJavacOpts(
-            Sequence.cast(javacOpts, String.class, "javac_opts").getImmutableList());
-    return StarlarkList.lazyImmutable(() -> interned);
   }
 
   static boolean isInstanceOfProvider(Object obj, Provider provider) {

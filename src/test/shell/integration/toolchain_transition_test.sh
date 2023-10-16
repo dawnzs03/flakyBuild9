@@ -355,6 +355,7 @@ sample = rule(
         "log": "%{name}.log",
     },
     toolchains = ["//${pkg}/toolchain:toolchain_type"],
+    incompatible_use_toolchain_transition = True,
 )
 
 def _sample_test_impl(ctx):
@@ -388,6 +389,7 @@ sample_test = rule(
         "log": "%{name}.log",
     },
     toolchains = ["//${pkg}/toolchain:toolchain_type"],
+    incompatible_use_toolchain_transition = True,
     test = True,
 )
 EOF

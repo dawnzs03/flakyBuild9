@@ -73,7 +73,6 @@ def import_deps_check(
         inputs = inputs,
         outputs = [jdeps_output],
         tools = tools,
-        toolchain = semantics.JAVA_TOOLCHAIN_TYPE,
     )
 
     return jdeps_output

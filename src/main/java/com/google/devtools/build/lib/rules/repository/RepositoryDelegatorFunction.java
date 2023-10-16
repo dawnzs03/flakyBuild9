@@ -507,15 +507,14 @@ public final class RepositoryDelegatorFunction implements SkyFunction {
   private static class DigestWriter {
     private final Path markerPath;
     private final Rule rule;
-    // not just Map<> to signal that iteration order must be deterministic
-    private final TreeMap<String, String> markerData;
+    private final Map<String, String> markerData;
     private final String ruleKey;
 
     DigestWriter(BlazeDirectories directories, RepositoryName repositoryName, Rule rule) {
       ruleKey = computeRuleKey(rule);
       markerPath = getMarkerPath(directories, repositoryName.getName());
       this.rule = rule;
-      markerData = Maps.newTreeMap();
+      markerData = Maps.newHashMap();
     }
 
     byte[] writeMarkerFile() throws RepositoryFunctionException {

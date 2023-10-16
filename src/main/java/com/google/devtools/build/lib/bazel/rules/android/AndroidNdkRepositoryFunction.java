@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.devtools.build.lib.actions.FileValue;
 import com.google.devtools.build.lib.analysis.BlazeDirectories;
@@ -72,7 +71,7 @@ public class AndroidNdkRepositoryFunction extends AndroidRepositoryFunction {
   private static final String PATH_ENV_VAR = "ANDROID_NDK_HOME";
   private static final PathFragment PLATFORMS_DIR = PathFragment.create("platforms");
 
-  private static final ImmutableSet<String> PATH_ENV_VAR_AS_SET = ImmutableSet.of(PATH_ENV_VAR);
+  private static final ImmutableList<String> PATH_ENV_VAR_AS_LIST = ImmutableList.of(PATH_ENV_VAR);
 
   private static String getDefaultCrosstool(Integer majorRevision) {
     // From NDK 17, libc++ replaces gnu-libstdc++ as the default STL.
@@ -263,7 +262,7 @@ public class AndroidNdkRepositoryFunction extends AndroidRepositoryFunction {
     if (attributes.isAttributeValueExplicitlySpecified("path")) {
       return true;
     }
-    return super.verifyEnvironMarkerData(markerData, env, PATH_ENV_VAR_AS_SET);
+    return super.verifyEnvironMarkerData(markerData, env, PATH_ENV_VAR_AS_LIST);
   }
 
   @Override
@@ -277,7 +276,7 @@ public class AndroidNdkRepositoryFunction extends AndroidRepositoryFunction {
       SkyKey key)
       throws InterruptedException, RepositoryFunctionException {
     Map<String, String> environ =
-        declareEnvironmentDependencies(markerData, env, PATH_ENV_VAR_AS_SET);
+        declareEnvironmentDependencies(markerData, env, PATH_ENV_VAR_AS_LIST);
     if (environ == null) {
       return null;
     }

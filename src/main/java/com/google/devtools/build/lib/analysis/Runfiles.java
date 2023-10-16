@@ -100,13 +100,6 @@ public final class Runfiles implements RunfilesApi {
         args.accept(symlink.getArtifact().getExecPathString());
       };
 
-  private static final CommandLineItem.ExceptionlessMapFn<Artifact>
-      RUNFILES_AND_ABSOLUTE_PATH_MAP_FN =
-          (artifact, args) -> {
-            args.accept(artifact.getRunfilesPathString());
-            args.accept(artifact.getPath().getPathString());
-          };
-
   private static final CommandLineItem.ExceptionlessMapFn<Artifact> RUNFILES_AND_EXEC_PATH_MAP_FN =
       (artifact, args) -> {
         args.accept(artifact.getRunfilesPathString());
@@ -116,7 +109,7 @@ public final class Runfiles implements RunfilesApi {
   /**
    * The directory to put all runfiles under.
    *
-   * <p>Using "foo" will put runfiles under &lt;target&gt;.runfiles/foo.
+   * <p>Using "foo" will put runfiles under &lt;target&gt;.runfiles/foo.</p>
    *
    * <p>This is either set to the workspace name, or is empty.
    */
@@ -278,7 +271,7 @@ public final class Runfiles implements RunfilesApi {
    *
    * @param checker If not null, check for conflicts using this checker.
    */
-  Map<PathFragment, Artifact> getSymlinksAsMap(@Nullable ConflictChecker checker) {
+  public Map<PathFragment, Artifact> getSymlinksAsMap(@Nullable ConflictChecker checker) {
     return entriesToMap(symlinks, checker);
   }
 
@@ -401,7 +394,8 @@ public final class Runfiles implements RunfilesApi {
     // workspace.
     private boolean sawWorkspaceName;
 
-    ManifestBuilder(PathFragment workspaceName, boolean legacyExternalRunfiles) {
+    public ManifestBuilder(
+        PathFragment workspaceName, boolean legacyExternalRunfiles) {
       this.manifest = new HashMap<>();
       this.workspaceName = workspaceName;
       this.legacyExternalRunfiles = legacyExternalRunfiles;
@@ -556,7 +550,7 @@ public final class Runfiles implements RunfilesApi {
   }
 
   /** Returns currently policy for conflicting symlink entries. */
-  ConflictPolicy getConflictPolicy() {
+  public ConflictPolicy getConflictPolicy() {
     return this.conflictPolicy;
   }
 
@@ -572,7 +566,7 @@ public final class Runfiles implements RunfilesApi {
    */
   public static final class ConflictChecker {
     /** Prebuilt ConflictChecker with policy set to IGNORE */
-    static final ConflictChecker IGNORE_CHECKER =
+    public static final ConflictChecker IGNORE_CHECKER =
         new ConflictChecker(ConflictPolicy.IGNORE, null, null);
 
     /** Behavior when a conflict is found. */
@@ -768,7 +762,7 @@ public final class Runfiles implements RunfilesApi {
 
     /** Adds several symlinks. Neither keys nor values may be null. */
     @CanIgnoreReturnValue
-    Builder addSymlinks(Map<PathFragment, Artifact> symlinks) {
+    public Builder addSymlinks(Map<PathFragment, Artifact> symlinks) {
       for (Map.Entry<PathFragment, Artifact> symlink : symlinks.entrySet()) {
         symlinksBuilder.add(new SymlinkEntry(symlink.getKey(), symlink.getValue()));
       }
@@ -828,9 +822,14 @@ public final class Runfiles implements RunfilesApi {
       return this;
     }
 
-    /** Adds the other {@link Runfiles} object transitively. */
-    @CanIgnoreReturnValue
+    /** Add the other {@link Runfiles} object transitively. */
     public Builder merge(Runfiles runfiles) {
+      return merge(runfiles, true);
+    }
+
+    /** Add the other {@link Runfiles} object transitively. */
+    @CanIgnoreReturnValue
+    private Builder merge(Runfiles runfiles, boolean includeArtifacts) {
       // Propagate the most strict conflict checking from merged-in runfiles
       if (runfiles.conflictPolicy.compareTo(conflictPolicy) > 0) {
         conflictPolicy = runfiles.conflictPolicy;
@@ -842,7 +841,9 @@ public final class Runfiles implements RunfilesApi {
       // may have an empty suffix, but that is covered above.
       Preconditions.checkArgument(
           suffix.equals(runfiles.suffix), "%s != %s", suffix, runfiles.suffix);
-      artifactsBuilder.addTransitive(runfiles.getArtifacts());
+      if (includeArtifacts) {
+        artifactsBuilder.addTransitive(runfiles.getArtifacts());
+      }
       symlinksBuilder.addTransitive(runfiles.getSymlinks());
       rootSymlinksBuilder.addTransitive(runfiles.getRootSymlinks());
       extraMiddlemenBuilder.addTransitive(runfiles.getExtraMiddlemen());
@@ -903,7 +904,7 @@ public final class Runfiles implements RunfilesApi {
 
     /** Collects runfiles from "srcs" and "deps" of a target. */
     @CanIgnoreReturnValue
-    Builder addNonDataDeps(
+    public Builder addNonDataDeps(
         RuleContext ruleContext, Function<TransitiveInfoCollection, Runfiles> mapping) {
       for (TransitiveInfoCollection target : getNonDataDeps(ruleContext)) {
         addTargetExceptFileTargets(target, mapping);
@@ -970,6 +971,22 @@ public final class Runfiles implements RunfilesApi {
       return addTargetExceptFileTargets(target, mapping);
     }
 
+    /** Adds symlinks to given artifacts at their exec paths. */
+    public Builder addSymlinksToArtifacts(NestedSet<Artifact> artifacts) {
+      // These are symlinks using the exec path, not the output-dir-relative path, which currently
+      // requires flattening.
+      return addSymlinksToArtifacts(artifacts.toList());
+    }
+
+    /** Adds symlinks to given artifacts at their exec paths. */
+    @CanIgnoreReturnValue
+    public Builder addSymlinksToArtifacts(Iterable<Artifact> artifacts) {
+      for (Artifact artifact : artifacts) {
+        addSymlink(artifact.getExecPath(), artifact);
+      }
+      return this;
+    }
+
     /**
      * Add extra middlemen artifacts that should be built by reverse dependency binaries. This
      * method exists solely to support the unfortunate legacy behavior of some rules; new uses
@@ -980,6 +997,11 @@ public final class Runfiles implements RunfilesApi {
       Preconditions.checkArgument(middleman.isMiddlemanArtifact(), middleman);
       extraMiddlemenBuilder.add(middleman);
       return this;
+    }
+
+    /** Add the other {@link Runfiles} object transitively, but don't merge artifacts. */
+    public Builder mergeExceptArtifacts(Runfiles runfiles) {
+      return merge(runfiles, false);
     }
 
     private static Iterable<TransitiveInfoCollection> getNonDataDeps(RuleContext ruleContext) {
@@ -1090,19 +1112,15 @@ public final class Runfiles implements RunfilesApi {
     }
   }
 
-  /** Fingerprint this {@link Runfiles} tree, including the absolute paths of artifacts. */
-  public void fingerprint(
-      ActionKeyContext actionKeyContext, Fingerprint fp, boolean digestAbsolutePaths) {
+  /** Fingerprint this {@link Runfiles} tree. */
+  public void fingerprint(ActionKeyContext actionKeyContext, Fingerprint fp) {
     fp.addInt(conflictPolicy.ordinal());
     fp.addBoolean(legacyExternalRunfiles);
     fp.addPath(suffix);
 
     actionKeyContext.addNestedSetToFingerprint(SYMLINK_ENTRY_MAP_FN, fp, symlinks);
     actionKeyContext.addNestedSetToFingerprint(SYMLINK_ENTRY_MAP_FN, fp, rootSymlinks);
-    actionKeyContext.addNestedSetToFingerprint(
-        digestAbsolutePaths ? RUNFILES_AND_ABSOLUTE_PATH_MAP_FN : RUNFILES_AND_EXEC_PATH_MAP_FN,
-        fp,
-        artifacts);
+    actionKeyContext.addNestedSetToFingerprint(RUNFILES_AND_EXEC_PATH_MAP_FN, fp, artifacts);
 
     emptyFilesSupplier.fingerprint(fp);
 
@@ -1111,7 +1129,7 @@ public final class Runfiles implements RunfilesApi {
   }
 
   /** Describes the inputs {@link #fingerprint} uses to aid describeKey() descriptions. */
-  String describeFingerprint(boolean digestAbsolutePaths) {
+  public String describeFingerprint() {
     return String.format("conflictPolicy: %s\n", conflictPolicy)
         + String.format("legacyExternalRunfiles: %s\n", legacyExternalRunfiles)
         + String.format("suffix: %s\n", suffix)
@@ -1121,11 +1139,7 @@ public final class Runfiles implements RunfilesApi {
             "rootSymlinks: %s\n", describeNestedSetFingerprint(SYMLINK_ENTRY_MAP_FN, rootSymlinks))
         + String.format(
             "artifacts: %s\n",
-            describeNestedSetFingerprint(
-                digestAbsolutePaths
-                    ? RUNFILES_AND_ABSOLUTE_PATH_MAP_FN
-                    : RUNFILES_AND_EXEC_PATH_MAP_FN,
-                artifacts))
+            describeNestedSetFingerprint(RUNFILES_AND_EXEC_PATH_MAP_FN, artifacts))
         + String.format("emptyFilesSupplier: %s\n", emptyFilesSupplier.getClass().getName());
   }
 }

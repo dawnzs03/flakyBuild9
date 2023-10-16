@@ -443,7 +443,7 @@ The `tool()` constructor takes in the following parameters:
    </td>
   </tr>
   <tr>
-   <td><code>path</code>
+   <td><code>tool_path</code>
    </td>
    <td>Path to the tool in question (relative to the current location).
    </td>
@@ -481,15 +481,16 @@ With Bazel, this process can instead be implemented as follows, with
 
     action_configs = [
         action_config (
+            config_name = ACTION_NAMES.cpp_link_executable,
             action_name = ACTION_NAMES.cpp_link_executable,
             tools = [
                 tool(
                     with_features = [
                         with_feature(features=["generate-debug-symbols"]),
                     ],
-                    path = "toolchain/mac/ld-with-dsym-packaging",
+                    tool_path = "toolchain/mac/ld-with-dsym-packaging",
                 ),
-                tool (path = "toolchain/mac/ld"),
+                tool (tool_path = "toolchain/mac/ld"),
             ],
         ),
     ]
@@ -527,7 +528,7 @@ follows:
             name = ACTION_NAMES.cpp_compile,
             tools = [
                 tool(
-                    path = "toolchain/bin/gcc",
+                    tool_path = "toolchain/bin/gcc",
                 ),
             ],
         ),

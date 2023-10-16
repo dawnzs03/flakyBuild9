@@ -39,7 +39,6 @@ import com.google.devtools.build.lib.events.EventHandler;
 import com.google.devtools.build.lib.packages.BazelStarlarkContext;
 import com.google.devtools.build.lib.packages.BazelStarlarkContext.Phase;
 import com.google.devtools.build.lib.packages.Rule;
-import com.google.devtools.build.lib.packages.RuleTransitionData;
 import com.google.devtools.build.lib.packages.StructImpl;
 import com.google.devtools.build.lib.packages.SymbolGenerator;
 import com.google.devtools.build.lib.starlarkbuildapi.config.ConfigurationTransitionApi;
@@ -96,7 +95,7 @@ public abstract class StarlarkDefinedConfigTransition implements ConfigurationTr
 
   // The values in this cache should always be instances of StarlarkTransition, but referencing that
   // here results in a circular dependency.
-  private final transient Cache<RuleTransitionData, PatchTransition> ruleTransitionCache =
+  private final transient Cache<Rule, PatchTransition> ruleTransitionCache =
       Caffeine.newBuilder().weakKeys().build();
 
   private StarlarkDefinedConfigTransition(
@@ -217,8 +216,7 @@ public abstract class StarlarkDefinedConfigTransition implements ConfigurationTr
   /**
    * Returns a cache that can be used to ensure that this {@link StarlarkDefinedConfigTransition}
    * results in at most one {@link
-   * com.google.devtools.build.lib.analysis.starlark.StarlarkTransition} instance per {@link
-   * RuleTransitionData}.
+   * com.google.devtools.build.lib.analysis.starlark.StarlarkTransition} instance per {@link Rule}.
    *
    * <p>The cache uses {@link Caffeine#weakKeys} to permit collection of transition objects when the
    * corresponding {@link Rule} is collectable. As a consequence, it uses identity comparison for
@@ -233,7 +231,7 @@ public abstract class StarlarkDefinedConfigTransition implements ConfigurationTr
    * practice to have few or even one transition invoke multiple times over multiple configured
    * targets.
    */
-  public final Cache<RuleTransitionData, PatchTransition> getRuleTransitionCache() {
+  public final Cache<Rule, PatchTransition> getRuleTransitionCache() {
     return ruleTransitionCache;
   }
 
@@ -482,8 +480,16 @@ public abstract class StarlarkDefinedConfigTransition implements ConfigurationTr
         // Create a new {@link BazelStarlarkContext} for the new thread. We need to
         // create a new context every time because {@link BazelStarlarkContext}s
         // should be confined to a single thread.
-        new BazelStarlarkContext(Phase.ANALYSIS, dummySymbolGenerator).storeInThread(thread);
+        BazelStarlarkContext starlarkContext =
+            new BazelStarlarkContext(
+                Phase.ANALYSIS,
+                /*toolsRepository=*/ null,
+                /*fragmentNameToClass=*/ null,
+                dummySymbolGenerator,
+                parentLabel,
+                /*networkAllowlistForTests=*/ null);
 
+        starlarkContext.storeInThread(thread);
         result =
             Starlark.fastcall(
                 thread, impl, new Object[] {previousSettingsDict, attributeMapper}, new Object[0]);

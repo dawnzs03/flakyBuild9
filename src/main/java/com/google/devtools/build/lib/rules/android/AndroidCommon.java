@@ -526,7 +526,8 @@ public class AndroidCommon {
     }
 
     if (addCoverageSupport) {
-      androidSemantics.addCoverageSupport(ruleContext, true, attributesBuilder);
+      androidSemantics.addCoverageSupport(
+          ruleContext, this, javaSemantics, true, attributesBuilder, artifactsBuilder);
       if (ruleContext.hasErrors()) {
         return null;
       }

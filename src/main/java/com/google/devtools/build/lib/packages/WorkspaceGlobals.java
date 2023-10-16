@@ -98,11 +98,9 @@ public class WorkspaceGlobals implements WorkspaceGlobalsApi {
 
   private static ImmutableList<TargetPattern> parsePatterns(
       List<String> patterns, Package.Builder builder, StarlarkThread thread) throws EvalException {
-    @Nullable // moduleContext is null if we're called directly from a WORKSPACE file.
-    BazelModuleContext moduleContext =
+    BazelModuleContext bzlModule =
         BazelModuleContext.of(Module.ofInnermostEnclosingStarlarkFunction(thread));
-    RepositoryName myName =
-        getRepositoryName((moduleContext != null ? moduleContext.label() : null));
+    RepositoryName myName = getRepositoryName((bzlModule != null ? bzlModule.label() : null));
     RepositoryMapping renaming = builder.getRepositoryMappingFor(myName);
     TargetPattern.Parser parser =
         new TargetPattern.Parser(PathFragment.EMPTY_FRAGMENT, myName, renaming);

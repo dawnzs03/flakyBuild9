@@ -145,14 +145,10 @@ public final class StarlarkFunction implements StarlarkCallable {
     return rfn.getName();
   }
 
-  /**
-   * Returns the value denoted by the function's doc string literal (trimmed if necessary), or null
-   * if absent.
-   */
+  /** Returns the value denoted by the function's doc string literal, or null if absent. */
   @Nullable
   public String getDocumentation() {
-    String documentation = rfn.getDocumentation();
-    return documentation != null ? Starlark.trimDocString(documentation) : null;
+    return rfn.getDocumentation();
   }
 
   public Module getModule() {

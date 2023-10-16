@@ -57,7 +57,7 @@ public interface CcModuleApi<
                     ? extends CppConfigurationApi<?>,
                     CcToolchainVariablesT>,
         FeatureConfigurationT extends FeatureConfigurationApi,
-        CompilationContextT extends CcCompilationContextApi<FileT, CppModuleMapT>,
+        CompilationContextT extends CcCompilationContextApi<FileT>,
         LtoBackendArtifactsT extends LtoBackendArtifactsApi<FileT>,
         LinkerInputT extends LinkerInputApi<LibraryToLinkT, LtoBackendArtifactsT, FileT>,
         LinkingContextT extends CcLinkingContextApi<?>,
@@ -1103,12 +1103,6 @@ public interface CcModuleApi<
   boolean checkExperimentalCcSharedLibrary(StarlarkThread thread) throws EvalException;
 
   @StarlarkMethod(
-      name = "incompatible_disable_objc_library_transition",
-      useStarlarkThread = true,
-      documented = false)
-  boolean getIncompatibleDisableObjcLibraryTransition(StarlarkThread thread) throws EvalException;
-
-  @StarlarkMethod(
       name = "create_linking_context",
       doc = "Creates a <code>LinkingContext</code>.",
       useStarlarkThread = true,
@@ -1256,96 +1250,6 @@ public interface CcModuleApi<
             positional = false,
             named = true,
             defaultValue = "unbound"),
-        @Param(
-            name = "actions",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "label",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "external_includes",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "virtual_to_original_headers",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "dependent_cc_compilation_contexts",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "non_code_inputs",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "loose_hdrs_dirs",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "headers_checking_mode",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "propagate_module_map_to_compile_action",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "pic_header_module",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "header_module",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "separate_module_headers",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "separate_module",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "separate_pic_module",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
-        @Param(
-            name = "add_public_headers_to_modular_headers",
-            documented = false,
-            positional = false,
-            named = true,
-            defaultValue = "unbound"),
       })
   CompilationContextT createCcCompilationContext(
       Object headers,
@@ -1360,21 +1264,6 @@ public interface CcModuleApi<
       Sequence<?> directPrivateHdrs,
       Object purpose,
       Object moduleMap,
-      Object actionFactoryForMiddlemanOwnerAndConfiguration,
-      Object labelForMiddlemanNameObject,
-      Object externalIncludes,
-      Object virtualToOriginalHeaders,
-      Sequence<?> dependentCcCompilationContexts,
-      Sequence<?> nonCodeInputs,
-      Sequence<?> looseHdrsDirs,
-      String headersCheckingMode,
-      Boolean propagateModuleMapToCompileAction,
-      Object picHeaderModule,
-      Object headerModule,
-      Sequence<?> separateModuleHeaders,
-      Object separateModule,
-      Object separatePicModule,
-      Object addPublicHeadersToModularHeaders,
       StarlarkThread thread)
       throws EvalException;
 

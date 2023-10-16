@@ -52,4 +52,9 @@ public interface ActionLookupKey extends ArtifactOwner, CPUHeavySkyKey {
   default boolean mayOwnShareableActions() {
     return getLabel() != null;
   }
+
+  @Override
+  default boolean hasLowFanout() {
+    return false; // May have >10k deps.
+  }
 }

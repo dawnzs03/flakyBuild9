@@ -18,7 +18,6 @@ import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 import build.bazel.remote.execution.v2.ActionResult;
-import build.bazel.remote.execution.v2.CacheCapabilities;
 import build.bazel.remote.execution.v2.Digest;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -199,16 +198,6 @@ public final class DiskAndRemoteCacheClient implements RemoteCacheClient {
           }
         },
         directExecutor());
-  }
-
-  @Override
-  public CacheCapabilities getCacheCapabilities() {
-    return remoteCache.getCacheCapabilities();
-  }
-
-  @Override
-  public ListenableFuture<String> getAuthority() {
-    return remoteCache.getAuthority();
   }
 
   @Override

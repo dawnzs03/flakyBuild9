@@ -15,9 +15,7 @@ package com.google.devtools.build.lib.skyframe;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.devtools.build.lib.analysis.config.BuildConfigurationValue.configurationId;
-import static com.google.devtools.build.lib.analysis.config.BuildConfigurationValue.configurationIdMessage;
 import static com.google.devtools.build.lib.analysis.config.transitions.TransitionCollector.NULL_TRANSITION_COLLECTOR;
-import static com.google.devtools.build.lib.analysis.producers.TargetAndConfigurationProducer.createDetailedExitCode;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -63,13 +61,11 @@ import com.google.devtools.build.lib.analysis.producers.TargetAndConfigurationPr
 import com.google.devtools.build.lib.analysis.producers.UnloadedToolchainContextsInputs;
 import com.google.devtools.build.lib.analysis.starlark.StarlarkAttributeTransitionProvider;
 import com.google.devtools.build.lib.analysis.starlark.StarlarkTransition.TransitionException;
-import com.google.devtools.build.lib.causes.AnalysisFailedCause;
 import com.google.devtools.build.lib.causes.Cause;
 import com.google.devtools.build.lib.cmdline.Label;
 import com.google.devtools.build.lib.cmdline.LabelSyntaxException;
 import com.google.devtools.build.lib.collect.nestedset.NestedSet;
 import com.google.devtools.build.lib.collect.nestedset.NestedSetBuilder;
-import com.google.devtools.build.lib.collect.nestedset.Order;
 import com.google.devtools.build.lib.events.Event;
 import com.google.devtools.build.lib.events.ExtendedEventHandler;
 import com.google.devtools.build.lib.events.StoredEventHandler;
@@ -373,8 +369,7 @@ public final class DependencyResolver {
                 "Cannot compute config conditions"));
         throw new ReportedException(
             new ConfiguredValueCreationException(
-                targetAndConfiguration.getTarget(),
-                configurationId(targetAndConfiguration.getConfiguration()),
+                targetAndConfiguration,
                 "Cannot compute config conditions",
                 causes,
                 getPrioritizedDetailedExitCode(causes)));
@@ -402,8 +397,7 @@ public final class DependencyResolver {
         // BuildTool to handle. Calling code needs to be untangled for that to work and pass tests.
         throw new UnreportedException(
             new ConfiguredValueCreationException(
-                targetAndConfiguration.getTarget(),
-                configurationId(targetAndConfiguration.getConfiguration()),
+                targetAndConfiguration,
                 "Analysis failed",
                 causes,
                 getPrioritizedDetailedExitCode(causes)));
@@ -450,15 +444,14 @@ public final class DependencyResolver {
     if (splitval.size() < 2) {
       throw new UnreportedException(
           new ConfiguredValueCreationException(
-              targetAndConfiguration.getTarget(),
-              "bad Starlark exec transition reference: " + bzlReference));
+              targetAndConfiguration, "bad Starlark exec transition reference: " + bzlReference));
     }
     Label bzlFile;
     try {
       bzlFile = Label.parseCanonical(splitval.get(0));
     } catch (LabelSyntaxException e) {
       throw new UnreportedException(
-          new ConfiguredValueCreationException(targetAndConfiguration.getTarget(), e.getMessage()));
+          new ConfiguredValueCreationException(targetAndConfiguration, e.getMessage()));
     }
     BzlLoadValue bzlValue = (BzlLoadValue) env.getValue(BzlLoadValue.keyForBuild(bzlFile));
     if (bzlValue == null) {
@@ -468,7 +461,7 @@ public final class DependencyResolver {
     if (!(transition instanceof StarlarkDefinedConfigTransition)) {
       throw new UnreportedException(
           new ConfiguredValueCreationException(
-              targetAndConfiguration.getTarget(),
+              targetAndConfiguration,
               String.valueOf(transition) + " is not a Starlark transition"));
     }
     return Optional.of(
@@ -579,11 +572,7 @@ public final class DependencyResolver {
           cvce != null
               ? cvce
               : new ConfiguredValueCreationException(
-                  targetAndConfiguration.getTarget(),
-                  configurationId(targetAndConfiguration.getConfiguration()),
-                  errorMessage,
-                  null,
-                  e.getDetailedExitCode()));
+                  targetAndConfiguration, errorMessage, null, e.getDetailedExitCode()));
     } else if (untyped instanceof ConfiguredValueCreationException) {
       ConfiguredValueCreationException e = (ConfiguredValueCreationException) untyped;
       if (!e.getMessage().isEmpty()) {
@@ -599,11 +588,7 @@ public final class DependencyResolver {
       }
       throw new ReportedException(
           new ConfiguredValueCreationException(
-              targetAndConfiguration.getTarget(),
-              configurationId(targetAndConfiguration.getConfiguration()),
-              e.getMessage(),
-              e.getCauses(),
-              e.getDetailedExitCode()));
+              targetAndConfiguration, e.getMessage(), e.getCauses(), e.getDetailedExitCode()));
     } else if (untyped instanceof ToolchainException) {
       ToolchainException e = (ToolchainException) untyped;
       ConfiguredValueCreationException cvce =
@@ -732,12 +717,12 @@ public final class DependencyResolver {
           case DEPENDENCY_TRANSITION:
             {
               TransitionException e = error.dependencyTransition();
-              throw new ConfiguredValueCreationException(ctgValue.getTarget(), e.getMessage());
+              throw new ConfiguredValueCreationException(ctgValue, e.getMessage());
             }
           case DEPENDENCY_OPTIONS_PARSING:
             {
               OptionsParsingException e = error.dependencyOptionsParsing();
-              throw new ConfiguredValueCreationException(ctgValue.getTarget(), e.getMessage());
+              throw new ConfiguredValueCreationException(ctgValue, e.getMessage());
             }
           case INVALID_VISIBILITY:
             {
@@ -882,19 +867,14 @@ public final class DependencyResolver {
     BuildConfigurationValue configuration = targetAndConfiguration.getConfiguration();
     Label label = targetAndConfiguration.getLabel();
     listener.post(AnalysisRootCauseEvent.withConfigurationValue(configuration, label, message));
-    Cause cause =
-        new AnalysisFailedCause(
-            targetAndConfiguration.getLabel(),
-            configurationIdMessage(targetAndConfiguration.getConfiguration()),
-            createDetailedExitCode(message));
     return new DependencyEvaluationException(
         new ConfiguredValueCreationException(
             location,
             message,
             label,
             configurationId(configuration),
-            NestedSetBuilder.create(Order.STABLE_ORDER, cause),
-            cause.getDetailedExitCode()),
+            /* rootCauses= */ null,
+            /* detailedExitCode= */ null),
         // These errors occur in dependency resolution, which is attached to the current target.
         // i.e. no dependent ConfiguredTargetFunction call happens to report its own error.
         /* depReportedOwnError= */ false);

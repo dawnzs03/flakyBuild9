@@ -79,17 +79,13 @@ _bazel__get_rule_match_pattern() {
 }
 
 # Compute workspace directory. Search for the innermost
-# enclosing directory with a boundary file (see
-# src/main/cpp/workspace_layout.cc).
+# enclosing directory with a WORKSPACE file.
 _bazel__get_workspace_path() {
   local workspace=$PWD
   while true; do
-    if [ -f "${workspace}/WORKSPACE" ] || \
-       [ -f "${workspace}/WORKSPACE.bazel" ] || \
-       [ -f "${workspace}/MODULE.bazel" ] || \
-       [ -f "${workspace}/REPO.bazel" ]; then
+    if [ -f "${workspace}/WORKSPACE" ]; then
       break
-    elif [ -z "$workspace" ] || [ "$workspace" = "/" ]; then
+    elif [ -z "$workspace" -o "$workspace" = "/" ]; then
       workspace=$PWD
       break;
     fi

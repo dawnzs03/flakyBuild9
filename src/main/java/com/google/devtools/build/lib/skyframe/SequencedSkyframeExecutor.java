@@ -153,7 +153,6 @@ public final class SequencedSkyframeExecutor extends SkyframeExecutor {
       ExternalPackageHelper externalPackageHelper,
       @Nullable SkyframeExecutorRepositoryHelpersHolder repositoryHelpersHolder,
       ActionOnIOExceptionReadingBuildFile actionOnIOExceptionReadingBuildFile,
-      boolean shouldUseRepoDotBazel,
       SkyKeyStateReceiver skyKeyStateReceiver,
       BugReporter bugReporter) {
     super(
@@ -171,7 +170,6 @@ public final class SequencedSkyframeExecutor extends SkyframeExecutor {
         buildFilesByPriority,
         externalPackageHelper,
         actionOnIOExceptionReadingBuildFile,
-        shouldUseRepoDotBazel,
         /* shouldUnblockCpuWorkWhenFetchingDeps= */ false,
         new PackageProgressReceiver(),
         new ConfiguredTargetProgressReceiver(),
@@ -321,7 +319,8 @@ public final class SequencedSkyframeExecutor extends SkyframeExecutor {
     invalidate(SkyFunctionName.functionIsIn(PACKAGE_LOCATOR_DEPENDENT_VALUES));
   }
 
-  void invalidate(Predicate<SkyKey> pred) {
+  @Override
+  protected void invalidate(Predicate<SkyKey> pred) {
     recordingDiffer.invalidate(Iterables.filter(memoizingEvaluator.getValues().keySet(), pred));
   }
 
@@ -679,9 +678,7 @@ public final class SequencedSkyframeExecutor extends SkyframeExecutor {
   public void deleteOldNodes(long versionWindowForDirtyGc) {
     // TODO(bazel-team): perhaps we should come up with a separate GC class dedicated to maintaining
     // value garbage. If we ever do so, this logic should be moved there.
-    if (trackIncrementalState) {
-      memoizingEvaluator.deleteDirty(versionWindowForDirtyGc);
-    }
+    memoizingEvaluator.deleteDirty(versionWindowForDirtyGc);
   }
 
   @Override
@@ -723,7 +720,6 @@ public final class SequencedSkyframeExecutor extends SkyframeExecutor {
     private ImmutableList<BuildFileName> buildFilesByPriority;
     private ExternalPackageHelper externalPackageHelper;
     private ActionOnIOExceptionReadingBuildFile actionOnIOExceptionReadingBuildFile;
-    private boolean shouldUseRepoDotBazel = true;
 
     // Fields with default values.
     private ImmutableMap<SkyFunctionName, SkyFunction> extraSkyFunctions = ImmutableMap.of();
@@ -770,7 +766,6 @@ public final class SequencedSkyframeExecutor extends SkyframeExecutor {
               externalPackageHelper,
               repositoryHelpersHolder,
               actionOnIOExceptionReadingBuildFile,
-              shouldUseRepoDotBazel,
               skyKeyStateReceiver,
               bugReporter);
       skyframeExecutor.init();
@@ -870,12 +865,6 @@ public final class SequencedSkyframeExecutor extends SkyframeExecutor {
     public Builder setActionOnIOExceptionReadingBuildFile(
         ActionOnIOExceptionReadingBuildFile actionOnIOExceptionReadingBuildFile) {
       this.actionOnIOExceptionReadingBuildFile = actionOnIOExceptionReadingBuildFile;
-      return this;
-    }
-
-    @CanIgnoreReturnValue
-    public Builder setShouldUseRepoDotBazel(boolean shouldUseRepoDotBazel) {
-      this.shouldUseRepoDotBazel = shouldUseRepoDotBazel;
       return this;
     }
 

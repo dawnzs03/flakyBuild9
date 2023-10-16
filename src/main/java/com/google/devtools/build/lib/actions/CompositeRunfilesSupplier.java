@@ -18,13 +18,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.devtools.build.lib.analysis.config.BuildConfigurationValue.RunfileSymlinksMode;
 import com.google.devtools.build.lib.collect.nestedset.NestedSet;
 import com.google.devtools.build.lib.collect.nestedset.NestedSetBuilder;
 import com.google.devtools.build.lib.vfs.PathFragment;
 import java.util.Collection;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /** A {@link RunfilesSupplier} implementation for composing multiple instances. */
 public final class CompositeRunfilesSupplier implements RunfilesSupplier {
@@ -103,21 +101,19 @@ public final class CompositeRunfilesSupplier implements RunfilesSupplier {
   }
 
   @Override
-  @Nullable
-  public RunfileSymlinksMode getRunfileSymlinksMode(PathFragment runfilesDir) {
-    for (RunfilesSupplier supplier : suppliers) {
-      RunfileSymlinksMode mode = supplier.getRunfileSymlinksMode(runfilesDir);
-      if (mode != null) {
-        return mode;
-      }
-    }
-    return null;
-  }
-
-  @Override
   public boolean isBuildRunfileLinks(PathFragment runfilesDir) {
     for (RunfilesSupplier supplier : suppliers) {
       if (supplier.isBuildRunfileLinks(runfilesDir)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public boolean isRunfileLinksEnabled(PathFragment runfilesDir) {
+    for (RunfilesSupplier supplier : suppliers) {
+      if (supplier.isRunfileLinksEnabled(runfilesDir)) {
         return true;
       }
     }

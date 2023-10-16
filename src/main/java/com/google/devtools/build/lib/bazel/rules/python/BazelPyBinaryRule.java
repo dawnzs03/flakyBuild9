@@ -20,6 +20,8 @@ import com.google.devtools.build.lib.analysis.RuleDefinition;
 import com.google.devtools.build.lib.analysis.RuleDefinitionEnvironment;
 import com.google.devtools.build.lib.bazel.rules.python.BazelPyRuleClasses.PyBinaryBaseRule;
 import com.google.devtools.build.lib.packages.RuleClass;
+import com.google.devtools.build.lib.rules.python.PyRuleClasses;
+import com.google.devtools.build.lib.rules.python.PythonConfiguration;
 
 /**
  * Rule definition for the {@code py_binary} rule.
@@ -34,6 +36,8 @@ public final class BazelPyBinaryRule implements RuleDefinition {
     <code>main.py</code>, then your name should be <code>main</code>.
     <!-- #END_BLAZE_RULE.NAME --> */
     return builder
+        .requiresConfigurationFragments(PythonConfiguration.class, BazelPythonConfiguration.class)
+        .cfg(PyRuleClasses.VERSION_TRANSITION)
         .build();
   }
 

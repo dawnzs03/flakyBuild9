@@ -14,11 +14,7 @@
 package com.google.devtools.build.lib.packages;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableMap;
-import com.google.devtools.build.lib.analysis.config.ConfigMatchingProvider;
 import com.google.devtools.build.lib.analysis.config.transitions.TransitionFactory;
-import com.google.devtools.build.lib.cmdline.Label;
-import javax.annotation.Nullable;
 
 /**
  * Helper class which contains data used by a {@link TransitionFactory} to create a transition for
@@ -27,15 +23,9 @@ import javax.annotation.Nullable;
 @AutoValue
 public abstract class RuleTransitionData implements TransitionFactory.Data {
 
-  public static RuleTransitionData create(
-      Rule rule, ImmutableMap<Label, ConfigMatchingProvider> configConditions, String configHash) {
-    return new AutoValue_RuleTransitionData(rule, configConditions, configHash);
+  public static RuleTransitionData create(Rule rule) {
+    return new AutoValue_RuleTransitionData(rule);
   }
 
   public abstract Rule rule();
-
-  @Nullable
-  public abstract ImmutableMap<Label, ConfigMatchingProvider> configConditions();
-
-  public abstract String configHash();
 }

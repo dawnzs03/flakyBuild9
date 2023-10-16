@@ -33,7 +33,6 @@ import com.google.devtools.build.lib.actions.util.ActionsTestUtil;
 import com.google.devtools.build.lib.analysis.Runfiles;
 import com.google.devtools.build.lib.analysis.actions.SymlinkTreeAction;
 import com.google.devtools.build.lib.analysis.actions.SymlinkTreeActionContext;
-import com.google.devtools.build.lib.analysis.config.BuildConfigurationValue.RunfileSymlinksMode;
 import com.google.devtools.build.lib.analysis.util.BuildViewTestCase;
 import com.google.devtools.build.lib.events.StoredEventHandler;
 import com.google.devtools.build.lib.util.Fingerprint;
@@ -108,7 +107,8 @@ public final class SymlinkTreeStrategyTest extends BuildViewTestCase {
             /* repoMappingManifest= */ null,
             /* filesetRoot= */ null,
             ActionEnvironment.EMPTY,
-            RunfileSymlinksMode.EXTERNAL);
+            /* enableRunfiles= */ true,
+            /* inprocessSymlinkCreation= */ false);
 
     action.execute(context);
 
@@ -163,7 +163,8 @@ public final class SymlinkTreeStrategyTest extends BuildViewTestCase {
             /* repoMappingManifest= */ null,
             /* filesetRoot= */ null,
             ActionEnvironment.EMPTY,
-            RunfileSymlinksMode.INTERNAL);
+            /* enableRunfiles= */ true,
+            /* inprocessSymlinkCreation= */ true);
 
     action.execute(context);
     // Check that the OutputService is not used.

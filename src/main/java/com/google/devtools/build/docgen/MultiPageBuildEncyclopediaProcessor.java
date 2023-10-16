@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-/** Assembles the multi-page version of the Build Encyclopedia with one page per rule family. */
+/**
+ * Assembles the multi-page version of the Build Encyclopedia with one page per rule family.
+ */
 public class MultiPageBuildEncyclopediaProcessor extends BuildEncyclopediaProcessor {
 
   // Whether a table-of-contents file should be created.
@@ -28,34 +30,25 @@ public class MultiPageBuildEncyclopediaProcessor extends BuildEncyclopediaProces
 
   public MultiPageBuildEncyclopediaProcessor(
       RuleLinkExpander linkExpander,
-      SourceUrlMapper urlMapper,
       ConfiguredRuleClassProvider ruleClassProvider,
       boolean createToc) {
-    super(linkExpander, urlMapper, ruleClassProvider);
+    super(linkExpander, ruleClassProvider);
     this.createToc = createToc;
   }
 
   /**
-   * Collects and processes all the rule and attribute documentation in inputJavaDirs and generates
-   * the Build Encyclopedia into outputDir.
+   * Collects and processes all the rule and attribute documentation in inputDirs and generates the
+   * Build Encyclopedia into the outputDir.
    *
-   * @param inputJavaDirs list of directories to scan for documentation in Java source code
-   * @param inputStardocProtos list of file paths of stardoc_output.ModuleInfo binary proto files
-   *     generated from Build Encyclopedia entry point .bzl files; documentation from these protos
-   *     takes precedence over documentation from {@code inputJavaDirs}
+   * @param inputDirs list of directory to scan for document in the source code
    * @param outputDir output directory where to write the build encyclopedia
    * @param denyList optional path to a file listing rules to not document
    */
   @Override
-  public void generateDocumentation(
-      List<String> inputJavaDirs,
-      List<String> inputStardocProtos,
-      String outputDir,
-      String denyList)
+  public void generateDocumentation(List<String> inputDirs, String outputDir, String denyList)
       throws BuildEncyclopediaDocException, IOException {
-    BuildDocCollector collector = new BuildDocCollector(linkExpander, urlMapper, ruleClassProvider);
-    Map<String, RuleDocumentation> ruleDocEntries =
-        collector.collect(inputJavaDirs, inputStardocProtos, denyList);
+    BuildDocCollector collector = new BuildDocCollector(linkExpander, ruleClassProvider, false);
+    Map<String, RuleDocumentation> ruleDocEntries = collector.collect(inputDirs, denyList);
     warnAboutUndocumentedRules(
         Sets.difference(ruleClassProvider.getRuleClassMap().keySet(), ruleDocEntries.keySet()));
 
@@ -102,8 +95,7 @@ public class MultiPageBuildEncyclopediaProcessor extends BuildEncyclopediaProces
     }
   }
 
-  private void writeOverviewPage(
-      String outputDir,
+  private void writeOverviewPage(String outputDir,
       List<RuleFamily> langSpecificRuleFamilies,
       List<RuleFamily> genericRuleFamilies)
       throws BuildEncyclopediaDocException, IOException {

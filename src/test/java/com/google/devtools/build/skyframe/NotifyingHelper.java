@@ -16,7 +16,6 @@ package com.google.devtools.build.skyframe;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.ThreadSafe;
 import com.google.devtools.build.skyframe.NodeEntry.DirtyType;
@@ -198,11 +197,11 @@ public class NotifyingHelper {
   }
 
   /** {@link NodeEntry} that informs a {@link Listener} of various method calls. */
-  public class NotifyingNodeEntry extends DelegatingNodeEntry {
+  class NotifyingNodeEntry extends DelegatingNodeEntry {
     private final SkyKey myKey;
     private final NodeEntry delegate;
 
-    protected NotifyingNodeEntry(SkyKey key, NodeEntry delegate) {
+    NotifyingNodeEntry(SkyKey key, NodeEntry delegate) {
       myKey = key;
       this.delegate = delegate;
     }
@@ -341,7 +340,7 @@ public class NotifyingHelper {
     }
 
     @Override
-    public ImmutableSet<SkyKey> getAllDirectDepsForIncompleteNode() throws InterruptedException {
+    public Iterable<SkyKey> getAllDirectDepsForIncompleteNode() throws InterruptedException {
       graphListener.accept(
           myKey, EventType.GET_ALL_DIRECT_DEPS_FOR_INCOMPLETE_NODE, Order.BEFORE, this);
       return super.getAllDirectDepsForIncompleteNode();

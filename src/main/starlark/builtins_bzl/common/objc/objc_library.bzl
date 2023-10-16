@@ -15,14 +15,13 @@
 """objc_library Starlark implementation replacing native"""
 
 load("@_builtins//:common/cc/cc_helper.bzl", "cc_helper")
-load("@_builtins//:common/objc/attrs.bzl", "common_attrs")
 load("@_builtins//:common/objc/compilation_support.bzl", "compilation_support")
+load("@_builtins//:common/objc/attrs.bzl", "common_attrs")
 load("@_builtins//:common/objc/objc_common.bzl", "extensions", "objc_common")
 load("@_builtins//:common/objc/semantics.bzl", "semantics")
 load("@_builtins//:common/objc/transitions.bzl", "apple_crosstool_transition")
-load(":common/cc/cc_common.bzl", "cc_common")
-load(":common/cc/cc_info.bzl", "CcInfo")
 load(":common/objc/providers.bzl", "J2ObjcEntryClassInfo", "J2ObjcMappingFileInfo")
+load(":common/cc/cc_info.bzl", "CcInfo")
 
 objc_internal = _builtins.internal.objc_internal
 coverage_common = _builtins.toplevel.coverage_common
@@ -129,10 +128,12 @@ objc_library = rule(
         common_attrs.COMPILING_RULE,
         common_attrs.COMPILE_DEPENDENCY_RULE,
         common_attrs.COPTS_RULE,
+        common_attrs.INCLUDE_SCANNING_RULE,
         common_attrs.LICENSES,
         common_attrs.SDK_FRAMEWORK_DEPENDER_RULE,
     ),
     fragments = ["objc", "apple", "cpp"],
-    cfg = None if cc_common.incompatible_disable_objc_library_transition() else apple_crosstool_transition,
+    cfg = apple_crosstool_transition,
     toolchains = cc_helper.use_cpp_toolchain(),
+    incompatible_use_toolchain_transition = True,
 )

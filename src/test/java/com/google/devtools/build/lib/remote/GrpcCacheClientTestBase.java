@@ -18,7 +18,6 @@ import static com.google.devtools.build.lib.remote.util.Utils.getFromFuture;
 
 import build.bazel.remote.execution.v2.Digest;
 import build.bazel.remote.execution.v2.RequestMetadata;
-import build.bazel.remote.execution.v2.ServerCapabilities;
 import com.google.api.client.json.GenericJson;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.common.collect.ImmutableList;
@@ -171,7 +170,6 @@ class GrpcCacheClientTestBase {
                 return 100;
               }
             });
-    channel.setServerCapabilities(ServerCapabilities.getDefaultInstance());
     channels.add(channel);
     return new GrpcCacheClient(
         channel, callCredentialsProvider, remoteOptions, retrier, DIGEST_UTIL);

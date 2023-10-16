@@ -119,9 +119,8 @@ public class BuildEventStreamer {
   @GuardedBy("this")
   private final Set<AbortReason> abortReasons = new LinkedHashSet<>();
 
-  // Will be set to true if the build was invoked through "bazel test", "bazel coverage", or
-  // "bazel run".
-  private boolean isCommandToSkipBuildCompleteEvent;
+  // Will be set to true if the build was invoked through "bazel test" or "bazel coverage".
+  private boolean isTestCommand;
 
   // After #buildComplete is called, contains the set of events that the streamer is expected to
   // process. The streamer will fully close after seeing them. This field is null until
@@ -462,10 +461,9 @@ public class BuildEventStreamer {
 
     if (event instanceof BuildStartingEvent) {
       BuildRequest buildRequest = ((BuildStartingEvent) event).request();
-      isCommandToSkipBuildCompleteEvent =
-          buildRequest.getCommandName().equals("test")
-              || buildRequest.getCommandName().equals("coverage")
-              || buildRequest.getCommandName().equals("run");
+      isTestCommand =
+          "test".equals(buildRequest.getCommandName())
+              || "coverage".equals(buildRequest.getCommandName());
     }
 
     if (event instanceof BuildEventWithConfiguration) {
@@ -723,9 +721,9 @@ public class BuildEventStreamer {
       return RetentionDecision.DISCARD;
     }
 
-    if (isCommandToSkipBuildCompleteEvent && event instanceof BuildCompleteEvent) {
-      // In case of "bazel test" or "bazel run" ignore the BuildCompleteEvent, as it will be
-      // followed by a TestingCompleteEvent that contains the correct exit code.
+    if (isTestCommand && event instanceof BuildCompleteEvent) {
+      // In case of "bazel test" ignore the BuildCompleteEvent, as it will be followed by a
+      // TestingCompleteEvent that contains the correct exit code.
       return isCrash((BuildCompleteEvent) event)
           ? RetentionDecision.POST
           : RetentionDecision.DISCARD;

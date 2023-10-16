@@ -15,7 +15,6 @@
 package com.google.devtools.build.lib.analysis;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.devtools.build.lib.analysis.constraints.ConstraintConstants.OS_TO_CONSTRAINTS;
 import static com.google.devtools.build.lib.analysis.test.ExecutionInfo.DEFAULT_TEST_RUNNER_EXEC_GROUP;
 import static com.google.devtools.build.lib.packages.ExecGroup.DEFAULT_EXEC_GROUP_NAME;
 
@@ -66,6 +65,7 @@ import com.google.devtools.build.lib.packages.Aspect;
 import com.google.devtools.build.lib.packages.AspectDescriptor;
 import com.google.devtools.build.lib.packages.Attribute;
 import com.google.devtools.build.lib.packages.AttributeMap;
+import com.google.devtools.build.lib.packages.BazelStarlarkContext;
 import com.google.devtools.build.lib.packages.BuildType;
 import com.google.devtools.build.lib.packages.BuiltinProvider;
 import com.google.devtools.build.lib.packages.ConfigurationFragmentPolicy;
@@ -599,8 +599,10 @@ public final class RuleContext extends TargetContext
    */
   public Artifact createOutputArtifactScript() {
     Target target = getTarget();
+    // TODO(laszlocsomor): Use the execution platform, not the host platform.
+    boolean isExecutedOnWindows = OS.getCurrent() == OS.WINDOWS;
 
-    String fileExtension = isExecutedOnWindows() ? ".cmd" : ".sh";
+    String fileExtension = isExecutedOnWindows ? ".cmd" : ".sh";
 
     PathFragment rootRelativePath =
         getPackageDirectory().getRelative(PathFragment.create(target.getName() + fileExtension));
@@ -1087,7 +1089,14 @@ public final class RuleContext extends TargetContext
     AnalysisEnvironment env = getAnalysisEnvironment();
     StarlarkThread thread = new StarlarkThread(mutability, env.getStarlarkSemantics());
     thread.setPrintHandler(Event.makeDebugPrintHandler(env.getEventHandler()));
-    new BazelRuleAnalysisThreadContext(getSymbolGenerator(), this).storeInThread(thread);
+    new BazelStarlarkContext(
+            BazelStarlarkContext.Phase.ANALYSIS,
+            ruleClassProvider.getToolsRepository(),
+            /* fragmentNameToClass= */ null,
+            getSymbolGenerator(),
+            getLabel(),
+            /* networkAllowlistForTests= */ null)
+        .storeInThread(thread);
     return thread;
   }
 
@@ -1618,13 +1627,6 @@ public final class RuleContext extends TargetContext
   /** Returns true if the testonly attribute is set on this context. */
   public boolean isTestOnlyTarget() {
     return attributes().has("testonly", Type.BOOLEAN) && attributes().get("testonly", Type.BOOLEAN);
-  }
-
-  /** Returns true if the execution platform is Windows. */
-  public boolean isExecutedOnWindows() {
-    return getExecutionPlatform()
-        .constraints()
-        .hasConstraintValue(OS_TO_CONSTRAINTS.get(OS.WINDOWS));
   }
 
   /**

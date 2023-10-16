@@ -47,7 +47,6 @@ import net.starlark.java.eval.EvalException;
 import net.starlark.java.eval.Sequence;
 import net.starlark.java.eval.Starlark;
 import net.starlark.java.eval.StarlarkList;
-import net.starlark.java.eval.StarlarkSemantics;
 import net.starlark.java.eval.StarlarkThread;
 
 /**
@@ -240,22 +239,6 @@ public final class ObjcProvider implements Info, ObjcProviderApi<Artifact> {
    * </ul>
    */
   static final ImmutableSet<Key<?>> KEYS_FOR_DIRECT = ImmutableSet.<Key<?>>of(MODULE_MAP, SOURCE);
-
-  /** Keys that are deprecated and will be removed at conclusion of linking info migration. */
-  static final ImmutableSet<Key<?>> DEPRECATED_KEYS =
-      ImmutableSet.<Key<?>>of(
-          CC_LIBRARY,
-          DYNAMIC_FRAMEWORK_FILE,
-          FORCE_LOAD_LIBRARY,
-          FLAG,
-          IMPORTED_LIBRARY,
-          LIBRARY,
-          LINK_INPUTS,
-          LINKOPT,
-          SDK_DYLIB,
-          SDK_FRAMEWORK,
-          STATIC_FRAMEWORK_FILE,
-          WEAK_SDK_FRAMEWORK);
 
   public ImmutableList<PathFragment> getStrictDependencyIncludes() {
     return strictDependencyIncludes;
@@ -563,7 +546,6 @@ public final class ObjcProvider implements Info, ObjcProviderApi<Artifact> {
    */
   public static class Builder {
 
-    protected final StarlarkSemantics starlarkSemantics;
     private final Map<Key<?>, NestedSetBuilder<?>> items = new HashMap<>();
     private final ImmutableList.Builder<PathFragment> strictDependencyIncludes =
         ImmutableList.builder();
@@ -572,9 +554,7 @@ public final class ObjcProvider implements Info, ObjcProviderApi<Artifact> {
     private final ImmutableListMultimap.Builder<Key<?>, ?> directItems =
         new ImmutableListMultimap.Builder<>();
 
-    public Builder(StarlarkSemantics semantics) {
-      this.starlarkSemantics = semantics;
-    }
+    public Builder() {}
 
     private static void maybeAddEmptyBuilder(Map<Key<?>, NestedSetBuilder<?>> set, Key<?> key) {
       set.computeIfAbsent(key, k -> new NestedSetBuilder<>(k.order));
@@ -700,8 +680,8 @@ public final class ObjcProvider implements Info, ObjcProviderApi<Artifact> {
 
   /** A builder for this context, specialized for Starlark use. */
   public static final class StarlarkBuilder extends Builder {
-    public StarlarkBuilder(StarlarkSemantics semantics) {
-      super(semantics);
+    public StarlarkBuilder() {
+      super();
     }
 
     /**

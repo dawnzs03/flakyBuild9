@@ -127,11 +127,7 @@ JAVA_TOOLS = [
     ],
 ) for suffix, jdk in {
     "_jdk_allmodules": [":embedded_jdk_allmodules"],
-    "_jdk_minimal": select({
-        # We cannot minimize the JDK during cross compiling for Windows arm64
-        "//src/conditions:windows_arm64": [":embedded_jdk_vanilla"],
-        "//conditions:default": [":embedded_jdk_minimal"],
-    }),
+    "_jdk_minimal": [":embedded_jdk_minimal"],
     "_nojdk": [],
 }.items()]
 
@@ -154,11 +150,8 @@ filegroup(
         "//src/conditions:darwin_arm64": [
             "@openjdk_macos_aarch64_vanilla//file",
         ],
-        "//src/conditions:windows_x86_64": [
+        "//src/conditions:windows": [
             "@openjdk_win_vanilla//file",
-        ],
-        "//src/conditions:windows_arm64": [
-            "@openjdk_win_arm64_vanilla//file",
         ],
         "//src/conditions:linux_aarch64": [
             "@openjdk_linux_aarch64_vanilla//file",
@@ -374,7 +367,6 @@ filegroup(
         "//src/test/tools:srcs",
         "//src/tools/android:srcs",
         "//src/tools/android/java/com/google/devtools/build/android:srcs",
-        "//src/tools/bzlmod:srcs",
         "//src/tools/execlog:srcs",
         "//src/tools/launcher:srcs",
         "//src/tools/remote:srcs",

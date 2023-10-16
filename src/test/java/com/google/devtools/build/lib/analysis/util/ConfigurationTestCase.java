@@ -29,6 +29,7 @@ import com.google.devtools.build.lib.analysis.config.FragmentFactory;
 import com.google.devtools.build.lib.analysis.config.FragmentOptions;
 import com.google.devtools.build.lib.analysis.config.InvalidConfigurationException;
 import com.google.devtools.build.lib.clock.BlazeClock;
+import com.google.devtools.build.lib.cmdline.RepositoryName;
 import com.google.devtools.build.lib.packages.PackageFactory;
 import com.google.devtools.build.lib.packages.semantics.BuildLanguageOptions;
 import com.google.devtools.build.lib.packages.util.MockToolsConfig;
@@ -230,13 +231,13 @@ public abstract class ConfigurationTestCase extends FoundationTestCase {
   /** Returns a raw {@link BuildConfigurationValue} with the given parameters. */
   protected BuildConfigurationValue createRaw(
       BuildOptions buildOptions,
-      String workspaceName,
+      String repositoryName,
       boolean siblingRepositoryLayout,
       String transitionDirectoryNameFragment)
       throws Exception {
     return BuildConfigurationValue.create(
         buildOptions,
-        workspaceName,
+        RepositoryName.create(repositoryName),
         siblingRepositoryLayout,
         transitionDirectoryNameFragment,
         skyframeExecutor.getBlazeDirectoriesForTesting(),

@@ -78,18 +78,15 @@ def _remove_repo(file):
         return short_path.removeprefix(workspace_root + "/")
     return short_path
 
-def _get_import_path(proto_file):
-    """Returns the import path of a .proto file
-
-    This is the path as used for the the file that can be used in an `import` statement in another
-    .proto file.
+def get_import_path(proto_source):
+    """Returns the import path of a .proto file, i.e. clean path without any repo or strip_prefixes remapping
 
     Args:
-      proto_file: (File) The .proto file
+      proto_source: (ProtoSourceInfo) The .proto file
     Returns:
       (str) import path
     """
-    repo_path = _remove_repo(proto_file)
+    repo_path = _remove_repo(proto_source)
     index = repo_path.find("_virtual_imports/")
     if index >= 0:
         index = repo_path.find("/", index + len("_virtual_imports/"))
@@ -121,15 +118,14 @@ def _check_collocated(label, proto_info, proto_lang_toolchain_info):
       proto_lang_toolchain_info: (ProtoLangToolchainInfo) The proto lang toolchain info.
         Obtained from a `proto_lang_toolchain` target.
     """
-    PackageSpecificationInfo = _builtins.toplevel.PackageSpecificationInfo
     if (proto_info.direct_descriptor_set.owner.package != label.package and
         proto_lang_toolchain_info.allowlist_different_package):
-        if not proto_lang_toolchain_info.allowlist_different_package[PackageSpecificationInfo].contains(label):
+        if not proto_lang_toolchain_info.allowlist_different_package.isAvailableFor(label):
             fail(("lang_proto_library '%s' may only be created in the same package " +
                   "as proto_library '%s'") % (label, proto_info.direct_descriptor_set.owner))
     if (proto_info.direct_descriptor_set.owner.package != label.package and
         hasattr(proto_info, "allow_exports")):
-        if not proto_info.allow_exports[PackageSpecificationInfo].contains(label):
+        if not proto_info.allow_exports.isAvailableFor(label):
             fail(("lang_proto_library '%s' may only be created in the same package " +
                   "as proto_library '%s'") % (label, proto_info.direct_descriptor_set.owner))
 
@@ -356,6 +352,5 @@ proto_common_do_not_use = struct(
     check_collocated = _check_collocated,
     experimental_should_generate_code = _experimental_should_generate_code,
     experimental_filter_sources = _experimental_filter_sources,
-    get_import_path = _get_import_path,
     ProtoLangToolchainInfo = ProtoLangToolchainInfo,
 )

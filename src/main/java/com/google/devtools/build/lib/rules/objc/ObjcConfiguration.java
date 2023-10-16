@@ -23,9 +23,10 @@ import com.google.devtools.build.lib.analysis.config.CoreOptions;
 import com.google.devtools.build.lib.analysis.config.Fragment;
 import com.google.devtools.build.lib.analysis.config.RequiresOptions;
 import com.google.devtools.build.lib.analysis.starlark.StarlarkRuleContext;
+import com.google.devtools.build.lib.cmdline.BazelModuleContext;
+import com.google.devtools.build.lib.cmdline.Label;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.Immutable;
 import com.google.devtools.build.lib.packages.AttributeMap;
-import com.google.devtools.build.lib.packages.BuiltinRestriction;
 import com.google.devtools.build.lib.packages.Type;
 import com.google.devtools.build.lib.rules.apple.ApplePlatform.PlatformType;
 import com.google.devtools.build.lib.rules.apple.DottedVersion;
@@ -33,6 +34,8 @@ import com.google.devtools.build.lib.rules.cpp.CppOptions;
 import com.google.devtools.build.lib.starlarkbuildapi.apple.ObjcConfigurationApi;
 import javax.annotation.Nullable;
 import net.starlark.java.eval.EvalException;
+import net.starlark.java.eval.Module;
+import net.starlark.java.eval.Starlark;
 import net.starlark.java.eval.StarlarkThread;
 
 /** A compiler configuration containing flags required for Objective-C compilation. */
@@ -55,6 +58,10 @@ public class ObjcConfiguration extends Fragment implements ObjcConfigurationApi<
 
   private final DottedVersion iosSimulatorVersion;
   private final String iosSimulatorDevice;
+  private final DottedVersion watchosSimulatorVersion;
+  private final String watchosSimulatorDevice;
+  private final DottedVersion tvosSimulatorVersion;
+  private final String tvosSimulatorDevice;
   // TODO(b/236152224): Delete after Starlark uses are migrated to CppConfiguration.
   private final boolean generateLinkmap;
   private final boolean runMemleaks;
@@ -78,6 +85,10 @@ public class ObjcConfiguration extends Fragment implements ObjcConfigurationApi<
 
     this.iosSimulatorDevice = objcOptions.iosSimulatorDevice;
     this.iosSimulatorVersion = DottedVersion.maybeUnwrap(objcOptions.iosSimulatorVersion);
+    this.watchosSimulatorDevice = objcOptions.watchosSimulatorDevice;
+    this.watchosSimulatorVersion = DottedVersion.maybeUnwrap(objcOptions.watchosSimulatorVersion);
+    this.tvosSimulatorDevice = objcOptions.tvosSimulatorDevice;
+    this.tvosSimulatorVersion = DottedVersion.maybeUnwrap(objcOptions.tvosSimulatorVersion);
     this.generateLinkmap = cppOptions.objcGenerateLinkmap;
     this.runMemleaks = objcOptions.runMemleaks;
     this.copts = ImmutableList.copyOf(cppOptions.objcoptList);
@@ -106,6 +117,36 @@ public class ObjcConfiguration extends Fragment implements ObjcConfigurationApi<
   public DottedVersion getIosSimulatorVersion() {
     // TODO(bazel-team): Deprecate in favor of getSimulatorVersionForPlatformType(IOS).
     return iosSimulatorVersion;
+  }
+
+  @Override
+  public String getSimulatorDeviceForPlatformType(PlatformType platformType) {
+    switch (platformType) {
+      case IOS:
+        return iosSimulatorDevice;
+      case TVOS:
+        return tvosSimulatorDevice;
+      case WATCHOS:
+        return watchosSimulatorDevice;
+      default:
+        throw new IllegalArgumentException(
+            "ApplePlatform type " + platformType + " does not support " + "simulators.");
+    }
+  }
+
+  @Override
+  public DottedVersion getSimulatorVersionForPlatformType(PlatformType platformType) {
+    switch (platformType) {
+      case IOS:
+        return iosSimulatorVersion;
+      case TVOS:
+        return tvosSimulatorVersion;
+      case WATCHOS:
+        return watchosSimulatorVersion;
+      default:
+        throw new IllegalArgumentException(
+            "ApplePlatform type " + platformType + " does not support " + "simulators.");
+    }
   }
 
   /**
@@ -202,6 +243,13 @@ public class ObjcConfiguration extends Fragment implements ObjcConfigurationApi<
     return alwayslinkByDefault;
   }
 
+  private static boolean isBuiltIn(StarlarkThread thread) {
+    Label label =
+        ((BazelModuleContext) Module.ofInnermostEnclosingStarlarkFunction(thread).getClientData())
+            .label();
+    return label.getPackageIdentifier().getRepository().getName().equals("_builtins");
+  }
+
   /**
    * Looks at any explicit value for alwayslink on ctx and then falls back to the value of
    * alwayslink_by_default.
@@ -209,7 +257,9 @@ public class ObjcConfiguration extends Fragment implements ObjcConfigurationApi<
   @Override
   public boolean targetShouldAlwayslink(StarlarkRuleContext ruleContext, StarlarkThread thread)
       throws EvalException {
-    BuiltinRestriction.failIfCalledOutsideBuiltins(thread);
+    if (!isBuiltIn(thread)) {
+      throw Starlark.errorf("Cannot use targetShouldAlwayslink API outside of builtins");
+    }
 
     AttributeMap attributes = ruleContext.getRuleContext().attributes();
     if (attributes.isAttributeValueExplicitlySpecified("alwayslink")) {

@@ -17,7 +17,6 @@ package com.google.devtools.build.lib.bazel.bzlmod;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.flogger.GoogleLogger;
 import com.google.devtools.build.lib.bazel.repository.RepositoryOptions;
@@ -124,11 +123,7 @@ public class BazelLockFileModule extends BlazeModule {
     for (ModuleExtensionResolutionEvent extensionEvent : extensionResolutionEvents) {
       updatedExtensionMap.put(extensionEvent.getExtensionId(), extensionEvent.getModuleExtension());
     }
-    // The order in which extensions are added to extensionResolutionEvents depends on the order
-    // in which their Skyframe evaluations finish, which is non-deterministic. We ensure a
-    // deterministic lockfile by sorting.
-    return ImmutableSortedMap.copyOf(
-        updatedExtensionMap.buildKeepingLast(), ModuleExtensionId.LEXICOGRAPHIC_COMPARATOR);
+    return updatedExtensionMap.buildKeepingLast();
   }
 
   /**

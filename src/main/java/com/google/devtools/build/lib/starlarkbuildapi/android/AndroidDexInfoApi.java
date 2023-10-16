@@ -44,23 +44,12 @@ public interface AndroidDexInfoApi<FileT extends FileApi> extends StructApi {
       structField = true)
   FileT getDeployJar();
 
-  @Nullable
   @StarlarkMethod(
       name = "final_classes_dex_zip",
       doc = "The zip file containing the final dex classes.",
       documented = false,
-      structField = true,
-      allowReturnNones = true)
+      structField = true)
   FileT getFinalClassesDexZip();
-
-  @Nullable
-  @StarlarkMethod(
-      name = "final_proguard_output_map",
-      doc = "The final proguard output map.",
-      documented = false,
-      structField = true,
-      allowReturnNones = true)
-  FileT getFinalProguardOutputMap();
 
   @Nullable
   @StarlarkMethod(
@@ -96,19 +85,9 @@ public interface AndroidDexInfoApi<FileT extends FileApi> extends StructApi {
               name = "final_classes_dex_zip",
               allowedTypes = {
                 @ParamType(type = FileApi.class),
-                @ParamType(type = NoneType.class),
               },
               named = true,
               doc = "The zip file containing the final dex classes."),
-          @Param(
-              name = "final_proguard_output_map",
-              allowedTypes = {
-                @ParamType(type = FileApi.class),
-                @ParamType(type = NoneType.class),
-              },
-              named = true,
-              doc = "The final proguard output map.",
-              defaultValue = "None"),
           @Param(
               name = "java_resource_jar",
               allowedTypes = {
@@ -116,16 +95,11 @@ public interface AndroidDexInfoApi<FileT extends FileApi> extends StructApi {
                 @ParamType(type = NoneType.class),
               },
               named = true,
-              doc = "The final Java resource jar.",
-              defaultValue = "None")
+              doc = "The final Java resource jar."),
         },
         selfCall = true)
     @StarlarkConstructor
     AndroidDexInfoApi<FileT> createInfo(
-        FileT deployJar,
-        Object finalClassesDexZip,
-        Object finalProguardOutputMap,
-        Object javaResourceJar)
-        throws EvalException;
+        FileT deployJar, FileT finalClassesDexZip, Object javaResourceJar) throws EvalException;
   }
 }

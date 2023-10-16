@@ -64,13 +64,13 @@ public final class SpawnExecutedEvent implements ExtendedEventHandler.Postable {
    * runtime of the entire CriticalPathComponent.
    */
   public static final class ChangePhase implements ExtendedEventHandler.Postable {
-    private final ActionAnalysisMetadata action;
+    private final Action action;
 
-    public ChangePhase(ActionAnalysisMetadata action) {
+    public ChangePhase(Action action) {
       this.action = action;
     }
 
-    public ActionAnalysisMetadata getAction() {
+    public Action getAction() {
       return this.action;
     }
   }

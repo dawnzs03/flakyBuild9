@@ -644,7 +644,9 @@ public final class StarlarkRuleImplementationFunctionsTest extends BuildViewTest
     AssertionError error =
         assertThrows(AssertionError.class, () -> getConfiguredTarget("//abc:foo"));
 
-    assertThat(error).hasMessageThat().contains("file '//abc:rule.bzl' cannot use private API");
+    assertThat(error)
+        .hasMessageThat()
+        .contains("Error in expand_location: Rule in 'abc' cannot use private API");
   }
 
   @Test
@@ -713,7 +715,12 @@ public final class StarlarkRuleImplementationFunctionsTest extends BuildViewTest
         "   tools=ruleContext.attr.tools)");
     @SuppressWarnings("unchecked")
     List<Artifact> inputs = (List<Artifact>) (List<?>) (StarlarkList) ev.lookup("inputs");
-    assertArtifactFilenames(inputs, "mytool.sh", "mytool", "foo_Smytool-runfiles", "t.exe");
+    assertArtifactFilenames(
+        inputs,
+        "mytool.sh",
+        "mytool",
+        "foo_Smytool" + OsUtils.executableExtension() + "-runfiles",
+        "t.exe");
     @SuppressWarnings("unchecked")
     RunfilesSupplier runfilesSupplier =
         CompositeRunfilesSupplier.fromSuppliers(
@@ -838,7 +845,7 @@ public final class StarlarkRuleImplementationFunctionsTest extends BuildViewTest
         ((Depset) ev.lookup("inputs")).getSet(Artifact.class).toList(),
         "mytool.sh",
         "mytool",
-        "foo_Smytool-runfiles",
+        "foo_Smytool" + OsUtils.executableExtension() + "-runfiles",
         "t.exe");
     @SuppressWarnings("unchecked")
     RunfilesSupplier runfilesSupplier =
@@ -851,7 +858,11 @@ public final class StarlarkRuleImplementationFunctionsTest extends BuildViewTest
             Iterables.getOnlyElement(
                 ruleContext.getRuleContext().getAnalysisEnvironment().getRegisteredActions());
     assertThat(ActionsTestUtil.baseArtifactNames(action.getInputs()))
-        .containsAtLeast("mytool.sh", "mytool", "foo_Smytool-runfiles", "t.exe");
+        .containsAtLeast(
+            "mytool.sh",
+            "mytool",
+            "foo_Smytool" + OsUtils.executableExtension() + "-runfiles",
+            "t.exe");
   }
 
   @Test
@@ -2609,7 +2620,7 @@ public final class StarlarkRuleImplementationFunctionsTest extends BuildViewTest
         "  implementation = _foo_impl,",
         "  attrs = {",
         "    '_attr': attr.label(",
-        "        cfg = android_common.multi_cpu_configuration,",
+        "        cfg = apple_common.multi_arch_split,",
         "        default = configuration_field(fragment='cpp', name = 'cc_toolchain'))})");
 
     scratch.file("test/BUILD", "load('//test:rule.bzl', 'foo')", "foo(name='foo')");
@@ -3323,7 +3334,9 @@ public final class StarlarkRuleImplementationFunctionsTest extends BuildViewTest
     AssertionError error =
         assertThrows(AssertionError.class, () -> getConfiguredTarget("//abc:foo"));
 
-    assertThat(error).hasMessageThat().contains("file '//abc:rule.bzl' cannot use private API");
+    assertThat(error)
+        .hasMessageThat()
+        .contains("Error in declare_shareable_artifact: Rule in 'abc' cannot use private API");
   }
 
   @Test
@@ -3340,7 +3353,9 @@ public final class StarlarkRuleImplementationFunctionsTest extends BuildViewTest
     AssertionError error =
         assertThrows(AssertionError.class, () -> getConfiguredTarget("//abc:foo"));
 
-    assertThat(error).hasMessageThat().contains("file '//abc:rule.bzl' cannot use private API");
+    assertThat(error)
+        .hasMessageThat()
+        .contains("Error in runfiles: Rule in 'abc' cannot use private API");
   }
 
   @Test

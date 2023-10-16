@@ -26,7 +26,6 @@ import com.google.devtools.build.lib.actions.ActionResult;
 import com.google.devtools.build.lib.actions.Artifact;
 import com.google.devtools.build.lib.analysis.Runfiles;
 import com.google.devtools.build.lib.analysis.config.BuildConfigurationValue;
-import com.google.devtools.build.lib.analysis.config.BuildConfigurationValue.RunfileSymlinksMode;
 import com.google.devtools.build.lib.collect.nestedset.NestedSet;
 import com.google.devtools.build.lib.collect.nestedset.NestedSetBuilder;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.Immutable;
@@ -49,7 +48,8 @@ public final class SymlinkTreeAction extends AbstractAction {
   private final Artifact outputManifest;
   @Nullable private final String filesetRoot;
   private final ActionEnvironment env;
-  private final RunfileSymlinksMode runfileSymlinksMode;
+  private final boolean enableRunfiles;
+  private final boolean inprocessSymlinkCreation;
   private final Artifact repoMappingManifest;
 
   /**
@@ -80,7 +80,8 @@ public final class SymlinkTreeAction extends AbstractAction {
         repoMappingManifest,
         filesetRoot,
         config.getActionEnvironment(),
-        config.getRunfileSymlinksMode());
+        config.runfilesEnabled(),
+        config.inprocessSymlinkCreation());
   }
 
   /**
@@ -105,10 +106,11 @@ public final class SymlinkTreeAction extends AbstractAction {
       @Nullable Artifact repoMappingManifest,
       @Nullable String filesetRoot,
       ActionEnvironment env,
-      RunfileSymlinksMode runfileSymlinksMode) {
+      boolean enableRunfiles,
+      boolean inprocessSymlinkCreation) {
     super(
         owner,
-        computeInputs(runfileSymlinksMode, runfiles, inputManifest, repoMappingManifest),
+        computeInputs(enableRunfiles, runfiles, inputManifest, repoMappingManifest),
         ImmutableSet.of(outputManifest));
     Preconditions.checkArgument(outputManifest.getPath().getBaseName().equals("MANIFEST"));
     Preconditions.checkArgument(
@@ -118,13 +120,14 @@ public final class SymlinkTreeAction extends AbstractAction {
     this.outputManifest = outputManifest;
     this.filesetRoot = filesetRoot;
     this.env = env;
-    this.runfileSymlinksMode = runfileSymlinksMode;
+    this.enableRunfiles = enableRunfiles;
+    this.inprocessSymlinkCreation = inprocessSymlinkCreation;
     this.inputManifest = inputManifest;
     this.repoMappingManifest = repoMappingManifest;
   }
 
   private static NestedSet<Artifact> computeInputs(
-      RunfileSymlinksMode runfileSymlinksMode,
+      boolean enableRunfiles,
       Runfiles runfiles,
       Artifact inputManifest,
       @Nullable Artifact repoMappingManifest) {
@@ -133,9 +136,7 @@ public final class SymlinkTreeAction extends AbstractAction {
     // All current strategies (in-process and build-runfiles-windows) for
     // making symlink trees on Windows depend on the target files
     // existing, so directory or file links can be made as appropriate.
-    if (runfileSymlinksMode != RunfileSymlinksMode.SKIP
-        && runfiles != null
-        && OS.getCurrent() == OS.WINDOWS) {
+    if (enableRunfiles && runfiles != null && OS.getCurrent() == OS.WINDOWS) {
       inputs.addTransitive(runfiles.getAllArtifacts());
       if (repoMappingManifest != null) {
         inputs.add(repoMappingManifest);
@@ -175,8 +176,12 @@ public final class SymlinkTreeAction extends AbstractAction {
     return PathFragment.create(filesetRoot);
   }
 
-  public RunfileSymlinksMode getRunfileSymlinksMode() {
-    return runfileSymlinksMode;
+  public boolean isRunfilesEnabled() {
+    return enableRunfiles;
+  }
+
+  public boolean inprocessSymlinkCreation() {
+    return inprocessSymlinkCreation;
   }
 
   @Override
@@ -197,7 +202,8 @@ public final class SymlinkTreeAction extends AbstractAction {
       Fingerprint fp) {
     fp.addString(GUID);
     fp.addNullableString(filesetRoot);
-    fp.addInt(runfileSymlinksMode.ordinal());
+    fp.addBoolean(enableRunfiles);
+    fp.addBoolean(inprocessSymlinkCreation);
     env.addTo(fp);
     // We need to ensure that the fingerprints for two different instances of this action are
     // different. Consider the hypothetical scenario where we add a second runfiles object to this
@@ -209,7 +215,7 @@ public final class SymlinkTreeAction extends AbstractAction {
     // safe to add more fields in the future.
     fp.addBoolean(runfiles != null);
     if (runfiles != null) {
-      runfiles.fingerprint(actionKeyContext, fp, /* digestAbsolutePaths= */ true);
+      runfiles.fingerprint(actionKeyContext, fp);
     }
     fp.addBoolean(repoMappingManifest != null);
     if (repoMappingManifest != null) {

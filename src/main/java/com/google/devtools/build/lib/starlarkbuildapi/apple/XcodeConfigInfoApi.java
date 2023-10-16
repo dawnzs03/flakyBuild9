@@ -104,16 +104,6 @@ public interface XcodeConfigInfoApi<
               positional = false,
               doc = "The ios minimum os version."),
           @Param(
-              name = "visionosSdkVersion",
-              named = true,
-              positional = false,
-              doc = "The visionOS SDK version."),
-          @Param(
-              name = "visionosMinimumOsVersion",
-              named = true,
-              positional = false,
-              doc = "The visionOS minimum os version."),
-          @Param(
               name = "watchosSdkVersion",
               named = true,
               positional = false,
@@ -154,8 +144,6 @@ public interface XcodeConfigInfoApi<
     XcodeConfigInfoApi<?, ?> xcodeConfigInfo(
         String iosSdkVersion,
         String iosMinimumOsVersion,
-        String visionosSdkVersion,
-        String visionosMinimumOsVersion,
         String watchosSdkVersion,
         String watchosMinimumOsVersion,
         String tvosSdkVersion,

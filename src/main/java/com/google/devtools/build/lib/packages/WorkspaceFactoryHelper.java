@@ -49,8 +49,7 @@ public final class WorkspaceFactoryHelper {
           InterruptedException {
     StoredEventHandler eventHandler = new StoredEventHandler();
     BuildLangTypedAttributeValuesMap attributeValues = new BuildLangTypedAttributeValuesMap(kwargs);
-    Rule rule =
-        RuleFactory.createRule(pkg, ruleClass, attributeValues, true, eventHandler, callstack);
+    Rule rule = RuleFactory.createRule(pkg, ruleClass, attributeValues, eventHandler, callstack);
     pkg.addEvents(eventHandler.getEvents());
     pkg.addPosts(eventHandler.getPosts());
     overwriteRule(pkg, rule);
@@ -165,8 +164,7 @@ public final class WorkspaceFactoryHelper {
     StoredEventHandler handler = new StoredEventHandler();
     BuildLangTypedAttributeValuesMap attributeValues =
         new BuildLangTypedAttributeValuesMap(attributes);
-    Rule rule =
-        RuleFactory.createRule(pkg, bindRuleClass, attributeValues, true, handler, callstack);
+    Rule rule = RuleFactory.createRule(pkg, bindRuleClass, attributeValues, handler, callstack);
     overwriteRule(pkg, rule);
   }
 

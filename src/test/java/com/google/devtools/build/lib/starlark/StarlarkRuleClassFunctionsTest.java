@@ -25,9 +25,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.testing.EqualsTester;
 import com.google.devtools.build.lib.analysis.ConfiguredRuleClassProvider;
-import com.google.devtools.build.lib.analysis.ConfiguredTarget;
 import com.google.devtools.build.lib.analysis.RuleContext;
 import com.google.devtools.build.lib.analysis.config.transitions.NoTransition;
 import com.google.devtools.build.lib.analysis.starlark.StarlarkAttrModule;
@@ -96,7 +94,6 @@ import net.starlark.java.syntax.ParserInput;
 import net.starlark.java.syntax.Program;
 import net.starlark.java.syntax.StarlarkFile;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
@@ -291,33 +288,6 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
   }
 
   @Test
-  public void testAttrEquality() throws Exception {
-    new EqualsTester()
-        .addEqualityGroup(
-            buildAttribute("foo", "attr.string_list(default = [])"),
-            buildAttribute("foo", "attr.string_list(default = [])"))
-        .addEqualityGroup(
-            buildAttribute("bar", "attr.string_list(default = [])"),
-            buildAttribute("bar", "attr.string_list(default = [])"))
-        .addEqualityGroup(
-            buildAttribute("bar", "attr.label_list(default = [])"),
-            buildAttribute("bar", "attr.label_list(default = [])"))
-        .addEqualityGroup(
-            buildAttribute("foo", "attr.string_list(default = ['hello'])"),
-            buildAttribute("foo", "attr.string_list(default = ['hello'])"))
-        .addEqualityGroup(
-            buildAttribute("foo", "attr.string_list(doc = 'Blah blah blah', default = [])"),
-            buildAttribute("foo", "attr.string_list(doc = 'Blah blah blah', default = [])"))
-        .addEqualityGroup(
-            buildAttribute("foo", "attr.string_list(mandatory = True, default = [])"),
-            buildAttribute("foo", "attr.string_list(mandatory = True, default = [])"))
-        .addEqualityGroup(
-            buildAttribute("foo", "attr.string_list(allow_empty = False, default = [])"),
-            buildAttribute("foo", "attr.string_list(allow_empty = False, default = [])"))
-        .testEquals();
-  }
-
-  @Test
   public void testRuleClassTooManyAttributes() throws Exception {
     ev.setFailFast(false);
 
@@ -391,8 +361,7 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
   @Test
   public void testAttrWithProviders() throws Exception {
     Attribute attr =
-        buildAttribute(
-            "a1", //
+        buildAttribute("a1",
             "b = provider()",
             "attr.label_list(allow_files = True, providers = ['a', b])");
     assertThat(attr.starlarkDefined()).isTrue();
@@ -414,8 +383,7 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
   @Test
   public void testAttrWithProvidersList() throws Exception {
     Attribute attr =
-        buildAttribute(
-            "a1",
+        buildAttribute("a1",
             "b = provider()",
             "attr.label_list(allow_files = True, providers = [['a', b], ['c']])");
     assertThat(attr.starlarkDefined()).isTrue();
@@ -627,7 +595,7 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
     StarlarkDefinedAspect aspect = (StarlarkDefinedAspect) ev.lookup("my_aspect");
     Attribute attribute = Iterables.getOnlyElement(aspect.getAttributes());
     assertThat(attribute.getName()).isEqualTo("$extra_deps");
-    assertThat(attribute.getDefaultValue(null))
+    assertThat(attribute.getDefaultValue())
         .isEqualTo(Label.parseCanonicalUnchecked("//foo/bar:baz"));
   }
 
@@ -769,10 +737,8 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
 
   @Test
   public void testAttrAllowedRuleClassesSpecificRuleClasses() throws Exception {
-    Attribute attr =
-        buildAttribute(
-            "a", //
-            "attr.label_list(allow_rules = ['java_binary'], allow_files = True)");
+    Attribute attr = buildAttribute("a",
+        "attr.label_list(allow_rules = ['java_binary'], allow_files = True)");
     assertThat(attr.getAllowedRuleClassObjectPredicate().apply(ruleClass("java_binary"))).isTrue();
     assertThat(attr.getAllowedRuleClassObjectPredicate().apply(ruleClass("genrule"))).isFalse();
   }
@@ -904,11 +870,6 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
     Attribute documented =
         buildAttribute("documented", String.format("attr.%s(doc='foo')", attrType));
     assertThat(documented.getDoc()).isEqualTo("foo");
-    Attribute documentedNeedingDedent =
-        buildAttribute(
-            "documented",
-            String.format("attr.%s(doc='''foo\n\n    More details.\n    ''')", attrType));
-    assertThat(documentedNeedingDedent.getDoc()).isEqualTo("foo\n\nMore details.");
     Attribute undocumented = buildAttribute("undocumented", String.format("attr.%s()", attrType));
     assertThat(undocumented.getDoc()).isNull();
   }
@@ -938,21 +899,11 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
         ev,
         "def impl(ctx):",
         "    return None",
-        "documented_rule = rule(impl, doc = 'My doc string')",
-        "long_documented_rule = rule(",
-        "    impl,",
-        "    doc = '''Long doc",
-        "",
-        "             With details",
-        "''',",
-        ")",
+        "documented_rule = rule(impl, doc='My doc string')",
         "undocumented_rule = rule(impl)");
     StarlarkRuleFunction documentedRule = (StarlarkRuleFunction) ev.lookup("documented_rule");
-    StarlarkRuleFunction longDocumentedRule =
-        (StarlarkRuleFunction) ev.lookup("long_documented_rule");
     StarlarkRuleFunction undocumentedRule = (StarlarkRuleFunction) ev.lookup("undocumented_rule");
     assertThat(documentedRule.getDocumentation()).hasValue("My doc string");
-    assertThat(longDocumentedRule.getDocumentation()).hasValue("Long doc\n\nWith details");
     assertThat(undocumentedRule.getDocumentation()).isEmpty();
   }
 
@@ -1122,7 +1073,7 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
   public void testRuleBadTypeForAdd() throws Exception {
     registerDummyStarlarkFunction();
     ev.checkEvalErrorContains(
-        "in call to rule(), parameter 'attrs' got value of type 'string', want 'dict'",
+        "in call to rule(), parameter 'attrs' got value of type 'string', want 'dict or NoneType'",
         "rule(impl, attrs = 'some text')");
   }
 
@@ -1451,10 +1402,10 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
     checkJson("struct(name=123).to_json()", "{\"name\":123}");
     checkJson("struct(name=[1, 2, 3]).to_json()", "{\"name\":[1,2,3]}");
     checkJson("struct(a=struct(b='b')).to_json()", "{\"a\":{\"b\":\"b\"}}");
-    checkJson(
-        "struct(a=[struct(b='x'), struct(b='y')]).to_json()",
+    checkJson("struct(a=[struct(b='x'), struct(b='y')]).to_json()",
         "{\"a\":[{\"b\":\"x\"},{\"b\":\"y\"}]}");
-    checkJson("struct(a=struct(b=struct(c='c'))).to_json()", "{\"a\":{\"b\":{\"c\":\"c\"}}}");
+    checkJson("struct(a=struct(b=struct(c='c'))).to_json()",
+        "{\"a\":{\"b\":{\"c\":\"c\"}}}");
   }
 
   @Test
@@ -1769,13 +1720,10 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
     evalAndExport(
         ev,
         "UndocumentedInfo = provider()",
-        "DocumentedInfo = provider(doc = '''",
-        "    My documented provider",
-        "",
-        "    Details''')",
+        "DocumentedInfo = provider(doc = 'My documented provider')",
         // Note fields below are not alphabetized
         "SchemafulWithoutDocsInfo = provider(fields = ['b', 'a'])",
-        "SchemafulWithDocsInfo = provider(fields = {'b': 'Field b', 'a': 'Field\\n    a'})");
+        "SchemafulWithDocsInfo = provider(fields = {'b': 'Field b', 'a': 'Field a'})");
 
     StarlarkProvider undocumentedInfo = (StarlarkProvider) ev.lookup("UndocumentedInfo");
     StarlarkProvider documentedInfo = (StarlarkProvider) ev.lookup("DocumentedInfo");
@@ -1784,11 +1732,11 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
     StarlarkProvider schemafulWithDocsInfo = (StarlarkProvider) ev.lookup("SchemafulWithDocsInfo");
 
     assertThat(undocumentedInfo.getDocumentation()).isEmpty();
-    assertThat(documentedInfo.getDocumentation()).hasValue("My documented provider\n\nDetails");
+    assertThat(documentedInfo.getDocumentation()).hasValue("My documented provider");
     assertThat(schemafulWithoutDocsInfo.getSchema())
         .containsExactly("b", Optional.empty(), "a", Optional.empty());
     assertThat(schemafulWithDocsInfo.getSchema())
-        .containsExactly("b", Optional.of("Field b"), "a", Optional.of("Field\na"));
+        .containsExactly("b", Optional.of("Field b"), "a", Optional.of("Field a"));
   }
 
   @Test
@@ -2044,8 +1992,8 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
         "cc = provider()",
         "my_aspect = aspect(_impl, required_aspect_providers=['java', cc])");
     StarlarkDefinedAspect myAspect = (StarlarkDefinedAspect) ev.lookup("my_aspect");
-    RequiredProviders requiredProviders =
-        myAspect.getDefinition(AspectParameters.EMPTY).getRequiredProvidersForAspects();
+    RequiredProviders requiredProviders = myAspect.getDefinition(AspectParameters.EMPTY)
+        .getRequiredProvidersForAspects();
     assertThat(requiredProviders.isSatisfiedBy(AdvertisedProviderSet.ANY)).isTrue();
     assertThat(requiredProviders.isSatisfiedBy(AdvertisedProviderSet.EMPTY)).isFalse();
     assertThat(
@@ -2070,8 +2018,8 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
         "cc = provider()",
         "my_aspect = aspect(_impl, required_aspect_providers=[['java'], [cc]])");
     StarlarkDefinedAspect myAspect = (StarlarkDefinedAspect) ev.lookup("my_aspect");
-    RequiredProviders requiredProviders =
-        myAspect.getDefinition(AspectParameters.EMPTY).getRequiredProvidersForAspects();
+    RequiredProviders requiredProviders = myAspect.getDefinition(AspectParameters.EMPTY)
+        .getRequiredProvidersForAspects();
     assertThat(requiredProviders.isSatisfiedBy(AdvertisedProviderSet.ANY)).isTrue();
     assertThat(requiredProviders.isSatisfiedBy(AdvertisedProviderSet.EMPTY)).isFalse();
     assertThat(
@@ -2096,8 +2044,8 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
         "   pass",
         "my_aspect = aspect(_impl, required_aspect_providers=[])");
     StarlarkDefinedAspect myAspect = (StarlarkDefinedAspect) ev.lookup("my_aspect");
-    RequiredProviders requiredProviders =
-        myAspect.getDefinition(AspectParameters.EMPTY).getRequiredProvidersForAspects();
+    RequiredProviders requiredProviders = myAspect.getDefinition(AspectParameters.EMPTY)
+        .getRequiredProvidersForAspects();
     assertThat(requiredProviders.isSatisfiedBy(AdvertisedProviderSet.ANY)).isFalse();
     assertThat(requiredProviders.isSatisfiedBy(AdvertisedProviderSet.EMPTY)).isFalse();
   }
@@ -2110,8 +2058,8 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
         "   pass",
         "my_aspect = aspect(_impl)");
     StarlarkDefinedAspect myAspect = (StarlarkDefinedAspect) ev.lookup("my_aspect");
-    RequiredProviders requiredProviders =
-        myAspect.getDefinition(AspectParameters.EMPTY).getRequiredProvidersForAspects();
+    RequiredProviders requiredProviders = myAspect.getDefinition(AspectParameters.EMPTY)
+        .getRequiredProvidersForAspects();
     assertThat(requiredProviders.isSatisfiedBy(AdvertisedProviderSet.ANY)).isFalse();
     assertThat(requiredProviders.isSatisfiedBy(AdvertisedProviderSet.EMPTY)).isFalse();
   }
@@ -2223,8 +2171,8 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
         "y = provider()",
         "my_aspect = aspect(_impl, provides = ['x', y])");
     StarlarkDefinedAspect myAspect = (StarlarkDefinedAspect) ev.lookup("my_aspect");
-    AdvertisedProviderSet advertisedProviders =
-        myAspect.getDefinition(AspectParameters.EMPTY).getAdvertisedProviders();
+    AdvertisedProviderSet advertisedProviders = myAspect.getDefinition(AspectParameters.EMPTY)
+        .getAdvertisedProviders();
     assertThat(advertisedProviders.canHaveAnyProvider()).isFalse();
     assertThat(advertisedProviders.getStarlarkProviders())
         .containsExactly(legacy("x"), declared("y"));
@@ -2239,8 +2187,7 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
         "   pass",
         "y = provider()",
         "my_aspect = aspect(_impl, provides = ['x', 1])");
-    MoreAsserts.assertContainsEvent(
-        ev.getEventCollector(),
+    MoreAsserts.assertContainsEvent(ev.getEventCollector(),
         " Illegal argument: element in 'provides' is of unexpected type."
             + " Should be list of providers, but got item of type int. ");
   }
@@ -2252,20 +2199,10 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
         "def _impl(target, ctx):", //
         "   pass",
         "documented_aspect = aspect(_impl, doc='My doc string')",
-        "long_documented_aspect = aspect(",
-        "    _impl,",
-        "    doc='''",
-        "           My doc string",
-        "           ",
-        "           With details''',",
-        ")",
         "undocumented_aspect = aspect(_impl)");
 
     StarlarkDefinedAspect documentedAspect = (StarlarkDefinedAspect) ev.lookup("documented_aspect");
     assertThat(documentedAspect.getDocumentation()).hasValue("My doc string");
-    StarlarkDefinedAspect longDocumentedAspect =
-        (StarlarkDefinedAspect) ev.lookup("long_documented_aspect");
-    assertThat(longDocumentedAspect.getDocumentation()).hasValue("My doc string\n\nWith details");
     StarlarkDefinedAspect undocumentedAspect =
         (StarlarkDefinedAspect) ev.lookup("undocumented_aspect");
     assertThat(undocumentedAspect.getDocumentation()).isEmpty();
@@ -2412,24 +2349,23 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
 
   @Test
   public void testMandatoryConfigParameterForExecutableLabels() throws Exception {
-    scratch.file(
-        "third_party/foo/extension.bzl",
-        "def _main_rule_impl(ctx):",
-        "    pass",
-        "my_rule = rule(_main_rule_impl,",
-        "    attrs = { ",
-        "        'exe' : attr.label(executable = True, allow_files = True),",
-        "    },",
-        ")");
-    scratch.file(
-        "third_party/foo/BUILD",
-        "load(':extension.bzl', 'my_rule')",
-        "my_rule(name = 'main', exe = ':tool.sh')");
+    scratch.file("third_party/foo/extension.bzl",
+      "def _main_rule_impl(ctx):",
+      "    pass",
+      "my_rule = rule(_main_rule_impl,",
+      "    attrs = { ",
+      "        'exe' : attr.label(executable = True, allow_files = True),",
+      "    },",
+      ")"
+    );
+    scratch.file("third_party/foo/BUILD",
+      "load(':extension.bzl', 'my_rule')",
+      "my_rule(name = 'main', exe = ':tool.sh')"
+    );
 
     AssertionError expected =
         assertThrows(AssertionError.class, () -> createRuleContext("//third_party/foo:main"));
-    assertThat(expected)
-        .hasMessageThat()
+    assertThat(expected).hasMessageThat()
         .contains("cfg parameter is mandatory when executable=True is provided.");
   }
 
@@ -2536,18 +2472,16 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
 
   @Test
   public void testRuleFunctionReturnsNone() throws Exception {
-    scratch.file(
-        "test/rule.bzl",
+    scratch.file("test/rule.bzl",
         "def _impl(ctx):",
         "  pass",
         "foo_rule = rule(",
         "  implementation = _impl,",
         "  attrs = {'params': attr.string_list()},",
         ")");
-    scratch.file(
-        "test/BUILD",
+    scratch.file("test/BUILD",
         "load(':rule.bzl', 'foo_rule')",
-        "r = foo_rule(name='foo')", // Custom rule should return None
+        "r = foo_rule(name='foo')",  // Custom rule should return None
         "c = cc_library(name='cc')", // Native rule should return None
         "",
         "foo_rule(",
@@ -2715,7 +2649,7 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
     getConfiguredTarget("//r:r");
 
     ev.assertContainsError(
-        "rule() can only be used during .bzl initialization (top-level evaluation)");
+        "Error in unexported rule: Invalid rule class hasn't been exported by a bzl file");
   }
 
   @Test
@@ -2753,388 +2687,6 @@ public final class StarlarkRuleClassFunctionsTest extends BuildViewTestCase {
                 .get("aspect_attr")
                 .getDefaultValueUnchecked())
         .isEqualTo("v1");
-  }
-
-  @Test
-  public void initializer_onlyAllowedInBuiltins() throws Exception {
-    scratch.file(
-        "p/b.bzl",
-        "def initializer(**kwargs):",
-        "  return kwargs",
-        "def impl(ctx): ",
-        "  pass",
-        "my_rule = rule(impl, initializer = initializer)");
-    scratch.file(
-        "p/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target')");
-
-    reporter.removeHandler(failFastHandler);
-    reporter.addHandler(ev.getEventCollector());
-    getConfiguredTarget("//p:my_target");
-
-    ev.assertContainsError("file '//p:b.bzl' cannot use private API");
-  }
-
-  // TODO b/298561048 - move the initializers tests below into a separate file
-
-  /**
-   * Verifies that precisely returned attributes are modified.
-   *
-   * <p>When an attribute is not returned it's unaffected.
-   *
-   * <p>It also verifies that the keyword arguments passed to the initializer are exactly the values
-   * of the declared attributes.".
-   */
-  @Test
-  @SuppressWarnings("unchecked")
-  public void initializer_basic() throws Exception {
-    scratch.file(
-        "BUILD", //
-        "filegroup(name = 'initial')",
-        "filegroup(name = 'added')");
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "MyInfo = provider()",
-        "def initializer(srcs = [], deps = []):",
-        "  return {'deps': deps + ['//:added']}",
-        "def impl(ctx): ",
-        "  return [MyInfo(",
-        "    srcs = [s.short_path for s in ctx.files.srcs],",
-        "    deps = [str(d.label) for d in ctx.attr.deps])]",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  attrs = {",
-        "    'srcs': attr.label_list(allow_files = ['ml']),",
-        "    'deps': attr.label_list(),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target', srcs = ['a.ml'], deps = ['//:initial'])");
-
-    ConfiguredTarget myTarget = getConfiguredTarget("//initializer_testing:my_target");
-    StructImpl info =
-        (StructImpl)
-            myTarget.get(
-                new StarlarkProvider.Key(
-                    Label.parseCanonical("//initializer_testing:b.bzl"), "MyInfo"));
-
-    assertThat((List<String>) info.getValue("srcs")).containsExactly("initializer_testing/a.ml");
-    assertThat((List<String>) info.getValue("deps")).containsExactly("@//:initial", "@//:added");
-  }
-
-  @Test
-  public void initializer_passThrough() throws Exception {
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "def initializer(**kwargs):",
-        "  pass",
-        "def impl(ctx): ",
-        "  pass",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  attrs = {",
-        "    'srcs': attr.label_list(allow_files = ['ml']),",
-        "    'deps': attr.label_list(),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target', srcs = ['a.ml'])");
-
-    getConfiguredTarget("//initializer_testing:my_target");
-
-    assertNoEvents();
-  }
-
-  @Test
-  @SuppressWarnings("unchecked")
-  public void initializer_overridesAttributeDefault() throws Exception {
-    scratch.file(
-        "BUILD", //
-        "filegroup(name = 'initializer_default')",
-        "filegroup(name = 'attr_default')");
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "MyInfo = provider()",
-        "def initializer(deps = ['//:initializer_default']):",
-        "  return {'deps': deps}",
-        "def impl(ctx): ",
-        "  return [MyInfo(",
-        "    deps = [str(d.label) for d in ctx.attr.deps])]",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  attrs = {",
-        "    'deps': attr.label_list(default = ['//:attr_default']),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target')");
-
-    ConfiguredTarget myTarget = getConfiguredTarget("//initializer_testing:my_target");
-    StructImpl info =
-        (StructImpl)
-            myTarget.get(
-                new StarlarkProvider.Key(
-                    Label.parseCanonical("//initializer_testing:b.bzl"), "MyInfo"));
-
-    assertThat((List<String>) info.getValue("deps")).containsExactly("@//:initializer_default");
-  }
-
-  @Test
-  @SuppressWarnings("unchecked")
-  public void initializer_returningNoneSetsDefault() throws Exception {
-    scratch.file(
-        "BUILD", //
-        "filegroup(name = 'initializer_default')",
-        "filegroup(name = 'attr_default')");
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "MyInfo = provider()",
-        "def initializer(deps = ['//:initializer_default']):",
-        "  return {'deps': None}",
-        "def impl(ctx): ",
-        "  return [MyInfo(",
-        "    deps = [str(d.label) for d in ctx.attr.deps])]",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  attrs = {",
-        "    'deps': attr.label_list(default = ['//:attr_default']),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target')");
-
-    ConfiguredTarget myTarget = getConfiguredTarget("//initializer_testing:my_target");
-    StructImpl info =
-        (StructImpl)
-            myTarget.get(
-                new StarlarkProvider.Key(
-                    Label.parseCanonical("//initializer_testing:b.bzl"), "MyInfo"));
-
-    assertThat((List<String>) info.getValue("deps")).containsExactly("@//:attr_default");
-  }
-
-  @Test
-  public void initializer_omittedValueIsNotPassed() throws Exception {
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "MyInfo = provider()",
-        "def initializer(srcs):",
-        "  return {'srcs': srcs}",
-        "def impl(ctx): ",
-        "  return [MyInfo(",
-        "    deps = [str(d.label) for d in ctx.attr.deps])]",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  attrs = {",
-        "    'srcs': attr.label_list(),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target')");
-    // TODO: b/298561048 - Behavior with `srcs=[]` or `srcs=None` is different. Fix that when
-    // lifting parameters types.
-
-    reporter.removeHandler(failFastHandler);
-    reporter.addHandler(ev.getEventCollector());
-    getConfiguredTarget("//initializer_testing:my_target");
-
-    // TODO: b/298561048 - Fix error messages to match a rule without initializer
-    ev.assertContainsError("initializer() missing 1 required positional argument: srcs");
-  }
-
-  @Test
-  public void initializer_incorrectReturnType() throws Exception {
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "def initializer(srcs = []):",
-        "  return [srcs]",
-        "def impl(ctx): ",
-        "  pass",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  attrs = {",
-        "    'srcs': attr.label_list(allow_files = ['ml']),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target', srcs = ['a.ml'])");
-
-    reporter.removeHandler(failFastHandler);
-    reporter.addHandler(ev.getEventCollector());
-    getConfiguredTarget("//initializer_testing:my_target");
-
-    ev.assertContainsError("got list for 'rule's initializer return value', want dict");
-  }
-
-  @Test
-  public void initializer_incorrectReturnDicts() throws Exception {
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "def initializer(srcs = []):",
-        "  return {True: srcs}",
-        "def impl(ctx): ",
-        "  pass",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  attrs = {",
-        "    'srcs': attr.label_list(allow_files = ['ml']),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target', srcs = ['a.ml'])");
-
-    reporter.removeHandler(failFastHandler);
-    reporter.addHandler(ev.getEventCollector());
-    getConfiguredTarget("//initializer_testing:my_target");
-
-    ev.assertContainsError("got dict<bool, list> for 'rule's initializer return value', want dict");
-  }
-
-  @Test
-  public void initializer_failsSettingInheritedPublicParameter() throws Exception {
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "def initializer(srcs = [], deps = []):",
-        "  return {'srcs': srcs, 'deps': deps, 'args': ['a']}",
-        "def impl(ctx): ",
-        "  pass",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  executable = True,",
-        "  attrs = {",
-        "    'srcs': attr.label_list(allow_files = ['ml']),",
-        "    'deps': attr.label_list(),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target', srcs = ['a.ml'])");
-
-    reporter.removeHandler(failFastHandler);
-    reporter.addHandler(ev.getEventCollector());
-    getConfiguredTarget("//initializer_testing:my_target");
-
-    ev.assertContainsError(
-        "Initializer can only set public, Starlark defined attributes, not 'args'");
-  }
-
-  @Test
-  public void initializer_failsSettingUnknownAttr() throws Exception {
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "def initializer(srcs = [], deps = []):",
-        "  return {'srcs': srcs, 'my_deps': deps}",
-        "def impl(ctx): ",
-        "  pass",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  attrs = {",
-        "    'srcs': attr.label_list(allow_files = ['ml']),",
-        "    'deps': attr.label_list(),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target', srcs = ['a.ml'])");
-
-    reporter.removeHandler(failFastHandler);
-    reporter.addHandler(ev.getEventCollector());
-    getConfiguredTarget("//initializer_testing:my_target");
-
-    ev.assertContainsError("no such attribute 'my_deps' in 'my_rule' rule (did you mean 'deps'?)");
-  }
-
-  @Test
-  @Ignore("TODO - b/298561048")
-  public void initializer_failsCreatingAnotherRule() throws Exception {
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "def initializer(srcs = [], deps = []):",
-        "  native.java_library(name = 'jl', srcs = ['a.java'])",
-        "  return {'srcs': srcs, 'deps': deps}",
-        "def impl(ctx): ",
-        "  pass",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  attrs = {",
-        "    'srcs': attr.label_list(allow_files = ['ml']),",
-        "    'deps': attr.label_list(),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target', srcs = ['a.ml'])");
-
-    reporter.removeHandler(failFastHandler);
-    reporter.addHandler(ev.getEventCollector());
-    getConfiguredTarget("//initializer_testing:my_target");
-
-    ev.assertContainsError("TODO");
-  }
-
-  @Test
-  @Ignore("TODO - b/298561048")
-  public void initializer_failsWithExistingRules() throws Exception {
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "def initializer(srcs = [], deps = []):",
-        "  native.existing_rules()",
-        "  return {'srcs': srcs, 'deps': deps}",
-        "def impl(ctx): ",
-        "  pass",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  attrs = {",
-        "    'srcs': attr.label_list(allow_files = ['ml']),",
-        "    'deps': attr.label_list(),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target', srcs = ['a.ml'])");
-
-    reporter.removeHandler(failFastHandler);
-    reporter.addHandler(ev.getEventCollector());
-    getConfiguredTarget("//initializer_testing:my_target");
-
-    ev.assertContainsError("TODO");
-  }
-
-  @Test
-  public void initializer_withFails() throws Exception {
-    scratch.file(
-        "initializer_testing/b.bzl",
-        "def initializer(srcs = [], deps = []):",
-        "  fail('Fail called in initializer')",
-        "  return {'srcs': srcs, 'deps': deps}",
-        "def impl(ctx): ",
-        "  pass",
-        "my_rule = rule(impl,",
-        "  initializer = initializer,",
-        "  attrs = {",
-        "    'srcs': attr.label_list(allow_files = ['ml']),",
-        "    'deps': attr.label_list(),",
-        "  })");
-    scratch.file(
-        "initializer_testing/BUILD", //
-        "load(':b.bzl','my_rule')",
-        "my_rule(name = 'my_target', srcs = ['a.ml'])");
-
-    reporter.removeHandler(failFastHandler);
-    reporter.addHandler(ev.getEventCollector());
-    getConfiguredTarget("//initializer_testing:my_target");
-
-    ev.assertContainsError("Fail called in initializer");
-    // TODO: b/298561048 - fix that the whole package doesn't fail if possible
-    ev.assertContainsError("target 'my_target' not declared in package 'initializer_testing'");
   }
 
   @Test

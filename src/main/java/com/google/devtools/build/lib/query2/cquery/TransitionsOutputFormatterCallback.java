@@ -138,11 +138,7 @@ class TransitionsOutputFormatterCallback extends CqueryThreadsafeCallback {
       if (factory != null) {
         output =
             factory
-                .create(
-                    RuleTransitionData.create(
-                        target.getAssociatedRule(),
-                        null,
-                        ct.getConfigurationKey().getOptionsChecksum()))
+                .create(RuleTransitionData.create(target.getAssociatedRule()))
                 .getName()
                 .concat(" -> ");
       }

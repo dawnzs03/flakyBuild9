@@ -13,7 +13,7 @@ license(
         "@rules_license//licenses/spdx:0BSD",
     ],
     license_text = "LICENSE",
-    package_version = "1.3",
+    package_version = "1.2.12",
 )
 
 filegroup(
@@ -38,44 +38,13 @@ genrule(
 
 distrib_cc_library(
     name = "zlib",
-    srcs = [
-        "adler32.c",
-        "compress.c",
-        "crc32.c",
-        "deflate.c",
-        "gzclose.c",
-        "gzlib.c",
-        "gzread.c",
-        "gzwrite.c",
-        "infback.c",
-        "inffast.c",
-        "inflate.c",
-        "inftrees.c",
-        "trees.c",
-        "uncompr.c",
-        "zutil.c",
+    srcs = glob(["*.c"]),
+    hdrs = glob(["*.h"]),
+    # Use -Dverbose=-1 to turn off zlib's trace logging. (#3280)
+    copts = [
+        "-w",
+        "-Dverbose=-1",
     ],
-    hdrs = [
-        "crc32.h",
-        "deflate.h",
-        "gzguts.h",
-        "inffast.h",
-        "inffixed.h",
-        "inflate.h",
-        "inftrees.h",
-        "trees.h",
-        "zconf.h",
-        "zlib.h",
-        "zutil.h",
-    ],
-    copts = select({
-        "@platforms//os:windows": [],
-        "//conditions:default": [
-            "-Wno-deprecated-non-prototype",
-            "-Wno-unused-variable",
-            "-Wno-implicit-function-declaration",
-        ],
-    }),
     enable_distributions = ["debian"],
     includes = ["."],
     visibility = ["//visibility:public"],

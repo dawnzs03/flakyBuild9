@@ -95,13 +95,6 @@ public interface AndroidConfigurationApi extends StarlarkValue {
   ImmutableList<String> getDexoptsSupportedInDexMerger();
 
   @StarlarkMethod(
-      name = "get_dexopts_supported_in_dex_sharder",
-      structField = true,
-      doc = "",
-      documented = false)
-  ImmutableList<String> getDexoptsSupportedInDexSharder();
-
-  @StarlarkMethod(
       name = "get_target_dexopts_that_prevent_incremental_dexing",
       structField = true,
       doc = "",
@@ -151,6 +144,13 @@ public interface AndroidConfigurationApi extends StarlarkValue {
       doc = "",
       documented = false)
   boolean useAndroidResourceNameObfuscation();
+
+  @StarlarkMethod(
+      name = "use_single_jar_apk_builder",
+      structField = true,
+      doc = "",
+      documented = false)
+  boolean useSingleJarApkBuilder();
 
   @StarlarkMethod(name = "use_parallel_dex2oat", structField = true, doc = "", documented = false)
   boolean useParallelDex2Oat();
@@ -207,12 +207,22 @@ public interface AndroidConfigurationApi extends StarlarkValue {
       documented = false)
   boolean getOneVersionEnforcementUseTransitiveJarsForBinaryUnderTest();
 
+  @StarlarkMethod(name = "use_databinding_v2", structField = true, doc = "", documented = false)
+  boolean useDataBindingV2();
+
   @StarlarkMethod(
-      name = "persistent_aar_extractor",
+      name = "android_databinding_use_v3_4_args",
       structField = true,
       doc = "",
       documented = false)
-  boolean persistentAarExtractor();
+  boolean useDataBindingUpdatedArgs();
+
+  @StarlarkMethod(
+      name = "android_databinding_use_androidx",
+      structField = true,
+      doc = "",
+      documented = false)
+  boolean useDataBindingAndroidX();
 
   @StarlarkMethod(
       name = "persistent_busybox_tools",

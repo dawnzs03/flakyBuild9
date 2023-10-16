@@ -13,10 +13,9 @@
 // limitations under the License.
 package com.google.devtools.build.skyframe;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.ThreadSafe;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -30,7 +29,7 @@ import javax.annotation.Nullable;
  * <p>Certain graph implementations' node entries can throw {@link InterruptedException} on various
  * accesses. Such exceptions should not be caught locally -- they should be allowed to propagate up.
  */
-public interface NodeEntry {
+public interface NodeEntry extends PriorityTracker {
 
   /**
    * Return code for {@link #addReverseDepAndCheckIfDone} and {@link
@@ -71,48 +70,52 @@ public interface NodeEntry {
      * did.
      */
     NEEDS_REBUILDING,
+    /**
+     * A forced rebuilding is required, likely because of a recoverable inconsistency in the current
+     * build.
+     */
+    NEEDS_FORCED_REBUILDING,
     /** A rebuilding is in progress. */
     REBUILDING,
+    /**
+     * A forced rebuilding is in progress, likely because of a transient error on the previous build
+     * or a recoverable inconsistency in the current one. The distinction between this and {@link
+     * #REBUILDING} is only needed for internal checks.
+     */
+    FORCED_REBUILDING
   }
 
   /** Ways that a node may be dirtied. */
   enum DirtyType {
+    /**
+     * A node P dirtied with DIRTY is re-evaluated during the evaluation phase if it's requested and
+     * directly depends on some node C whose value changed since the last evaluation of P. If it's
+     * requested and there is no such node C, P is marked clean.
+     */
+    DIRTY(DirtyState.CHECK_DEPENDENCIES),
 
     /**
-     * Indicates that the node is being marked dirty because it has a dependency that was marked
-     * dirty.
-     *
-     * <p>A node P dirtied with {@code DIRTY} is re-evaluated during the evaluation phase if it is
-     * requested and directly depends on some node C whose value changed since the last evaluation
-     * of P. If it is requested and there is no such node C, P is {@linkplain #markClean marked
-     * clean}.
+     * A node dirtied with CHANGE is re-evaluated during the evaluation phase if it's requested
+     * (regardless of the state of its dependencies). Such a node is expected to evaluate to the
+     * same value if evaluated at the same graph version.
      */
-    DIRTY,
+    CHANGE(DirtyState.NEEDS_REBUILDING),
 
     /**
-     * Indicates that the node is being marked dirty because its value from a previous evaluation is
-     * no longer valid, even if none of its dependencies change.
-     *
-     * <p>This is typically used to indicate that a value produced by a {@link
-     * FunctionHermeticity#NONHERMETIC} function is no longer valid because some state outside of
-     * Skyframe has changed (e.g. a change to the filesystem).
-     *
-     * <p>A node dirtied with {@code CHANGE} is re-evaluated during the evaluation phase if it is
-     * requested, regardless of the state of its dependencies. If it re-evaluates to the same value,
-     * dirty parents are not necessarily re-evaluated.
+     * A node dirtied with FORCE_REBUILD behaves like a {@link #CHANGE}d node, except that it may
+     * evaluate to a different value even if evaluated at the same graph version.
      */
-    CHANGE,
+    FORCE_REBUILD(DirtyState.NEEDS_FORCED_REBUILDING);
 
-    /**
-     * Similar to {@link #CHANGE} except may be used intra-evaluation to indicate that the node's
-     * value (which may be from either a previous evaluation or the current evaluation) is no longer
-     * valid.
-     *
-     * <p>A node dirtied with {@code REWIND} is re-evaluated during the evaluation phase if it is
-     * requested, regardless of the state of its dependencies. Even if it re-evaluates to the same
-     * value, dirty parents are re-evaluated.
-     */
-    REWIND
+    private final DirtyState initialDirtyState;
+
+    DirtyType(DirtyState initialDirtyState) {
+      this.initialDirtyState = initialDirtyState;
+    }
+
+    DirtyState getInitialDirtyState() {
+      return initialDirtyState;
+    }
   }
 
   /** Returns whether the entry has been built and is finished evaluating. */
@@ -141,8 +144,8 @@ public interface NodeEntry {
    * markDirty(DirtyType.CHANGE)} may only be called on a node P for which {@code P.isDone() ||
    * !P.isChanged()}. Otherwise, this will throw {@link IllegalStateException}.
    *
-   * <p>{@code markDirty(DirtyType.REWIND)} may be called at any time (even multiple times
-   * concurrently), although it only has an effect if the node {@link #isDone}.
+   * <p>{@code markDirty(DirtyType.FORCE_REBUILD)} may be called multiple times; only the first has
+   * any effect.
    *
    * @return if the node was done, a {@link MarkedDirtyResult} which may include the node's reverse
    *     deps; otherwise {@code null}
@@ -152,11 +155,10 @@ public interface NodeEntry {
   MarkedDirtyResult markDirty(DirtyType dirtyType) throws InterruptedException;
 
   /**
-   * Returned by {@link #markDirty} if that call changed the node from done to dirty. Contains a
-   * {@link Collection} of the node's reverse deps for efficiency, because an important use case for
-   * {@link #markDirty} is during invalidation, and the invalidator must immediately afterwards
-   * schedule the invalidation of a node's reverse deps if the invalidator successfully dirties that
-   * node.
+   * Returned by {@link #markDirty} if that call changed the node from done to dirty. Contains an
+   * iterable of the node's reverse deps for efficiency, because an important use case for {@link
+   * #markDirty} is during invalidation, and the invalidator must immediately afterwards schedule
+   * the invalidation of a node's reverse deps if the invalidator successfully dirties that node.
    *
    * <p>Warning: {@link #getReverseDepsUnsafe()} may return a live view of the reverse deps
    * collection of the marked-dirty node. The consumer of this data must be careful only to iterate
@@ -164,20 +166,13 @@ public interface NodeEntry {
    * during invalidation, because reverse deps don't change during invalidation.
    */
   final class MarkedDirtyResult {
+    private final Iterable<SkyKey> reverseDepsUnsafe;
 
-    private static final MarkedDirtyResult NO_RDEPS = new MarkedDirtyResult(ImmutableList.of());
-
-    public static MarkedDirtyResult withReverseDeps(Collection<SkyKey> reverseDepsUnsafe) {
-      return reverseDepsUnsafe.isEmpty() ? NO_RDEPS : new MarkedDirtyResult(reverseDepsUnsafe);
+    public MarkedDirtyResult(Iterable<SkyKey> reverseDepsUnsafe) {
+      this.reverseDepsUnsafe = Preconditions.checkNotNull(reverseDepsUnsafe);
     }
 
-    private final Collection<SkyKey> reverseDepsUnsafe;
-
-    private MarkedDirtyResult(Collection<SkyKey> reverseDepsUnsafe) {
-      this.reverseDepsUnsafe = reverseDepsUnsafe;
-    }
-
-    public Collection<SkyKey> getReverseDepsUnsafe() {
+    public Iterable<SkyKey> getReverseDepsUnsafe() {
       return reverseDepsUnsafe;
     }
   }
@@ -226,7 +221,7 @@ public interface NodeEntry {
   /**
    * Removes a reverse dependency.
    *
-   * <p>May only be called if this entry is not done (i.e. {@link #isDone} is false) and {@code
+   * <p>May only be called if this entry is not done (i.e. {@link #isDone} is false) and {@param
    * reverseDep} was added/confirmed during this evaluation (by {@link #addReverseDepAndCheckIfDone}
    * or {@link #checkIfDoneForDirtyReverseDep}).
    */
@@ -240,7 +235,7 @@ public interface NodeEntry {
    * <p>May only be called on a done node entry.
    */
   @ThreadSafe
-  Collection<SkyKey> getReverseDepsForDoneEntry() throws InterruptedException;
+  Iterable<SkyKey> getReverseDepsForDoneEntry() throws InterruptedException;
 
   /**
    * Returns raw {@link SkyValue} stored in this entry, which may include metadata associated with
@@ -340,7 +335,7 @@ public interface NodeEntry {
   @ThreadSafe
   DependencyState checkIfDoneForDirtyReverseDep(SkyKey reverseDep) throws InterruptedException;
 
-  Collection<SkyKey> getAllReverseDepsForNodeBeingDeleted();
+  Iterable<SkyKey> getAllReverseDepsForNodeBeingDeleted();
 
   /**
    * Tell this entry that one of its dependencies is now done. Callers must check the return value,
@@ -397,11 +392,12 @@ public interface NodeEntry {
   }
 
   /**
-   * Called on a dirty node during {@linkplain DirtyState#CHECK_DEPENDENCIES dependency checking} to
-   * force the node to be re-evaluated, even if none of its dependencies are known to have changed.
+   * Forces this node to be re-evaluated, even if none of its dependencies are known to have
+   * changed.
    *
-   * <p>Used when a caller has reason to believe that re-evaluating may yield a new result, such as
-   * when the prior evaluation encountered a transient error.
+   * <p>Used when an external caller has reason to believe that re-evaluating may yield a new
+   * result. This method should not be used if one of the normal deps of this node has changed, the
+   * usual change-pruning process should work in that case.
    */
   @ThreadSafe
   void forceRebuild();
@@ -452,18 +448,12 @@ public interface NodeEntry {
 
   /**
    * Returns all deps of a node that has not yet finished evaluating. In other words, if a node has
-   * a reverse dep on this node, its key will be in the returned set here.
-   *
-   * <p>The returned set is the union of:
-   *
-   * <ul>
-   *   <li>This node's {@linkplain #getTemporaryDirectDeps temporary direct deps}.
-   *   <li>Deps from a previous evaluation, if this this node was {@linkplain #markDirty marked
-   *       dirty} (all the elements that would have been returned by successive calls to {@link
-   *       #getNextDirtyDirectDeps} or, equivalently, one call to {@link
-   *       #getAllRemainingDirtyDirectDeps}).
-   *   <li>This node's {@linkplain #getResetDirectDeps reset direct deps}.
-   * </ul>
+   * a reverse dep on this node, its key will be in the returned set here. If this node was freshly
+   * created, this is just any elements that were added using one of the methods to add temporary
+   * direct deps (so it is the same as {@link #getTemporaryDirectDeps}). If this node is marked
+   * dirty, this includes all the elements that would have been returned by successive calls to
+   * {@link #getNextDirtyDirectDeps} (or, equivalently, one call to {@link
+   * #getAllRemainingDirtyDirectDeps}).
    *
    * <p>This method should only be called when this node is about to be deleted after an aborted
    * evaluation. After such an evaluation, any nodes that did not finish evaluating are deleted, as
@@ -475,7 +465,7 @@ public interface NodeEntry {
    * <p>This method must not be called twice: the next thing done to this node after this method is
    * called should be the removal of the node from the graph.
    */
-  ImmutableSet<SkyKey> getAllDirectDepsForIncompleteNode() throws InterruptedException;
+  Iterable<SkyKey> getAllDirectDepsForIncompleteNode() throws InterruptedException;
 
   /**
    * If an entry {@link #isDirty}, returns all direct deps that were present last build, but have
@@ -522,56 +512,13 @@ public interface NodeEntry {
   void removeUnfinishedDeps(Set<SkyKey> unfinishedDeps);
 
   /**
-   * Prepares this node for a restart of its evaluation to recover from an inconsistency.
-   *
-   * <p>Called on a {@link DirtyState#REBUILDING} node when one of the following scenarios is
-   * observed:
-   *
-   * <ol>
-   *   <li>One or more already requested dependencies are not done. This may happen when a
-   *       dependency's node was dropped from the graph to save memory, or if a dependency was
-   *       {@linkplain DirtyType#REWIND rewound} by another node.
-   *   <li>The corresponding {@link SkyFunction} for this node returned {@link SkyFunction.Restart}
-   *       to indicate that one or more dependencies were done but are in need of {@linkplain
-   *       DirtyType#REWIND rewinding} to regenerate their values.
-   * </ol>
-   *
-   * <p>This method is similar to calling {@link #markDirty} with {@link DirtyType#REWIND} with an
-   * important distinction: rewinding is initiated on a <em>done</em> node because of an issue with
-   * its <em>value</em>, while this method is called on a <em>building</em> node because of an issue
-   * with a <em>dependency</em>. The dependency will be rewound if we are in scenario 2 above.
-   *
-   * <p>Temporary direct deps should be cleared by this call, as they will be added again when
-   * requested during the restarted evaluation of this node. If the graph keeps dependency edges,
-   * however, the temporary direct deps must be accounted for in {@link #getResetDirectDeps}.
-   *
-   * <p>Reverse deps on the other hand should be preserved - parents waiting on this node are
-   * unaware that it is being restarted and will not register themselves again, yet they still need
-   * to be signaled when this node is done.
+   * Erases all stored work during this evaluation from this entry, namely all temporary direct
+   * deps. The entry will be as if it had never evaluated at this version. Called after the {@link
+   * SkyFunction} for this entry returns {@link SkyFunction.Restart}, indicating that something went
+   * wrong in external state and the evaluation has to be restarted.
    */
   @ThreadSafe
   void resetForRestartFromScratch();
-
-  /**
-   * If the graph keeps dependency edges and {@link #resetForRestartFromScratch} has been called on
-   * this node since it was last done, returns the set of temporary direct deps that were registered
-   * prior to the restart. Otherwise, returns an empty set.
-   *
-   * <p>Called on a {@link DirtyState#REBUILDING} node when it is about to finish evaluating. Used
-   * to determine which of its {@linkplain #getTemporaryDirectDeps temporary direct deps} have
-   * already registered a corresponding reverse dep, in order to avoid creating duplicate rdep
-   * edges.
-   *
-   * <p>Like {@link #getAllRemainingDirtyDirectDeps}, keys in the returned set are assumed to have
-   * already registered an rdep on this node. Unlike {@link #getAllRemainingDirtyDirectDeps},
-   * however, deps in the returned set may have only been registered at the current evaluation
-   * version, not a previous one.
-   *
-   * <p>If this node was reset multiple times since it was last done, must return deps requested
-   * prior to <em>any</em> of those restarts, not just the most recent one.
-   */
-  @ThreadSafe
-  ImmutableSet<SkyKey> getResetDirectDeps();
 
   /**
    * Adds a temporary direct dep in its own group.

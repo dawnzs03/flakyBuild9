@@ -92,13 +92,6 @@ public abstract class BazelLockFileValue implements SkyValue, Postable {
       ImmutableMap<String, String> localOverrideHashes,
       BzlmodFlagsAndEnvVars flags) {
     ImmutableList.Builder<String> moduleDiff = new ImmutableList.Builder<>();
-    if (getLockFileVersion() != BazelLockFileValue.LOCK_FILE_VERSION) {
-      return moduleDiff
-          .add(
-              "the version of the lockfile is not compatible with the current Bazel, please run"
-                  + " with '--lockfile_mode=update'")
-          .build();
-    }
     if (!moduleFileHash.equals(getModuleFileHash())) {
       moduleDiff.add("the root MODULE.bazel has been modified");
     }
@@ -116,28 +109,27 @@ public abstract class BazelLockFileValue implements SkyValue, Postable {
     return moduleDiff.build();
   }
 
-  /** Returns the differences between an extension and its locked data */
   public ImmutableList<String> getModuleExtensionDiff(
+      LockFileModuleExtension lockedExtension,
+      ImmutableMap<ModuleKey, ModuleExtensionUsage> lockedExtensionUsages,
       ModuleExtensionId extensionId,
       byte[] transitiveDigest,
-      boolean filesChanged,
       ImmutableMap<String, String> envVariables,
-      ImmutableMap<ModuleKey, ModuleExtensionUsage> extensionUsages,
-      ImmutableMap<ModuleKey, ModuleExtensionUsage> lockedExtensionUsages) {
-    LockFileModuleExtension lockedExtension = getModuleExtensions().get(extensionId);
-
+      ImmutableMap<ModuleKey, ModuleExtensionUsage> extensionUsages) {
     ImmutableList.Builder<String> extDiff = new ImmutableList.Builder<>();
+    if (lockedExtension == null) {
+      return extDiff
+          .add("The module extension '" + extensionId + "' does not exist in the lockfile")
+          .build();
+    }
     if (!Arrays.equals(transitiveDigest, lockedExtension.getBzlTransitiveDigest())) {
         extDiff.add(
             "The implementation of the extension '"
                 + extensionId
                 + "' or one of its transitive .bzl files has changed");
     }
-    if (filesChanged) {
-      extDiff.add("One or more files the extension '" + extensionId + "' is using have changed");
-    }
     if (!extensionUsages.equals(lockedExtensionUsages)) {
-      extDiff.add("The usages of the extension '" + extensionId + "' have changed");
+      extDiff.add("The usages of the extension '" + extensionId + "' has changed");
     }
     if (!envVariables.equals(lockedExtension.getEnvVariables())) {
       extDiff.add(

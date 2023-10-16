@@ -46,16 +46,6 @@ public interface XcodePropertiesApi extends StructApi {
   String getDefaultIosSdkVersionString();
 
   @StarlarkMethod(
-      name = "default_visionos_sdk_version",
-      doc =
-          "The default visionOS sdk version for this version of xcode, or <code>None</code> if "
-              + "unknown.",
-      structField = true,
-      allowReturnNones = true)
-  @Nullable
-  String getDefaultVisionosSdkVersionString();
-
-  @StarlarkMethod(
       name = "default_watchos_sdk_version",
       doc =
           "The default watchOS sdk version for this version of xcode, or <code>None</code> if "

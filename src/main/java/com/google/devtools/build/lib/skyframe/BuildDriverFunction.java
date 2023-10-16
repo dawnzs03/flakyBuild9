@@ -369,9 +369,8 @@ public class BuildDriverFunction implements SkyFunction {
     if (!postedEventsTypes.add(TopLevelStatusEvents.Type.ASPECT_ANALYZED)) {
       return;
     }
-    for (Map.Entry<AspectKey, AspectValue> entry :
-        topLevelAspectsValue.getTopLevelAspectsMap().entrySet()) {
-      AspectKey aspectKey = entry.getKey();
+    for (AspectValue aspectValue : topLevelAspectsValue.getTopLevelAspectsValues()) {
+      AspectKey aspectKey = aspectValue.getKey();
       env.getListener()
           .post(
               new AspectConfiguredEvent(
@@ -379,7 +378,7 @@ public class BuildDriverFunction implements SkyFunction {
                   /* aspectClassName= */ aspectKey.getAspectClass().getName(),
                   aspectKey.getAspectDescriptor().getDescription(),
                   getConfigurationValue(env, aspectKey.getConfigurationKey())));
-      env.getListener().post(AspectAnalyzedEvent.create(aspectKey, entry.getValue()));
+      env.getListener().post(AspectAnalyzedEvent.create(aspectKey, aspectValue));
     }
   }
 
@@ -557,10 +556,8 @@ public class BuildDriverFunction implements SkyFunction {
     boolean symlinkPlantingEventsSent =
         !postedEventsTypes.add(
             TopLevelStatusEvents.Type.TOP_LEVEL_TARGET_READY_FOR_SYMLINK_PLANTING);
-    for (Map.Entry<AspectKey, AspectValue> entry :
-        topLevelAspectsValue.getTopLevelAspectsMap().entrySet()) {
-      AspectKey aspectKey = entry.getKey();
-      AspectValue aspectValue = entry.getValue();
+    for (AspectValue aspectValue : topLevelAspectsValue.getTopLevelAspectsValues()) {
+      AspectKey aspectKey = aspectValue.getKey();
       addExtraActionsIfRequested(
           aspectValue.getProvider(ExtraActionArtifactsProvider.class),
           artifactsToBuild,
@@ -614,15 +611,19 @@ public class BuildDriverFunction implements SkyFunction {
     if (localRef == null) {
       return ImmutableMap.of();
     }
-    if (transitiveActionLookupValuesHelper.trackingStateForIncrementality()) {
-      return localRef.findArtifactConflicts(actionLookupKey, strictConflictCheck).getConflicts();
-    }
     ActionLookupValuesCollectionResult transitiveValueCollectionResult =
-        transitiveActionLookupValuesHelper.collect();
-    return localRef
-        .findArtifactConflictsNoIncrementality(
-            transitiveValueCollectionResult.collectedValues(), strictConflictCheck)
-        .getConflicts();
+        transitiveActionLookupValuesHelper.collect(actionLookupKey);
+
+    ImmutableMap<ActionAnalysisMetadata, ConflictException> conflicts =
+        localRef
+            .findArtifactConflicts(
+                transitiveValueCollectionResult.collectedValues(), strictConflictCheck)
+            .getConflicts();
+    if (conflicts.isEmpty()) {
+      transitiveActionLookupValuesHelper.registerConflictFreeKeys(
+          transitiveValueCollectionResult.visitedKeys());
+    }
+    return conflicts;
   }
 
   private void addExtraActionsIfRequested(
@@ -666,13 +667,13 @@ public class BuildDriverFunction implements SkyFunction {
   interface TransitiveActionLookupValuesHelper {
 
     /**
-     * Collect the evaluated ActionLookupValues accumulated since the last time this method was
-     * called. Only used when we're not tracking for incrementality.
+     * Perform the traversal of the transitive closure of the {@code key} and collect the
+     * corresponding ActionLookupValues.
      */
-    ActionLookupValuesCollectionResult collect() throws InterruptedException;
+    ActionLookupValuesCollectionResult collect(ActionLookupKey key) throws InterruptedException;
 
-    /** Whether we're tracking state for incrementality in the current invocation. */
-    boolean trackingStateForIncrementality();
+    /** Register with the helper that the {@code keys} are conflict-free. */
+    void registerConflictFreeKeys(ImmutableSet<ActionLookupKey> keys);
   }
 
   interface TestTypeResolver {

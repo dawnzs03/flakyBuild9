@@ -36,6 +36,7 @@ import com.google.devtools.build.lib.collect.nestedset.Order;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.Immutable;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.ThreadSafe;
 import com.google.devtools.build.lib.packages.AspectDescriptor;
+import com.google.devtools.build.lib.packages.semantics.BuildLanguageOptions;
 import com.google.devtools.build.lib.starlarkbuildapi.ActionApi;
 import com.google.devtools.build.lib.starlarkbuildapi.CommandLineArgsApi;
 import com.google.devtools.build.lib.vfs.BulkDeleter;
@@ -56,6 +57,7 @@ import net.starlark.java.eval.Dict;
 import net.starlark.java.eval.EvalException;
 import net.starlark.java.eval.Printer;
 import net.starlark.java.eval.Sequence;
+import net.starlark.java.eval.StarlarkSemantics;
 
 /**
  * Abstract implementation of Action which implements basic functionality: the inputs, outputs, and
@@ -517,12 +519,8 @@ public abstract class AbstractAction extends ActionKeyCacher implements Action, 
       }
 
       Path parentDir = path.getParentDirectory();
-      if (root.contains(parentDir)) {
-        try {
-          parentDir.setWritable(true);
-        } catch (IOException ignored) {
-          // Intentionally ignored because we will fail below anyway.
-        }
+      if (!parentDir.isWritable() && root.contains(parentDir)) {
+        parentDir.setWritable(true);
       }
 
       // Retry deleting after making the parent writable.
@@ -652,8 +650,16 @@ public abstract class AbstractAction extends ActionKeyCacher implements Action, 
   }
 
   @Override
-  public Dict<String, String> getEnv() {
-    return Dict.immutableCopyOf(getEnvironment().getFixedEnv());
+  public Dict<String, String> getEnv(StarlarkSemantics semantics) throws EvalException {
+    if (semantics.getBool(BuildLanguageOptions.EXPERIMENTAL_GET_FIXED_CONFIGURED_ACTION_ENV)) {
+      try {
+        return Dict.immutableCopyOf(getEffectiveEnvironment(/*clientEnv=*/ ImmutableMap.of()));
+      } catch (CommandLineExpansionException ex) {
+        throw new EvalException(ex);
+      }
+    } else {
+      return Dict.immutableCopyOf(getEnvironment().getFixedEnv());
+    }
   }
 
   @Override

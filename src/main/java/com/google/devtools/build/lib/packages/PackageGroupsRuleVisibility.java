@@ -13,24 +13,22 @@
 // limitations under the License.
 package com.google.devtools.build.lib.packages;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.devtools.build.lib.cmdline.Label;
+import com.google.devtools.build.lib.concurrent.ThreadSafety.Immutable;
 import com.google.devtools.build.lib.packages.PackageSpecification.PackageGroupContents;
+import java.util.Collection;
 import java.util.List;
 
 /** A rule visibility that allows visibility to a list of package groups. */
-@AutoValue
-public abstract class PackageGroupsRuleVisibility implements RuleVisibility {
-  public abstract ImmutableList<Label> getPackageGroups();
+@Immutable
+public class PackageGroupsRuleVisibility implements RuleVisibility {
+  private final List<Label> packageGroups;
+  private final PackageGroupContents directPackages;
+  private final List<Label> declaredLabels;
 
-  public abstract PackageGroupContents getDirectPackages();
-
-  @Override
-  public abstract ImmutableList<Label> getDeclaredLabels();
-
-  /** Creates a {@link PackageGroupsRuleVisibility} from a list of labels. */
-  public static PackageGroupsRuleVisibility create(List<Label> labels) {
+  private PackageGroupsRuleVisibility(List<Label> labels) {
+    declaredLabels = ImmutableList.copyOf(labels);
     ImmutableList.Builder<PackageSpecification> directPackageBuilder = ImmutableList.builder();
     ImmutableList.Builder<Label> packageGroupBuilder = ImmutableList.builder();
 
@@ -43,14 +41,30 @@ public abstract class PackageGroupsRuleVisibility implements RuleVisibility {
       }
     }
 
-    return new AutoValue_PackageGroupsRuleVisibility(
-        packageGroupBuilder.build(),
-        PackageGroupContents.create(directPackageBuilder.build()),
-        ImmutableList.copyOf(labels));
+    packageGroups = packageGroupBuilder.build();
+    directPackages = PackageGroupContents.create(directPackageBuilder.build());
+  }
+
+  public Collection<Label> getPackageGroups() {
+    return packageGroups;
+  }
+
+  public PackageGroupContents getDirectPackages() {
+    return directPackages;
   }
 
   @Override
-  public final ImmutableList<Label> getDependencyLabels() {
-    return getPackageGroups();
+  public List<Label> getDependencyLabels() {
+    return packageGroups;
+  }
+
+  @Override
+  public List<Label> getDeclaredLabels() {
+    return declaredLabels;
+  }
+
+  /** Creates a {@link PackageGroupsRuleVisibility} from a list of labels. */
+  public static PackageGroupsRuleVisibility create(List<Label> labels) {
+    return new PackageGroupsRuleVisibility(labels);
   }
 }

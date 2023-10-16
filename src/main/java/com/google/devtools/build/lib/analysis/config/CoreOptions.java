@@ -450,7 +450,7 @@ public class CoreOptions extends FragmentOptions implements Cloneable {
       help =
           "If true, write runfiles manifests for all targets. If false, omit them. Local tests will"
               + " fail to run when false.")
-  public boolean buildRunfileManifests;
+  public boolean buildRunfilesManifests;
 
   @Option(
       name = "build_runfile_links",
@@ -459,8 +459,8 @@ public class CoreOptions extends FragmentOptions implements Cloneable {
       effectTags = {OptionEffectTag.AFFECTS_OUTPUTS},
       help =
           "If true, build runfiles symlink forests for all targets.  "
-              + "If false, write them only when required by a local action, test or run command.")
-  public boolean buildRunfileLinks;
+              + "If false, write only manifests when possible.")
+  public boolean buildRunfiles;
 
   @Option(
       name = "legacy_external_runfiles",
@@ -579,7 +579,7 @@ public class CoreOptions extends FragmentOptions implements Cloneable {
 
   @Option(
       name = "experimental_output_directory_naming_scheme",
-      defaultValue = "diff_against_dynamic_baseline",
+      defaultValue = "diff_against_baseline",
       converter = OutputDirectoryNamingSchemeConverter.class,
       documentationCategory = OptionDocumentationCategory.UNDOCUMENTED,
       effectTags = {OptionEffectTag.AFFECTS_OUTPUTS},
@@ -881,7 +881,7 @@ public class CoreOptions extends FragmentOptions implements Cloneable {
       metadataTags = OptionMetadataTag.EXPERIMENTAL,
       effectTags = {OptionEffectTag.LOADING_AND_ANALYSIS, OptionEffectTag.EXECUTION},
       help = "Whether to make direct file system calls to create symlink trees")
-  public boolean inProcessSymlinkCreation;
+  public boolean inprocessSymlinkCreation;
 
   @Option(
       name = "experimental_remotable_source_manifests",
@@ -974,8 +974,8 @@ public class CoreOptions extends FragmentOptions implements Cloneable {
     exec.disallowUnsoundDirectoryOutputs = disallowUnsoundDirectoryOutputs;
 
     // === Runfiles ===
-    exec.buildRunfileManifests = buildRunfileManifests;
-    exec.buildRunfileLinks = buildRunfileLinks;
+    exec.buildRunfilesManifests = buildRunfilesManifests;
+    exec.buildRunfiles = buildRunfiles;
     exec.legacyExternalRunfiles = legacyExternalRunfiles;
     exec.remotableSourceManifestActions = remotableSourceManifestActions;
     exec.alwaysIncludeFilesToBuildInData = alwaysIncludeFilesToBuildInData;

@@ -28,8 +28,6 @@ import com.google.devtools.build.lib.analysis.config.InvalidConfigurationExcepti
 import com.google.devtools.build.lib.analysis.config.RequiresOptions;
 import com.google.devtools.build.lib.analysis.starlark.annotations.StarlarkConfigurationField;
 import com.google.devtools.build.lib.cmdline.Label;
-import com.google.devtools.build.lib.collect.nestedset.Depset;
-import com.google.devtools.build.lib.collect.nestedset.NestedSet;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.Immutable;
 import com.google.devtools.build.lib.starlarkbuildapi.java.JavaConfigurationApi;
 import java.util.Map;
@@ -78,7 +76,7 @@ public final class JavaConfiguration extends Fragment implements JavaConfigurati
     ERROR
   }
 
-  private final NestedSet<String> commandLineJavacFlags;
+  private final ImmutableList<String> commandLineJavacFlags;
   private final Label javaLauncherLabel;
   private final boolean useIjars;
   private final boolean useHeaderCompilation;
@@ -119,7 +117,8 @@ public final class JavaConfiguration extends Fragment implements JavaConfigurati
 
   public JavaConfiguration(BuildOptions buildOptions) throws InvalidConfigurationException {
     JavaOptions javaOptions = buildOptions.get(JavaOptions.class);
-    this.commandLineJavacFlags = JavaHelper.detokenizeJavaOptions(javaOptions.javacOpts);
+    this.commandLineJavacFlags =
+        ImmutableList.copyOf(JavaHelper.tokenizeJavaOptions(javaOptions.javacOpts));
     this.javaLauncherLabel = javaOptions.javaLauncher;
     this.useIjars = javaOptions.useIjars;
     this.useHeaderCompilation = javaOptions.headerCompilation;
@@ -217,22 +216,11 @@ public final class JavaConfiguration extends Fragment implements JavaConfigurati
     }
   }
 
-  public NestedSet<String> getDefaultJavacFlags() {
+  @Override
+  // TODO(bazel-team): this is the command-line passed options, we should remove from Starlark
+  // probably.
+  public ImmutableList<String> getDefaultJavacFlags() {
     return commandLineJavacFlags;
-  }
-
-  @Override
-  // TODO(bazel-team): this is the command-line passed options, we should remove from Starlark
-  // probably.
-  public ImmutableList<String> getDefaultJavacFlagsForStarlarkAsList() {
-    return JavaHelper.tokenizeJavaOptions(commandLineJavacFlags);
-  }
-
-  @Override
-  // TODO(bazel-team): this is the command-line passed options, we should remove from Starlark
-  // probably.
-  public Depset getDefaultJavacFlagsStarlark() {
-    return Depset.of(String.class, commandLineJavacFlags);
   }
 
   @Override

@@ -36,7 +36,6 @@ import com.google.devtools.build.lib.bazel.bzlmod.BazelModuleResolutionFunction;
 import com.google.devtools.build.lib.bazel.bzlmod.BzlmodRepoRuleValue;
 import com.google.devtools.build.lib.bazel.bzlmod.FakeRegistry;
 import com.google.devtools.build.lib.bazel.bzlmod.ModuleFileFunction;
-import com.google.devtools.build.lib.bazel.bzlmod.RepoSpecFunction;
 import com.google.devtools.build.lib.bazel.bzlmod.YankedVersionsUtil;
 import com.google.devtools.build.lib.bazel.repository.RepositoryOptions.BazelCompatibilityMode;
 import com.google.devtools.build.lib.bazel.repository.RepositoryOptions.CheckDirectDepsMode;
@@ -199,7 +198,6 @@ public class RepositoryDelegatorTest extends FoundationTestCase {
                         /* packageProgress= */ null,
                         PackageFunction.ActionOnIOExceptionReadingBuildFile.UseOriginalIOException
                             .INSTANCE,
-                        /* shouldUseRepoDotBazel= */ true,
                         GlobbingStrategy.SKYFRAME_HYBRID,
                         k -> ThreadStateReceiver.NULL_INSTANCE))
                 .put(
@@ -255,7 +253,6 @@ public class RepositoryDelegatorTest extends FoundationTestCase {
                 .put(
                     BzlmodRepoRuleValue.BZLMOD_REPO_RULE,
                     new BzlmodRepoRuleFunction(ruleClassProvider, directories))
-                .put(SkyFunctions.REPO_SPEC, new RepoSpecFunction(registryFactory))
                 .put(
                     SkyFunctions.CLIENT_ENVIRONMENT_VARIABLE,
                     new ClientEnvironmentFunction(new AtomicReference<>(ImmutableMap.of())))

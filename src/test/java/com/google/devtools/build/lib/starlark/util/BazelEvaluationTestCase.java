@@ -27,7 +27,7 @@ import com.google.devtools.build.lib.events.EventCollector;
 import com.google.devtools.build.lib.events.EventKind;
 import com.google.devtools.build.lib.events.ExtendedEventHandler;
 import com.google.devtools.build.lib.events.util.EventCollectionApparatus;
-import com.google.devtools.build.lib.packages.BzlInitThreadContext;
+import com.google.devtools.build.lib.packages.BazelStarlarkContext;
 import com.google.devtools.build.lib.packages.SymbolGenerator;
 import com.google.devtools.build.lib.packages.semantics.BuildLanguageOptions;
 import com.google.devtools.build.lib.rules.config.ConfigStarlarkCommon;
@@ -38,7 +38,6 @@ import com.google.devtools.common.options.OptionsParsingException;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import net.starlark.java.eval.EvalException;
 import net.starlark.java.eval.Module;
 import net.starlark.java.eval.Mutability;
@@ -58,24 +57,12 @@ import net.starlark.java.syntax.SyntaxError;
 // which the client provides files, flags, and arguments like a command-line tool, and all our tests
 // should be ported to use that API.
 public final class BazelEvaluationTestCase {
-
-  private static final String DEFAULT_LABEL = "//test:label";
   private final EventCollectionApparatus eventCollectionApparatus =
       new EventCollectionApparatus(EventKind.ALL_EVENTS);
-
-  private final Label label;
 
   private StarlarkSemantics semantics = StarlarkSemantics.DEFAULT;
   private StarlarkThread thread = null; // created lazily by getStarlarkThread
   private Module module = null; // created lazily by getModule
-
-  public BazelEvaluationTestCase() {
-    this(DEFAULT_LABEL);
-  }
-
-  public BazelEvaluationTestCase(String label) {
-    this.label = Label.parseCanonicalUnchecked(label);
-  }
 
   /**
    * Parses the semantics flags and updates the semantics used to filter predeclared bindings, and
@@ -130,24 +117,24 @@ public final class BazelEvaluationTestCase {
     // for testing rule implementation functions. It has phase LOADING, for example.
     // TODO(adonovan): stop creating threads in tests. This is the responsibility of the
     // production code. Tests should provide only files and commands.
-    new BzlInitThreadContext(
-            Label.parseCanonicalUnchecked("//:dummy.bzl"),
-            /* transitiveDigest= */ new byte[0], // dummy value for tests
+    new BazelStarlarkContext(
+            BazelStarlarkContext.Phase.LOADING,
             TestConstants.TOOLS_REPOSITORY,
-            /* networkAllowlistForTests= */ Optional.empty(),
-            /* fragmentNameToClass= */ ImmutableMap.of(),
-            new SymbolGenerator<>(new Object()))
+            /*fragmentNameToClass=*/ null,
+            new SymbolGenerator<>(new Object()),
+            /*analysisRuleLabel=*/ null,
+            /*networkAllowlistForTests=*/ null) // dummy value for tests
         .storeInThread(thread);
   }
 
-  private Object newModule(ImmutableMap.Builder<String, Object> predeclared) {
+  private static Object newModule(ImmutableMap.Builder<String, Object> predeclared) {
     predeclared.putAll(StarlarkGlobalsImpl.INSTANCE.getFixedBzlToplevels());
     predeclared.put("platform_common", new PlatformCommon());
     predeclared.put("config_common", new ConfigStarlarkCommon());
 
     // Return the module's client data. (This one uses dummy values for tests.)
     return BazelModuleContext.create(
-        label,
+        Label.parseCanonicalUnchecked("//test:label"),
         RepositoryMapping.ALWAYS_FALLBACK,
         "test/label.bzl",
         /* loads= */ ImmutableList.of(),

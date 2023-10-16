@@ -14,6 +14,7 @@
 
 package com.google.devtools.build.android;
 
+import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
@@ -51,6 +52,10 @@ public class InMemoryProfiler implements Profiler {
     final Stopwatch task = tasks.remove(taskName);
     report.add(new Timing(taskName, task.elapsed().toMillis() / 1000f));
     return this;
+  }
+
+  public String asTimingReport() {
+    return report.stream().map(Timing::toString).collect(joining("\n"));
   }
 
   static final class Timing {

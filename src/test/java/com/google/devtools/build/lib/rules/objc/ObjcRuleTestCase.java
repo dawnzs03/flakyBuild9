@@ -40,6 +40,7 @@ import com.google.devtools.build.lib.analysis.config.BuildOptions;
 import com.google.devtools.build.lib.analysis.config.BuildOptionsView;
 import com.google.devtools.build.lib.analysis.config.CompilationMode;
 import com.google.devtools.build.lib.analysis.config.CoreOptions;
+import com.google.devtools.build.lib.analysis.config.CoreOptions.OutputDirectoryNamingScheme;
 import com.google.devtools.build.lib.analysis.config.InvalidConfigurationException;
 import com.google.devtools.build.lib.analysis.config.transitions.SplitTransition;
 import com.google.devtools.build.lib.analysis.util.BuildViewTestCase;
@@ -87,7 +88,13 @@ public abstract class ObjcRuleTestCase extends BuildViewTestCase {
   protected static final DottedVersion DEFAULT_IOS_SDK_VERSION =
       DottedVersion.fromStringUnchecked(AppleCommandLineOptions.DEFAULT_IOS_SDK_VERSION);
 
-  protected static final String OUTPUTDIR = TestConstants.PRODUCT_NAME + "-out//bin";
+  /**
+   * Returns the configuration obtained by applying the apple crosstool configuration transition to
+   * this {@code BuildViewTestCase}'s target configuration.
+   */
+  protected BuildConfigurationValue getAppleCrosstoolConfiguration() throws InterruptedException {
+    return getConfiguration(targetConfig, AppleCrosstoolTransition.APPLE_CROSSTOOL_TRANSITION);
+  }
 
   /** Specification of code coverage behavior. */
   public enum CodeCoverageMode {
@@ -135,6 +142,29 @@ public abstract class ObjcRuleTestCase extends BuildViewTestCase {
         + "bin/";
   }
 
+  /**
+   * Returns the genfiles dir for artifacts built for a given Apple architecture and minimum OS
+   * version (as set by a configuration transition) and configuration distinguisher but the global
+   * default for {@code --cpu}.
+   *
+   * @param arch the given Apple architecture which artifacts are built under this configuration.
+   *     Note this will likely be different than the value of {@code --cpu}.
+   * @param configurationDistinguisher the configuration distinguisher used to describe the a
+   *     configuration transition
+   * @param minOsVersion the minimum os version for which to compile artifacts in the configuration
+   */
+  protected String configurationGenfiles(
+      String arch,
+      ConfigurationDistinguisher configurationDistinguisher,
+      DottedVersion minOsVersion) {
+    return configurationDir(
+            arch, configurationDistinguisher, minOsVersion, CompilationMode.FASTBUILD)
+        + getTargetConfiguration()
+            .getGenfilesDirectory(RepositoryName.MAIN)
+            .getExecPath()
+            .getBaseName();
+  }
+
   @SuppressWarnings("MissingCasesInEnumSwitch")
   private String configurationDir(
       String arch,
@@ -145,10 +175,8 @@ public abstract class ObjcRuleTestCase extends BuildViewTestCase {
     String modeSegment = compilationModeFlag(compilationMode);
 
     String hash = "";
-    if (targetConfig
-        .getOptions()
-        .get(CoreOptions.class)
-        .useBaselineForOutputDirectoryNamingScheme()) {
+    if (targetConfig.getOptions().get(CoreOptions.class).outputDirectoryNamingScheme
+        == OutputDirectoryNamingScheme.DIFF_AGAINST_BASELINE) {
       PlatformType platformType = null;
       switch (configurationDistinguisher) {
         case APPLEBIN_IOS:
@@ -503,68 +531,6 @@ public abstract class ObjcRuleTestCase extends BuildViewTestCase {
 
     scratch.file(
         "test_starlark/apple_binary_starlark.bzl",
-        "_apple_platform_transition_inputs = [",
-        "    '//command_line_option:apple_crosstool_top',",
-        "    '//command_line_option:cpu',",
-        "    '//command_line_option:ios_multi_cpus',",
-        "    '//command_line_option:macos_cpus',",
-        "    '//command_line_option:tvos_cpus',",
-        "    '//command_line_option:watchos_cpus',",
-        "]",
-        "_apple_rule_base_transition_outputs = [",
-        "    '//command_line_option:apple configuration distinguisher',",
-        "    '//command_line_option:apple_platform_type',",
-        "    '//command_line_option:apple_platforms',",
-        "    '//command_line_option:apple_split_cpu',",
-        "    '//command_line_option:compiler',",
-        "    '//command_line_option:cpu',",
-        "    '//command_line_option:crosstool_top',",
-        "    '//command_line_option:fission',",
-        "    '//command_line_option:grte_top',",
-        "]",
-        "def _command_line_options(*, environment_arch = None, platform_type, settings):",
-        "    output_dictionary = {",
-        "        '//command_line_option:apple configuration distinguisher':",
-        "            'applebin_' + platform_type,",
-        "        '//command_line_option:apple_platform_type': platform_type,",
-        "        '//command_line_option:apple_platforms': [],",
-        "        '//command_line_option:apple_split_cpu': environment_arch,",
-        "        '//command_line_option:compiler': None,",
-        "        '//command_line_option:cpu': ",
-        "            'darwin_' + environment_arch if platform_type == 'macos'",
-        "            else platform_type + '_' +  environment_arch,",
-        "        '//command_line_option:crosstool_top': ",
-        "            settings['//command_line_option:apple_crosstool_top'],",
-        "        '//command_line_option:fission': [],",
-        "        '//command_line_option:grte_top': None,",
-        "    }",
-        "    return output_dictionary",
-        "def _apple_platform_split_transition_impl(settings, attr):",
-        "    output_dictionary = {}",
-        "    platform_type = attr.platform_type",
-        "    if platform_type == 'ios':",
-        "       environment_archs = settings['//command_line_option:ios_multi_cpus']",
-        "    else:",
-        "       environment_archs = settings['//command_line_option:%s_cpus' % platform_type]",
-        "    if not environment_archs and platform_type == 'ios':",
-        "       cpu_value = settings['//command_line_option:cpu']",
-        "       if cpu_value.startswith('ios_'):",
-        "           environment_archs = [cpu_value[4:]]",
-        "    if not environment_archs:",
-        "        environment_archs = ['x86_64']",
-        "    for environment_arch in environment_archs:",
-        "        found_cpu = 'ios_{}'.format(environment_arch)",
-        "        output_dictionary[found_cpu] = _command_line_options(",
-        "            environment_arch = environment_arch,",
-        "            platform_type = platform_type,",
-        "            settings = settings,",
-        "        )",
-        "    return output_dictionary",
-        "apple_platform_split_transition = transition(",
-        "    implementation = _apple_platform_split_transition_impl,",
-        "    inputs = _apple_platform_transition_inputs,",
-        "    outputs = _apple_rule_base_transition_outputs,",
-        ")",
         "def apple_binary_starlark_impl(ctx):",
         "    all_avoid_deps = list(ctx.attr.avoid_deps)",
         "    binary_type = ctx.attr.binary_type",
@@ -637,10 +603,16 @@ public abstract class ObjcRuleTestCase extends BuildViewTestCase {
         "    apple_binary_starlark_impl,",
         "    attrs = {",
         "        '_child_configuration_dummy': attr.label(",
-        "            cfg=apple_platform_split_transition,",
+        "            cfg=apple_common.multi_arch_split,",
         "            default=Label('" + toolsRepo + "//tools/cpp:current_cc_toolchain'),),",
         "        '_dummy_lib': attr.label(",
         "            default = Label('" + toolsLoc + "/dummy:dummy_lib'),),",
+        "        '_grep_includes': attr.label(",
+        "            cfg = 'exec',",
+        "            allow_single_file = True,",
+        "            executable = True,",
+        "            default = Label('" + toolsRepo + "//tools/cpp:grep-includes'),",
+        "        ),",
         "        '_j2objc_dead_code_pruner': attr.label(",
         "            executable = True,",
         "            allow_files=True,",
@@ -659,7 +631,7 @@ public abstract class ObjcRuleTestCase extends BuildViewTestCase {
         "        ),",
         "        'bundle_loader': attr.label(),",
         "        'deps': attr.label_list(",
-        "             cfg=apple_platform_split_transition,",
+        "             cfg=apple_common.multi_arch_split,",
         "        ),",
         "        'linkopts': attr.string_list(),",
         "        'extra_requested_features': attr.string_list(),",
@@ -669,22 +641,11 @@ public abstract class ObjcRuleTestCase extends BuildViewTestCase {
         "        'stamp': attr.int(values=[-1,0,1],default=-1),",
         "        'string_variables_extension': attr.string_dict(),",
         "        'string_list_variables_extension': attr.string_list_dict(),",
-        "        '_allowlist_function_transition': attr.label(",
-        "            default = '//tools/allowlists/function_transition_allowlist',",
-        "        ),",
         "    },",
         "    exec_groups = {",
         "        'j2objc': exec_group()",
         "    },",
         "    fragments = ['apple', 'objc', 'cpp',],",
-        ")");
-    scratch.overwriteFile(
-        "tools/allowlists/function_transition_allowlist/BUILD",
-        "package_group(",
-        "    name = 'function_transition_allowlist',",
-        "    packages = [",
-        "        '//...',",
-        "    ],",
         ")");
   }
 
@@ -718,7 +679,9 @@ public abstract class ObjcRuleTestCase extends BuildViewTestCase {
     scratch.file("x/a.h");
     ruleType.scratchTarget(scratch, "hdrs", "['a.h']", "includes", "['incdir']");
     CcCompilationContext ccCompilationContext =
-        getConfiguredTarget("//x:x").get(CcInfo.PROVIDER).getCcCompilationContext();
+        getConfiguredTarget("//x:x", getAppleCrosstoolConfiguration())
+            .get(CcInfo.PROVIDER)
+            .getCcCompilationContext();
     ImmutableList<String> declaredIncludeSrcs =
         ccCompilationContext.getDeclaredIncludeSrcs().toList().stream()
             .map(x -> removeConfigFragment(x.getExecPathString()))
@@ -735,7 +698,13 @@ public abstract class ObjcRuleTestCase extends BuildViewTestCase {
     assertThat(
             ccCompilationContext.getIncludeDirs().stream()
                 .map(x -> removeConfigFragment(x.toString())))
-        .containsExactly(PathFragment.create("x/incdir").toString(), OUTPUTDIR + "/x/incdir");
+        .containsExactly(
+            PathFragment.create("x/incdir").toString(),
+            removeConfigFragment(
+                getAppleCrosstoolConfiguration()
+                    .getGenfilesFragment(RepositoryName.MAIN)
+                    .getRelative("x/incdir")
+                    .toString()));
   }
 
   protected void checkCompilesWithHdrs(RuleType ruleType) throws Exception {
@@ -909,14 +878,16 @@ public abstract class ObjcRuleTestCase extends BuildViewTestCase {
     return getGeneratingAction(linkedLibrary);
   }
 
-  protected List<String> rootedIncludePaths(String... unrootedPaths) {
+  protected List<String> rootedIncludePaths(
+      BuildConfigurationValue configuration, String... unrootedPaths) {
     ImmutableList.Builder<String> rootedPaths = new ImmutableList.Builder<>();
     for (String unrootedPath : unrootedPaths) {
       rootedPaths
           .add(unrootedPath)
           .add(
               removeConfigFragment(
-                  PathFragment.create(TestConstants.PRODUCT_NAME + "-out/any-config-fragment/bin")
+                  configuration
+                      .getGenfilesFragment(RepositoryName.MAIN)
                       .getRelative(unrootedPath)
                       .getSafePathString()));
     }
@@ -1106,6 +1077,13 @@ public abstract class ObjcRuleTestCase extends BuildViewTestCase {
    */
   protected List<String> normalizeBashArgs(List<String> args) {
     return Splitter.on(' ').splitToList(Joiner.on(' ').join(args));
+  }
+
+  /** Returns the directory where objc modules will be cached. */
+  protected String getModulesCachePath() throws InterruptedException {
+    return getAppleCrosstoolConfiguration().getGenfilesFragment(RepositoryName.MAIN)
+        + "/"
+        + CompilationSupport.OBJC_MODULE_CACHE_DIR_NAME;
   }
 
   /**

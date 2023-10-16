@@ -57,6 +57,7 @@ import javax.annotation.Nullable;
 @ThreadSafe
 public class ExperimentalGrpcRemoteExecutor implements RemoteExecutionClient {
 
+  private final ServerCapabilities serverCapabilities;
   private final RemoteOptions remoteOptions;
   private final ReferenceCountedChannel channel;
   private final CallCredentialsProvider callCredentialsProvider;
@@ -65,10 +66,12 @@ public class ExperimentalGrpcRemoteExecutor implements RemoteExecutionClient {
   private final AtomicBoolean closed = new AtomicBoolean();
 
   public ExperimentalGrpcRemoteExecutor(
+      ServerCapabilities serverCapabilities,
       RemoteOptions remoteOptions,
       ReferenceCountedChannel channel,
       CallCredentialsProvider callCredentialsProvider,
       RemoteRetrier retrier) {
+    this.serverCapabilities = serverCapabilities;
     this.remoteOptions = remoteOptions;
     this.channel = channel;
     this.callCredentialsProvider = callCredentialsProvider;
@@ -333,7 +336,7 @@ public class ExperimentalGrpcRemoteExecutor implements RemoteExecutionClient {
 
   @Override
   public ServerCapabilities getServerCapabilities() {
-    return channel.getServerCapabilities();
+    return this.serverCapabilities;
   }
 
   @Override

@@ -14,10 +14,10 @@
 
 package com.google.devtools.build.lib.analysis;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.devtools.build.lib.analysis.ExtraActionUtils.createExtraActionProvider;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -80,11 +80,11 @@ public interface ConfiguredAspect extends ProviderCollection {
   }
 
   static ConfiguredAspect forAlias(ConfiguredAspect real) {
-    return new BasicConfiguredAspect(real.getActions(), real.getProviders());
+    return BasicConfiguredAspect.create(real.getActions(), real.getProviders());
   }
 
   static ConfiguredAspect forNonapplicableTarget() {
-    return new BasicConfiguredAspect(
+    return BasicConfiguredAspect.create(
         ImmutableList.of(), new TransitiveInfoProviderMapBuilder().build());
   }
 
@@ -174,12 +174,8 @@ public interface ConfiguredAspect extends ProviderCollection {
         addDeclaredProvider(OutputGroupInfo.fromBuilders(outputGroupBuilders));
       }
 
-      // Only add {@link ExtraActionProvider} if extra action listeners are applied
-      if (!ruleContext.getConfiguration().getActionListeners().isEmpty()) {
-        addProvider(
-            createExtraActionProvider(
-                /* actionsWithoutExtraAction= */ ImmutableSet.of(), ruleContext));
-      }
+      addProvider(
+          createExtraActionProvider(/*actionsWithoutExtraAction=*/ ImmutableSet.of(), ruleContext));
 
       AnalysisEnvironment analysisEnvironment = ruleContext.getAnalysisEnvironment();
       ImmutableList<ActionAnalysisMetadata> actions = analysisEnvironment.getRegisteredActions();
@@ -203,57 +199,34 @@ public interface ConfiguredAspect extends ProviderCollection {
         }
       }
 
-      return new BasicConfiguredAspect(actions, providerMap);
+      return BasicConfiguredAspect.create(actions, providerMap);
     }
 
     /**
      * Adds {@link RequiredConfigFragmentsProvider} if {@link
      * CoreOptions#includeRequiredConfigFragmentsProvider} isn't {@link
-     * CoreOptions.IncludeConfigFragmentsEnum#OFF} and if the provider was not already added.
+     * CoreOptions.IncludeConfigFragmentsEnum#OFF}.
      *
      * <p>See {@link com.google.devtools.build.lib.analysis.config.RequiredFragmentsUtil} for a
      * description of the meaning of this provider's content. That class contains methods that
      * populate the results of {@link RuleContext#getRequiredConfigFragments}.
      */
     private void maybeAddRequiredConfigFragmentsProvider() {
-      if (ruleContext.shouldIncludeRequiredConfigFragmentsProvider()
-          && !providers.contains(RequiredConfigFragmentsProvider.class)) {
+      if (ruleContext.shouldIncludeRequiredConfigFragmentsProvider()) {
         addProvider(ruleContext.getRequiredConfigFragments());
       }
     }
   }
 
   /** Basic implementation of {@link ConfiguredAspect}. */
-  static class BasicConfiguredAspect implements ConfiguredAspect {
-    /**
-     * Operations accessing actions, for example, executing them, should be performed in the same
-     * Bazel instance that constructs the {@code ConfiguredAspect} instance and not on a Bazel
-     * instance that retrieves it remotely using deserialization.
-     */
-    @Nullable // Null when deserialized.
-    private final transient ImmutableList<ActionAnalysisMetadata> actions;
+  @AutoValue
+  abstract class BasicConfiguredAspect implements ConfiguredAspect {
 
-    private final TransitiveInfoProviderMap providers;
-
-    private BasicConfiguredAspect(
+    private static BasicConfiguredAspect create(
         ImmutableList<ActionAnalysisMetadata> actions, TransitiveInfoProviderMap providers) {
-      this.actions = actions;
-      this.providers = providers;
+      return new AutoValue_ConfiguredAspect_BasicConfiguredAspect(actions, providers);
     }
 
-    @Override
-    public ImmutableList<ActionAnalysisMetadata> getActions() {
-      return checkNotNull(actions, "actions are not available on deserialized instances");
-    }
-
-    @Override
-    public TransitiveInfoProviderMap getProviders() {
-      return providers;
-    }
-
-    @Override
-    public String toString() {
-      return toStringHelper(this).add("actions", actions).add("providers", providers).toString();
-    }
+    BasicConfiguredAspect() {}
   }
 }

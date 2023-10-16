@@ -42,16 +42,19 @@ import javax.management.openmbean.CompositeData;
 final class MemoryPressureListener implements NotificationListener {
 
   private final AtomicReference<EventBus> eventBus = new AtomicReference<>();
+  private final RetainedHeapLimiter retainedHeapLimiter;
   private final AtomicReference<GcThrashingDetector> gcThrashingDetector = new AtomicReference<>();
   private final Executor executor;
 
-  private MemoryPressureListener(Executor executor) {
+  private MemoryPressureListener(RetainedHeapLimiter retainedHeapLimiter, Executor executor) {
+    this.retainedHeapLimiter = retainedHeapLimiter;
     this.executor = executor;
   }
 
-  static MemoryPressureListener create() {
+  static MemoryPressureListener create(RetainedHeapLimiter retainedHeapLimiter) {
     return createFromBeans(
         ManagementFactory.getGarbageCollectorMXBeans(),
+        retainedHeapLimiter,
         // Use a dedicated thread to broadcast memory pressure events. The service thread that calls
         // handleNotification for GC events is not a typical Java thread - it doesn't work with
         // debugger breakpoints and may not show up in thread dumps.
@@ -62,6 +65,7 @@ final class MemoryPressureListener implements NotificationListener {
   @VisibleForTesting
   static MemoryPressureListener createFromBeans(
       List<GarbageCollectorMXBean> gcBeans,
+      RetainedHeapLimiter retainedHeapLimiter,
       Executor executor) {
     ImmutableList<NotificationEmitter> tenuredGcEmitters = findTenuredCollectorBeans(gcBeans);
     if (tenuredGcEmitters.isEmpty()) {
@@ -75,7 +79,8 @@ final class MemoryPressureListener implements NotificationListener {
               "Unable to find tenured collector from %s: names were %s.", gcBeans, names));
     }
 
-    MemoryPressureListener memoryPressureListener = new MemoryPressureListener(executor);
+    MemoryPressureListener memoryPressureListener =
+        new MemoryPressureListener(retainedHeapLimiter, executor);
     tenuredGcEmitters.forEach(e -> e.addNotificationListener(memoryPressureListener, null, null));
     return memoryPressureListener;
   }
@@ -145,10 +150,14 @@ final class MemoryPressureListener implements NotificationListener {
     }
 
     // A null EventBus implies memory pressure event between commands with no active EventBus.
+    // In such cases, notify RetainedHeapLimiter but do not publish event.
     EventBus eventBus = this.eventBus.get();
     if (eventBus != null) {
       eventBus.post(event);
     }
+    // Post to EventBus first so memory pressure subscribers have a chance to make things
+    // eligible for GC before RetainedHeapLimiter would trigger a full GC.
+    this.retainedHeapLimiter.handle(event);
   }
 
   void setEventBus(@Nullable EventBus eventBus) {

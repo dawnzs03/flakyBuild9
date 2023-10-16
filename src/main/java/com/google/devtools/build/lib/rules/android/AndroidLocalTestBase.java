@@ -281,9 +281,9 @@ public abstract class AndroidLocalTestBase implements RuleConfiguredTargetFactor
 
     String javaExecutable;
     if (javaSemantics.isJavaExecutableSubstitution()) {
-      javaExecutable = javaCommon.getJavaBinSubstitution(ruleContext, launcher);
+      javaExecutable = JavaCommon.getJavaBinSubstitution(ruleContext, launcher);
     } else {
-      javaExecutable = javaCommon.getJavaExecutableForStub(ruleContext, launcher);
+      javaExecutable = JavaCommon.getJavaExecutableForStub(ruleContext, launcher);
     }
 
     javaSemantics.createStubAction(
@@ -536,10 +536,7 @@ public abstract class AndroidLocalTestBase implements RuleConfiguredTargetFactor
     builder.addTransitiveArtifactsWrappedInStableOrder(javaCommon.getRuntimeClasspath());
 
     // Add the JDK files from P4 (see java_stub_template.txt).
-    builder.addTransitiveArtifacts(
-        JavaRuntimeInfo.from(
-                ruleContext, javaCommon.getJavaSemantics().getJavaRuntimeToolchainType())
-            .javaBaseInputs());
+    builder.addTransitiveArtifacts(JavaRuntimeInfo.from(ruleContext).javaBaseInputs());
     builder.addArtifact(manifest);
     builder.addArtifact(resourcesClassJar);
     builder.addArtifact(resourcesZip);
