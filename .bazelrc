@@ -1,50 +1,79 @@
-common --enable_platform_specific_config
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+startup --host_jvm_args=-Xmx2g
 
-# Shared configuration flags to build and test Bazel on RBE.
-build:remote_shared --remote_instance_name=projects/bazel-untrusted/instances/default_instance
-build:remote_shared --remote_executor=grpcs://remotebuildexecution.googleapis.com
-build:remote_shared --remote_download_toplevel
-build:remote_shared --remote_timeout=600
-build:remote_shared --google_default_credentials
-build:remote_shared --jobs=100
-build:remote_shared --action_env=PATH=/bin:/usr/bin:/usr/local/bin
-build:remote_shared --java_runtime_version=rbe_jdk
-build:remote_shared --tool_java_runtime_version=rbe_jdk
-# Workaround for singlejar incompatibility with RBE
-build:remote_shared --noexperimental_check_desugar_deps
+run --color=yes
 
-# Configuration to build and test Bazel on RBE on Ubuntu 18.04 with Java 11
-build:ubuntu1804_java11 --extra_toolchains=@rbe_ubuntu1804_java11//java:all
-build:ubuntu1804_java11 --crosstool_top=@rbe_ubuntu1804_java11//cc:toolchain
-build:ubuntu1804_java11 --extra_toolchains=@rbe_ubuntu1804_java11//config:cc-toolchain
-build:ubuntu1804_java11 --extra_execution_platforms=//:rbe_ubuntu1804_java11_platform,//:rbe_ubuntu1804_java11_highcpu_platform
-build:ubuntu1804_java11 --host_platform=//:rbe_ubuntu1804_java11_platform
-build:ubuntu1804_java11 --platforms=//:rbe_ubuntu1804_java11_platform
-build:ubuntu1804_java11 --config=remote_shared
+build --color=yes
+build --enable_platform_specific_config
 
-# Alias
-build:remote --config=ubuntu1804_java11
+test --action_env=TEST_TMPDIR=/tmp
 
-build:macos --macos_minimum_os=10.11
+test  --experimental_strict_java_deps=warn
+build --experimental_strict_java_deps=warn
 
-# Enable Bzlmod
-build:bzlmod --enable_bzlmod
-build:bzlmod --check_direct_dependencies=error
+test --test_output=errors
 
-# Enable Java 11 language features (https://github.com/bazelbuild/bazel/issues/14592)
-build --java_language_version=11
-build --tool_java_language_version=11
 
-# Fail if a glob doesn't match anything (https://github.com/bazelbuild/bazel/issues/8195)
-build --incompatible_disallow_empty_glob
+# This .bazelrc file contains all of the flags required for the provided
+# toolchain with Remote Build Execution.
+# Note your WORKSPACE must contain an rbe_autoconfig target with
+# name="rbe_default" to use these flags as-is.
 
-# Manually enable cc toolchain resolution before it is flipped. https://github.com/bazelbuild/bazel/issues/7260
-build --incompatible_enable_cc_toolchain_resolution
+# Depending on how many machines are in the remote execution instance, setting
+# this higher can make builds faster by allowing more jobs to run in parallel.
+# Setting it too high can result in jobs that timeout, however, while waiting
+# for a remote machine to execute them.
+build:remote --jobs=150
 
-# Fix non-deterministic Java compilation failures (https://github.com/bazelbuild/bazel/issues/3236)
-build --incompatible_sandbox_hermetic_tmp
+# Set several flags related to specifying the platform, toolchain and java
+# properties.
+# These flags should only be used as is for the rbe-ubuntu16-04 container
+# and need to be adapted to work with other toolchain containers.
+build:remote --java_runtime_version=rbe_jdk
+build:remote --tool_java_runtime_version=rbe_jdk
+build:remote --extra_toolchains=@rbe_default//java:all
 
-# User-specific .bazelrc
-try-import %workspace%/user.bazelrc
+build:remote --crosstool_top=@rbe_default//cc:toolchain
+build:remote --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+# Platform flags:
+# The toolchain container used for execution is defined in the target indicated
+# by "extra_execution_platforms", "host_platform" and "platforms".
+# More about platforms: https://docs.bazel.build/versions/master/platforms.html
+build:remote --extra_toolchains=@rbe_default//config:cc-toolchain
+build:remote --extra_execution_platforms=@rbe_default//config:platform
+build:remote --host_platform=@rbe_default//config:platform
+build:remote --platforms=@rbe_default//config:platform
 
-build:docs --workspace_status_command=scripts/docs/get_workspace_status.sh
+# Starting with Bazel 0.27.0 strategies do not need to be explicitly
+# defined. See https://github.com/bazelbuild/bazel/issues/7480
+build:remote --define=EXECUTOR=remote
+
+# Enable remote execution so actions are performed on the remote systems.
+build:remote --remote_executor=grpcs://remote.buildbuddy.io
+
+# Enforce stricter environment rules, which eliminates some non-hermetic
+# behavior and therefore improves both the remote cache hit rate and the
+# correctness and repeatability of the build.
+build:remote --incompatible_strict_action_env=true
+
+# Set a higher timeout value, just in case.
+build:remote --remote_timeout=3600
+
+# Use a pre-configured account, such that we may have pull-request replacing pull-request-target
+build:remote --remote_header=x-buildbuddy-api-key=FD819nUEY7WjvqmoufsU
+test:remote --remote_header=x-buildbuddy-api-key=FD819nUEY7WjvqmoufsU
