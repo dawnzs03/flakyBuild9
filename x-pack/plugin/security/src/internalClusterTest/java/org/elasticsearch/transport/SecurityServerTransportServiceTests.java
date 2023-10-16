@@ -22,7 +22,13 @@ public class SecurityServerTransportServiceTests extends SecurityIntegTestCase {
                     + SecurityServerTransportInterceptor.ProfileSecuredRequestHandler.class
                     + "; do all the handler registration methods have overrides?",
                 handler.toString(),
-                "ProfileSecuredRequestHandler{action='" + handler.getAction() + "', forceExecution=" + handler.isForceExecution() + "}"
+                "ProfileSecuredRequestHandler{action='"
+                    + handler.getAction()
+                    + "', executorName='"
+                    + handler.getExecutor()
+                    + "', forceExecution="
+                    + handler.isForceExecution()
+                    + "}"
             );
         }
     }

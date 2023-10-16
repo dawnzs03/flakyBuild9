@@ -12,7 +12,6 @@ import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 public class BlobStoreWrapper implements BlobStore {
 
@@ -25,11 +24,6 @@ public class BlobStoreWrapper implements BlobStore {
     @Override
     public BlobContainer blobContainer(BlobPath path) {
         return delegate.blobContainer(path);
-    }
-
-    @Override
-    public void deleteBlobsIgnoringIfNotExists(Iterator<String> blobNames) throws IOException {
-        delegate.deleteBlobsIgnoringIfNotExists(blobNames);
     }
 
     @Override

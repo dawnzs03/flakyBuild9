@@ -176,6 +176,11 @@ public interface Block extends NamedWriteable {
             DoubleBlock.ENTRY,
             BytesRefBlock.ENTRY,
             BooleanBlock.ENTRY,
+            IntVectorBlock.ENTRY,
+            LongVectorBlock.ENTRY,
+            DoubleVectorBlock.ENTRY,
+            BytesRefVectorBlock.ENTRY,
+            BooleanVectorBlock.ENTRY,
             ConstantNullBlock.ENTRY
         );
     }

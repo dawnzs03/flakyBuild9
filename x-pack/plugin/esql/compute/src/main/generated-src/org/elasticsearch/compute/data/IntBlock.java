@@ -44,10 +44,6 @@ public sealed interface IntBlock extends Block permits FilterIntBlock, IntArrayB
     }
 
     static IntBlock of(StreamInput in) throws IOException {
-        final boolean isVector = in.readBoolean();
-        if (isVector) {
-            return IntVector.of(in).asBlock();
-        }
         final int positions = in.readVInt();
         var builder = newBlockBuilder(positions);
         for (int i = 0; i < positions; i++) {
@@ -67,23 +63,17 @@ public sealed interface IntBlock extends Block permits FilterIntBlock, IntArrayB
 
     @Override
     default void writeTo(StreamOutput out) throws IOException {
-        IntVector vector = asVector();
-        out.writeBoolean(vector != null);
-        if (vector != null) {
-            vector.writeTo(out);
-        } else {
-            final int positions = getPositionCount();
-            out.writeVInt(positions);
-            for (int pos = 0; pos < positions; pos++) {
-                if (isNull(pos)) {
-                    out.writeBoolean(true);
-                } else {
-                    out.writeBoolean(false);
-                    final int valueCount = getValueCount(pos);
-                    out.writeVInt(valueCount);
-                    for (int valueIndex = 0; valueIndex < valueCount; valueIndex++) {
-                        out.writeInt(getInt(getFirstValueIndex(pos) + valueIndex));
-                    }
+        final int positions = getPositionCount();
+        out.writeVInt(positions);
+        for (int pos = 0; pos < positions; pos++) {
+            if (isNull(pos)) {
+                out.writeBoolean(true);
+            } else {
+                out.writeBoolean(false);
+                final int valueCount = getValueCount(pos);
+                out.writeVInt(valueCount);
+                for (int valueIndex = 0; valueIndex < valueCount; valueIndex++) {
+                    out.writeInt(getInt(getFirstValueIndex(pos) + valueIndex));
                 }
             }
         }

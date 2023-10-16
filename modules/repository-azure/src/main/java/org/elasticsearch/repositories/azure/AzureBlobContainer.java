@@ -123,7 +123,7 @@ public class AzureBlobContainer extends AbstractBlobContainer {
 
     @Override
     public void deleteBlobsIgnoringIfNotExists(Iterator<String> blobNames) throws IOException {
-        blobStore.deleteBlobsIgnoringIfNotExists(new Iterator<>() {
+        blobStore.deleteBlobs(new Iterator<>() {
             @Override
             public boolean hasNext() {
                 return blobNames.hasNext();
