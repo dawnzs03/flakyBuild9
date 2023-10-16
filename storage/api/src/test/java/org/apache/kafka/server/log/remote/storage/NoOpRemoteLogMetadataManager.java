@@ -29,12 +29,12 @@ import java.util.concurrent.CompletableFuture;
 public class NoOpRemoteLogMetadataManager implements RemoteLogMetadataManager {
     @Override
     public CompletableFuture<Void> addRemoteLogSegmentMetadata(RemoteLogSegmentMetadata remoteLogSegmentMetadata) {
-        return CompletableFuture.completedFuture(null);
+        return null;
     }
 
     @Override
     public CompletableFuture<Void> updateRemoteLogSegmentMetadata(RemoteLogSegmentMetadataUpdate remoteLogSegmentMetadataUpdate) {
-        return CompletableFuture.completedFuture(null);
+        return null;
     }
 
     @Override

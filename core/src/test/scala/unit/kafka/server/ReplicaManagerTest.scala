@@ -3283,12 +3283,10 @@ class ReplicaManagerTest {
     (rm0, rm1)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithStaleControllerEpoch(enableRemoteStorage: Boolean): Unit = {
+  @Test
+  def testStopReplicaWithStaleControllerEpoch(): Unit = {
     val mockTimer = new MockTimer(time)
-    val replicaManager = setupReplicaManagerWithMockedPurgatories(mockTimer, aliveBrokerIds = Seq(0, 1),
-      enableRemoteStorage = enableRemoteStorage)
+    val replicaManager = setupReplicaManagerWithMockedPurgatories(mockTimer, aliveBrokerIds = Seq(0, 1))
 
     try {
       val tp0 = new TopicPartition(topic, 0)
@@ -3311,20 +3309,15 @@ class ReplicaManagerTest {
 
       val (_, error) = replicaManager.stopReplicas(1, 0, 0, partitionStates)
       assertEquals(Errors.STALE_CONTROLLER_EPOCH, error)
-      if (enableRemoteStorage) {
-        verify(mockRemoteLogManager, times(0)).stopPartitions(any(), any(), any())
-      }
     } finally {
       replicaManager.shutdown(checkpointHW = false)
     }
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithOfflinePartition(enableRemoteStorage: Boolean): Unit = {
+  @Test
+  def testStopReplicaWithOfflinePartition(): Unit = {
     val mockTimer = new MockTimer(time)
-    val replicaManager = setupReplicaManagerWithMockedPurgatories(mockTimer, aliveBrokerIds = Seq(0, 1),
-      enableRemoteStorage = enableRemoteStorage)
+    val replicaManager = setupReplicaManagerWithMockedPurgatories(mockTimer, aliveBrokerIds = Seq(0, 1))
 
     try {
       val tp0 = new TopicPartition(topic, 0)
@@ -3349,38 +3342,29 @@ class ReplicaManagerTest {
       val (result, error) = replicaManager.stopReplicas(1, 0, 0, partitionStates)
       assertEquals(Errors.NONE, error)
       assertEquals(Map(tp0 -> Errors.KAFKA_STORAGE_ERROR), result)
-      if (enableRemoteStorage) {
-        verify(mockRemoteLogManager, times(0)).stopPartitions(any(), any(), any())
-      }
     } finally {
       replicaManager.shutdown(checkpointHW = false)
     }
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithInexistentPartition(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithInexistentPartition(false, false, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithInexistentPartition(): Unit = {
+    testStopReplicaWithInexistentPartition(false, false)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithInexistentPartitionAndPartitionsDelete(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithInexistentPartition(true, false, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithInexistentPartitionAndPartitionsDelete(): Unit = {
+    testStopReplicaWithInexistentPartition(true, false)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithInexistentPartitionAndPartitionsDeleteAndIOException(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithInexistentPartition(true, true, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithInexistentPartitionAndPartitionsDeleteAndIOException(): Unit = {
+    testStopReplicaWithInexistentPartition(true, true)
   }
 
-  private def testStopReplicaWithInexistentPartition(deletePartitions: Boolean,
-                                                     throwIOException: Boolean,
-                                                     enableRemoteStorage: Boolean): Unit = {
+  private def testStopReplicaWithInexistentPartition(deletePartitions: Boolean, throwIOException: Boolean): Unit = {
     val mockTimer = new MockTimer(time)
-    val replicaManager = setupReplicaManagerWithMockedPurgatories(mockTimer, aliveBrokerIds = Seq(0, 1),
-      enableRemoteStorage = enableRemoteStorage)
+    val replicaManager = setupReplicaManagerWithMockedPurgatories(mockTimer, aliveBrokerIds = Seq(0, 1))
 
     try {
       val tp0 = new TopicPartition(topic, 0)
@@ -3412,79 +3396,64 @@ class ReplicaManagerTest {
         assertEquals(Map(tp0 -> Errors.NONE), result)
         assertTrue(replicaManager.logManager.getLog(tp0).isDefined)
       }
-      if (enableRemoteStorage) {
-        verify(mockRemoteLogManager, times(1))
-          .stopPartitions(ArgumentMatchers.eq(Collections.singleton(tp0)), ArgumentMatchers.eq(false), any())
-      }
     } finally {
       replicaManager.shutdown(checkpointHW = false)
     }
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithExistingPartitionAndNewerLeaderEpoch(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithExistingPartition(2, false, false, Errors.NONE, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithExistingPartitionAndNewerLeaderEpoch(): Unit = {
+    testStopReplicaWithExistingPartition(2, false, false, Errors.NONE)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithExistingPartitionAndOlderLeaderEpoch(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithExistingPartition(0, false, false, Errors.FENCED_LEADER_EPOCH, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithExistingPartitionAndOlderLeaderEpoch(): Unit = {
+    testStopReplicaWithExistingPartition(0, false, false, Errors.FENCED_LEADER_EPOCH)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithExistingPartitionAndEqualLeaderEpoch(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithExistingPartition(1, false, false, Errors.NONE, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithExistingPartitionAndEqualLeaderEpoch(): Unit = {
+    testStopReplicaWithExistingPartition(1, false, false, Errors.NONE)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithExistingPartitionAndDeleteSentinel(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithExistingPartition(LeaderAndIsr.EpochDuringDelete, false, false, Errors.NONE, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithExistingPartitionAndDeleteSentinel(): Unit = {
+    testStopReplicaWithExistingPartition(LeaderAndIsr.EpochDuringDelete, false, false, Errors.NONE)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithExistingPartitionAndLeaderEpochNotProvided(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithExistingPartition(LeaderAndIsr.NoEpoch, false, false, Errors.NONE, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithExistingPartitionAndLeaderEpochNotProvided(): Unit = {
+    testStopReplicaWithExistingPartition(LeaderAndIsr.NoEpoch, false, false, Errors.NONE)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithDeletePartitionAndExistingPartitionAndNewerLeaderEpoch(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithExistingPartition(2, true, false, Errors.NONE, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithDeletePartitionAndExistingPartitionAndNewerLeaderEpoch(): Unit = {
+    testStopReplicaWithExistingPartition(2, true, false, Errors.NONE)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithDeletePartitionAndExistingPartitionAndNewerLeaderEpochAndIOException(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithExistingPartition(2, true, true, Errors.KAFKA_STORAGE_ERROR, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithDeletePartitionAndExistingPartitionAndNewerLeaderEpochAndIOException(): Unit = {
+    testStopReplicaWithExistingPartition(2, true, true, Errors.KAFKA_STORAGE_ERROR)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithDeletePartitionAndExistingPartitionAndOlderLeaderEpoch(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithExistingPartition(0, true, false, Errors.FENCED_LEADER_EPOCH, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithDeletePartitionAndExistingPartitionAndOlderLeaderEpoch(): Unit = {
+    testStopReplicaWithExistingPartition(0, true, false, Errors.FENCED_LEADER_EPOCH)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithDeletePartitionAndExistingPartitionAndEqualLeaderEpoch(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithExistingPartition(1, true, false, Errors.NONE, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithDeletePartitionAndExistingPartitionAndEqualLeaderEpoch(): Unit = {
+    testStopReplicaWithExistingPartition(1, true, false, Errors.NONE)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithDeletePartitionAndExistingPartitionAndDeleteSentinel(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithExistingPartition(LeaderAndIsr.EpochDuringDelete, true, false, Errors.NONE, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithDeletePartitionAndExistingPartitionAndDeleteSentinel(): Unit = {
+    testStopReplicaWithExistingPartition(LeaderAndIsr.EpochDuringDelete, true, false, Errors.NONE)
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = Array(true, false))
-  def testStopReplicaWithDeletePartitionAndExistingPartitionAndLeaderEpochNotProvided(enableRemoteStorage: Boolean): Unit = {
-    testStopReplicaWithExistingPartition(LeaderAndIsr.NoEpoch, true, false, Errors.NONE, enableRemoteStorage)
+  @Test
+  def testStopReplicaWithDeletePartitionAndExistingPartitionAndLeaderEpochNotProvided(): Unit = {
+    testStopReplicaWithExistingPartition(LeaderAndIsr.NoEpoch, true, false, Errors.NONE)
   }
 
   @ParameterizedTest(name = TestInfoUtils.TestWithParameterizedQuorumName)
@@ -3729,11 +3698,9 @@ class ReplicaManagerTest {
   private def testStopReplicaWithExistingPartition(leaderEpoch: Int,
                                                    deletePartition: Boolean,
                                                    throwIOException: Boolean,
-                                                   expectedOutput: Errors,
-                                                   enableRemoteStorage: Boolean): Unit = {
+                                                   expectedOutput: Errors): Unit = {
     val mockTimer = new MockTimer(time)
-    val replicaManager = setupReplicaManagerWithMockedPurgatories(mockTimer, aliveBrokerIds = Seq(0, 1),
-      enableRemoteStorage = enableRemoteStorage)
+    val replicaManager = setupReplicaManagerWithMockedPurgatories(mockTimer, aliveBrokerIds = Seq(0, 1))
 
     try {
       val tp0 = new TopicPartition(topic, 0)
@@ -3795,15 +3762,6 @@ class ReplicaManagerTest {
         assertEquals(HostedPartition.None, replicaManager.getPartition(tp0))
         assertFalse(readRecoveryPointCheckpoint().contains(tp0))
         assertFalse(readLogStartOffsetCheckpoint().contains(tp0))
-        if (enableRemoteStorage) {
-          verify(mockRemoteLogManager).stopPartitions(ArgumentMatchers.eq(Collections.singleton(tp0)),
-            ArgumentMatchers.eq(leaderEpoch == LeaderAndIsr.EpochDuringDelete), any())
-        }
-      }
-
-      if (expectedOutput == Errors.NONE && !deletePartition && enableRemoteStorage) {
-        verify(mockRemoteLogManager).stopPartitions(ArgumentMatchers.eq(Collections.singleton(tp0)),
-          ArgumentMatchers.eq(false), any())
       }
     } finally {
       replicaManager.shutdown(checkpointHW = false)
@@ -4451,11 +4409,7 @@ class ReplicaManagerTest {
       val notReplicaMetadataImage = imageFromTopics(notReplicaTopicsDelta.apply())
       replicaManager.applyDelta(notReplicaTopicsDelta, notReplicaMetadataImage)
 
-      if (enableRemoteStorage) {
-        verify(mockRemoteLogManager, never()).onLeadershipChange(anySet(), anySet(), anyMap())
-        verify(mockRemoteLogManager, times(1)).stopPartitions(
-          ArgumentMatchers.eq(Collections.singleton(topicPartition)), ArgumentMatchers.eq(false), any())
-      }
+      verify(mockRemoteLogManager, never()).onLeadershipChange(anySet(), anySet(), anyMap())
 
       // Check that the partition was removed
       assertEquals(HostedPartition.None, replicaManager.getPartition(topicPartition))
@@ -4497,12 +4451,7 @@ class ReplicaManagerTest {
       val removeTopicsDelta = topicsDeleteDelta(followerMetadataImage.topics())
       val removeMetadataImage = imageFromTopics(removeTopicsDelta.apply())
       replicaManager.applyDelta(removeTopicsDelta, removeMetadataImage)
-
-      if (enableRemoteStorage) {
-        verify(mockRemoteLogManager, never()).onLeadershipChange(anySet(), anySet(), anyMap())
-        verify(mockRemoteLogManager, times(1)).stopPartitions(
-          ArgumentMatchers.eq(Collections.singleton(topicPartition)), ArgumentMatchers.eq(false), any())
-      }
+      verify(mockRemoteLogManager, never()).onLeadershipChange(anySet(), anySet(), anyMap())
 
       // Check that the partition was removed
       assertEquals(HostedPartition.None, replicaManager.getPartition(topicPartition))
@@ -4544,12 +4493,7 @@ class ReplicaManagerTest {
       val notReplicaTopicsDelta = topicsChangeDelta(leaderMetadataImage.topics(), otherId, true)
       val notReplicaMetadataImage = imageFromTopics(notReplicaTopicsDelta.apply())
       replicaManager.applyDelta(notReplicaTopicsDelta, notReplicaMetadataImage)
-
-      if (enableRemoteStorage) {
-        verify(mockRemoteLogManager, never()).onLeadershipChange(anySet(), anySet(), anyMap())
-        verify(mockRemoteLogManager, times(1)).stopPartitions(
-          ArgumentMatchers.eq(Collections.singleton(topicPartition)), ArgumentMatchers.eq(false), any())
-      }
+      verify(mockRemoteLogManager, never()).onLeadershipChange(anySet(), anySet(), anyMap())
 
       // Check that the partition was removed
       assertEquals(HostedPartition.None, replicaManager.getPartition(topicPartition))
@@ -4591,12 +4535,7 @@ class ReplicaManagerTest {
       val removeTopicsDelta = topicsDeleteDelta(leaderMetadataImage.topics())
       val removeMetadataImage = imageFromTopics(removeTopicsDelta.apply())
       replicaManager.applyDelta(removeTopicsDelta, removeMetadataImage)
-
-      if (enableRemoteStorage) {
-        verify(mockRemoteLogManager, never()).onLeadershipChange(anySet(), anySet(), anyMap())
-        verify(mockRemoteLogManager, times(1)).stopPartitions(
-          ArgumentMatchers.eq(Collections.singleton(topicPartition)), ArgumentMatchers.eq(true), any())
-      }
+      verify(mockRemoteLogManager, never()).onLeadershipChange(anySet(), anySet(), anyMap())
 
       // Check that the partition was removed
       assertEquals(HostedPartition.None, replicaManager.getPartition(topicPartition))
@@ -5364,8 +5303,7 @@ class ReplicaManagerTest {
       ClientQuotasImage.EMPTY,
       ProducerIdsImage.EMPTY,
       AclsImage.EMPTY,
-      ScramImage.EMPTY,
-      DelegationTokenImage.EMPTY
+      ScramImage.EMPTY
     )
   }
 

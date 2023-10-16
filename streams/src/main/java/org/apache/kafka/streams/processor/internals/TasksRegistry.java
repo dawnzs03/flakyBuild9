@@ -53,11 +53,9 @@ public interface TasksRegistry {
 
     void addPendingTaskToCloseClean(final TaskId taskId);
 
-    Set<Task> drainPendingTasksToInit();
+    Set<Task> drainPendingTaskToInit();
 
-    void addPendingTasksToInit(final Collection<Task> tasks);
-
-    boolean hasPendingTasksToInit();
+    void addPendingTaskToInit(final Collection<Task> tasks);
 
     boolean removePendingActiveTaskToSuspend(final TaskId taskId);
 

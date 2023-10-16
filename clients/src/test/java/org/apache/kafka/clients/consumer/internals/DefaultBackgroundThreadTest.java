@@ -41,6 +41,7 @@ import org.mockito.Mockito;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
@@ -67,9 +68,10 @@ public class DefaultBackgroundThreadTest {
     private NetworkClientDelegate networkClient;
     private BlockingQueue<BackgroundEvent> backgroundEventsQueue;
     private BlockingQueue<ApplicationEvent> applicationEventsQueue;
-    private ApplicationEventProcessor applicationEventProcessor;
+    private ApplicationEventProcessor processor;
     private CoordinatorRequestManager coordinatorManager;
     private ErrorEventHandler errorEventHandler;
+    private SubscriptionState subscriptionState;
     private int requestTimeoutMs = 500;
     private GroupState groupState;
     private CommitRequestManager commitManager;
@@ -82,9 +84,10 @@ public class DefaultBackgroundThreadTest {
         this.networkClient = mock(NetworkClientDelegate.class);
         this.applicationEventsQueue = (BlockingQueue<ApplicationEvent>) mock(BlockingQueue.class);
         this.backgroundEventsQueue = (BlockingQueue<BackgroundEvent>) mock(BlockingQueue.class);
-        this.applicationEventProcessor = mock(ApplicationEventProcessor.class);
+        this.processor = mock(ApplicationEventProcessor.class);
         this.coordinatorManager = mock(CoordinatorRequestManager.class);
         this.errorEventHandler = mock(ErrorEventHandler.class);
+        this.subscriptionState = mock(SubscriptionState.class);
         GroupRebalanceConfig rebalanceConfig = new GroupRebalanceConfig(
                 100,
                 100,
@@ -95,6 +98,9 @@ public class DefaultBackgroundThreadTest {
                 true);
         this.groupState = new GroupState(rebalanceConfig);
         this.commitManager = mock(CommitRequestManager.class);
+        properties.put(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(RETRY_BACKOFF_MS_CONFIG, RETRY_BACKOFF_MS);
     }
 
     @Test
@@ -118,7 +124,7 @@ public class DefaultBackgroundThreadTest {
         ApplicationEvent e = new NoopApplicationEvent("noop event");
         this.applicationEventsQueue.add(e);
         backgroundThread.runOnce();
-        verify(applicationEventProcessor, times(1)).process(e);
+        verify(processor, times(1)).process(e);
         backgroundThread.close();
     }
 
@@ -126,10 +132,8 @@ public class DefaultBackgroundThreadTest {
     public void testMetadataUpdateEvent() {
         this.applicationEventsQueue = new LinkedBlockingQueue<>();
         this.backgroundEventsQueue = new LinkedBlockingQueue<>();
-        this.applicationEventProcessor = new ApplicationEventProcessor(
-                this.backgroundEventsQueue,
-                mockRequestManagers(),
-                metadata);
+        this.processor = new ApplicationEventProcessor(this.backgroundEventsQueue, mockRequestManagerRegistry(),
+            metadata);
         when(coordinatorManager.poll(anyLong())).thenReturn(mockPollCoordinatorResult());
         when(commitManager.poll(anyLong())).thenReturn(mockPollCommitResult());
         DefaultBackgroundThread backgroundThread = mockBackgroundThread();
@@ -150,7 +154,7 @@ public class DefaultBackgroundThreadTest {
         ApplicationEvent e = new CommitApplicationEvent(new HashMap<>());
         this.applicationEventsQueue.add(e);
         backgroundThread.runOnce();
-        verify(applicationEventProcessor).process(any(CommitApplicationEvent.class));
+        verify(processor).process(any(CommitApplicationEvent.class));
         backgroundThread.close();
     }
 
@@ -158,9 +162,7 @@ public class DefaultBackgroundThreadTest {
     public void testAssignmentChangeEvent() {
         this.applicationEventsQueue = new LinkedBlockingQueue<>();
         this.backgroundEventsQueue = new LinkedBlockingQueue<>();
-        this.applicationEventProcessor = spy(new ApplicationEventProcessor(
-                this.backgroundEventsQueue,
-                mockRequestManagers(),
+        this.processor = spy(new ApplicationEventProcessor(this.backgroundEventsQueue, mockRequestManagerRegistry(),
             metadata));
 
         DefaultBackgroundThread backgroundThread = mockBackgroundThread();
@@ -174,7 +176,7 @@ public class DefaultBackgroundThreadTest {
         when(this.commitManager.poll(anyLong())).thenReturn(mockPollCommitResult());
 
         backgroundThread.runOnce();
-        verify(applicationEventProcessor).process(any(AssignmentChangeApplicationEvent.class));
+        verify(processor).process(any(AssignmentChangeApplicationEvent.class));
         verify(networkClient, times(1)).poll(anyLong(), anyLong());
         verify(commitManager, times(1)).updateAutoCommitTimer(currentTimeMs);
         verify(commitManager, times(1)).maybeAutoCommit(offset);
@@ -217,8 +219,11 @@ public class DefaultBackgroundThreadTest {
         return topicPartitionOffsets;
     }
 
-    private RequestManagers mockRequestManagers() {
-        return new RequestManagers(Optional.of(coordinatorManager), Optional.of(commitManager));
+    private Map<RequestManager.Type, Optional<RequestManager>> mockRequestManagerRegistry() {
+        Map<RequestManager.Type, Optional<RequestManager>> registry = new HashMap<>();
+        registry.put(RequestManager.Type.COORDINATOR, Optional.of(coordinatorManager));
+        registry.put(RequestManager.Type.COMMIT, Optional.of(commitManager));
+        return registry;
     }
 
     private static NetworkClientDelegate.UnsentRequest findCoordinatorUnsentRequest(
@@ -230,24 +235,21 @@ public class DefaultBackgroundThreadTest {
                         new FindCoordinatorRequestData()
                                 .setKeyType(FindCoordinatorRequest.CoordinatorType.TRANSACTION.id())
                                 .setKey("foobar")),
-                Optional.empty());
+            Optional.empty());
         req.setTimer(time, timeout);
         return req;
     }
 
     private DefaultBackgroundThread mockBackgroundThread() {
-        properties.put(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        properties.put(VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        properties.put(RETRY_BACKOFF_MS_CONFIG, RETRY_BACKOFF_MS);
-
         return new DefaultBackgroundThread(
                 this.time,
                 new ConsumerConfig(properties),
                 new LogContext(),
                 applicationEventsQueue,
                 backgroundEventsQueue,
+                subscriptionState,
                 this.errorEventHandler,
-                applicationEventProcessor,
+                processor,
                 this.metadata,
                 this.networkClient,
                 this.groupState,

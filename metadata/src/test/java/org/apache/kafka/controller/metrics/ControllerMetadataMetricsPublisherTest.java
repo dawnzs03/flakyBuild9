@@ -24,7 +24,6 @@ import org.apache.kafka.image.AclsImage;
 import org.apache.kafka.image.ClientQuotasImage;
 import org.apache.kafka.image.ClusterImage;
 import org.apache.kafka.image.ConfigurationsImage;
-import org.apache.kafka.image.DelegationTokenImage;
 import org.apache.kafka.image.FeaturesImage;
 import org.apache.kafka.image.MetadataDelta;
 import org.apache.kafka.image.MetadataImage;
@@ -87,8 +86,7 @@ public class ControllerMetadataMetricsPublisherTest {
             ClientQuotasImage.EMPTY,
             ProducerIdsImage.EMPTY,
             AclsImage.EMPTY,
-            ScramImage.EMPTY,
-            DelegationTokenImage.EMPTY);
+            ScramImage.EMPTY);
     }
 
     static final TopicsImage TOPICS_IMAGE1;
@@ -130,12 +128,7 @@ public class ControllerMetadataMetricsPublisherTest {
         if (isSnapshot) {
             return new SnapshotManifest(MetadataProvenance.EMPTY, 0);
         } else {
-            return LogDeltaManifest.newBuilder()
-                .provenance(MetadataProvenance.EMPTY)
-                .leaderAndEpoch(LeaderAndEpoch.UNKNOWN)
-                .numBatches(0)
-                .elapsedNs(0)
-                .numBytes(0).build();
+            return new LogDeltaManifest(MetadataProvenance.EMPTY, LeaderAndEpoch.UNKNOWN, 0, 0, 0);
         }
     }
 

@@ -89,6 +89,7 @@ import static org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_
 import static org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Setup an embedded Kafka cluster with specified number of brokers and specified broker properties. To be used for
@@ -596,9 +597,7 @@ public class EmbeddedKafkaCluster {
             Admin admin,
             Collection<String> topics
     ) throws TimeoutException, InterruptedException, ExecutionException {
-        if (topics.isEmpty()) {
-            throw new AssertionError("collection of topics may not be empty");
-        }
+        assertFalse("collection of topics may not be empty", topics.isEmpty());
         return admin.describeTopics(topics)
                 .allTopicNames().get(maxDurationMs, TimeUnit.MILLISECONDS)
                 .entrySet().stream()
@@ -618,9 +617,7 @@ public class EmbeddedKafkaCluster {
             Admin admin,
             Collection<TopicPartition> topicPartitions
     ) throws TimeoutException, InterruptedException, ExecutionException {
-        if (topicPartitions.isEmpty()) {
-            throw new AssertionError("collection of topic partitions may not be empty");
-        }
+        assertFalse("collection of topic partitions may not be empty", topicPartitions.isEmpty());
         Map<TopicPartition, OffsetSpec> offsetSpecMap = topicPartitions.stream().collect(Collectors.toMap(Function.identity(), tp -> OffsetSpec.latest()));
         return admin.listOffsets(offsetSpecMap, new ListOffsetsOptions(IsolationLevel.READ_UNCOMMITTED))
                 .all().get(maxDurationMs, TimeUnit.MILLISECONDS)

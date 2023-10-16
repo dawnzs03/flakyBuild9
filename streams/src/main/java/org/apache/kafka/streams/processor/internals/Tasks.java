@@ -180,20 +180,15 @@ class Tasks implements TasksRegistry {
     }
 
     @Override
-    public Set<Task> drainPendingTasksToInit() {
+    public Set<Task> drainPendingTaskToInit() {
         final Set<Task> result = new HashSet<>(pendingTasksToInit);
         pendingTasksToInit.clear();
         return result;
     }
 
     @Override
-    public void addPendingTasksToInit(final Collection<Task> tasks) {
+    public void addPendingTaskToInit(final Collection<Task> tasks) {
         pendingTasksToInit.addAll(tasks);
-    }
-
-    @Override
-    public boolean hasPendingTasksToInit() {
-        return !pendingTasksToInit.isEmpty();
     }
 
     @Override

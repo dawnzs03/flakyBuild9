@@ -1527,7 +1527,7 @@ class KafkaZkClient private[zk] (zooKeeperClient: ZooKeeperClient, isSecure: Boo
       retryRequestUntilConnected(createRequest)
     }
 
-    val tokenInfo = DelegationTokenInfoZNode.encode(token.tokenInfo())
+    val tokenInfo = DelegationTokenInfoZNode.encode(token)
     val setDataResponse = set(tokenInfo)
     setDataResponse.resultCode match {
       case Code.NONODE =>

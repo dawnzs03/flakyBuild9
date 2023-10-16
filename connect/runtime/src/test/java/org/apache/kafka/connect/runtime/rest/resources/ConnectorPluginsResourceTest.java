@@ -342,8 +342,12 @@ public class ConnectorPluginsResourceTest {
 
     @Test
     public void testListConnectorPlugins() {
+        Set<Class<?>> excludes = Stream.of(ConnectorPluginsResource.SINK_CONNECTOR_EXCLUDES, ConnectorPluginsResource.SOURCE_CONNECTOR_EXCLUDES)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
         Set<PluginInfo> expectedConnectorPlugins = Stream.of(SINK_CONNECTOR_PLUGINS, SOURCE_CONNECTOR_PLUGINS)
                 .flatMap(Collection::stream)
+                .filter(p -> !excludes.contains(p.pluginClass()))
                 .map(PluginInfo::new)
                 .collect(Collectors.toSet());
         Set<PluginInfo> actualConnectorPlugins = new HashSet<>(connectorPluginsResource.listConnectorPlugins(true));
@@ -386,6 +390,11 @@ public class ConnectorPluginsResourceTest {
 
     @Test
     public void testListAllPlugins() {
+        Set<Class<?>> excludes = Stream.of(
+                        ConnectorPluginsResource.SINK_CONNECTOR_EXCLUDES,
+                        ConnectorPluginsResource.SOURCE_CONNECTOR_EXCLUDES
+                ).flatMap(Collection::stream)
+                .collect(Collectors.toSet());
         Set<PluginInfo> expectedConnectorPlugins = Stream.of(
                         SINK_CONNECTOR_PLUGINS,
                         SOURCE_CONNECTOR_PLUGINS,
@@ -394,6 +403,7 @@ public class ConnectorPluginsResourceTest {
                         TRANSFORMATION_PLUGINS,
                         PREDICATE_PLUGINS
                 ).flatMap(Collection::stream)
+                .filter(p -> !excludes.contains(p.pluginClass()))
                 .map(PluginInfo::new)
                 .collect(Collectors.toSet());
         Set<PluginInfo> actualConnectorPlugins = new HashSet<>(connectorPluginsResource.listConnectorPlugins(false));

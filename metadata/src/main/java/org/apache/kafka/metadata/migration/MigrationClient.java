@@ -76,8 +76,6 @@ public interface MigrationClient {
 
     AclMigrationClient aclClient();
 
-    DelegationTokenMigrationClient delegationTokenClient();
-
     Optional<ProducerIdsBlock> readProducerId();
 
     ZkMigrationLeadershipState writeProducerId(

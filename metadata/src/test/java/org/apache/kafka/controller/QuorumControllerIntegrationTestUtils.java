@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.common.Uuid;
 import org.apache.kafka.common.message.CreateTopicsResponseData.CreatableTopicResult;
@@ -212,6 +211,6 @@ public class QuorumControllerIntegrationTestUtils {
             controller.renounce();
             future.complete(null);
         });
-        future.get(30, TimeUnit.SECONDS);
+        future.get();
     }
 }
