@@ -26,7 +26,6 @@ const { Browser } = require('../')
 const { Context } = require('../firefox')
 const { Pages, suite } = require('../lib/test')
 const { locate } = require('../lib/test/resources')
-const { until, By } = require('../index')
 
 const EXT_XPI = locate('common/extensions/webextensions-selenium-example.xpi')
 const EXT_UNSIGNED_ZIP = locate(
@@ -321,11 +320,9 @@ suite(
       }
 
       async function verifyWebExtensionWasInstalled() {
-        let footer = await driver.wait(
-          until.elementLocated(By.id('webextensions-selenium-example')),
-          5000
-        )
-
+        let footer = await driver.findElement({
+          id: 'webextensions-selenium-example',
+        })
         let text = await footer.getText()
         assert.strictEqual(
           text,
