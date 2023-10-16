@@ -225,21 +225,17 @@ public class OffsetMetadataManager {
     }
 
     /**
-     * Validates an OffsetFetch request.
+     * Validates an OffsetCommit request.
      *
-     * @param request               The actual request.
+     * @param groupId               The group id.
      * @param lastCommittedOffset   The last committed offsets in the timeline.
      */
     private void validateOffsetFetch(
-        OffsetFetchRequestData.OffsetFetchRequestGroup request,
+        String groupId,
         long lastCommittedOffset
     ) throws GroupIdNotFoundException {
-        Group group = groupMetadataManager.group(request.groupId(), lastCommittedOffset);
-        group.validateOffsetFetch(
-            request.memberId(),
-            request.memberEpoch(),
-            lastCommittedOffset
-        );
+        Group group = groupMetadataManager.group(groupId, lastCommittedOffset);
+        group.validateOffsetFetch();
     }
 
     /**
@@ -347,7 +343,7 @@ public class OffsetMetadataManager {
     ) throws ApiException {
         boolean failAllPartitions = false;
         try {
-            validateOffsetFetch(request, lastCommittedOffset);
+            validateOffsetFetch(request.groupId(), lastCommittedOffset);
         } catch (GroupIdNotFoundException ex) {
             failAllPartitions = true;
         }
@@ -402,7 +398,7 @@ public class OffsetMetadataManager {
         long lastCommittedOffset
     ) throws ApiException {
         try {
-            validateOffsetFetch(request, lastCommittedOffset);
+            validateOffsetFetch(request.groupId(), lastCommittedOffset);
         } catch (GroupIdNotFoundException ex) {
             return new OffsetFetchResponseData.OffsetFetchResponseGroup()
                 .setGroupId(request.groupId())

@@ -61,7 +61,6 @@ public class DefaultEventHandlerTest {
                 groupId,
                 groupInstanceId,
                 retryBackoffMs,
-                retryBackoffMs,
                 true);
     }
 

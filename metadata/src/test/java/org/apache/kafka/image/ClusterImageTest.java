@@ -21,9 +21,6 @@ import org.apache.kafka.common.Endpoint;
 import org.apache.kafka.common.Uuid;
 import org.apache.kafka.common.metadata.BrokerRegistrationChangeRecord;
 import org.apache.kafka.common.metadata.FenceBrokerRecord;
-import org.apache.kafka.common.metadata.RegisterControllerRecord;
-import org.apache.kafka.common.metadata.RegisterControllerRecord.ControllerEndpoint;
-import org.apache.kafka.common.metadata.RegisterControllerRecord.ControllerEndpointCollection;
 import org.apache.kafka.common.metadata.UnfenceBrokerRecord;
 import org.apache.kafka.common.metadata.UnregisterBrokerRecord;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -31,7 +28,6 @@ import org.apache.kafka.image.writer.ImageWriterOptions;
 import org.apache.kafka.image.writer.RecordListWriter;
 import org.apache.kafka.metadata.BrokerRegistration;
 import org.apache.kafka.metadata.BrokerRegistrationInControlledShutdownChange;
-import org.apache.kafka.metadata.ControllerRegistration;
 import org.apache.kafka.metadata.RecordTestUtils;
 import org.apache.kafka.metadata.VersionRange;
 import org.apache.kafka.server.common.ApiMessageAndVersion;
@@ -50,6 +46,7 @@ import java.util.Optional;
 
 import static org.apache.kafka.common.metadata.MetadataRecordType.FENCE_BROKER_RECORD;
 import static org.apache.kafka.common.metadata.MetadataRecordType.UNFENCE_BROKER_RECORD;
+import static org.apache.kafka.common.metadata.MetadataRecordType.UNREGISTER_BROKER_RECORD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
@@ -91,15 +88,7 @@ public class ClusterImageTest {
             Optional.of("arack"),
             false,
             false));
-        Map<Integer, ControllerRegistration> cmap1 = new HashMap<>();
-        cmap1.put(1000, new ControllerRegistration.Builder().
-            setId(1000).
-            setIncarnationId(Uuid.fromString("9ABu6HEgRuS-hjHLgC4cHw")).
-            setZkMigrationReady(false).
-            setListeners(Collections.singletonMap("PLAINTEXT",
-                    new Endpoint("PLAINTEXT", SecurityProtocol.PLAINTEXT, "localhost", 19092))).
-            setSupportedFeatures(Collections.emptyMap()).build());
-        IMAGE1 = new ClusterImage(map1, cmap1);
+        IMAGE1 = new ClusterImage(map1);
 
         DELTA1_RECORDS = new ArrayList<>();
         DELTA1_RECORDS.add(new ApiMessageAndVersion(new UnfenceBrokerRecord().
@@ -108,24 +97,11 @@ public class ClusterImageTest {
             setId(1).setEpoch(1001), FENCE_BROKER_RECORD.highestSupportedVersion()));
         DELTA1_RECORDS.add(new ApiMessageAndVersion(new BrokerRegistrationChangeRecord().
             setBrokerId(0).setBrokerEpoch(1000).setInControlledShutdown(
-            BrokerRegistrationInControlledShutdownChange.IN_CONTROLLED_SHUTDOWN.value()),
-            (short) 0));
+                BrokerRegistrationInControlledShutdownChange.IN_CONTROLLED_SHUTDOWN.value()),
+            FENCE_BROKER_RECORD.highestSupportedVersion()));
         DELTA1_RECORDS.add(new ApiMessageAndVersion(new UnregisterBrokerRecord().
             setBrokerId(2).setBrokerEpoch(123),
-            (short) 0));
-
-        ControllerEndpointCollection endpointsFor1001 = new ControllerEndpointCollection();
-        new ControllerEndpointCollection().add(new ControllerEndpoint().
-                setHost("localhost").
-                setName("PLAINTEXT").
-                setPort(19093).
-                setSecurityProtocol(SecurityProtocol.PLAINTEXT.id));
-        DELTA1_RECORDS.add(new ApiMessageAndVersion(new RegisterControllerRecord().
-            setControllerId(1001).
-            setIncarnationId(Uuid.fromString("FdEHF-IqScKfYyjZ1CjfNQ")).
-            setZkMigrationReady(true).
-            setEndPoints(endpointsFor1001),
-            (short) 0));
+            UNREGISTER_BROKER_RECORD.highestSupportedVersion()));
 
         DELTA1 = new ClusterDelta(IMAGE1);
         RecordTestUtils.replayAll(DELTA1, DELTA1_RECORDS);
@@ -147,15 +123,7 @@ public class ClusterImageTest {
             Optional.empty(),
             true,
             false));
-        Map<Integer, ControllerRegistration> cmap2 = new HashMap<>(cmap1);
-        cmap2.put(1001, new ControllerRegistration.Builder().
-            setId(1001).
-            setIncarnationId(Uuid.fromString("FdEHF-IqScKfYyjZ1CjfNQ")).
-            setZkMigrationReady(true).
-            setListeners(Collections.singletonMap("PLAINTEXT",
-                new Endpoint("PLAINTEXT", SecurityProtocol.PLAINTEXT, "localhost", 19093))).
-            setSupportedFeatures(Collections.emptyMap()).build());
-        IMAGE2 = new ClusterImage(map2, cmap2);
+        IMAGE2 = new ClusterImage(map2);
     }
 
     @Test

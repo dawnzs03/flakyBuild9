@@ -17,6 +17,7 @@
 
 package org.apache.kafka.streams.state.internals;
 
+import java.time.Duration;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
@@ -26,37 +27,40 @@ import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 import org.apache.kafka.streams.state.WindowBytesStoreSupplier;
 import org.apache.kafka.streams.state.WindowStore;
+import org.easymock.EasyMockRunner;
+import org.easymock.Mock;
+import org.easymock.MockType;
 import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
 
-import java.time.Duration;
 import java.util.Collections;
 
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.reset;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.StrictStubs.class)
+@RunWith(EasyMockRunner.class)
 public class WindowStoreBuilderTest {
 
-    @Mock
+    @Mock(type = MockType.NICE)
     private WindowBytesStoreSupplier supplier;
-    @Mock
+    @Mock(type = MockType.NICE)
     private WindowStore<Bytes, byte[]> inner;
     private WindowStoreBuilder<String, String> builder;
 
     @Before
     public void setUp() {
-        when(supplier.get()).thenReturn(inner);
-        when(supplier.name()).thenReturn("name");
-        when(supplier.metricsScope()).thenReturn("metricScope");
+        expect(supplier.get()).andReturn(inner);
+        expect(supplier.name()).andReturn("name");
+        expect(supplier.metricsScope()).andReturn("metricScope");
+        replay(supplier);
 
         builder = new WindowStoreBuilder<>(
             supplier,
@@ -161,6 +165,17 @@ public class WindowStoreBuilderTest {
     }
 
     @Test
+    public void shouldThrowNullPointerIfKeySerdeIsNull() {
+        assertThrows(NullPointerException.class, () -> new WindowStoreBuilder<>(supplier, null, Serdes.String(), new MockTime()));
+    }
+
+    @Test
+    public void shouldThrowNullPointerIfValueSerdeIsNull() {
+        assertThrows(NullPointerException.class, () -> new WindowStoreBuilder<>(supplier, Serdes.String(),
+            null, new MockTime()));
+    }
+
+    @Test
     public void shouldThrowNullPointerIfTimeIsNull() {
         assertThrows(NullPointerException.class, () -> new WindowStoreBuilder<>(supplier, Serdes.String(),
                 Serdes.String(), null));
@@ -168,7 +183,18 @@ public class WindowStoreBuilderTest {
 
     @Test
     public void shouldThrowNullPointerIfMetricsScopeIsNull() {
-        when(supplier.metricsScope()).thenReturn(null);
+        reset(supplier);
+        expect(supplier.get()).andReturn(new RocksDBWindowStore(
+            new RocksDBSegmentedBytesStore(
+                "name",
+                null,
+                10L,
+                5L,
+                new WindowKeySchema()),
+            false,
+            1L));
+        expect(supplier.name()).andReturn("name");
+        replay(supplier);
 
         final Exception e = assertThrows(NullPointerException.class,
             () -> new WindowStoreBuilder<>(supplier, Serdes.String(), Serdes.String(), new MockTime()));

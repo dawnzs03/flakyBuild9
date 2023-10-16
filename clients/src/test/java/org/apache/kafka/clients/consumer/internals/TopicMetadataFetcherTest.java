@@ -237,11 +237,10 @@ public class TopicMetadataFetcherTest {
         MetricConfig metricConfig = new MetricConfig();
         long metadataExpireMs = Long.MAX_VALUE;
         long retryBackoffMs = 100;
-        long retryBackoffMaxMs = 1000;
         LogContext logContext = new LogContext();
         SubscriptionState subscriptionState = new SubscriptionState(logContext, OffsetResetStrategy.EARLIEST);
         buildDependencies(metricConfig, metadataExpireMs, subscriptionState, logContext);
-        topicMetadataFetcher = new TopicMetadataFetcher(logContext, consumerClient, retryBackoffMs, retryBackoffMaxMs);
+        topicMetadataFetcher = new TopicMetadataFetcher(logContext, consumerClient, retryBackoffMs);
     }
 
     private void buildDependencies(MetricConfig metricConfig,
@@ -250,7 +249,7 @@ public class TopicMetadataFetcherTest {
                                    LogContext logContext) {
         time = new MockTime(1);
         subscriptions = subscriptionState;
-        metadata = new ConsumerMetadata(0, 0, metadataExpireMs, false, false,
+        metadata = new ConsumerMetadata(0, metadataExpireMs, false, false,
                 subscriptions, logContext, new ClusterResourceListeners());
         client = new MockClient(time, metadata);
         metrics = new Metrics(metricConfig, time);

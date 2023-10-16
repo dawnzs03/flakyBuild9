@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -52,7 +51,7 @@ public class MigrationManifest {
             batches++;
             recordBatch.forEach(apiMessageAndVersion -> {
                 MetadataRecordType type = MetadataRecordType.fromId(apiMessageAndVersion.message().apiKey());
-                counts.merge(type, 1, Integer::sum);
+                counts.merge(type, 1, (__, count) -> count + 1);
                 total++;
             });
         }
@@ -61,8 +60,7 @@ public class MigrationManifest {
             if (endTimeNanos == 0) {
                 endTimeNanos = time.nanoseconds();
             }
-            Map<MetadataRecordType, Integer> orderedCounts = new TreeMap<>(counts);
-            return new MigrationManifest(total, batches, endTimeNanos - startTimeNanos, orderedCounts);
+            return new MigrationManifest(total, batches, endTimeNanos - startTimeNanos, counts);
         }
     }
 

@@ -25,23 +25,20 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>
  * The formula is:
  * <pre>Backoff(attempts) = random(1 - jitter, 1 + jitter) * initialInterval * multiplier ^ attempts</pre>
- * If {$code maxInterval} is less that {@code initialInterval}, a constant backoff of
- * {@code maxInterval} will be provided. The jitter will never cause the backoff to exceed
- * {@code maxInterval}.
+ * If {@code initialInterval} is greater than or equal to {@code maxInterval}, a constant backoff of
+ * {@code initialInterval} will be provided.
  * <p>
  * This class is thread-safe.
  */
 public class ExponentialBackoff {
-    private final long initialInterval;
     private final int multiplier;
-    private final long maxInterval;
-    private final double jitter;
     private final double expMax;
+    private final long initialInterval;
+    private final double jitter;
 
     public ExponentialBackoff(long initialInterval, int multiplier, long maxInterval, double jitter) {
-        this.initialInterval = maxInterval < initialInterval ? maxInterval : initialInterval;
+        this.initialInterval = initialInterval;
         this.multiplier = multiplier;
-        this.maxInterval = maxInterval;
         this.jitter = jitter;
         this.expMax = maxInterval > initialInterval ?
                 Math.log(maxInterval / (double) Math.max(initialInterval, 1)) / Math.log(multiplier) : 0;
@@ -55,17 +52,6 @@ public class ExponentialBackoff {
         double term = initialInterval * Math.pow(multiplier, exp);
         double randomFactor = jitter < Double.MIN_NORMAL ? 1.0 :
             ThreadLocalRandom.current().nextDouble(1 - jitter, 1 + jitter);
-        long backoffValue = (long) (randomFactor * term);
-        return backoffValue > maxInterval ? maxInterval : backoffValue;
-    }
-
-    @Override
-    public String toString() {
-        return "ExponentialBackoff{" +
-                "multiplier=" + multiplier +
-                ", expMax=" + expMax +
-                ", initialInterval=" + initialInterval +
-                ", jitter=" + jitter +
-                '}';
+        return (long) (randomFactor * term);
     }
 }

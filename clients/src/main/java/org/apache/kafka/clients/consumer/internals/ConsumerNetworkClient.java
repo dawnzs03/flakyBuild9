@@ -20,7 +20,6 @@ import org.apache.kafka.clients.ClientRequest;
 import org.apache.kafka.clients.ClientResponse;
 import org.apache.kafka.clients.KafkaClient;
 import org.apache.kafka.clients.Metadata;
-import org.apache.kafka.clients.NetworkClientUtils;
 import org.apache.kafka.clients.RequestCompletionHandler;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.errors.AuthenticationException;
@@ -160,7 +159,7 @@ public class ConsumerNetworkClient implements Closeable {
      * @return true if update succeeded, false otherwise.
      */
     public boolean awaitMetadataUpdate(Timer timer) {
-        int version = this.metadata.requestUpdate(false);
+        int version = this.metadata.requestUpdate();
         do {
             poll(timer);
         } while (this.metadata.updateVersion() == version && timer.notExpired());
@@ -559,7 +558,7 @@ public class ConsumerNetworkClient implements Closeable {
     public boolean isUnavailable(Node node) {
         lock.lock();
         try {
-            return NetworkClientUtils.isUnavailable(client, node, time);
+            return client.connectionFailed(node) && client.connectionDelay(node, time.milliseconds()) > 0;
         } finally {
             lock.unlock();
         }
@@ -571,7 +570,9 @@ public class ConsumerNetworkClient implements Closeable {
     public void maybeThrowAuthFailure(Node node) {
         lock.lock();
         try {
-            NetworkClientUtils.maybeThrowAuthFailure(client, node);
+            AuthenticationException exception = client.authenticationException(node);
+            if (exception != null)
+                throw exception;
         } finally {
             lock.unlock();
         }

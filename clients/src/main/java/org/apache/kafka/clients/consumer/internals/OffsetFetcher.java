@@ -227,16 +227,12 @@ public class OffsetFetcher {
             future.addListener(new RequestFutureListener<ListOffsetResult>() {
                 @Override
                 public void onSuccess(ListOffsetResult result) {
-                    offsetFetcherUtils.onSuccessfulRequestForResettingPositions(
-                            resetTimestamps,
-                            result);
+                    offsetFetcherUtils.onSuccessfulRequestForResettingPositions(resetTimestamps, result);
                 }
 
                 @Override
                 public void onFailure(RuntimeException e) {
-                    offsetFetcherUtils.onFailedRequestForResettingPositions(
-                            resetTimestamps,
-                            e);
+                    offsetFetcherUtils.onFailedRequestForResettingPositions(resetTimestamps, e);
                 }
             });
         }
@@ -256,7 +252,7 @@ public class OffsetFetcher {
         long nextResetTimeMs = time.milliseconds() + requestTimeoutMs;
         regrouped.forEach((node, fetchPositions) -> {
             if (node.isEmpty()) {
-                metadata.requestUpdate(true);
+                metadata.requestUpdate();
                 return;
             }
 
@@ -287,7 +283,7 @@ public class OffsetFetcher {
                     List<SubscriptionState.LogTruncation> truncations = new ArrayList<>();
                     if (!offsetsResult.partitionsToRetry().isEmpty()) {
                         subscriptions.setNextAllowedRetry(offsetsResult.partitionsToRetry(), time.milliseconds() + retryBackoffMs);
-                        metadata.requestUpdate(false);
+                        metadata.requestUpdate();
                     }
 
                     // For each OffsetsForLeader response, check if the end-offset is lower than our current offset
@@ -311,7 +307,7 @@ public class OffsetFetcher {
                 @Override
                 public void onFailure(RuntimeException e) {
                     subscriptions.requestFailed(fetchPositions.keySet(), time.milliseconds() + retryBackoffMs);
-                    metadata.requestUpdate(false);
+                    metadata.requestUpdate();
 
                     if (!(e instanceof RetriableException)) {
                         offsetFetcherUtils.maybeSetOffsetForLeaderException(e);
@@ -401,7 +397,7 @@ public class OffsetFetcher {
 
             if (!leaderAndEpoch.leader.isPresent()) {
                 log.debug("Leader for partition {} is unknown for fetching offset {}", tp, offset);
-                metadata.requestUpdate(true);
+                metadata.requestUpdate();
                 partitionsToRetry.add(tp);
             } else {
                 Node leader = leaderAndEpoch.leader.get();

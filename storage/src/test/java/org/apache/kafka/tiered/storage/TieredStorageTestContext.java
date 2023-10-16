@@ -190,14 +190,13 @@ public final class TieredStorageTestContext implements AutoCloseable {
      * @param batchSize the batch size
      */
     public void produce(List<ProducerRecord<String, String>> recordsToProduce, Integer batchSize) {
-        int counter = 1;
+        int counter = 0;
         for (ProducerRecord<String, String> record : recordsToProduce) {
             producer.send(record);
             if (counter++ % batchSize == 0) {
                 producer.flush();
             }
         }
-        producer.flush();
     }
 
     public List<ConsumerRecord<String, String>> consume(TopicPartition topicPartition,

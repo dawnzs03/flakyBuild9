@@ -70,7 +70,6 @@ class OffsetFetchRequestTest extends BaseRequestTest {
     properties.put(KafkaConfig.TransactionsTopicPartitionsProp, "1")
     properties.put(KafkaConfig.TransactionsTopicReplicationFactorProp, "1")
     properties.put(KafkaConfig.TransactionsTopicMinISRProp, "1")
-    properties.setProperty(KafkaConfig.UnstableApiVersionsEnableProp, "true")
   }
 
   @BeforeEach

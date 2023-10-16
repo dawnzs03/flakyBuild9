@@ -18,6 +18,7 @@
 package org.apache.kafka.controller;
 
 import java.util.Collections;
+import org.apache.kafka.clients.ApiVersions;
 import org.apache.kafka.common.errors.StaleBrokerEpochException;
 import org.apache.kafka.common.errors.UnknownServerException;
 import org.apache.kafka.common.metadata.ProducerIdsRecord;
@@ -48,7 +49,7 @@ public class ProducerIdControlManagerTest {
         snapshotRegistry = new SnapshotRegistry(new LogContext());
         featureControl = new FeatureControlManager.Builder().
             setSnapshotRegistry(snapshotRegistry).
-            setQuorumFeatures(new QuorumFeatures(0,
+            setQuorumFeatures(new QuorumFeatures(0, new ApiVersions(),
                 QuorumFeatures.defaultFeatureMap(),
                 Collections.singletonList(0))).
             setMetadataVersion(MetadataVersion.latest()).

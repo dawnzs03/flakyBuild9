@@ -372,16 +372,10 @@ public class DistributedConfig extends WorkerConfig {
                     CommonClientConfigs.SOCKET_CONNECTION_SETUP_TIMEOUT_MAX_MS_DOC)
             .define(CommonClientConfigs.RETRY_BACKOFF_MS_CONFIG,
                     ConfigDef.Type.LONG,
-                    CommonClientConfigs.DEFAULT_RETRY_BACKOFF_MS,
+                    100L,
                     atLeast(0L),
                     ConfigDef.Importance.LOW,
                     CommonClientConfigs.RETRY_BACKOFF_MS_DOC)
-            .define(CommonClientConfigs.RETRY_BACKOFF_MAX_MS_CONFIG,
-                    ConfigDef.Type.LONG,
-                    CommonClientConfigs.DEFAULT_RETRY_BACKOFF_MAX_MS,
-                    atLeast(0L),
-                    ConfigDef.Importance.LOW,
-                    CommonClientConfigs.RETRY_BACKOFF_MAX_MS_DOC)
             .define(CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG,
                     ConfigDef.Type.INT,
                     Math.toIntExact(TimeUnit.SECONDS.toMillis(40)),
@@ -558,12 +552,6 @@ public class DistributedConfig extends WorkerConfig {
     @Override
     public String groupId() {
         return getString(GROUP_ID_CONFIG);
-    }
-
-    @Override
-    protected Map<String, Object> postProcessParsedConfig(final Map<String, Object> parsedValues) {
-        CommonClientConfigs.warnDisablingExponentialBackoff(this);
-        return super.postProcessParsedConfig(parsedValues);
     }
 
     public DistributedConfig(Map<String, String> props) {
