@@ -170,13 +170,15 @@ public interface GroupCoordinator {
      * Fetch offsets for a given Group.
      *
      * @param context           The request context.
-     * @param request           The OffsetFetchRequestGroup request.
+     * @param groupId           The group id.
+     * @param topics            The topics to fetch the offsets for.
      *
      * @return A future yielding the results or an exception.
      */
-    CompletableFuture<OffsetFetchResponseData.OffsetFetchResponseGroup> fetchOffsets(
+    CompletableFuture<List<OffsetFetchResponseData.OffsetFetchResponseTopics>> fetchOffsets(
         RequestContext context,
-        OffsetFetchRequestData.OffsetFetchRequestGroup request,
+        String groupId,
+        List<OffsetFetchRequestData.OffsetFetchRequestTopics> topics,
         boolean requireStable
     );
 
@@ -184,13 +186,13 @@ public interface GroupCoordinator {
      * Fetch all offsets for a given Group.
      *
      * @param context           The request context.
-     * @param request           The OffsetFetchRequestGroup request.
+     * @param groupId           The group id.
      *
      * @return A future yielding the results or an exception.
      */
-    CompletableFuture<OffsetFetchResponseData.OffsetFetchResponseGroup> fetchAllOffsets(
+    CompletableFuture<List<OffsetFetchResponseData.OffsetFetchResponseTopics>> fetchAllOffsets(
         RequestContext context,
-        OffsetFetchRequestData.OffsetFetchRequestGroup request,
+        String groupId,
         boolean requireStable
     );
 

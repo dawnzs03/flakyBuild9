@@ -78,8 +78,7 @@ class LogLoader(
   recoveryPointCheckpoint: Long,
   leaderEpochCache: Option[LeaderEpochFileCache],
   producerStateManager: ProducerStateManager,
-  numRemainingSegments: ConcurrentMap[String, Int] = new ConcurrentHashMap[String, Int],
-  isRemoteLogEnabled: Boolean = false,
+  numRemainingSegments: ConcurrentMap[String, Int] = new ConcurrentHashMap[String, Int]
 ) extends Logging {
   logIdent = s"[LogLoader partition=$topicPartition, dir=${dir.getParent}] "
 
@@ -181,11 +180,7 @@ class LogLoader(
     }
 
     leaderEpochCache.foreach(_.truncateFromEnd(nextOffset))
-    val newLogStartOffset = if (isRemoteLogEnabled) {
-      logStartOffsetCheckpoint
-    } else {
-      math.max(logStartOffsetCheckpoint, segments.firstSegment.get.baseOffset)
-    }
+    val newLogStartOffset = math.max(logStartOffsetCheckpoint, segments.firstSegment.get.baseOffset)
     // The earliest leader epoch may not be flushed during a hard failure. Recover it here.
     leaderEpochCache.foreach(_.truncateFromStart(logStartOffsetCheckpoint))
 

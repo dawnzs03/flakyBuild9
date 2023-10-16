@@ -97,7 +97,7 @@ public class TaskExecutionMetadata {
         return successfullyProcessed;
     }
 
-    public void addToSuccessfullyProcessed(final Task task) {
+    void addToSuccessfullyProcessed(final Task task) {
         successfullyProcessed.add(task);
     }
 

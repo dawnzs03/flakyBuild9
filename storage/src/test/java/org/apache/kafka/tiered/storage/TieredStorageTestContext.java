@@ -16,9 +16,7 @@
  */
 package org.apache.kafka.tiered.storage;
 
-import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.common.network.ListenerName;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.tiered.storage.specs.ExpandPartitionCountSpec;
@@ -92,21 +90,15 @@ public final class TieredStorageTestContext implements AutoCloseable {
 
     @SuppressWarnings("deprecation")
     private void initClients() {
-        // rediscover the new bootstrap-server port incase of broker restarts
-        ListenerName listenerName = harness.listenerName();
-        Properties commonOverrideProps = new Properties();
-        commonOverrideProps.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, harness.bootstrapServers(listenerName));
-
         // Set a producer linger of 60 seconds, in order to optimistically generate batches of
         // records with a pre-determined size.
         Properties producerOverrideProps = new Properties();
         producerOverrideProps.put(LINGER_MS_CONFIG, String.valueOf(TimeUnit.SECONDS.toMillis(60)));
-        producerOverrideProps.putAll(commonOverrideProps);
-
         producer = harness.createProducer(ser, ser, producerOverrideProps);
-        consumer = harness.createConsumer(de, de, commonOverrideProps,
+
+        consumer = harness.createConsumer(de, de, new Properties(),
                 JavaConverters.asScalaBuffer(Collections.<String>emptyList()).toList());
-        admin = harness.createAdminClient(listenerName, commonOverrideProps);
+        admin = harness.createAdminClient(harness.listenerName(), new Properties());
     }
 
     private void initContext() {
@@ -236,11 +228,7 @@ public final class TieredStorageTestContext implements AutoCloseable {
 
     public void bounce(int brokerId) {
         harness.killBroker(brokerId);
-        boolean allBrokersDead = harness.aliveBrokers().isEmpty();
         harness.startBroker(brokerId);
-        if (allBrokersDead) {
-            reinitClients();
-        }
         initContext();
     }
 
@@ -250,11 +238,7 @@ public final class TieredStorageTestContext implements AutoCloseable {
     }
 
     public void start(int brokerId) {
-        boolean allBrokersDead = harness.aliveBrokers().isEmpty();
         harness.startBroker(brokerId);
-        if (allBrokersDead) {
-            reinitClients();
-        }
         initContext();
     }
 
@@ -326,16 +310,5 @@ public final class TieredStorageTestContext implements AutoCloseable {
 
     @Override
     public void close() throws IOException {
-        // IntegrationTestHarness closes the clients on tearDown, no need to close them explicitly.
-    }
-
-    private void reinitClients() {
-        // Broker uses a random port (TestUtils.RandomPort) for the listener. If the initial bootstrap-server config
-        // becomes invalid, then the clients won't be able to reconnect to the cluster.
-        // To avoid this, we reinitialize the clients after all the brokers are bounced.
-        Utils.closeQuietly(producer, "Producer client");
-        Utils.closeQuietly(consumer, "Consumer client");
-        Utils.closeQuietly(admin, "Admin client");
-        initClients();
     }
 }

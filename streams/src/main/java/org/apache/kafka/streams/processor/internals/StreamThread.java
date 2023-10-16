@@ -1196,12 +1196,8 @@ public class StreamThread extends Thread {
         } catch (final Throwable e) {
             log.error("Failed to close changelog reader due to the following error:", e);
         }
-        try {
-            if (leaveGroupRequested.get()) {
-                mainConsumer.unsubscribe();
-            }
-        } catch (final Throwable e) {
-            log.error("Failed to unsubscribe due to the following error: ", e);
+        if (leaveGroupRequested.get()) {
+            mainConsumer.unsubscribe();
         }
         try {
             mainConsumer.close();

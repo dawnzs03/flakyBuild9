@@ -502,7 +502,7 @@ class GroupCoordinatorAdapterTest {
     val ctx = makeContext(ApiKeys.OFFSET_FETCH, ApiKeys.OFFSET_FETCH.latestVersion)
     val future = adapter.fetchAllOffsets(
       ctx,
-      new OffsetFetchRequestData.OffsetFetchRequestGroup().setGroupId("group"),
+      "group",
       true
     )
 
@@ -537,10 +537,9 @@ class GroupCoordinatorAdapterTest {
         ).asJava)
     )
 
-    assertEquals("group", future.get().groupId)
     assertEquals(
       expectedResponse.sortWith(_.name > _.name),
-      future.get().topics.asScala.toList.sortWith(_.name > _.name)
+      future.get().asScala.toList.sortWith(_.name > _.name)
     )
   }
 
@@ -584,15 +583,15 @@ class GroupCoordinatorAdapterTest {
     val ctx = makeContext(ApiKeys.OFFSET_FETCH, ApiKeys.OFFSET_FETCH.latestVersion)
     val future = adapter.fetchOffsets(
       ctx,
-      new OffsetFetchRequestData.OffsetFetchRequestGroup()
-        .setGroupId("group")
-        .setTopics(List(
-          new OffsetFetchRequestData.OffsetFetchRequestTopics()
-            .setName(foo0.topic)
-            .setPartitionIndexes(List[Integer](foo0.partition, foo1.partition).asJava),
-          new OffsetFetchRequestData.OffsetFetchRequestTopics()
-            .setName(bar1.topic)
-            .setPartitionIndexes(List[Integer](bar1.partition).asJava)).asJava),
+      "group",
+      List(
+        new OffsetFetchRequestData.OffsetFetchRequestTopics()
+          .setName(foo0.topic)
+          .setPartitionIndexes(List[Integer](foo0.partition, foo1.partition).asJava),
+        new OffsetFetchRequestData.OffsetFetchRequestTopics()
+          .setName(bar1.topic)
+          .setPartitionIndexes(List[Integer](bar1.partition).asJava),
+      ).asJava,
       true
     )
 
@@ -627,10 +626,9 @@ class GroupCoordinatorAdapterTest {
         ).asJava)
     )
 
-    assertEquals("group", future.get().groupId)
     assertEquals(
       expectedResponse.sortWith(_.name > _.name),
-      future.get().topics.asScala.toList.sortWith(_.name > _.name)
+      future.get().asScala.toList.sortWith(_.name > _.name)
     )
   }
 
