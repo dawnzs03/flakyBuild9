@@ -185,7 +185,7 @@ class BrokerLifecycleManager(
    * The channel manager, or null if this manager has not been started yet.  This variable
    * can only be read or written from the event queue thread.
    */
-  private var _channelManager: NodeToControllerChannelManager = _
+  private var _channelManager: BrokerToControllerChannelManager = _
 
   /**
    * The event queue.
@@ -199,11 +199,11 @@ class BrokerLifecycleManager(
    * Start the BrokerLifecycleManager.
    *
    * @param highestMetadataOffsetProvider Provides the current highest metadata offset.
-   * @param channelManager                The NodeToControllerChannelManager to use.
+   * @param channelManager                The brokerToControllerChannelManager to use.
    * @param clusterId                     The cluster ID.
    */
   def start(highestMetadataOffsetProvider: () => Long,
-            channelManager: NodeToControllerChannelManager,
+            channelManager: BrokerToControllerChannelManager,
             clusterId: String,
             advertisedListeners: ListenerCollection,
             supportedFeatures: util.Map[String, VersionRange]): Unit = {
@@ -271,7 +271,7 @@ class BrokerLifecycleManager(
   }
 
   private class StartupEvent(highestMetadataOffsetProvider: () => Long,
-                     channelManager: NodeToControllerChannelManager,
+                     channelManager: BrokerToControllerChannelManager,
                      clusterId: String,
                      advertisedListeners: ListenerCollection,
                      supportedFeatures: util.Map[String, VersionRange]) extends EventQueue.Event {

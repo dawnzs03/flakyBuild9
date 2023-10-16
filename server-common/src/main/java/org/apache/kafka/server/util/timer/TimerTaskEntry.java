@@ -23,7 +23,6 @@ public class TimerTaskEntry {
     TimerTaskEntry next;
     TimerTaskEntry prev;
 
-    @SuppressWarnings("this-escape")
     public TimerTaskEntry(
         TimerTask timerTask,
         long expirationMs

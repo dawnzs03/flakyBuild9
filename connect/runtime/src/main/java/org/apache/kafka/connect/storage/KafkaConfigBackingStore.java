@@ -331,7 +331,6 @@ public class KafkaConfigBackingStore extends KafkaTopicBasedBackingStore impleme
         this(converter, config, configTransformer, adminSupplier, clientIdBase, Time.SYSTEM);
     }
 
-    @SuppressWarnings("this-escape")
     KafkaConfigBackingStore(Converter converter, DistributedConfig config, WorkerConfigTransformer configTransformer, Supplier<TopicAdmin> adminSupplier, String clientIdBase, Time time) {
         this.lock = new Object();
         this.started = false;

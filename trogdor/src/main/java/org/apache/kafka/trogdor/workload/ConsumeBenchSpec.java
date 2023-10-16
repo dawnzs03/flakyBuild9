@@ -104,7 +104,6 @@ public class ConsumeBenchSpec extends TaskSpec {
     private final int threadsPerWorker;
     private final Optional<RecordProcessor> recordProcessor;
 
-    @SuppressWarnings("this-escape")
     @JsonCreator
     public ConsumeBenchSpec(@JsonProperty("startMs") long startMs,
                             @JsonProperty("durationMs") long durationMs,

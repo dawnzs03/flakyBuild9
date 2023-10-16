@@ -698,10 +698,10 @@ public class CoordinatorRuntime<S extends CoordinatorShard<U>, U> implements Aut
          */
         @Override
         public void complete(Throwable exception) {
-            CompletableFuture<Void> appendFuture = result != null ? result.appendFuture() : null;
+            CompletableFuture<T> appendFuture = result != null ? result.appendFuture() : null;
 
             if (exception == null) {
-                if (appendFuture != null) result.appendFuture().complete(null);
+                if (appendFuture != null) result.appendFuture().complete(result.response());
                 future.complete(result.response());
             } else {
                 if (appendFuture != null) result.appendFuture().completeExceptionally(exception);

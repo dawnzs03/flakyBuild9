@@ -85,7 +85,7 @@ public class DescribeAclsResponse extends AbstractResponse {
         return errorCounts(Errors.forCode(data.errorCode()));
     }
 
-    public final List<DescribeAclsResource> acls() {
+    public List<DescribeAclsResource> acls() {
         return data.resources();
     }
 

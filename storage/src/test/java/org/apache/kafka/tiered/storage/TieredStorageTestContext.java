@@ -271,18 +271,11 @@ public final class TieredStorageTestContext implements AutoCloseable {
 
     public LocalTieredStorageSnapshot takeTieredStorageSnapshot() {
         int aliveBrokerId = harness.aliveBrokers().head().config().brokerId();
-        return LocalTieredStorageSnapshot.takeSnapshot(remoteStorageManager(aliveBrokerId));
+        return LocalTieredStorageSnapshot.takeSnapshot(remoteStorageManagers.get(aliveBrokerId));
     }
 
     public LocalTieredStorageHistory tieredStorageHistory(int brokerId) {
-        return remoteStorageManager(brokerId).getHistory();
-    }
-
-    public LocalTieredStorage remoteStorageManager(int brokerId) {
-        return remoteStorageManagers.stream()
-                .filter(rsm -> rsm.brokerId() == brokerId)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No remote storage manager found for broker " + brokerId));
+        return remoteStorageManagers.get(brokerId).getHistory();
     }
 
     public List<LocalTieredStorage> remoteStorageManagers() {

@@ -46,7 +46,6 @@ public class ConnectionStressSpec extends TaskSpec {
         FETCH_METADATA
     }
 
-    @SuppressWarnings("this-escape")
     @JsonCreator
     public ConnectionStressSpec(@JsonProperty("startMs") long startMs,
             @JsonProperty("durationMs") long durationMs,

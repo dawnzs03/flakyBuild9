@@ -90,7 +90,6 @@ public class MirrorMakerConfig extends AbstractConfig {
 
     private final Map<String, String> rawProperties;
 
-    @SuppressWarnings("this-escape")
     public MirrorMakerConfig(Map<String, String> props) {
         super(config(), props, true);
         plugins = new Plugins(originalsStrings());

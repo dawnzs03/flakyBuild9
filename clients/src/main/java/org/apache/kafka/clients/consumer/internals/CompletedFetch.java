@@ -52,10 +52,12 @@ import java.util.Set;
 
 /**
  * {@link CompletedFetch} represents a {@link RecordBatch batch} of {@link Record records} that was returned from the
- * broker via a {@link FetchRequest}. It contains logic to maintain state between calls to
- * {@link #fetchRecords(FetchConfig, int)}.
+ * broker via a {@link FetchRequest}. It contains logic to maintain state between calls to {@link #fetchRecords(int)}.
+ *
+ * @param <K> Record key type
+ * @param <V> Record value type
  */
-public class CompletedFetch {
+public class CompletedFetch<K, V> {
 
     final TopicPartition partition;
     final FetchResponseData.PartitionData partitionData;
@@ -63,6 +65,7 @@ public class CompletedFetch {
 
     private final Logger log;
     private final SubscriptionState subscriptions;
+    private final FetchConfig<K, V> fetchConfig;
     private final BufferSupplier decompressionBufferSupplier;
     private final Iterator<? extends RecordBatch> batches;
     private final Set<Long> abortedProducerIds;
@@ -83,6 +86,7 @@ public class CompletedFetch {
 
     CompletedFetch(LogContext logContext,
                    SubscriptionState subscriptions,
+                   FetchConfig<K, V> fetchConfig,
                    BufferSupplier decompressionBufferSupplier,
                    TopicPartition partition,
                    FetchResponseData.PartitionData partitionData,
@@ -91,6 +95,7 @@ public class CompletedFetch {
                    short requestVersion) {
         this.log = logContext.logger(CompletedFetch.class);
         this.subscriptions = subscriptions;
+        this.fetchConfig = fetchConfig;
         this.decompressionBufferSupplier = decompressionBufferSupplier;
         this.partition = partition;
         this.partitionData = partitionData;
@@ -135,7 +140,7 @@ public class CompletedFetch {
     /**
      * Draining a {@link CompletedFetch} will signal that the data has been consumed and the underlying resources
      * are closed. This is somewhat analogous to {@link Closeable#close() closing}, though no error will result if a
-     * caller invokes {@link #fetchRecords(FetchConfig, int)}; an empty {@link List list} will be returned instead.
+     * caller invokes {@link #fetchRecords(int)}; an empty {@link List list} will be returned instead.
      */
     void drain() {
         if (!isConsumed) {
@@ -151,7 +156,7 @@ public class CompletedFetch {
         }
     }
 
-    private <K, V> void maybeEnsureValid(FetchConfig<K, V> fetchConfig, RecordBatch batch) {
+    private void maybeEnsureValid(RecordBatch batch) {
         if (fetchConfig.checkCrcs && batch.magic() >= RecordBatch.MAGIC_VALUE_V2) {
             try {
                 batch.ensureValid();
@@ -162,7 +167,7 @@ public class CompletedFetch {
         }
     }
 
-    private <K, V> void maybeEnsureValid(FetchConfig<K, V> fetchConfig, Record record) {
+    private void maybeEnsureValid(Record record) {
         if (fetchConfig.checkCrcs) {
             try {
                 record.ensureValid();
@@ -180,7 +185,7 @@ public class CompletedFetch {
         }
     }
 
-    private <K, V> Record nextFetchedRecord(FetchConfig<K, V> fetchConfig) {
+    private Record nextFetchedRecord() {
         while (true) {
             if (records == null || !records.hasNext()) {
                 maybeCloseRecordStream();
@@ -199,7 +204,7 @@ public class CompletedFetch {
 
                 currentBatch = batches.next();
                 lastEpoch = maybeLeaderEpoch(currentBatch.partitionLeaderEpoch());
-                maybeEnsureValid(fetchConfig, currentBatch);
+                maybeEnsureValid(currentBatch);
 
                 if (fetchConfig.isolationLevel == IsolationLevel.READ_COMMITTED && currentBatch.hasProducerId()) {
                     // remove from the aborted transaction queue all aborted transactions which have begun
@@ -225,7 +230,7 @@ public class CompletedFetch {
                 // skip any records out of range
                 if (record.offset() >= nextFetchOffset) {
                     // we only do validation when the message should not be skipped.
-                    maybeEnsureValid(fetchConfig, record);
+                    maybeEnsureValid(record);
 
                     // control records are not returned to the user
                     if (!currentBatch.isControlBatch()) {
@@ -245,11 +250,10 @@ public class CompletedFetch {
      * {@link Deserializer deserialization} of the {@link Record record's} key and value are performed in
      * this step.
      *
-     * @param fetchConfig {@link FetchConfig Configuration} to use, including, but not limited to, {@link Deserializer}s
      * @param maxRecords The number of records to return; the number returned may be {@code 0 <= maxRecords}
      * @return {@link ConsumerRecord Consumer records}
      */
-    <K, V> List<ConsumerRecord<K, V>> fetchRecords(FetchConfig<K, V> fetchConfig, int maxRecords) {
+    List<ConsumerRecord<K, V>> fetchRecords(int maxRecords) {
         // Error when fetching the next record before deserialization.
         if (corruptLastRecord)
             throw new KafkaException("Received exception when fetching the next record from " + partition
@@ -267,7 +271,7 @@ public class CompletedFetch {
                 // use the last record to do deserialization again.
                 if (cachedRecordException == null) {
                     corruptLastRecord = true;
-                    lastRecord = nextFetchedRecord(fetchConfig);
+                    lastRecord = nextFetchedRecord();
                     corruptLastRecord = false;
                 }
 
@@ -276,7 +280,7 @@ public class CompletedFetch {
 
                 Optional<Integer> leaderEpoch = maybeLeaderEpoch(currentBatch.partitionLeaderEpoch());
                 TimestampType timestampType = currentBatch.timestampType();
-                ConsumerRecord<K, V> record = parseRecord(fetchConfig, partition, leaderEpoch, timestampType, lastRecord);
+                ConsumerRecord<K, V> record = parseRecord(partition, leaderEpoch, timestampType, lastRecord);
                 records.add(record);
                 recordsRead++;
                 bytesRead += lastRecord.sizeInBytes();
@@ -302,11 +306,10 @@ public class CompletedFetch {
     /**
      * Parse the record entry, deserializing the key / value fields if necessary
      */
-    <K, V> ConsumerRecord<K, V> parseRecord(FetchConfig<K, V> fetchConfig,
-                                            TopicPartition partition,
-                                            Optional<Integer> leaderEpoch,
-                                            TimestampType timestampType,
-                                            Record record) {
+    ConsumerRecord<K, V> parseRecord(TopicPartition partition,
+                                     Optional<Integer> leaderEpoch,
+                                     TimestampType timestampType,
+                                     Record record) {
         try {
             long offset = record.offset();
             long timestamp = record.timestamp();
@@ -321,7 +324,6 @@ public class CompletedFetch {
                     valueBytes == null ? ConsumerRecord.NULL_SIZE : valueBytes.remaining(),
                     key, value, headers, leaderEpoch);
         } catch (RuntimeException e) {
-            log.error("Deserializers with error: {}", fetchConfig.deserializers);
             throw new RecordDeserializationException(partition, record.offset(),
                     "Error deserializing key/value for partition " + partition +
                             " at offset " + record.offset() + ". If needed, please seek past the record to continue consumption.", e);

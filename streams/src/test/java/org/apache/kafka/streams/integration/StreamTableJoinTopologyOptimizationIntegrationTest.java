@@ -16,7 +16,7 @@
  */
 package org.apache.kafka.streams.integration;
 
-import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -206,7 +206,7 @@ public class StreamTableJoinTopologyOptimizationIntegrationTest {
     }
 
     private int getNumberOfPartitionsForTopic(final String topic) throws Exception {
-        try (final Admin adminClient = createAdminClient()) {
+        try (final AdminClient adminClient = createAdminClient()) {
             final TopicDescription topicDescription = adminClient.describeTopics(Collections.singleton(topic))
                                                                  .topicNameValues()
                                                                  .get(topic)
@@ -262,10 +262,10 @@ public class StreamTableJoinTopologyOptimizationIntegrationTest {
         );
     }
 
-    private static Admin createAdminClient() {
+    private static AdminClient createAdminClient() {
         final Properties properties = new Properties();
         properties.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, CLUSTER.bootstrapServers());
 
-        return Admin.create(properties);
+        return AdminClient.create(properties);
     }
 }

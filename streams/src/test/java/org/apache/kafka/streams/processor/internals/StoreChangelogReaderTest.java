@@ -91,7 +91,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@SuppressWarnings("this-escape")
 public class StoreChangelogReaderTest extends EasyMockSupport {
 
     @Rule
@@ -1303,8 +1302,8 @@ public class StoreChangelogReaderTest extends EasyMockSupport {
 
     @Test
     public void shouldNotThrowOnUnknownRevokedPartition() {
+        LogCaptureAppender.setClassLoggerToDebug(StoreChangelogReader.class);
         try (final LogCaptureAppender appender = LogCaptureAppender.createAndRegister(StoreChangelogReader.class)) {
-            appender.setClassLoggerToDebug(StoreChangelogReader.class);
             changelogReader.unregister(Collections.singletonList(new TopicPartition("unknown", 0)));
 
             assertThat(

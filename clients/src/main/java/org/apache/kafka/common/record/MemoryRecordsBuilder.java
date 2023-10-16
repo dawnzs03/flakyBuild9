@@ -224,7 +224,7 @@ public class MemoryRecordsBuilder implements AutoCloseable {
         return isTransactional;
     }
 
-    public final boolean hasDeleteHorizonMs() {
+    public boolean hasDeleteHorizonMs() {
         return magic >= RecordBatch.MAGIC_VALUE_V2 && deleteHorizonMs >= 0L;
     }
 

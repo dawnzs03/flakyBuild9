@@ -65,7 +65,6 @@ public class OffsetIndex extends AbstractIndex {
         this(file, baseOffset, maxIndexSize, true);
     }
 
-    @SuppressWarnings("this-escape")
     public OffsetIndex(File file, long baseOffset, int maxIndexSize, boolean writable) throws IOException {
         super(file, baseOffset, maxIndexSize, writable);
 

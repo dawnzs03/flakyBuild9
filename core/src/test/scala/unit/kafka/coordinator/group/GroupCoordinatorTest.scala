@@ -3865,6 +3865,7 @@ class GroupCoordinatorTest {
       any(),
       any(),
       any(),
+      any(),
       any()
     )).thenAnswer(_ => {
       capturedArgument.getValue.apply(
@@ -3900,6 +3901,7 @@ class GroupCoordinatorTest {
       any[Option[ReentrantLock]],
       any(),
       any(), 
+      any(),
       any(),
       any())).thenAnswer(_ => {
         capturedArgument.getValue.apply(
@@ -4047,8 +4049,9 @@ class GroupCoordinatorTest {
       any(),
       any(),
       any(),
-      any()
-    )).thenAnswer(_ => {
+      any(),
+      any())
+    ).thenAnswer(_ => {
       capturedArgument.getValue.apply(
         Map(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId) ->
           new PartitionResponse(Errors.NONE, 0L, RecordBatch.NO_TIMESTAMP, 0L)
@@ -4082,8 +4085,9 @@ class GroupCoordinatorTest {
       any(),
       any(),
       any(),
-      any()
-    )).thenAnswer(_ => {
+      any(),
+      any())
+    ).thenAnswer(_ => {
       capturedArgument.getValue.apply(
         Map(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupCoordinator.partitionFor(groupId)) ->
           new PartitionResponse(Errors.NONE, 0L, RecordBatch.NO_TIMESTAMP, 0L)

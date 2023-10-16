@@ -24,8 +24,6 @@ import org.apache.kafka.common.errors.AuthenticationException;
 import org.apache.kafka.common.utils.LogContext;
 import org.apache.kafka.common.utils.MockTime;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
@@ -42,15 +40,7 @@ public class AdminMetadataManagerTest {
     private final long refreshBackoffMs = 100;
     private final long metadataExpireMs = 60000;
     private final AdminMetadataManager mgr = new AdminMetadataManager(
-            logContext, refreshBackoffMs, metadataExpireMs, false);
-
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    public void testSetUsingBootstrapControllers(boolean usingBootstrapControllers) {
-        AdminMetadataManager manager = new AdminMetadataManager(
-                logContext, refreshBackoffMs, metadataExpireMs, usingBootstrapControllers);
-        assertEquals(usingBootstrapControllers, manager.usingBootstrapControllers());
-    }
+            logContext, refreshBackoffMs, metadataExpireMs);
 
     @Test
     public void testMetadataReady() {

@@ -436,7 +436,6 @@ public class WorkerConfig extends AbstractConfig {
         }
     }
 
-    @SuppressWarnings("this-escape")
     public WorkerConfig(ConfigDef definition, Map<String, String> props) {
         super(definition, props);
         logInternalConverterRemovalWarnings(props);

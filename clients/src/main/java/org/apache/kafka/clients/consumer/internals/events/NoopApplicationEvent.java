@@ -16,47 +16,19 @@
  */
 package org.apache.kafka.clients.consumer.internals.events;
 
-import java.util.Objects;
-
 /**
- * The event is a no-op, but is intentionally left here for demonstration and test purposes.
+ * The event is NoOp. This is intentionally left here for demonstration purpose.
  */
 public class NoopApplicationEvent extends ApplicationEvent {
-
-    private final String message;
+    public final String message;
 
     public NoopApplicationEvent(final String message) {
         super(Type.NOOP);
-        this.message = Objects.requireNonNull(message);
-    }
-
-    public String message() {
-        return message;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-
-        NoopApplicationEvent that = (NoopApplicationEvent) o;
-
-        return message.equals(that.message);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + message.hashCode();
-        return result;
+        this.message = message;
     }
 
     @Override
     public String toString() {
-        return "NoopApplicationEvent{" +
-                toStringBase() +
-                ",message='" + message + '\'' +
-                '}';
+        return getClass() + "_" + this.message;
     }
 }

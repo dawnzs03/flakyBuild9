@@ -260,12 +260,6 @@ public class StreamThread extends Thread {
         }
     }
 
-    public boolean isStartingRunningOrPartitionAssigned() {
-        synchronized (stateLock) {
-            return state.equals(State.RUNNING) || state.equals(State.STARTING) || state.equals(State.PARTITIONS_ASSIGNED);
-        }
-    }
-
     private final Time time;
     private final Logger log;
     private final String logPrefix;
@@ -471,7 +465,6 @@ public class StreamThread extends Thread {
         }
     }
 
-    @SuppressWarnings("this-escape")
     public StreamThread(final Time time,
                         final StreamsConfig config,
                         final Admin adminClient,
@@ -770,13 +763,7 @@ public class StreamThread extends Thread {
         final long startMs = time.milliseconds();
         now = startMs;
 
-        final long pollLatency;
-        taskManager.resumePollingForPartitionsWithAvailableSpace();
-        try {
-            pollLatency = pollPhase();
-        } finally {
-            taskManager.updateLags();
-        }
+        final long pollLatency = pollPhase();
 
         // Shutdown hook could potentially be triggered and transit the thread state to PENDING_SHUTDOWN during #pollRequests().
         // The task manager internal states could be uninitialized if the state transition happens during #onPartitionsAssigned().
@@ -800,7 +787,7 @@ public class StreamThread extends Thread {
         long totalProcessLatency = 0L;
         long totalPunctuateLatency = 0L;
         if (state == State.RUNNING
-            || (stateUpdaterEnabled && isStartingRunningOrPartitionAssigned())) {
+            || (stateUpdaterEnabled && isRunning())) {
             /*
              * Within an iteration, after processing up to N (N initialized as 1 upon start up) records for each applicable tasks, check the current time:
              *  1. If it is time to punctuate, do it;

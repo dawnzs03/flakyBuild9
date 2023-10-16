@@ -44,11 +44,12 @@ import org.apache.kafka.streams.processor.internals.metrics.StreamsMetricsImpl;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.SessionStore;
 import org.apache.kafka.test.KeyValueIteratorStub;
+import org.easymock.EasyMockRule;
+import org.easymock.Mock;
+import org.easymock.MockType;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collections;
 import java.util.List;
@@ -57,6 +58,15 @@ import java.util.stream.Collectors;
 
 import static org.apache.kafka.common.utils.Utils.mkEntry;
 import static org.apache.kafka.common.utils.Utils.mkMap;
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.aryEq;
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.mock;
+import static org.easymock.EasyMock.niceMock;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -65,15 +75,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.StrictStubs.class)
 public class MeteredSessionStoreTest {
+
+    @Rule
+    public EasyMockRule rule = new EasyMockRule(this);
 
     private static final String APPLICATION_ID = "test-app";
     private static final String STORE_TYPE = "scope";
@@ -95,9 +101,9 @@ public class MeteredSessionStoreTest {
     private final TaskId taskId = new TaskId(0, 0, "My-Topology");
     private final Metrics metrics = new Metrics();
     private MeteredSessionStore<String, String> store;
-    @Mock
+    @Mock(type = MockType.NICE)
     private SessionStore<Bytes, byte[]> innerStore;
-    @Mock
+    @Mock(type = MockType.NICE)
     private InternalProcessorContext context;
 
     private Map<String, String> tags;
@@ -113,12 +119,12 @@ public class MeteredSessionStoreTest {
             mockTime
         );
         metrics.config().recordLevel(Sensor.RecordingLevel.DEBUG);
-        when(context.applicationId()).thenReturn(APPLICATION_ID);
-        when(context.metrics())
-            .thenReturn(new StreamsMetricsImpl(metrics, "test", StreamsConfig.METRICS_LATEST, mockTime));
-        when(context.taskId()).thenReturn(taskId);
-        when(context.changelogFor(STORE_NAME)).thenReturn(CHANGELOG_TOPIC);
-        when(innerStore.name()).thenReturn(STORE_NAME);
+        expect(context.applicationId()).andStubReturn(APPLICATION_ID);
+        expect(context.metrics())
+            .andStubReturn(new StreamsMetricsImpl(metrics, "test", StreamsConfig.METRICS_LATEST, mockTime));
+        expect(context.taskId()).andStubReturn(taskId);
+        expect(context.changelogFor(STORE_NAME)).andStubReturn(CHANGELOG_TOPIC);
+        expect(innerStore.name()).andStubReturn(STORE_NAME);
         tags = mkMap(
             mkEntry(THREAD_ID_TAG_KEY, threadId),
             mkEntry("task-id", taskId.toString()),
@@ -127,34 +133,45 @@ public class MeteredSessionStoreTest {
     }
 
     private void init() {
+        replay(innerStore, context);
         store.init((StateStoreContext) context, store);
     }
 
     @SuppressWarnings("deprecation")
     @Test
     public void shouldDelegateDeprecatedInit() {
+        final SessionStore<Bytes, byte[]> inner = mock(SessionStore.class);
         final MeteredSessionStore<String, String> outer = new MeteredSessionStore<>(
-            innerStore,
+            inner,
             STORE_TYPE,
             Serdes.String(),
             Serdes.String(),
             new MockTime()
         );
-        doNothing().when(innerStore).init((ProcessorContext) context, outer);
+        expect(inner.name()).andStubReturn("store");
+        inner.init((ProcessorContext) context, outer);
+        expectLastCall();
+        replay(inner, context);
         outer.init((ProcessorContext) context, outer);
+        verify(inner);
     }
 
     @Test
     public void shouldDelegateInit() {
+        final SessionStore<Bytes, byte[]> inner = mock(SessionStore.class);
         final MeteredSessionStore<String, String> outer = new MeteredSessionStore<>(
-            innerStore,
+            inner,
             STORE_TYPE,
             Serdes.String(),
             Serdes.String(),
             new MockTime()
         );
-        doNothing().when(innerStore).init((StateStoreContext) context, outer);
+        expect(inner.name()).andStubReturn("store");
+        inner.init((StateStoreContext) context, outer);
+        expectLastCall();
+        replay(inner, context);
         outer.init((StateStoreContext) context, outer);
+        verify(inner);
     }
 
     @Test
@@ -166,24 +183,24 @@ public class MeteredSessionStoreTest {
     public void shouldPassDefaultChangelogTopicNameToStateStoreSerdeIfLoggingDisabled() {
         final String defaultChangelogTopicName =
             ProcessorStateManager.storeChangelogTopic(APPLICATION_ID, STORE_NAME, taskId.topologyName());
-        when(context.changelogFor(STORE_NAME)).thenReturn(null);
+        expect(context.changelogFor(STORE_NAME)).andReturn(null);
         doShouldPassChangelogTopicNameToStateStoreSerde(defaultChangelogTopicName);
     }
 
-    @SuppressWarnings("unchecked")
     private void doShouldPassChangelogTopicNameToStateStoreSerde(final String topic) {
-        final Serde<String> keySerde = mock(Serde.class);
+        final Serde<String> keySerde = niceMock(Serde.class);
         final Serializer<String> keySerializer = mock(Serializer.class);
-        final Serde<String> valueSerde = mock(Serde.class);
+        final Serde<String> valueSerde = niceMock(Serde.class);
         final Deserializer<String> valueDeserializer = mock(Deserializer.class);
         final Serializer<String> valueSerializer = mock(Serializer.class);
-        when(keySerde.serializer()).thenReturn(keySerializer);
-        when(keySerializer.serialize(topic, KEY)).thenReturn(KEY.getBytes());
-        when(valueSerde.deserializer()).thenReturn(valueDeserializer);
-        when(valueDeserializer.deserialize(topic, VALUE_BYTES)).thenReturn(VALUE);
-        when(valueSerde.serializer()).thenReturn(valueSerializer);
-        when(valueSerializer.serialize(topic, VALUE)).thenReturn(VALUE_BYTES);
-        when(innerStore.fetchSession(KEY_BYTES, START_TIMESTAMP, END_TIMESTAMP)).thenReturn(VALUE_BYTES);
+        expect(keySerde.serializer()).andStubReturn(keySerializer);
+        expect(keySerializer.serialize(topic, KEY)).andStubReturn(KEY.getBytes());
+        expect(valueSerde.deserializer()).andStubReturn(valueDeserializer);
+        expect(valueDeserializer.deserialize(topic, VALUE_BYTES)).andStubReturn(VALUE);
+        expect(valueSerde.serializer()).andStubReturn(valueSerializer);
+        expect(valueSerializer.serialize(topic, VALUE)).andStubReturn(VALUE_BYTES);
+        expect(innerStore.fetchSession(KEY_BYTES, START_TIMESTAMP, END_TIMESTAMP)).andStubReturn(VALUE_BYTES);
+        replay(innerStore, context, keySerializer, keySerde, valueDeserializer, valueSerializer, valueSerde);
         store = new MeteredSessionStore<>(
             innerStore,
             STORE_TYPE,
@@ -195,6 +212,8 @@ public class MeteredSessionStoreTest {
 
         store.fetchSession(KEY, START_TIMESTAMP, END_TIMESTAMP);
         store.put(WINDOWED_KEY, VALUE);
+
+        verify(keySerializer, valueDeserializer, valueSerializer);
     }
 
     @Test
@@ -218,7 +237,8 @@ public class MeteredSessionStoreTest {
 
     @Test
     public void shouldWriteBytesToInnerStoreAndRecordPutMetric() {
-        doNothing().when(innerStore).put(WINDOWED_KEY_BYTES, VALUE_BYTES);
+        innerStore.put(eq(WINDOWED_KEY_BYTES), aryEq(VALUE_BYTES));
+        expectLastCall();
         init();
 
         store.put(WINDOWED_KEY, VALUE);
@@ -227,12 +247,13 @@ public class MeteredSessionStoreTest {
         // and the sensor is tested elsewhere
         final KafkaMetric metric = metric("put-rate");
         assertTrue(((Double) metric.metricValue()) > 0);
+        verify(innerStore);
     }
 
     @Test
     public void shouldFindSessionsFromStoreAndRecordFetchMetric() {
-        when(innerStore.findSessions(KEY_BYTES, 0, 0))
-                .thenReturn(new KeyValueIteratorStub<>(
+        expect(innerStore.findSessions(KEY_BYTES, 0, 0))
+                .andReturn(new KeyValueIteratorStub<>(
                         Collections.singleton(KeyValue.pair(WINDOWED_KEY_BYTES, VALUE_BYTES)).iterator()));
         init();
 
@@ -245,12 +266,13 @@ public class MeteredSessionStoreTest {
         // and the sensor is tested elsewhere
         final KafkaMetric metric = metric("fetch-rate");
         assertTrue((Double) metric.metricValue() > 0);
+        verify(innerStore);
     }
 
     @Test
     public void shouldBackwardFindSessionsFromStoreAndRecordFetchMetric() {
-        when(innerStore.backwardFindSessions(KEY_BYTES, 0, 0))
-            .thenReturn(
+        expect(innerStore.backwardFindSessions(KEY_BYTES, 0, 0))
+            .andReturn(
                 new KeyValueIteratorStub<>(
                     Collections.singleton(KeyValue.pair(WINDOWED_KEY_BYTES, VALUE_BYTES)).iterator()
                 )
@@ -266,12 +288,13 @@ public class MeteredSessionStoreTest {
         // and the sensor is tested elsewhere
         final KafkaMetric metric = metric("fetch-rate");
         assertTrue((Double) metric.metricValue() > 0);
+        verify(innerStore);
     }
 
     @Test
     public void shouldFindSessionRangeFromStoreAndRecordFetchMetric() {
-        when(innerStore.findSessions(KEY_BYTES, KEY_BYTES, 0, 0))
-                .thenReturn(new KeyValueIteratorStub<>(
+        expect(innerStore.findSessions(KEY_BYTES, KEY_BYTES, 0, 0))
+                .andReturn(new KeyValueIteratorStub<>(
                         Collections.singleton(KeyValue.pair(WINDOWED_KEY_BYTES, VALUE_BYTES)).iterator()));
         init();
 
@@ -284,12 +307,13 @@ public class MeteredSessionStoreTest {
         // and the sensor is tested elsewhere
         final KafkaMetric metric = metric("fetch-rate");
         assertTrue((Double) metric.metricValue() > 0);
+        verify(innerStore);
     }
 
     @Test
     public void shouldBackwardFindSessionRangeFromStoreAndRecordFetchMetric() {
-        when(innerStore.backwardFindSessions(KEY_BYTES, KEY_BYTES, 0, 0))
-            .thenReturn(
+        expect(innerStore.backwardFindSessions(KEY_BYTES, KEY_BYTES, 0, 0))
+            .andReturn(
                 new KeyValueIteratorStub<>(
                     Collections.singleton(KeyValue.pair(WINDOWED_KEY_BYTES, VALUE_BYTES)).iterator()
                 )
@@ -305,11 +329,13 @@ public class MeteredSessionStoreTest {
         // and the sensor is tested elsewhere
         final KafkaMetric metric = metric("fetch-rate");
         assertTrue((Double) metric.metricValue() > 0);
+        verify(innerStore);
     }
 
     @Test
     public void shouldRemoveFromStoreAndRecordRemoveMetric() {
-        doNothing().when(innerStore).remove(WINDOWED_KEY_BYTES);
+        innerStore.remove(WINDOWED_KEY_BYTES);
+        expectLastCall();
 
         init();
 
@@ -319,12 +345,13 @@ public class MeteredSessionStoreTest {
         // and the sensor is tested elsewhere
         final KafkaMetric metric = metric("remove-rate");
         assertTrue((Double) metric.metricValue() > 0);
+        verify(innerStore);
     }
 
     @Test
     public void shouldFetchForKeyAndRecordFetchMetric() {
-        when(innerStore.fetch(KEY_BYTES))
-                .thenReturn(new KeyValueIteratorStub<>(
+        expect(innerStore.fetch(KEY_BYTES))
+                .andReturn(new KeyValueIteratorStub<>(
                         Collections.singleton(KeyValue.pair(WINDOWED_KEY_BYTES, VALUE_BYTES)).iterator()));
         init();
 
@@ -337,12 +364,13 @@ public class MeteredSessionStoreTest {
         // and the sensor is tested elsewhere
         final KafkaMetric metric = metric("fetch-rate");
         assertTrue((Double) metric.metricValue() > 0);
+        verify(innerStore);
     }
 
     @Test
     public void shouldBackwardFetchForKeyAndRecordFetchMetric() {
-        when(innerStore.backwardFetch(KEY_BYTES))
-            .thenReturn(
+        expect(innerStore.backwardFetch(KEY_BYTES))
+            .andReturn(
                 new KeyValueIteratorStub<>(
                     Collections.singleton(KeyValue.pair(WINDOWED_KEY_BYTES, VALUE_BYTES)).iterator()
                 )
@@ -358,12 +386,13 @@ public class MeteredSessionStoreTest {
         // and the sensor is tested elsewhere
         final KafkaMetric metric = metric("fetch-rate");
         assertTrue((Double) metric.metricValue() > 0);
+        verify(innerStore);
     }
 
     @Test
     public void shouldFetchRangeFromStoreAndRecordFetchMetric() {
-        when(innerStore.fetch(KEY_BYTES, KEY_BYTES))
-                .thenReturn(new KeyValueIteratorStub<>(
+        expect(innerStore.fetch(KEY_BYTES, KEY_BYTES))
+                .andReturn(new KeyValueIteratorStub<>(
                         Collections.singleton(KeyValue.pair(WINDOWED_KEY_BYTES, VALUE_BYTES)).iterator()));
         init();
 
@@ -376,12 +405,13 @@ public class MeteredSessionStoreTest {
         // and the sensor is tested elsewhere
         final KafkaMetric metric = metric("fetch-rate");
         assertTrue((Double) metric.metricValue() > 0);
+        verify(innerStore);
     }
 
     @Test
     public void shouldBackwardFetchRangeFromStoreAndRecordFetchMetric() {
-        when(innerStore.backwardFetch(KEY_BYTES, KEY_BYTES))
-            .thenReturn(
+        expect(innerStore.backwardFetch(KEY_BYTES, KEY_BYTES))
+            .andReturn(
                 new KeyValueIteratorStub<>(
                     Collections.singleton(KeyValue.pair(WINDOWED_KEY_BYTES, VALUE_BYTES)).iterator()
                 )
@@ -397,13 +427,14 @@ public class MeteredSessionStoreTest {
         // and the sensor is tested elsewhere
         final KafkaMetric metric = metric("fetch-rate");
         assertTrue((Double) metric.metricValue() > 0);
+        verify(innerStore);
     }
 
     @Test
     public void shouldReturnNoSessionsWhenFetchedKeyHasExpired() {
         final long systemTime = Time.SYSTEM.milliseconds();
-        when(innerStore.findSessions(KEY_BYTES, systemTime - RETENTION_PERIOD, systemTime))
-                .thenReturn(new KeyValueIteratorStub<>(KeyValueIterators.emptyIterator()));
+        expect(innerStore.findSessions(KEY_BYTES, systemTime - RETENTION_PERIOD, systemTime))
+                .andReturn(new KeyValueIteratorStub<>(KeyValueIterators.emptyIterator()));
         init();
 
         final KeyValueIterator<Windowed<String>, String> iterator = store.findSessions(KEY, systemTime - RETENTION_PERIOD, systemTime);
@@ -414,8 +445,8 @@ public class MeteredSessionStoreTest {
     @Test
     public void shouldReturnNoSessionsInBackwardOrderWhenFetchedKeyHasExpired() {
         final long systemTime = Time.SYSTEM.milliseconds();
-        when(innerStore.backwardFindSessions(KEY_BYTES, systemTime - RETENTION_PERIOD, systemTime))
-                .thenReturn(new KeyValueIteratorStub<>(KeyValueIterators.emptyIterator()));
+        expect(innerStore.backwardFindSessions(KEY_BYTES, systemTime - RETENTION_PERIOD, systemTime))
+                .andReturn(new KeyValueIteratorStub<>(KeyValueIterators.emptyIterator()));
         init();
 
         final KeyValueIterator<Windowed<String>, String> iterator = store.backwardFindSessions(KEY, systemTime - RETENTION_PERIOD, systemTime);
@@ -426,8 +457,8 @@ public class MeteredSessionStoreTest {
     @Test
     public void shouldNotFindExpiredSessionRangeFromStore() {
         final long systemTime = Time.SYSTEM.milliseconds();
-        when(innerStore.findSessions(KEY_BYTES, KEY_BYTES, systemTime - RETENTION_PERIOD, systemTime))
-                .thenReturn(new KeyValueIteratorStub<>(KeyValueIterators.emptyIterator()));
+        expect(innerStore.findSessions(KEY_BYTES, KEY_BYTES, systemTime - RETENTION_PERIOD, systemTime))
+                .andReturn(new KeyValueIteratorStub<>(KeyValueIterators.emptyIterator()));
         init();
 
         final KeyValueIterator<Windowed<String>, String> iterator = store.findSessions(KEY, KEY, systemTime - RETENTION_PERIOD, systemTime);
@@ -438,8 +469,8 @@ public class MeteredSessionStoreTest {
     @Test
     public void shouldNotFindExpiredSessionRangeInBackwardOrderFromStore() {
         final long systemTime = Time.SYSTEM.milliseconds();
-        when(innerStore.backwardFindSessions(KEY_BYTES, KEY_BYTES, systemTime - RETENTION_PERIOD, systemTime))
-                .thenReturn(new KeyValueIteratorStub<>(KeyValueIterators.emptyIterator()));
+        expect(innerStore.backwardFindSessions(KEY_BYTES, KEY_BYTES, systemTime - RETENTION_PERIOD, systemTime))
+                .andReturn(new KeyValueIteratorStub<>(KeyValueIterators.emptyIterator()));
         init();
 
         final KeyValueIterator<Windowed<String>, String> iterator = store.backwardFindSessions(KEY, KEY, systemTime - RETENTION_PERIOD, systemTime);
@@ -459,7 +490,7 @@ public class MeteredSessionStoreTest {
 
     @Test
     public void shouldNotThrowNullPointerExceptionIfFetchSessionReturnsNull() {
-        when(innerStore.fetchSession(Bytes.wrap("a".getBytes()), 0, Long.MAX_VALUE)).thenReturn(null);
+        expect(innerStore.fetchSession(Bytes.wrap("a".getBytes()), 0, Long.MAX_VALUE)).andReturn(null);
 
         init();
         assertNull(store.fetchSession("a", 0, Long.MAX_VALUE));
@@ -567,7 +598,8 @@ public class MeteredSessionStoreTest {
     public void shouldSetFlushListenerOnWrappedCachingStore() {
         final CachedSessionStore cachedSessionStore = mock(CachedSessionStore.class);
 
-        when(cachedSessionStore.setFlushListener(any(CacheFlushListener.class), eq(false))).thenReturn(true);
+        expect(cachedSessionStore.setFlushListener(anyObject(CacheFlushListener.class), eq(false))).andReturn(true);
+        replay(cachedSessionStore);
 
         store = new MeteredSessionStore<>(
             cachedSessionStore,
@@ -576,6 +608,8 @@ public class MeteredSessionStoreTest {
             Serdes.String(),
             new MockTime());
         assertTrue(store.setFlushListener(null, false));
+
+        verify(cachedSessionStore);
     }
 
     @Test
@@ -585,23 +619,27 @@ public class MeteredSessionStoreTest {
 
     @Test
     public void shouldRemoveMetricsOnClose() {
-        doNothing().when(innerStore).close();
+        innerStore.close();
+        expectLastCall();
         init(); // replays "inner"
 
         // There's always a "count" metric registered
         assertThat(storeMetrics(), not(empty()));
         store.close();
         assertThat(storeMetrics(), empty());
+        verify(innerStore);
     }
 
     @Test
     public void shouldRemoveMetricsEvenIfWrappedStoreThrowsOnClose() {
-        doThrow(new RuntimeException("Oops!")).when(innerStore).close();
+        innerStore.close();
+        expectLastCall().andThrow(new RuntimeException("Oops!"));
         init(); // replays "inner"
 
         assertThat(storeMetrics(), not(empty()));
         assertThrows(RuntimeException.class, store::close);
         assertThat(storeMetrics(), empty());
+        verify(innerStore);
     }
 
     private KafkaMetric metric(final String name) {

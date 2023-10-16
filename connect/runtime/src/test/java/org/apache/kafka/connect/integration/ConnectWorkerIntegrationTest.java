@@ -431,9 +431,9 @@ public class ConnectWorkerIntegrationTest {
 
         // Delete the connector
         connect.deleteConnector(CONNECTOR_NAME);
-        connect.assertions().assertConnectorDoesNotExist(
+        connect.assertions().assertConnectorAndTasksAreNotRunning(
                 CONNECTOR_NAME,
-                "Connector wasn't deleted in time"
+                "Connector tasks were not destroyed in time"
         );
     }
 
@@ -505,9 +505,9 @@ public class ConnectWorkerIntegrationTest {
 
         // Can delete a stopped connector
         connect.deleteConnector(CONNECTOR_NAME);
-        connect.assertions().assertConnectorDoesNotExist(
+        connect.assertions().assertConnectorAndTasksAreNotRunning(
                 CONNECTOR_NAME,
-                "Connector wasn't deleted in time"
+                "Connector and all of its tasks should no longer be running"
         );
     }
 

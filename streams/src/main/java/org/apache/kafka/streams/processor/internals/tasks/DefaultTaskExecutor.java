@@ -94,13 +94,7 @@ public class DefaultTaskExecutor implements TaskExecutor {
                 currentTask = taskManager.assignNextTask(DefaultTaskExecutor.this);
             }
 
-            if (currentTask == null) {
-                try {
-                    taskManager.awaitProcessableTasks();
-                } catch (final InterruptedException ignored) {
-                    // Can be ignored, the cause of the interrupted will be handled in the event loop
-                }
-            } else {
+            if (currentTask != null) {
                 boolean progressed = false;
 
                 if (taskExecutionMetadata.canProcessTask(currentTask, nowMs) && currentTask.isProcessable(nowMs)) {

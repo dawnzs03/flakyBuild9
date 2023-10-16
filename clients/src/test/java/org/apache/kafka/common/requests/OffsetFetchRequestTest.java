@@ -83,6 +83,7 @@ public class OffsetFetchRequestTest {
                     false,
                     partitions,
                     false);
+                assertFalse(builder.isAllTopicPartitions());
                 OffsetFetchRequest request = builder.build(version);
                 assertFalse(request.isAllPartitions());
                 assertEquals(group1, request.groupId());

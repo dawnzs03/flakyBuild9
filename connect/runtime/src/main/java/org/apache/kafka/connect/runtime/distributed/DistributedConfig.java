@@ -571,7 +571,6 @@ public class DistributedConfig extends WorkerConfig {
     }
 
     // Visible for testing
-    @SuppressWarnings("this-escape")
     DistributedConfig(Crypto crypto, Map<String, String> props) {
         super(config(crypto), props);
         this.crypto = crypto;

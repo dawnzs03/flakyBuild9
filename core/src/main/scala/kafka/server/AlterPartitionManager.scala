@@ -84,7 +84,7 @@ object AlterPartitionManager {
     threadNamePrefix: String,
     brokerEpochSupplier: () => Long,
   ): AlterPartitionManager = {
-    val channelManager = NodeToControllerChannelManager(
+    val channelManager = BrokerToControllerChannelManager(
       controllerNodeProvider,
       time = time,
       metrics = metrics,
@@ -116,7 +116,7 @@ object AlterPartitionManager {
 }
 
 class DefaultAlterPartitionManager(
-  val controllerChannelManager: NodeToControllerChannelManager,
+  val controllerChannelManager: BrokerToControllerChannelManager,
   val scheduler: Scheduler,
   val time: Time,
   val brokerId: Int,
@@ -200,7 +200,7 @@ class DefaultAlterPartitionManager(
             if (response.authenticationException != null) {
               // For now we treat authentication errors as retriable. We use the
               // `NETWORK_EXCEPTION` error code for lack of a good alternative.
-              // Note that `NodeToControllerChannelManager` will still log the
+              // Note that `BrokerToControllerChannelManager` will still log the
               // authentication errors so that users have a chance to fix the problem.
               Errors.NETWORK_EXCEPTION
             } else if (response.versionMismatch != null) {

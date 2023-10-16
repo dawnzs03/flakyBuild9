@@ -52,7 +52,6 @@ public class TimelineObject<T> implements Revertable {
     private final T initialValue;
     private T value;
 
-    @SuppressWarnings("this-escape")
     public TimelineObject(SnapshotRegistry snapshotRegistry, T initialValue) {
         Objects.requireNonNull(initialValue);
         this.snapshotRegistry = snapshotRegistry;

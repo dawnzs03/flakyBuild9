@@ -46,7 +46,6 @@ public abstract class ShutdownableThread extends Thread {
         this(name, isInterruptible, "[" + name + "]: ");
     }
 
-    @SuppressWarnings("this-escape")
     public ShutdownableThread(String name, boolean isInterruptible, String logPrefix) {
         super(name);
         this.isInterruptible = isInterruptible;
