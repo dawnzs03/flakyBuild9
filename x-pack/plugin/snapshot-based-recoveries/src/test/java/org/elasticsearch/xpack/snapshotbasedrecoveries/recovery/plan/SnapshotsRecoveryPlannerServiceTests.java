@@ -17,7 +17,7 @@ import org.apache.lucene.index.NoMergePolicy;
 import org.apache.lucene.index.NoMergeScheduler;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.store.BaseDirectoryWrapper;
-import org.apache.lucene.util.Version;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -61,6 +61,7 @@ import java.util.stream.IntStream;
 import static org.elasticsearch.common.util.CollectionUtils.iterableAsArrayList;
 import static org.elasticsearch.index.engine.Engine.ES_VERSION;
 import static org.elasticsearch.index.engine.Engine.HISTORY_UUID_KEY;
+import static org.elasticsearch.test.VersionUtils.randomCompatibleVersion;
 import static org.elasticsearch.test.index.IndexVersionUtils.randomVersionBetween;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -210,10 +211,10 @@ public class SnapshotsRecoveryPlannerServiceTests extends ESTestCase {
             Store.MetadataSnapshot sourceMetadata = store.getMetadata(null);
 
             boolean compatibleVersion = randomBoolean();
-            final IndexVersion snapshotVersion;
-            final Version luceneVersion;
+            final Version snapshotVersion;
+            final org.apache.lucene.util.Version luceneVersion;
             if (compatibleVersion) {
-                snapshotVersion = randomBoolean() ? null : IndexVersionUtils.randomCompatibleVersion(random());
+                snapshotVersion = randomBoolean() ? null : randomCompatibleVersion(random(), Version.CURRENT);
                 // If snapshotVersion is not present,
                 // then lucene version must be < RecoverySettings.SEQ_NO_SNAPSHOT_RECOVERIES_SUPPORTED_VERSION
                 if (snapshotVersion == null) {
@@ -226,7 +227,7 @@ public class SnapshotsRecoveryPlannerServiceTests extends ESTestCase {
                     luceneVersion = IndexVersionUtils.randomCompatibleVersion(random()).luceneVersion();
                 }
             } else {
-                snapshotVersion = IndexVersion.fromId(Integer.MAX_VALUE);
+                snapshotVersion = Version.fromId(Integer.MAX_VALUE);
                 luceneVersion = org.apache.lucene.util.Version.parse("255.255.255");
             }
 
@@ -410,7 +411,7 @@ public class SnapshotsRecoveryPlannerServiceTests extends ESTestCase {
                     }
                 },
                 true,
-                IndexVersion.V_7_14_0, // Unsupported version,
+                Version.V_7_14_0, // Unsupported version,
                 randomBoolean()
             );
 
@@ -443,7 +444,7 @@ public class SnapshotsRecoveryPlannerServiceTests extends ESTestCase {
             translogOps,
             shardSnapshotsService,
             snapshotRecoveriesEnabled,
-            IndexVersion.current(),
+            Version.CURRENT,
             primaryRelocation
         );
     }
@@ -456,7 +457,7 @@ public class SnapshotsRecoveryPlannerServiceTests extends ESTestCase {
         int translogOps,
         ShardSnapshotsService shardSnapshotsService,
         boolean snapshotRecoveriesEnabled,
-        IndexVersion version,
+        Version version,
         boolean primaryRelocation
     ) throws Exception {
         SnapshotsRecoveryPlannerService recoveryPlannerService = new SnapshotsRecoveryPlannerService(shardSnapshotsService, () -> true);
@@ -604,12 +605,12 @@ public class SnapshotsRecoveryPlannerServiceTests extends ESTestCase {
     }
 
     private ShardSnapshot createShardSnapshotThatDoNotShareSegmentFiles(String repoName) {
-        return createShardSnapshotThatDoNotShareSegmentFiles(repoName, IndexVersion.current(), IndexVersion.current().luceneVersion());
+        return createShardSnapshotThatDoNotShareSegmentFiles(repoName, Version.CURRENT, IndexVersion.current().luceneVersion());
     }
 
     private ShardSnapshot createShardSnapshotThatDoNotShareSegmentFiles(
         String repoName,
-        IndexVersion version,
+        Version version,
         org.apache.lucene.util.Version luceneVersion
     ) {
         List<BlobStoreIndexShardSnapshot.FileInfo> snapshotFiles = randomList(10, 20, () -> {
@@ -633,13 +634,13 @@ public class SnapshotsRecoveryPlannerServiceTests extends ESTestCase {
             );
             snapshotFiles.add(fileInfo);
         }
-        return createShardSnapshot(repository, snapshotFiles, IndexVersion.current(), IndexVersion.current().luceneVersion());
+        return createShardSnapshot(repository, snapshotFiles, Version.CURRENT, IndexVersion.current().luceneVersion());
     }
 
     private ShardSnapshot createShardSnapshot(
         String repoName,
         List<BlobStoreIndexShardSnapshot.FileInfo> snapshotFiles,
-        IndexVersion version,
+        Version version,
         org.apache.lucene.util.Version luceneVersion
     ) {
         String shardIdentifier = randomAlphaOfLength(10);
@@ -666,7 +667,7 @@ public class SnapshotsRecoveryPlannerServiceTests extends ESTestCase {
             "_" + randomAlphaOfLength(10),
             randomLongBetween(1, 100),
             randomAlphaOfLength(10),
-            IndexVersion.current().luceneVersion().toString()
+            Version.CURRENT.toString()
         );
     }
 

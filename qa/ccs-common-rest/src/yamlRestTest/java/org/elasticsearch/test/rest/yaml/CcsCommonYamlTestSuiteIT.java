@@ -30,7 +30,6 @@ import org.elasticsearch.test.cluster.ElasticsearchCluster;
 import org.elasticsearch.test.cluster.FeatureFlag;
 import org.elasticsearch.test.cluster.local.LocalClusterConfigProvider;
 import org.elasticsearch.test.rest.ObjectPath;
-import org.elasticsearch.test.rest.yaml.restspec.ClientYamlSuiteRestApi;
 import org.elasticsearch.test.rest.yaml.restspec.ClientYamlSuiteRestSpec;
 import org.elasticsearch.test.rest.yaml.section.ClientYamlTestSection;
 import org.elasticsearch.test.rest.yaml.section.DoSection;
@@ -49,7 +48,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiPredicate;
 
 import static java.util.Collections.unmodifiableList;
 
@@ -346,8 +344,7 @@ public class CcsCommonYamlTestSuiteIT extends ESClientYamlSuiteTestCase {
             Map<String, String> params,
             HttpEntity entity,
             Map<String, String> headers,
-            NodeSelector nodeSelector,
-            BiPredicate<ClientYamlSuiteRestApi, ClientYamlSuiteRestApi.Path> pathPredicate
+            NodeSelector nodeSelector
         ) throws IOException {
             // on request, we need to replace index specifications by prefixing the remote cluster
             if (shouldReplaceIndexWithRemote(apiName)) {
@@ -368,7 +365,7 @@ public class CcsCommonYamlTestSuiteIT extends ESClientYamlSuiteTestCase {
                 }
                 params.put(parameterName, String.join(",", expandedIndices));
             }
-            return super.callApi(apiName, params, entity, headers, nodeSelector, pathPredicate);
+            return super.callApi(apiName, params, entity, headers, nodeSelector);
         }
 
         private boolean shouldReplaceIndexWithRemote(String apiName) {

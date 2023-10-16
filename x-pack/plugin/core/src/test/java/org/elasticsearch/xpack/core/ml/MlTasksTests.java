@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.core.ml;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.node.DiscoveryNodeUtils;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -470,7 +471,7 @@ public class MlTasksTests extends ESTestCase {
         tasksBuilder.addTask(
             MlTasks.dataFrameAnalyticsTaskId("dfa-1"),
             MlTasks.DATA_FRAME_ANALYTICS_TASK_NAME,
-            new StartDataFrameAnalyticsAction.TaskParams("dfa-1", MlConfigVersion.CURRENT, true),
+            new StartDataFrameAnalyticsAction.TaskParams("dfa-1", Version.CURRENT, true),
             new PersistentTasksCustomMetadata.Assignment(randomAlphaOfLength(5), "test assignment")
         );
         tasksBuilder.addTask(
@@ -508,7 +509,7 @@ public class MlTasksTests extends ESTestCase {
         builder.addTask(
             MlTasks.dataFrameAnalyticsTaskId(jobId),
             MlTasks.DATA_FRAME_ANALYTICS_TASK_NAME,
-            new StartDataFrameAnalyticsAction.TaskParams(jobId, MlConfigVersion.CURRENT, false),
+            new StartDataFrameAnalyticsAction.TaskParams(jobId, Version.CURRENT, false),
             new PersistentTasksCustomMetadata.Assignment(nodeId, "test assignment")
         );
         if (state != null) {

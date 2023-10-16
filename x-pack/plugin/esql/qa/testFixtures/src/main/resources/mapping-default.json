@@ -70,9 +70,6 @@
                 },
                 "long": {
                     "type": "long"
-                },
-                "keyword": {
-                    "type" : "keyword"
                 }
             }
         }

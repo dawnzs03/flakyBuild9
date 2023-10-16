@@ -9,9 +9,7 @@ package org.elasticsearch.xpack.core.downsample;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.IndicesRequest;
-import org.elasticsearch.action.downsample.DownsampleAction;
 import org.elasticsearch.action.downsample.DownsampleConfig;
-import org.elasticsearch.action.downsample.DownsampleTask;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.broadcast.BroadcastRequest;
 import org.elasticsearch.action.support.broadcast.BroadcastResponse;
@@ -25,6 +23,7 @@ import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
+import org.elasticsearch.xpack.core.rollup.action.RollupShardTask;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -250,7 +249,7 @@ public class DownsampleIndexerAction extends ActionType<DownsampleIndexerAction.
             this.request = request;
         }
 
-        public String getDownsampleIndex() {
+        public String getRollupIndex() {
             return request.getDownsampleRequest().getTargetIndex();
         }
 
@@ -278,7 +277,7 @@ public class DownsampleIndexerAction extends ActionType<DownsampleIndexerAction.
 
         @Override
         public Task createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers) {
-            return new DownsampleShardTask(
+            return new RollupShardTask(
                 id,
                 type,
                 action,

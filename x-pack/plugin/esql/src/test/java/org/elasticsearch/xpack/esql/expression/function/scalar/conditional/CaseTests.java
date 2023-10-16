@@ -7,9 +7,6 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.conditional;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.compute.data.Block;
 import org.elasticsearch.compute.data.IntBlock;
@@ -22,40 +19,43 @@ import org.elasticsearch.xpack.ql.expression.Literal;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.type.DataType;
 import org.elasticsearch.xpack.ql.type.DataTypes;
+import org.hamcrest.Matcher;
 
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.elasticsearch.compute.data.BlockUtils.toJavaObject;
 import static org.hamcrest.Matchers.equalTo;
 
 public class CaseTests extends AbstractFunctionTestCase {
-
-    public CaseTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
+    @Override
+    protected List<Object> simpleData() {
+        return List.of(true, new BytesRef("a"), new BytesRef("b"));
     }
 
-    /**
-     * Generate the test cases for this test
-     */
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        return parameterSuppliersFromTypedData(List.of(new TestCaseSupplier("basics", () -> {
-            List<TypedData> typedData = List.of(
-                new TypedData(true, DataTypes.BOOLEAN, "cond"),
-                new TypedData(new BytesRef("a"), DataTypes.KEYWORD, "a"),
-                new TypedData(new BytesRef("b"), DataTypes.KEYWORD, "b")
-            );
-            return new TestCase(
-                typedData,
-                "CaseEvaluator[resultType=BYTES_REF, conditions=[ConditionEvaluator[condition=Attribute[channel=0], "
-                    + "value=Attribute[channel=1]]], elseVal=Attribute[channel=2]]",
-                DataTypes.KEYWORD,
-                equalTo(new BytesRef("a"))
-            );
-        })));
+    @Override
+    protected Expression expressionForSimpleData() {
+        return new Case(
+            Source.EMPTY,
+            List.of(field("cond", DataTypes.BOOLEAN), field("a", DataTypes.KEYWORD), field("b", DataTypes.KEYWORD))
+        );
+    }
+
+    @Override
+    protected DataType expressionForSimpleDataType() {
+        return DataTypes.KEYWORD;
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "CaseEvaluator[resultType=BYTES_REF, "
+            + "conditions=[ConditionEvaluator[condition=Attribute[channel=0], value=Attribute[channel=1]]], elseVal=Attribute[channel=2]]";
+    }
+
+    @Override
+    protected Expression constantFoldable(List<Object> data) {
+        return caseExpr(data.toArray());
     }
 
     @Override
@@ -80,8 +80,22 @@ public class CaseTests extends AbstractFunctionTestCase {
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
-        return new Case(Source.EMPTY, args.get(0), args.subList(1, args.size()));
+    protected Matcher<Object> resultMatcher(List<Object> data, DataType dataType) {
+        for (int i = 0; i < data.size() - 1; i += 2) {
+            Object cond = data.get(i);
+            if (cond != null && ((Boolean) cond).booleanValue()) {
+                return equalTo(data.get(i + 1));
+            }
+        }
+        if (data.size() % 2 == 0) {
+            return null;
+        }
+        return equalTo(data.get(data.size() - 1));
+    }
+
+    @Override
+    protected Expression build(Source source, List<Literal> args) {
+        return new Case(Source.EMPTY, args.stream().map(l -> (Expression) l).toList());
     }
 
     public void testEvalCase() {
@@ -122,6 +136,7 @@ public class CaseTests extends AbstractFunctionTestCase {
     }
 
     public void testCaseWithInvalidCondition() {
+        assertEquals("expected at least two arguments in [<case>] but got 0", resolveCase().message());
         assertEquals("expected at least two arguments in [<case>] but got 1", resolveCase(1).message());
         assertEquals("first argument of [<case>] must be [boolean], found value [1] type [integer]", resolveCase(1, 2).message());
         assertEquals(
@@ -157,13 +172,12 @@ public class CaseTests extends AbstractFunctionTestCase {
     }
 
     private static Case caseExpr(Object... args) {
-        List<Expression> exps = Stream.of(args).<Expression>map(arg -> {
+        return new Case(Source.synthetic("<case>"), Stream.of(args).<Expression>map(arg -> {
             if (arg instanceof Expression e) {
                 return e;
             }
             return new Literal(Source.synthetic(arg == null ? "null" : arg.toString()), arg, EsqlDataTypes.fromJava(arg));
-        }).toList();
-        return new Case(Source.synthetic("<case>"), exps.get(0), exps.subList(1, exps.size()));
+        }).toList());
     }
 
     private static TypeResolution resolveCase(Object... args) {

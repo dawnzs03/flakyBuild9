@@ -16,7 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class FieldExtractExec extends UnaryExec implements EstimatesRowSize {
+public class FieldExtractExec extends UnaryExec {
+
     private final List<Attribute> attributesToExtract;
     private final Attribute sourceAttribute;
 
@@ -53,12 +54,6 @@ public class FieldExtractExec extends UnaryExec implements EstimatesRowSize {
         List<Attribute> output = new ArrayList<>(child().output());
         output.addAll(attributesToExtract);
         return output;
-    }
-
-    @Override
-    public PhysicalPlan estimateRowSize(State state) {
-        state.add(true, attributesToExtract);
-        return this;
     }
 
     @Override

@@ -637,9 +637,7 @@ public class TrainedModelAssignmentNodeServiceTests extends ESTestCase {
             1,
             1024,
             randomBoolean() ? null : ByteSizeValue.ofBytes(randomNonNegativeLong()),
-            randomFrom(Priority.values()),
-            randomNonNegativeLong(),
-            randomNonNegativeLong()
+            randomFrom(Priority.values())
         );
     }
 

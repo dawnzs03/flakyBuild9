@@ -16,9 +16,7 @@ import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.test.AbstractXContentSerializingTestCase;
 import org.elasticsearch.test.VersionUtils;
 import org.elasticsearch.xcontent.XContentParser;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 import org.elasticsearch.xpack.core.ml.job.process.autodetect.state.ModelSnapshot;
-import org.elasticsearch.xpack.core.ml.utils.MlConfigVersionUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -132,10 +130,10 @@ public class JobUpdateTests extends AbstractXContentSerializingTestCase<JobUpdat
             update.setModelSnapshotId(randomAlphaOfLength(10));
         }
         if (useInternalParser && randomBoolean()) {
-            update.setModelSnapshotMinVersion(MlConfigVersion.CURRENT);
+            update.setModelSnapshotMinVersion(Version.CURRENT);
         }
         if (useInternalParser && randomBoolean()) {
-            update.setJobVersion(MlConfigVersionUtils.randomCompatibleVersion(random()));
+            update.setJobVersion(VersionUtils.randomCompatibleVersion(random(), Version.CURRENT));
         }
         if (useInternalParser) {
             update.setClearFinishTime(randomBoolean());
@@ -260,7 +258,6 @@ public class JobUpdateTests extends AbstractXContentSerializingTestCase<JobUpdat
         }
     }
 
-    @AwaitsFix(bugUrl = "https://github.com/elastic/elasticsearch/issues/98626")
     public void testMergeWithJob() {
         List<JobUpdate.DetectorUpdate> detectorUpdates = new ArrayList<>();
         List<DetectionRule> detectionRules1 = Collections.singletonList(
@@ -294,7 +291,7 @@ public class JobUpdateTests extends AbstractXContentSerializingTestCase<JobUpdat
         updateBuilder.setPerPartitionCategorizationConfig(new PerPartitionCategorizationConfig(true, randomBoolean()));
         updateBuilder.setCustomSettings(customSettings);
         updateBuilder.setModelSnapshotId(randomAlphaOfLength(10));
-        updateBuilder.setJobVersion(MlConfigVersion.fromVersion(VersionUtils.randomCompatibleVersion(random(), Version.CURRENT)));
+        updateBuilder.setJobVersion(VersionUtils.randomCompatibleVersion(random(), Version.CURRENT));
         updateBuilder.setModelPruneWindow(TimeValue.timeValueDays(randomIntBetween(1, 100)));
         JobUpdate update = updateBuilder.build();
 

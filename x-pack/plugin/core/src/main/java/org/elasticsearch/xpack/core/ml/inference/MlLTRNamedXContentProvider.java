@@ -15,8 +15,6 @@ import org.elasticsearch.xpack.core.ml.inference.trainedmodel.LearnToRankConfig;
 import org.elasticsearch.xpack.core.ml.inference.trainedmodel.LearnToRankConfigUpdate;
 import org.elasticsearch.xpack.core.ml.inference.trainedmodel.LenientlyParsedInferenceConfig;
 import org.elasticsearch.xpack.core.ml.inference.trainedmodel.StrictlyParsedInferenceConfig;
-import org.elasticsearch.xpack.core.ml.inference.trainedmodel.ltr.LearnToRankFeatureExtractorBuilder;
-import org.elasticsearch.xpack.core.ml.inference.trainedmodel.ltr.QueryExtractorBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,14 +52,6 @@ public class MlLTRNamedXContentProvider implements NamedXContentProvider {
                 LearnToRankConfigUpdate::fromXContentStrict
             )
         );
-        // LTR extractors
-        namedXContent.add(
-            new NamedXContentRegistry.Entry(
-                LearnToRankFeatureExtractorBuilder.class,
-                QueryExtractorBuilder.NAME,
-                QueryExtractorBuilder::fromXContent
-            )
-        );
         return namedXContent;
     }
 
@@ -77,14 +67,6 @@ public class MlLTRNamedXContentProvider implements NamedXContentProvider {
                 InferenceConfigUpdate.class,
                 LearnToRankConfigUpdate.NAME.getPreferredName(),
                 LearnToRankConfigUpdate::new
-            )
-        );
-        // LTR Extractors
-        namedWriteables.add(
-            new NamedWriteableRegistry.Entry(
-                LearnToRankFeatureExtractorBuilder.class,
-                QueryExtractorBuilder.NAME.getPreferredName(),
-                QueryExtractorBuilder::new
             )
         );
         return namedWriteables;

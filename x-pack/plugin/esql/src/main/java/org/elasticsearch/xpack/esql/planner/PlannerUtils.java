@@ -11,19 +11,16 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.internal.SearchContext;
-import org.elasticsearch.xpack.esql.optimizer.LocalLogicalOptimizerContext;
 import org.elasticsearch.xpack.esql.optimizer.LocalLogicalPlanOptimizer;
 import org.elasticsearch.xpack.esql.optimizer.LocalPhysicalOptimizerContext;
 import org.elasticsearch.xpack.esql.optimizer.LocalPhysicalPlanOptimizer;
 import org.elasticsearch.xpack.esql.plan.physical.EsSourceExec;
-import org.elasticsearch.xpack.esql.plan.physical.EstimatesRowSize;
 import org.elasticsearch.xpack.esql.plan.physical.ExchangeExec;
 import org.elasticsearch.xpack.esql.plan.physical.ExchangeSinkExec;
 import org.elasticsearch.xpack.esql.plan.physical.ExchangeSourceExec;
 import org.elasticsearch.xpack.esql.plan.physical.FragmentExec;
 import org.elasticsearch.xpack.esql.plan.physical.PhysicalPlan;
 import org.elasticsearch.xpack.esql.session.EsqlConfiguration;
-import org.elasticsearch.xpack.esql.stats.SearchStats;
 import org.elasticsearch.xpack.ql.plan.logical.EsRelation;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.util.Holder;
@@ -35,6 +32,8 @@ import java.util.Set;
 
 public class PlannerUtils {
 
+    private static final Mapper mapper = new Mapper(true);
+
     public static Tuple<PhysicalPlan, PhysicalPlan> breakPlanBetweenCoordinatorAndDataNode(PhysicalPlan plan, EsqlConfiguration config) {
         var dataNodePlan = new Holder<PhysicalPlan>();
 
@@ -42,9 +41,12 @@ public class PlannerUtils {
         PhysicalPlan coordinatorPlan = plan.transformUp(ExchangeExec.class, e -> {
             // remember the datanode subplan and wire it to a sink
             var subplan = e.child();
-            dataNodePlan.set(new ExchangeSinkExec(e.source(), e.output(), subplan));
+            dataNodePlan.set(new ExchangeSinkExec(e.source(), subplan));
 
-            return new ExchangeSourceExec(e.source(), e.output(), e.isInBetweenAggs());
+            // ugly hack to get the layout
+            var planContainingTheLayout = localPlan(List.of(), config, subplan);
+            // replace the subnode with an exchange source
+            return new ExchangeSourceExec(e.source(), e.output(), planContainingTheLayout);
         });
         return new Tuple<>(coordinatorPlan, dataNodePlan.get());
     }
@@ -78,27 +80,11 @@ public class PlannerUtils {
     }
 
     public static PhysicalPlan localPlan(List<SearchContext> searchContexts, EsqlConfiguration configuration, PhysicalPlan plan) {
-        return localPlan(configuration, plan, new SearchStats(searchContexts));
-    }
-
-    public static PhysicalPlan localPlan(EsqlConfiguration configuration, PhysicalPlan plan, SearchStats searchStats) {
-        final var logicalOptimizer = new LocalLogicalPlanOptimizer(new LocalLogicalOptimizerContext(configuration, searchStats));
-        var physicalOptimizer = new LocalPhysicalPlanOptimizer(new LocalPhysicalOptimizerContext(configuration));
-
-        return localPlan(plan, logicalOptimizer, physicalOptimizer);
-    }
-
-    public static PhysicalPlan localPlan(
-        PhysicalPlan plan,
-        LocalLogicalPlanOptimizer logicalOptimizer,
-        LocalPhysicalPlanOptimizer physicalOptimizer
-    ) {
-        final Mapper mapper = new Mapper(true);
         var isCoordPlan = new Holder<>(Boolean.TRUE);
 
         var localPhysicalPlan = plan.transformUp(FragmentExec.class, f -> {
             isCoordPlan.set(Boolean.FALSE);
-            var optimizedFragment = logicalOptimizer.localOptimize(f.fragment());
+            var optimizedFragment = new LocalLogicalPlanOptimizer().localOptimize(f.fragment());
             var physicalFragment = mapper.map(optimizedFragment);
             var filter = f.esFilter();
             if (filter != null) {
@@ -107,9 +93,11 @@ public class PlannerUtils {
                     query -> new EsSourceExec(Source.EMPTY, query.index(), query.output(), filter)
                 );
             }
-            return EstimatesRowSize.estimateRowSize(f.estimatedRowSize(), physicalOptimizer.localOptimize(physicalFragment));
+            return physicalFragment;
         });
-        return isCoordPlan.get() ? plan : localPhysicalPlan;
+        return isCoordPlan.get()
+            ? plan
+            : new LocalPhysicalPlanOptimizer(new LocalPhysicalOptimizerContext(configuration)).localOptimize(localPhysicalPlan);
     }
 
     /**

@@ -117,7 +117,7 @@ public class AnalyzerTests extends ESTestCase {
         var eval = as(limit.child(), Eval.class);
 
         assertEquals(1, eval.fields().size());
-        Alias eeField = eval.fields().get(0);
+        Alias eeField = (Alias) eval.fields().get(0);
         assertEquals("ee", eeField.name());
         assertEquals("e", ((ReferenceAttribute) eeField.child()).name());
 
@@ -455,7 +455,7 @@ public class AnalyzerTests extends ESTestCase {
     public void testRename() {
         assertProjection("""
             from test
-            | rename emp_no as e
+            | rename e = emp_no
             | keep first_name, e
             """, "first_name", "e");
     }
@@ -463,7 +463,7 @@ public class AnalyzerTests extends ESTestCase {
     public void testChainedRename() {
         assertProjection("""
             from test
-            | rename emp_no as r1, r1 as r2, r2 as r3
+            | rename r1 = emp_no, r2 = r1, r3 = r2
             | keep first_name, r3
             """, "first_name", "r3");
     }
@@ -471,7 +471,7 @@ public class AnalyzerTests extends ESTestCase {
     public void testChainedRenameReuse() {
         assertProjection("""
             from test
-            | rename emp_no as r1, r1 as r2, r2 as r3, first_name as r1
+            | rename r1 = emp_no, r2 = r1, r3 = r2, r1 = first_name
             | keep r1, r3
             """, "r1", "r3");
     }
@@ -479,7 +479,7 @@ public class AnalyzerTests extends ESTestCase {
     public void testRenameBackAndForth() {
         assertProjection("""
             from test
-            | rename emp_no as r1, r1 as emp_no
+            | rename r1 = emp_no, emp_no = r1
             | keep emp_no
             """, "emp_no");
     }
@@ -487,14 +487,14 @@ public class AnalyzerTests extends ESTestCase {
     public void testRenameReuseAlias() {
         assertProjection("""
             from test
-            | rename emp_no as e, first_name as e
+            | rename e = emp_no, e = first_name
             """, "_meta_field", "e", "gender", "languages", "last_name", "salary");
     }
 
     public void testRenameUnsupportedField() {
         assertProjectionWithMapping("""
             from test
-            | rename unsupported as u
+            | rename u = unsupported
             | keep int, u, float
             """, "mapping-multi-field-variation.json", "int", "u", "float");
     }
@@ -502,7 +502,7 @@ public class AnalyzerTests extends ESTestCase {
     public void testRenameUnsupportedFieldChained() {
         assertProjectionWithMapping("""
             from test
-            | rename unsupported as u1, u1 as u2
+            | rename u1 = unsupported, u2 = u1
             | keep int, u2, float
             """, "mapping-multi-field-variation.json", "int", "u2", "float");
     }
@@ -510,7 +510,7 @@ public class AnalyzerTests extends ESTestCase {
     public void testRenameUnsupportedAndResolved() {
         assertProjectionWithMapping("""
             from test
-            | rename unsupported as u, float as f
+            | rename u = unsupported, f = float
             | keep int, u, f
             """, "mapping-multi-field-variation.json", "int", "u", "f");
     }
@@ -518,7 +518,7 @@ public class AnalyzerTests extends ESTestCase {
     public void testRenameUnsupportedSubFieldAndResolved() {
         assertProjectionWithMapping("""
             from test
-            | rename some.string as ss, float as f
+            | rename ss = some.string, f = float
             | keep int, ss, f
             """, "mapping-multi-field-variation.json", "int", "ss", "f");
     }
@@ -526,15 +526,15 @@ public class AnalyzerTests extends ESTestCase {
     public void testRenameUnsupportedAndUnknown() {
         verifyUnsupported("""
             from test
-            | rename text as t, doesnotexist as d
-            """, "Found 1 problem\n" + "line 2:21: Unknown column [doesnotexist]");
+            | rename t = text, d = doesnotexist
+            """, "Found 1 problem\n" + "line 2:24: Unknown column [doesnotexist]");
     }
 
     public void testRenameResolvedAndUnknown() {
         verifyUnsupported("""
             from test
-            | rename int as i, doesnotexist as d
-            """, "Found 1 problem\n" + "line 2:20: Unknown column [doesnotexist]");
+            | rename i = int, d = doesnotexist
+            """, "Found 1 problem\n" + "line 2:23: Unknown column [doesnotexist]");
     }
 
     public void testUnsupportedFieldUsedExplicitly() {
@@ -948,36 +948,29 @@ public class AnalyzerTests extends ESTestCase {
     public void testDateTruncOnInt() {
         verifyUnsupported("""
             from test
-            | eval date_trunc("1M", int)
-            """, "first argument of [date_trunc(\"1M\", int)] must be [datetime], found value [int] type [integer]");
+            | eval date_trunc(int, "1M")
+            """, "first argument of [date_trunc(int, \"1M\")] must be [datetime], found value [int] type [integer]");
     }
 
     public void testDateTruncOnFloat() {
         verifyUnsupported("""
             from test
-            | eval date_trunc("1M", float)
-            """, "first argument of [date_trunc(\"1M\", float)] must be [datetime], found value [float] type [double]");
+            | eval date_trunc(float, "1M")
+            """, "first argument of [date_trunc(float, \"1M\")] must be [datetime], found value [float] type [double]");
     }
 
     public void testDateTruncOnText() {
         verifyUnsupported("""
             from test
-            | eval date_trunc("1M", keyword)
-            """, "first argument of [date_trunc(\"1M\", keyword)] must be [datetime], found value [keyword] type [keyword]");
+            | eval date_trunc(keyword, "1M")
+            """, "first argument of [date_trunc(keyword, \"1M\")] must be [datetime], found value [keyword] type [keyword]");
     }
 
     public void testDateTruncWithNumericInterval() {
         verifyUnsupported("""
             from test
-            | eval date_trunc(1, date)
-            """, "second argument of [date_trunc(1, date)] must be [dateperiod or timeduration], found value [1] type [integer]");
-    }
-
-    public void testDateTruncWithSwappedArguments() {
-        verifyUnsupported("""
-            from test
-            | eval date_trunc(date, 1 month)
-            """, "function definition has been updated, please swap arguments in [date_trunc(date, 1 month)]");
+            | eval date_trunc(date, 1)
+            """, "second argument of [date_trunc(date, 1)] must be [dateperiod or timeduration], found value [1] type [integer]");
     }
 
     public void testDateTruncWithDateInterval() {

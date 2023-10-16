@@ -25,6 +25,7 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.rest.FakeRestRequest;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xpack.core.security.action.apikey.ApiKey;
@@ -94,7 +95,7 @@ public class RestGetApiKeyActionTests extends ESTestCase {
                 responseSetOnce.set(restResponse);
             }
         };
-        final ApiKey.Type type = randomFrom(ApiKey.Type.values());
+        final ApiKey.Type type = TcpTransport.isUntrustedRemoteClusterEnabled() ? randomFrom(ApiKey.Type.values()) : ApiKey.Type.REST;
         final Instant creation = Instant.now();
         final Instant expiration = randomFrom(Arrays.asList(null, Instant.now().plus(10, ChronoUnit.DAYS)));
         final Map<String, Object> metadata = ApiKeyTests.randomMetadata();
@@ -217,7 +218,7 @@ public class RestGetApiKeyActionTests extends ESTestCase {
             }
         };
 
-        final ApiKey.Type type = randomFrom(ApiKey.Type.values());
+        final ApiKey.Type type = TcpTransport.isUntrustedRemoteClusterEnabled() ? randomFrom(ApiKey.Type.values()) : ApiKey.Type.REST;
         final Instant creation = Instant.now();
         final Instant expiration = randomFrom(Arrays.asList(null, Instant.now().plus(10, ChronoUnit.DAYS)));
         final ApiKey apiKey1 = new ApiKey(

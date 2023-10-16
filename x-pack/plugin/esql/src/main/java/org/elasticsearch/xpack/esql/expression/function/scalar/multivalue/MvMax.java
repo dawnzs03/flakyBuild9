@@ -10,7 +10,6 @@ package org.elasticsearch.xpack.esql.expression.function.scalar.multivalue;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.compute.ann.MvEvaluator;
 import org.elasticsearch.compute.operator.EvalOperator;
-import org.elasticsearch.xpack.esql.EsqlUnsupportedOperationException;
 import org.elasticsearch.xpack.esql.planner.LocalExecutionPlanner;
 import org.elasticsearch.xpack.esql.type.EsqlDataTypes;
 import org.elasticsearch.xpack.ql.expression.Expression;
@@ -44,7 +43,7 @@ public class MvMax extends AbstractMultivalueFunction {
             case INT -> () -> new MvMaxIntEvaluator(fieldEval.get());
             case LONG -> () -> new MvMaxLongEvaluator(fieldEval.get());
             case NULL -> () -> EvalOperator.CONSTANT_NULL;
-            default -> throw EsqlUnsupportedOperationException.unsupportedDataType(field().dataType());
+            default -> throw new UnsupportedOperationException("unsupported type [" + field().dataType() + "]");
         };
     }
 
@@ -58,12 +57,12 @@ public class MvMax extends AbstractMultivalueFunction {
         return NodeInfo.create(this, MvMax::new, field());
     }
 
-    @MvEvaluator(extraName = "Boolean", ascending = "ascendingIndex")
+    @MvEvaluator(extraName = "Boolean")
     static boolean process(boolean current, boolean v) {
         return current || v;
     }
 
-    @MvEvaluator(extraName = "BytesRef", ascending = "ascendingIndex")
+    @MvEvaluator(extraName = "BytesRef")
     static void process(BytesRef current, BytesRef v) {
         if (v.compareTo(current) > 0) {
             current.bytes = v.bytes;
@@ -72,25 +71,18 @@ public class MvMax extends AbstractMultivalueFunction {
         }
     }
 
-    @MvEvaluator(extraName = "Double", ascending = "ascendingIndex")
+    @MvEvaluator(extraName = "Double")
     static double process(double current, double v) {
         return Math.max(current, v);
     }
 
-    @MvEvaluator(extraName = "Int", ascending = "ascendingIndex")
+    @MvEvaluator(extraName = "Int")
     static int process(int current, int v) {
         return Math.max(current, v);
     }
 
-    @MvEvaluator(extraName = "Long", ascending = "ascendingIndex")
+    @MvEvaluator(extraName = "Long")
     static long process(long current, long v) {
         return Math.max(current, v);
-    }
-
-    /**
-     * If the values as ascending pick the final value.
-     */
-    static int ascendingIndex(int count) {
-        return count - 1;
     }
 }

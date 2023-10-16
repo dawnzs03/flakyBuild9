@@ -7,9 +7,6 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.math;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Rounding;
 import org.elasticsearch.index.mapper.DateFieldMapper;
@@ -22,72 +19,63 @@ import org.elasticsearch.xpack.ql.type.DataTypes;
 import org.hamcrest.Matcher;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.hamcrest.Matchers.equalTo;
 
 public class AutoBucketTests extends AbstractScalarFunctionTestCase {
-    public AutoBucketTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
+    @Override
+    protected List<Object> simpleData() {
+        return List.of(DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.parseMillis("2023-02-17T09:00:00.00Z"));
     }
 
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        return parameterSuppliersFromTypedData(List.of(new TestCaseSupplier("Autobucket Single date", () -> {
-            List<TypedData> args = List.of(
-                new TypedData(DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.parseMillis("2023-02-17T09:00:00.00Z"), DataTypes.DATETIME, "arg")
-            );
-            return new TestCase(
-                args,
-                "DateTruncEvaluator[fieldVal=Attribute[channel=0], rounding=Rounding[DAY_OF_MONTH in Z][fixed to midnight]]",
-                DataTypes.DATETIME,
-                resultsMatcher(args)
-            );
-        })));
+    @Override
+    protected Expression expressionForSimpleData() {
+        return build(Source.EMPTY, field("arg", DataTypes.DATETIME));
     }
 
     private Expression build(Source source, Expression arg) {
-        Literal from;
-        Literal to;
-        if (arg.dataType() == DataTypes.DATETIME) {
-            from = new Literal(Source.EMPTY, new BytesRef("2023-02-01T00:00:00.00Z"), DataTypes.KEYWORD);
-            to = new Literal(Source.EMPTY, new BytesRef("2023-03-01T00:00:00.00Z"), DataTypes.KEYWORD);
-        } else {
-            from = new Literal(Source.EMPTY, 0, DataTypes.DOUBLE);
-            to = new Literal(Source.EMPTY, 1000, DataTypes.DOUBLE);
-        }
-        return new AutoBucket(source, arg, new Literal(Source.EMPTY, 50, DataTypes.INTEGER), from, to);
+        return new AutoBucket(
+            source,
+            arg,
+            new Literal(Source.EMPTY, 50, DataTypes.INTEGER),
+            new Literal(Source.EMPTY, new BytesRef("2023-02-01T00:00:00.00Z"), DataTypes.KEYWORD),
+            new Literal(Source.EMPTY, new BytesRef("2023-03-01T00:00:00.00Z"), DataTypes.KEYWORD)
+        );
     }
 
     @Override
     protected DataType expectedType(List<DataType> argTypes) {
-        if (argTypes.get(0).isNumeric()) {
-            return DataTypes.DOUBLE;
-        }
         return argTypes.get(0);
     }
 
-    private static Matcher<Object> resultsMatcher(List<TypedData> typedData) {
-        long millis = ((Number) typedData.get(0).data()).longValue();
+    @Override
+    protected Matcher<Object> resultMatcher(List<Object> data, DataType dataType) {
+        long millis = ((Number) data.get(0)).longValue();
         return equalTo(Rounding.builder(Rounding.DateTimeUnit.DAY_OF_MONTH).build().prepareForUnknown().round(millis));
     }
 
     @Override
-    protected List<ArgumentSpec> argSpec() {
-        DataType[] numerics = numerics();
-        DataType[] all = new DataType[numerics.length + 1];
-        all[0] = DataTypes.DATETIME;
-        System.arraycopy(numerics, 0, all, 1, numerics.length);
-        return List.of(required(all));
+    protected String expectedEvaluatorSimpleToString() {
+        return "DateTruncEvaluator[fieldVal=Attribute[channel=0], rounding=Rounding[DAY_OF_MONTH in Z][fixed to midnight]]";
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
+    protected Expression constantFoldable(List<Object> data) {
+        return build(Source.EMPTY, new Literal(Source.EMPTY, data.get(0), DataTypes.DATETIME));
+    }
+
+    @Override
+    protected List<ArgumentSpec> argSpec() {
+        return List.of(required(DataTypes.DATETIME));
+    }
+
+    @Override
+    protected Expression build(Source source, List<Literal> args) {
         return build(source, args.get(0));
     }
 
     @Override
     protected Matcher<String> badTypeError(List<ArgumentSpec> spec, int badArgPosition, DataType badArgType) {
-        return equalTo("first argument of [exp] must be [datetime or numeric], found value [arg0] type [" + badArgType.typeName() + "]");
+        return equalTo("first argument of [exp] must be [datetime], found value [arg0] type [" + badArgType.typeName() + "]");
     }
 }

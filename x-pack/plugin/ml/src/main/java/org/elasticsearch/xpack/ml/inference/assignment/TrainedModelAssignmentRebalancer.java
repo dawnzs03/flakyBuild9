@@ -50,23 +50,20 @@ class TrainedModelAssignmentRebalancer {
     private final Map<DiscoveryNode, NodeLoad> nodeLoads;
     private final Map<List<String>, Collection<DiscoveryNode>> mlNodesByZone;
     private final Optional<StartTrainedModelDeploymentAction.TaskParams> deploymentToAdd;
-    private final int allocatedProcessorsScale;
 
     TrainedModelAssignmentRebalancer(
         TrainedModelAssignmentMetadata currentMetadata,
         Map<DiscoveryNode, NodeLoad> nodeLoads,
         Map<List<String>, Collection<DiscoveryNode>> mlNodesByZone,
-        Optional<StartTrainedModelDeploymentAction.TaskParams> deploymentToAdd,
-        int allocatedProcessorsScale
+        Optional<StartTrainedModelDeploymentAction.TaskParams> deploymentToAdd
     ) {
         this.currentMetadata = Objects.requireNonNull(currentMetadata);
         this.nodeLoads = Objects.requireNonNull(nodeLoads);
         this.mlNodesByZone = Objects.requireNonNull(mlNodesByZone);
         this.deploymentToAdd = Objects.requireNonNull(deploymentToAdd);
-        this.allocatedProcessorsScale = allocatedProcessorsScale;
     }
 
-    TrainedModelAssignmentMetadata.Builder rebalance() {
+    TrainedModelAssignmentMetadata.Builder rebalance() throws Exception {
         if (deploymentToAdd.isPresent() && currentMetadata.hasDeployment(deploymentToAdd.get().getDeploymentId())) {
             throw new ResourceAlreadyExistsException(
                 "[{}] assignment for deployment with model [{}] already exists",
@@ -287,7 +284,7 @@ class TrainedModelAssignmentRebalancer {
                                 // We subtract native inference memory as the planner expects available memory for
                                 // native inference including current assignments.
                                 getNodeFreeMemoryExcludingPerNodeOverheadAndNativeInference(load),
-                                MlProcessors.get(discoveryNode, allocatedProcessorsScale).roundUp()
+                                MlProcessors.get(discoveryNode).roundUp()
                             )
                         );
                     } else {
@@ -398,7 +395,7 @@ class TrainedModelAssignmentRebalancer {
             // But we should also check if we managed to assign a model during the rebalance for which
             // we check if the node has used up any of its allocated processors.
             boolean isPerNodeOverheadAccountedFor = load.getNumAssignedJobsAndModels() > 0
-                || assignmentPlan.getRemainingNodeCores(load.getNodeId()) < MlProcessors.get(node, allocatedProcessorsScale).roundUp();
+                || assignmentPlan.getRemainingNodeCores(load.getNodeId()) < MlProcessors.get(node).roundUp();
             long requiredMemory = deployment.memoryBytes() + (isPerNodeOverheadAccountedFor
                 ? 0
                 : MachineLearning.NATIVE_EXECUTABLE_CODE_OVERHEAD.getBytes());
@@ -427,7 +424,7 @@ class TrainedModelAssignmentRebalancer {
                     "This node has insufficient allocated processors. Available processors [{}], free processors [{}], "
                         + "processors required for each allocation of this model [{}]",
                     new Object[] {
-                        MlProcessors.get(node, allocatedProcessorsScale).roundUp(),
+                        MlProcessors.get(node).roundUp(),
                         assignmentPlan.getRemainingNodeCores(node.getId()),
                         deployment.threadsPerAllocation() }
                 )

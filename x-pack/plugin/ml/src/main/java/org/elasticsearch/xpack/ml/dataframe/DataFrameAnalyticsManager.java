@@ -165,8 +165,7 @@ public class DataFrameAnalyticsManager {
                 clientToUse,
                 clusterState,
                 masterNodeTimeout,
-                listener,
-                MlStatsIndex.STATS_INDEX_MAPPINGS_VERSION
+                listener
             ),
             listener::onFailure
         );

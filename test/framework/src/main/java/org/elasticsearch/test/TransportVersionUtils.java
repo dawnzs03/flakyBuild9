@@ -94,10 +94,6 @@ public class TransportVersionUtils {
     }
 
     public static TransportVersion getNextVersion(TransportVersion version) {
-        return getNextVersion(version, false);
-    }
-
-    public static TransportVersion getNextVersion(TransportVersion version, boolean createIfNecessary) {
         int place = Collections.binarySearch(ALL_VERSIONS, version);
         if (place < 0) {
             // version does not exist - need the item at the index this version should be inserted
@@ -108,12 +104,7 @@ public class TransportVersionUtils {
         }
 
         if (place < 0 || place >= ALL_VERSIONS.size()) {
-            if (createIfNecessary) {
-                // create a new transport version one greater than specified
-                return new TransportVersion(version.id() + 1);
-            } else {
-                throw new IllegalArgumentException("couldn't find any released versions after [" + version + "]");
-            }
+            throw new IllegalArgumentException("couldn't find any released versions after [" + version + "]");
         }
         return ALL_VERSIONS.get(place);
     }

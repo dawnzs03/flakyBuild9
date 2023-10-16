@@ -15,7 +15,6 @@ import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.cache.bitset.BitsetFilterCache;
-import org.elasticsearch.index.mapper.IdLoader;
 import org.elasticsearch.index.mapper.SourceLoader;
 import org.elasticsearch.index.query.ParsedQuery;
 import org.elasticsearch.index.query.SearchExecutionContext;
@@ -56,6 +55,8 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 
 public class TestSearchContext extends SearchContext {
+    public static final SearchShardTarget SHARD_TARGET = new SearchShardTarget("test", new ShardId("test", "test", 0), null);
+
     final IndexService indexService;
     final BitsetFilterCache fixedBitSetFilterCache;
     final IndexShard indexShard;
@@ -565,10 +566,5 @@ public class TestSearchContext extends SearchContext {
     @Override
     public SourceLoader newSourceLoader() {
         return searchExecutionContext.newSourceLoader(false);
-    }
-
-    @Override
-    public IdLoader newIdLoader() {
-        throw new UnsupportedOperationException();
     }
 }

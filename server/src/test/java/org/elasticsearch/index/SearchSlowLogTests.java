@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.search.SearchShardTask;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.UUIDs;
@@ -146,7 +147,7 @@ public class SearchSlowLogTests extends ESSingleNodeTestCase {
 
     private Settings.Builder settings(String uuid) {
         return Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
+            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
             .put(IndexMetadata.SETTING_INDEX_UUID, uuid)
             .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_FETCH_TRACE_SETTING.getKey(), "10nanos")
             .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_FETCH_DEBUG_SETTING.getKey(), "20nanos")
@@ -166,7 +167,7 @@ public class SearchSlowLogTests extends ESSingleNodeTestCase {
             createIndexMetadata(
                 "index-1",
                 Settings.builder()
-                    .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
+                    .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
                     .put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID())
                     .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_FETCH_WARN_SETTING.getKey(), "40nanos")
                     .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_QUERY_WARN_SETTING.getKey(), "40nanos")
@@ -179,7 +180,7 @@ public class SearchSlowLogTests extends ESSingleNodeTestCase {
             createIndexMetadata(
                 "index-2",
                 Settings.builder()
-                    .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
+                    .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
                     .put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID())
                     .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_FETCH_TRACE_SETTING.getKey(), "10nanos")
                     .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_QUERY_TRACE_SETTING.getKey(), "10nanos")
@@ -274,7 +275,7 @@ public class SearchSlowLogTests extends ESSingleNodeTestCase {
         IndexMetadata metadata = newIndexMeta(
             "index",
             Settings.builder()
-                .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
+                .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
                 .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_QUERY_TRACE_SETTING.getKey(), "100ms")
                 .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_QUERY_DEBUG_SETTING.getKey(), "200ms")
                 .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_QUERY_INFO_SETTING.getKey(), "300ms")
@@ -305,7 +306,7 @@ public class SearchSlowLogTests extends ESSingleNodeTestCase {
         assertEquals(TimeValue.timeValueMillis(320).nanos(), log.getQueryInfoThreshold());
         assertEquals(TimeValue.timeValueMillis(420).nanos(), log.getQueryWarnThreshold());
 
-        metadata = newIndexMeta("index", Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()).build());
+        metadata = newIndexMeta("index", Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT).build());
         settings.updateIndexMetadata(metadata);
         assertEquals(TimeValue.timeValueMillis(-1).nanos(), log.getQueryTraceThreshold());
         assertEquals(TimeValue.timeValueMillis(-1).nanos(), log.getQueryDebugThreshold());
@@ -380,7 +381,7 @@ public class SearchSlowLogTests extends ESSingleNodeTestCase {
         IndexMetadata metadata = newIndexMeta(
             "index",
             Settings.builder()
-                .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
+                .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
                 .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_FETCH_TRACE_SETTING.getKey(), "100ms")
                 .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_FETCH_DEBUG_SETTING.getKey(), "200ms")
                 .put(SearchSlowLog.INDEX_SEARCH_SLOWLOG_THRESHOLD_FETCH_INFO_SETTING.getKey(), "300ms")
@@ -411,7 +412,7 @@ public class SearchSlowLogTests extends ESSingleNodeTestCase {
         assertEquals(TimeValue.timeValueMillis(320).nanos(), log.getFetchInfoThreshold());
         assertEquals(TimeValue.timeValueMillis(420).nanos(), log.getFetchWarnThreshold());
 
-        metadata = newIndexMeta("index", Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()).build());
+        metadata = newIndexMeta("index", Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT).build());
         settings.updateIndexMetadata(metadata);
         assertEquals(TimeValue.timeValueMillis(-1).nanos(), log.getFetchTraceThreshold());
         assertEquals(TimeValue.timeValueMillis(-1).nanos(), log.getFetchDebugThreshold());
@@ -495,7 +496,7 @@ public class SearchSlowLogTests extends ESSingleNodeTestCase {
     }
 
     private IndexMetadata newIndexMeta(String name, Settings indexSettings) {
-        return IndexMetadata.builder(name).settings(indexSettings(IndexVersion.current(), 1, 1).put(indexSettings)).build();
+        return IndexMetadata.builder(name).settings(indexSettings(Version.CURRENT, 1, 1).put(indexSettings)).build();
     }
 
     private SearchContext searchContextWithSourceAndTask(IndexService index) {

@@ -21,7 +21,6 @@ import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
 import org.elasticsearch.cluster.routing.allocation.decider.Decision;
 import org.elasticsearch.cluster.routing.allocation.decider.DiskThresholdDecider;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.core.TimeValue;
@@ -248,9 +247,9 @@ public class DesiredBalanceReconciler {
                 nextShard: for (int i = 0; i < primaryLength; i++) {
                     final var shard = primary[i];
                     final var assignment = desiredBalance.getAssignment(shard.shardId());
-                    final boolean ignored = assignment == null || isIgnored(routingNodes, shard, assignment);
                     final var isThrottled = new AtomicBoolean(false);
-                    if (ignored == false) {
+                    if (assignment != null) {
+
                         for (final var nodeIdIterator : List.of(
                             getDesiredNodesIds(shard, assignment),
                             getFallbackNodeIds(shard, isThrottled)
@@ -284,12 +283,11 @@ public class DesiredBalanceReconciler {
                                         }
                                         continue nextShard;
                                     }
-                                    case THROTTLE -> {
-                                        isThrottled.set(true);
-                                        logger.trace("Couldn't assign shard [{}] to [{}]: {}", shard.shardId(), desiredNodeId, decision);
-                                    }
+                                    case THROTTLE -> isThrottled.set(true);
                                     case NO -> {
-                                        logger.trace("Couldn't assign shard [{}] to [{}]: {}", shard.shardId(), desiredNodeId, decision);
+                                        if (logger.isTraceEnabled()) {
+                                            logger.trace("Couldn't assign shard [{}] to [{}]", shard.shardId(), desiredNodeId);
+                                        }
                                     }
                                 }
                             }
@@ -299,7 +297,7 @@ public class DesiredBalanceReconciler {
                     logger.debug("No eligible node found to assign shard [{}] amongst [{}]", shard, assignment);
 
                     final UnassignedInfo.AllocationStatus allocationStatus;
-                    if (ignored) {
+                    if (assignment == null || assignment.isIgnored(shard.primary())) {
                         allocationStatus = UnassignedInfo.AllocationStatus.NO_ATTEMPT;
                     } else if (isThrottled.get()) {
                         allocationStatus = UnassignedInfo.AllocationStatus.DECIDERS_THROTTLED;
@@ -334,37 +332,12 @@ public class DesiredBalanceReconciler {
             return () -> {
                 if (shard.primary() && isThrottled.get() == false) {
                     var fallbackNodeIds = allocation.routingNodes().getAllNodeIds();
-                    logger.debug("Shard [{}] assignment is temporarily not possible. Falling back to {}", shard.shardId(), fallbackNodeIds);
+                    logger.debug("Shard [{}] assignment is temporary not possible. Falling back to {}", shard.shardId(), fallbackNodeIds);
                     return allocationOrdering.sort(fallbackNodeIds).iterator();
                 } else {
                     return Collections.emptyIterator();
                 }
             };
-        }
-
-        private boolean isIgnored(RoutingNodes routingNodes, ShardRouting shard, ShardAssignment assignment) {
-            if (assignment.ignored() == 0) {
-                // no shards are ignored
-                return false;
-            }
-            if (assignment.ignored() == assignment.total()) {
-                // all shards are ignored
-                return true;
-            }
-            if (assignment.total() - assignment.ignored() == 1) {
-                // all shard copies except primary are ignored
-                return shard.primary() == false;
-            }
-            // only some of the replicas might be ignored
-            // please note: it is not safe to use routing table here as it is not updated with changes from routing nodes yet
-            int assigned = 0;
-            for (RoutingNode routingNode : routingNodes) {
-                var assignedShard = routingNode.getByShardId(shard.shardId());
-                if (assignedShard != null && assignedShard.relocating() == false) {
-                    assigned++;
-                }
-            }
-            return assignment.total() - assignment.ignored() <= assigned;
         }
 
         private void moveShards() {
@@ -488,11 +461,11 @@ public class DesiredBalanceReconciler {
             if (allAllocations > 0 && undesiredAllocations > undesiredAllocationsLogThreshold * allAllocations) {
                 undesiredAllocationLogInterval.maybeExecute(
                     () -> logger.warn(
-                        "[{}] of assigned shards ({}/{}) are not on their desired nodes, which exceeds the warn threshold of [{}]",
-                        Strings.format1Decimals(100.0 * undesiredAllocations / allAllocations, "%"),
+                        "[{}%] of assigned shards ({}/{}) are not on their desired nodes, which exceeds the warn threshold of [{}%]",
+                        100.0 * undesiredAllocations / allAllocations,
                         undesiredAllocations,
                         allAllocations,
-                        Strings.format1Decimals(100.0 * undesiredAllocationsLogThreshold, "%")
+                        100.0 * undesiredAllocationsLogThreshold
                     )
                 );
             }

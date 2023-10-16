@@ -81,7 +81,7 @@ public class NestedAggregationBuilder extends AbstractAggregationBuilder<NestedA
     }
 
     @Override
-    public boolean supportsParallelCollection() {
+    public boolean supportsConcurrentExecution() {
         return false;
     }
 

@@ -12,13 +12,12 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.rest.root.MainResponse;
-import org.elasticsearch.test.BuildUtils;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.http.MockWebServer;
 import org.junit.After;
 import org.junit.Before;
 
-import java.util.Map;
+import java.util.Date;
 
 /**
  * Base class for unit tests that need a web server for basic tests.
@@ -51,9 +50,10 @@ public abstract class WebServerTestCase extends ESTestCase {
         String clusterUuid = randomAlphaOfLength(10);
         ClusterName clusterName = new ClusterName(randomAlphaOfLength(10));
         String nodeName = randomAlphaOfLength(10);
+        final String date = new Date(randomNonNegativeLong()).toString();
+        Build build = new Build("default", Build.Type.UNKNOWN, randomAlphaOfLength(8), date, randomBoolean(), version.toString());
         IndexVersion indexVersion = IndexVersion.current();
-        Build build = BuildUtils.newBuild(Build.current(), Map.of("version", version.toString()));
-        return new MainResponse(nodeName, indexVersion.luceneVersion().toString(), clusterName, clusterUuid, build);
+        return new MainResponse(nodeName, version, indexVersion.luceneVersion().toString(), clusterName, clusterUuid, build);
     }
 
     String webServerAddress() {

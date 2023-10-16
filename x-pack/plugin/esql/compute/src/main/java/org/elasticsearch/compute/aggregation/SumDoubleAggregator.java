@@ -8,6 +8,7 @@
 package org.elasticsearch.compute.aggregation;
 
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.common.util.BitArray;
 import org.elasticsearch.common.util.DoubleArray;
 import org.elasticsearch.compute.ann.Aggregator;
 import org.elasticsearch.compute.ann.GroupingAggregator;
@@ -76,12 +77,16 @@ class SumDoubleAggregator {
     public static void combineStates(GroupingSumState current, int groupId, GroupingSumState state, int statePosition) {
         if (state.hasValue(statePosition)) {
             current.add(state.values.get(statePosition), state.deltas.get(statePosition), groupId);
+        } else {
+            current.putNull(groupId);
         }
     }
 
     public static void combineIntermediate(GroupingSumState current, int groupId, double inValue, double inDelta, boolean seen) {
         if (seen) {
             current.add(inValue, inDelta, groupId);
+        } else {
+            current.putNull(groupId);
         }
     }
 
@@ -89,29 +94,29 @@ class SumDoubleAggregator {
         assert blocks.length >= offset + 3;
         var valuesBuilder = DoubleBlock.newBlockBuilder(selected.getPositionCount());
         var deltaBuilder = DoubleBlock.newBlockBuilder(selected.getPositionCount());
-        var seenBuilder = BooleanBlock.newBlockBuilder(selected.getPositionCount());
+        var nullsBuilder = BooleanBlock.newBlockBuilder(selected.getPositionCount());
         for (int i = 0; i < selected.getPositionCount(); i++) {
             int group = selected.getInt(i);
-            if (group < state.values.size()) {
-                valuesBuilder.appendDouble(state.values.get(group));
-                deltaBuilder.appendDouble(state.deltas.get(group));
-            } else {
-                valuesBuilder.appendDouble(0);
-                deltaBuilder.appendDouble(0);
+            valuesBuilder.appendDouble(state.values.get(group));
+            deltaBuilder.appendDouble(state.deltas.get(group));
+            if (state.seen != null) {
+                nullsBuilder.appendBoolean(state.seen.get(group));
             }
-            seenBuilder.appendBoolean(state.hasValue(group));
         }
         blocks[offset + 0] = valuesBuilder.build();
         blocks[offset + 1] = deltaBuilder.build();
-        blocks[offset + 2] = seenBuilder.build();
+        if (state.seen != null) {
+            blocks[offset + 2] = nullsBuilder.build();
+        } else {
+            blocks[offset + 2] = new ConstantBooleanVector(true, selected.getPositionCount()).asBlock();
+        }
     }
 
     public static Block evaluateFinal(GroupingSumState state, IntVector selected) {
         DoubleBlock.Builder builder = DoubleBlock.newBlockBuilder(selected.getPositionCount());
         for (int i = 0; i < selected.getPositionCount(); i++) {
-            int si = selected.getInt(i);
-            if (state.hasValue(si) && si < state.values.size()) {
-                builder.appendDouble(state.values.get(si));
+            if (state.hasValue(i)) {
+                builder.appendDouble(state.values.get(selected.getInt(i)));
             } else {
                 builder.appendNull();
             }
@@ -148,14 +153,20 @@ class SumDoubleAggregator {
         }
     }
 
-    static class GroupingSumState extends AbstractArrayState implements GroupingAggregatorState {
+    static class GroupingSumState implements GroupingAggregatorState {
+        private final BigArrays bigArrays;
         static final long BYTES_SIZE = Double.BYTES + Double.BYTES;
 
         DoubleArray values;
         DoubleArray deltas;
 
+        // total number of groups; <= values.length
+        int largestGroupId;
+
+        private BitArray seen;
+
         GroupingSumState(BigArrays bigArrays) {
-            super(bigArrays);
+            this.bigArrays = bigArrays;
             boolean success = false;
             try {
                 this.values = bigArrays.newDoubleArray(1);
@@ -192,12 +203,37 @@ class SumDoubleAggregator {
             double updatedValue = value + correctedSum;
             deltas.set(groupId, correctedSum - (updatedValue - value));
             values.set(groupId, updatedValue);
-            trackGroupId(groupId);
+            if (seen != null) {
+                seen.set(groupId);
+            }
+        }
+
+        void putNull(int groupId) {
+            if (groupId > largestGroupId) {
+                ensureCapacity(groupId);
+                largestGroupId = groupId;
+            }
+            if (seen == null) {
+                seen = new BitArray(groupId + 1, bigArrays);
+                for (int i = 0; i < groupId; i++) {
+                    seen.set(i);
+                }
+            } else {
+                // Do nothing. Null is represented by the default value of false for get(int),
+                // and any present value trumps a null value in our aggregations.
+            }
+        }
+
+        boolean hasValue(int index) {
+            return seen == null || seen.get(index);
         }
 
         private void ensureCapacity(int groupId) {
-            values = bigArrays.grow(values, groupId + 1);
-            deltas = bigArrays.grow(deltas, groupId + 1);
+            if (groupId > largestGroupId) {
+                largestGroupId = groupId;
+                values = bigArrays.grow(values, groupId + 1);
+                deltas = bigArrays.grow(deltas, groupId + 1);
+            }
         }
 
         @Override
@@ -207,7 +243,7 @@ class SumDoubleAggregator {
 
         @Override
         public void close() {
-            Releasables.close(values, deltas, () -> super.close());
+            Releasables.close(values, deltas, seen);
         }
     }
 }

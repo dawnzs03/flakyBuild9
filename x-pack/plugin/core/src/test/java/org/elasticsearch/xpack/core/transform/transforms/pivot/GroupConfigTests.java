@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.core.transform.transforms.pivot;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.ValidationException;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -19,7 +20,6 @@ import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xcontent.json.JsonXContent;
-import org.elasticsearch.xpack.core.transform.TransformConfigVersion;
 import org.elasticsearch.xpack.core.transform.transforms.pivot.SingleGroupSource.Type;
 
 import java.io.IOException;
@@ -41,10 +41,10 @@ public class GroupConfigTests extends AbstractXContentSerializingTestCase<GroupC
     private static final char[] ILLEGAL_FIELD_NAME_CHARACTERS = { '[', ']', '>' };
 
     public static GroupConfig randomGroupConfig() {
-        return randomGroupConfig(TransformConfigVersion.CURRENT);
+        return randomGroupConfig(Version.CURRENT);
     }
 
-    public static GroupConfig randomGroupConfig(TransformConfigVersion version) {
+    public static GroupConfig randomGroupConfig(Version version) {
         return randomGroupConfig(() -> randomSingleGroupSource(version));
     }
 
@@ -66,7 +66,7 @@ public class GroupConfigTests extends AbstractXContentSerializingTestCase<GroupC
         return new GroupConfig(source, groups);
     }
 
-    public static SingleGroupSource randomSingleGroupSource(TransformConfigVersion version) {
+    public static SingleGroupSource randomSingleGroupSource(Version version) {
         Type type = randomFrom(SingleGroupSource.Type.values());
         switch (type) {
             case TERMS:

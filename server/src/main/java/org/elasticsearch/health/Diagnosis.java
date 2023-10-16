@@ -80,7 +80,7 @@ public record Diagnosis(Definition definition, @Nullable List<Resource> affected
         public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params outerParams) {
             final Iterator<? extends ToXContent> valuesIterator;
             if (nodes != null) {
-                valuesIterator = Iterators.map(nodes.iterator(), node -> (builder, params) -> {
+                valuesIterator = nodes.stream().map(node -> (ToXContent) (builder, params) -> {
                     builder.startObject();
                     builder.field(ID_FIELD, node.getId());
                     if (node.getName() != null) {
@@ -88,9 +88,9 @@ public record Diagnosis(Definition definition, @Nullable List<Resource> affected
                     }
                     builder.endObject();
                     return builder;
-                });
+                }).iterator();
             } else {
-                valuesIterator = Iterators.map(values.iterator(), value -> (builder, params) -> builder.value(value));
+                valuesIterator = values.stream().map(value -> (ToXContent) (builder, params) -> builder.value(value)).iterator();
             }
             return ChunkedToXContentHelper.array(type.displayValue, valuesIterator);
         }

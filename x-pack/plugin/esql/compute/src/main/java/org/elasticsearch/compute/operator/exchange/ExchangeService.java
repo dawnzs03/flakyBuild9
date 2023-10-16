@@ -36,7 +36,6 @@ import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.Executor;
 
 /**
  * {@link ExchangeService} is responsible for exchanging pages between exchange sinks and sources on the same or different nodes.
@@ -59,18 +58,14 @@ public final class ExchangeService extends AbstractLifecycleComponent {
     private static final Logger LOGGER = LogManager.getLogger(ExchangeService.class);
 
     private final ThreadPool threadPool;
-    private final String requestExecutorName;
-    private final Executor responseExecutor;
 
     private final Map<String, ExchangeSinkHandler> sinks = ConcurrentCollections.newConcurrentMap();
     private final Map<String, ExchangeSourceHandler> sources = ConcurrentCollections.newConcurrentMap();
 
     private final InactiveSinksReaper inactiveSinksReaper;
 
-    public ExchangeService(Settings settings, ThreadPool threadPool, String executorName) {
+    public ExchangeService(Settings settings, ThreadPool threadPool) {
         this.threadPool = threadPool;
-        this.requestExecutorName = executorName;
-        this.responseExecutor = threadPool.executor(executorName);
         final var inactiveInterval = settings.getAsTime(INACTIVE_SINKS_INTERVAL_SETTING, TimeValue.timeValueMinutes(5));
         this.inactiveSinksReaper = new InactiveSinksReaper(LOGGER, threadPool, inactiveInterval);
     }
@@ -78,13 +73,13 @@ public final class ExchangeService extends AbstractLifecycleComponent {
     public void registerTransportHandler(TransportService transportService) {
         transportService.registerRequestHandler(
             EXCHANGE_ACTION_NAME,
-            requestExecutorName,
+            ThreadPool.Names.SAME,
             ExchangeRequest::new,
             new ExchangeTransportAction()
         );
         transportService.registerRequestHandler(
             OPEN_EXCHANGE_ACTION_NAME,
-            requestExecutorName,
+            ThreadPool.Names.SAME,
             OpenExchangeRequest::new,
             new OpenExchangeRequestHandler()
         );
@@ -149,14 +144,13 @@ public final class ExchangeService extends AbstractLifecycleComponent {
         DiscoveryNode targetNode,
         String sessionId,
         int exchangeBuffer,
-        Executor responseExecutor,
         ActionListener<Void> listener
     ) {
         transportService.sendRequest(
             targetNode,
             OPEN_EXCHANGE_ACTION_NAME,
             new OpenExchangeRequest(sessionId, exchangeBuffer),
-            new ActionListenerResponseHandler<>(listener.map(unused -> null), in -> TransportResponse.Empty.INSTANCE, responseExecutor)
+            new ActionListenerResponseHandler<>(listener.map(unused -> null), in -> TransportResponse.Empty.INSTANCE)
         );
     }
 
@@ -254,16 +248,12 @@ public final class ExchangeService extends AbstractLifecycleComponent {
      * @param remoteNode       the node where the remote exchange sink is located
      */
     public RemoteSink newRemoteSink(Task parentTask, String exchangeId, TransportService transportService, DiscoveryNode remoteNode) {
-        return new TransportRemoteSink(transportService, remoteNode, parentTask, exchangeId, responseExecutor);
+        return new TransportRemoteSink(transportService, remoteNode, parentTask, exchangeId);
     }
 
-    record TransportRemoteSink(
-        TransportService transportService,
-        DiscoveryNode node,
-        Task parentTask,
-        String exchangeId,
-        Executor responseExecutor
-    ) implements RemoteSink {
+    record TransportRemoteSink(TransportService transportService, DiscoveryNode node, Task parentTask, String exchangeId)
+        implements
+            RemoteSink {
 
         @Override
         public void fetchPageAsync(boolean allSourcesFinished, ActionListener<ExchangeResponse> listener) {
@@ -273,7 +263,7 @@ public final class ExchangeService extends AbstractLifecycleComponent {
                 new ExchangeRequest(exchangeId, allSourcesFinished),
                 parentTask,
                 TransportRequestOptions.EMPTY,
-                new ActionListenerResponseHandler<>(listener, ExchangeResponse::new, responseExecutor)
+                new ActionListenerResponseHandler<>(listener, ExchangeResponse::new)
             );
         }
     }

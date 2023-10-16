@@ -47,6 +47,7 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 import static org.elasticsearch.action.ActionListener.runAfter;
+import static org.elasticsearch.action.ActionListener.wrap;
 import static org.elasticsearch.xpack.eql.execution.ExecutionUtils.copySource;
 import static org.elasticsearch.xpack.eql.execution.search.RuntimeUtils.addFilter;
 import static org.elasticsearch.xpack.eql.execution.search.RuntimeUtils.searchHits;
@@ -217,7 +218,7 @@ public class TumblingWindow implements Executable {
             }
 
             List<SearchRequest> queries = prepareQueryForMissingEvents(batchToCheck);
-            client.multiQuery(queries, listener.delegateFailureAndWrap((l, p) -> doCheckMissingEvents(batchToCheck, p, l, next)));
+            client.multiQuery(queries, wrap(p -> doCheckMissingEvents(batchToCheck, p, listener, next), listener::onFailure));
         }
     }
 
@@ -353,7 +354,7 @@ public class TumblingWindow implements Executable {
         log.trace("{}", matcher);
         log.trace("Querying base stage [{}] {}", stage, base.queryRequest());
 
-        client.query(base.queryRequest(), listener.delegateFailureAndWrap((l, p) -> baseCriterion(stage, p, l)));
+        client.query(base.queryRequest(), wrap(p -> baseCriterion(stage, p, listener), listener::onFailure));
     }
 
     /**
@@ -526,7 +527,7 @@ public class TumblingWindow implements Executable {
 
         log.trace("Querying until stage {}", request);
 
-        client.query(request, listener.delegateFailureAndWrap((delegate, r) -> {
+        client.query(request, wrap(r -> {
             List<SearchHit> hits = searchHits(r);
 
             log.trace("Found [{}] hits", hits.size());
@@ -539,14 +540,15 @@ public class TumblingWindow implements Executable {
 
             // keep running the query runs out of the results (essentially returns less than what we want)
             if (hits.size() == windowSize && request.after().before(window.end)) {
-                untilCriterion(window, delegate, next);
+                untilCriterion(window, listener, next);
             }
             // looks like this stage is done, move on
             else {
                 // to the next query
                 next.run();
             }
-        }));
+
+        }, listener::onFailure));
     }
 
     private void secondaryCriterion(WindowInfo window, int currentStage, ActionListener<Payload> listener) {
@@ -557,7 +559,7 @@ public class TumblingWindow implements Executable {
 
         log.trace("Querying (secondary) stage [{}] {}", criterion.stage(), request);
 
-        client.query(request, listener.delegateFailureAndWrap((delegate, r) -> {
+        client.query(request, wrap(r -> {
             List<SearchHit> hits = searchHits(r);
 
             // filter hits that are escaping the window (same timestamp but different tiebreaker)
@@ -591,7 +593,7 @@ public class TumblingWindow implements Executable {
 
                 // if the limit has been reached, return what's available
                 if (matcher.match(criterion.stage(), wrapValues(criterion, hits)) == false) {
-                    payload(delegate);
+                    payload(listener);
                     return;
                 }
 
@@ -609,19 +611,19 @@ public class TumblingWindow implements Executable {
             // keep running the query runs out of the results (essentially returns less than what we want)
             // however check if the window has been fully consumed
             if (hits.size() == windowSize && request.after().before(window.end)) {
-                secondaryCriterion(window, currentStage, delegate);
+                secondaryCriterion(window, currentStage, listener);
             }
             // looks like this stage is done, move on
             else {
                 // but first check is there are still candidates within the current window
                 if (nextPositiveStage > 0 && matcher.hasFollowingCandidates(criterion.stage())) {
-                    secondaryCriterion(window, nextPositiveStage, delegate);
+                    secondaryCriterion(window, nextPositiveStage, listener);
                 } else {
                     // otherwise, advance it
-                    tumbleWindow(window.baseStage, delegate);
+                    tumbleWindow(window.baseStage, listener);
                 }
             }
-        }));
+        }, listener::onFailure));
     }
 
     /**

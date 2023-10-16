@@ -27,17 +27,8 @@ public class EsqlFeatureSetUsage extends XPackFeatureSet.Usage {
     }
 
     public EsqlFeatureSetUsage(Map<String, Object> stats) {
-        this(true, true, stats);
-    }
-
-    private EsqlFeatureSetUsage(boolean available, boolean enabled, Map<String, Object> stats) {
-        super(XPackField.ESQL, available, enabled);
+        super(XPackField.ESQL, true, true);
         this.stats = stats;
-    }
-
-    /** Returns a feature set usage where the feature is not available or enabled, and has an empty stats. */
-    public static EsqlFeatureSetUsage unavailable() {
-        return new EsqlFeatureSetUsage(false, false, Map.of());
     }
 
     public Map<String, Object> stats() {
@@ -62,7 +53,7 @@ public class EsqlFeatureSetUsage extends XPackFeatureSet.Usage {
 
     @Override
     public TransportVersion getMinimalSupportedVersion() {
-        return TransportVersion.V_8_500_062;
+        return TransportVersion.current(); // TODO change this to 8.11 for when that version is actually available
     }
 
 }

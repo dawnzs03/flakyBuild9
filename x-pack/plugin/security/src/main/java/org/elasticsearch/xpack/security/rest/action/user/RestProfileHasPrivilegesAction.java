@@ -67,7 +67,11 @@ public class RestProfileHasPrivilegesAction extends SecurityBaseRestHandler {
     }
 
     @Override
-    protected Exception innerCheckFeatureAvailable(RestRequest request) {
+    protected Exception checkFeatureAvailable(RestRequest request) {
+        final Exception failedFeature = super.checkFeatureAvailable(request);
+        if (failedFeature != null) {
+            return failedFeature;
+        }
         if (Security.USER_PROFILE_COLLABORATION_FEATURE.check(licenseState)) {
             return null;
         } else {

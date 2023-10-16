@@ -16,6 +16,7 @@ import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.test.rest.ObjectPath;
+import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.xpack.security.authc.InternalRealms;
 
 import java.io.IOException;
@@ -139,6 +140,9 @@ public class SecurityWithBasicLicenseIT extends SecurityInBasicRestTestCase {
     }
 
     private void checkRemoteIndicesXPackUsage() throws IOException {
+        if (false == TcpTransport.isUntrustedRemoteClusterEnabled()) {
+            return;
+        }
         final var putRoleRequest = new Request("PUT", "/_security/role/role1");
         putRoleRequest.setJsonEntity("""
             {
@@ -568,6 +572,10 @@ public class SecurityWithBasicLicenseIT extends SecurityInBasicRestTestCase {
     }
 
     private void assertFailToCreateAndUpdateCrossClusterApiKeys() {
+        if (false == TcpTransport.isUntrustedRemoteClusterEnabled()) {
+            return;
+        }
+
         final Request createRequest = new Request("POST", "/_security/cross_cluster/api_key");
         createRequest.setJsonEntity("""
             {
@@ -591,6 +599,10 @@ public class SecurityWithBasicLicenseIT extends SecurityInBasicRestTestCase {
     }
 
     private void assertSuccessToCreateAndUpdateCrossClusterApiKeys() throws IOException {
+        if (false == TcpTransport.isUntrustedRemoteClusterEnabled()) {
+            return;
+        }
+
         final Request createRequest = new Request("POST", "/_security/cross_cluster/api_key");
         createRequest.setJsonEntity("""
             {

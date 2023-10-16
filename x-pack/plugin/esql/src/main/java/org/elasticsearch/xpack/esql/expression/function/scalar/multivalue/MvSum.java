@@ -10,7 +10,7 @@ package org.elasticsearch.xpack.esql.expression.function.scalar.multivalue;
 import org.elasticsearch.compute.ann.MvEvaluator;
 import org.elasticsearch.compute.operator.EvalOperator;
 import org.elasticsearch.search.aggregations.metrics.CompensatedSum;
-import org.elasticsearch.xpack.esql.EsqlUnsupportedOperationException;
+import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Add;
 import org.elasticsearch.xpack.esql.planner.LocalExecutionPlanner;
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.tree.NodeInfo;
@@ -22,7 +22,6 @@ import java.util.function.Supplier;
 
 import static org.elasticsearch.xpack.esql.type.EsqlDataTypes.isRepresentable;
 import static org.elasticsearch.xpack.ql.expression.TypeResolutions.isType;
-import static org.elasticsearch.xpack.ql.util.NumericUtils.unsignedLongAddExact;
 
 /**
  * Reduce a multivalued field to a single valued field containing the sum of all values.
@@ -41,12 +40,12 @@ public class MvSum extends AbstractMultivalueFunction {
     protected Supplier<EvalOperator.ExpressionEvaluator> evaluator(Supplier<EvalOperator.ExpressionEvaluator> fieldEval) {
         return switch (LocalExecutionPlanner.toElementType(field().dataType())) {
             case DOUBLE -> () -> new MvSumDoubleEvaluator(fieldEval.get());
-            case INT -> () -> new MvSumIntEvaluator(source(), fieldEval.get());
+            case INT -> () -> new MvSumIntEvaluator(fieldEval.get());
             case LONG -> field().dataType() == DataTypes.UNSIGNED_LONG
-                ? () -> new MvSumUnsignedLongEvaluator(source(), fieldEval.get())
-                : () -> new MvSumLongEvaluator(source(), fieldEval.get());
+                ? () -> new MvSumUnsignedLongEvaluator(fieldEval.get())
+                : () -> new MvSumLongEvaluator(fieldEval.get());
             case NULL -> () -> EvalOperator.CONSTANT_NULL;
-            default -> throw EsqlUnsupportedOperationException.unsupportedDataType(field().dataType());
+            default -> throw new UnsupportedOperationException("unsupported type [" + field().dataType() + "]");
         };
     }
 
@@ -71,18 +70,18 @@ public class MvSum extends AbstractMultivalueFunction {
         return value;
     }
 
-    @MvEvaluator(extraName = "Int", warnExceptions = { ArithmeticException.class })
+    @MvEvaluator(extraName = "Int")
     static int process(int current, int v) {
-        return Math.addExact(current, v);
+        return current + v;
     }
 
-    @MvEvaluator(extraName = "Long", warnExceptions = { ArithmeticException.class })
+    @MvEvaluator(extraName = "Long")
     static long process(long current, long v) {
-        return Math.addExact(current, v);
+        return current + v;
     }
 
-    @MvEvaluator(extraName = "UnsignedLong", warnExceptions = { ArithmeticException.class })
+    @MvEvaluator(extraName = "UnsignedLong")
     static long processUnsignedLong(long current, long v) {
-        return unsignedLongAddExact(current, v);
+        return Add.processUnsignedLongs(current, v);
     }
 }

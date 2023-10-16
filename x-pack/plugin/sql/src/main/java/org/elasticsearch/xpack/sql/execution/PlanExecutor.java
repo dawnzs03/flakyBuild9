@@ -75,9 +75,9 @@ public class PlanExecutor {
     ) {
         metrics.translate();
 
-        newSession(cfg).sqlExecutable(sql, params, listener.delegateFailureAndWrap((delegate, exec) -> {
+        newSession(cfg).sqlExecutable(sql, params, wrap(exec -> {
             if (exec instanceof EsQueryExec e) {
-                delegate.onResponse(SourceGenerator.sourceBuilder(e.queryContainer(), cfg.filter(), cfg.pageSize()));
+                listener.onResponse(SourceGenerator.sourceBuilder(e.queryContainer(), cfg.filter(), cfg.pageSize()));
             }
             // try to provide a better resolution of what failed
             else {
@@ -90,9 +90,9 @@ public class PlanExecutor {
                 } else {
                     message = "Cannot generate a query DSL";
                 }
-                delegate.onFailure(new PlanningException(message + ", sql statement: [{}]", sql));
+                listener.onFailure(new PlanningException(message + ", sql statement: [{}]", sql));
             }
-        }));
+        }, listener::onFailure));
     }
 
     public void sql(SqlConfiguration cfg, String sql, List<SqlTypedParamValue> params, ActionListener<Page> listener) {

@@ -88,7 +88,9 @@ public class TransportGetDataStreamLifecycleAction extends TransportMasterNodeRe
                     )
                     .sorted(Comparator.comparing(GetDataStreamLifecycleAction.Response.DataStreamLifecycle::dataStreamName))
                     .toList(),
-                request.includeDefaults() ? clusterSettings.get(DataStreamLifecycle.CLUSTER_LIFECYCLE_DEFAULT_ROLLOVER_SETTING) : null
+                request.includeDefaults() && DataStreamLifecycle.isFeatureEnabled()
+                    ? clusterSettings.get(DataStreamLifecycle.CLUSTER_LIFECYCLE_DEFAULT_ROLLOVER_SETTING)
+                    : null
             )
         );
     }

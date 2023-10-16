@@ -2094,7 +2094,4 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
         }
     }
 
-    public boolean supportsParallelCollection() {
-        return collapse == null && (aggregations == null || aggregations.supportsParallelCollection());
-    }
 }

@@ -24,7 +24,6 @@ import org.elasticsearch.ingest.IngestStats;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.license.MockLicenseState;
 import org.elasticsearch.plugins.IngestPlugin;
-import org.elasticsearch.plugins.internal.DocumentParsingObserver;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xpack.core.ml.MachineLearningField;
@@ -134,8 +133,7 @@ public class TransportGetTrainedModelsStatsActionTests extends ESTestCase {
             null,
             Collections.singletonList(SKINNY_INGEST_PLUGIN),
             client,
-            null,
-            () -> DocumentParsingObserver.EMPTY_INSTANCE
+            null
         );
     }
 

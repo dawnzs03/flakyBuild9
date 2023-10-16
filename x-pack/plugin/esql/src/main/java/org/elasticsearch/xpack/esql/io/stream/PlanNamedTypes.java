@@ -27,16 +27,12 @@ import org.elasticsearch.xpack.esql.expression.function.aggregate.Percentile;
 import org.elasticsearch.xpack.esql.expression.function.aggregate.Sum;
 import org.elasticsearch.xpack.esql.expression.function.scalar.UnaryScalarFunction;
 import org.elasticsearch.xpack.esql.expression.function.scalar.conditional.Case;
-import org.elasticsearch.xpack.esql.expression.function.scalar.conditional.Greatest;
-import org.elasticsearch.xpack.esql.expression.function.scalar.conditional.Least;
 import org.elasticsearch.xpack.esql.expression.function.scalar.convert.ToBoolean;
 import org.elasticsearch.xpack.esql.expression.function.scalar.convert.ToDatetime;
-import org.elasticsearch.xpack.esql.expression.function.scalar.convert.ToDegrees;
 import org.elasticsearch.xpack.esql.expression.function.scalar.convert.ToDouble;
 import org.elasticsearch.xpack.esql.expression.function.scalar.convert.ToIP;
 import org.elasticsearch.xpack.esql.expression.function.scalar.convert.ToInteger;
 import org.elasticsearch.xpack.esql.expression.function.scalar.convert.ToLong;
-import org.elasticsearch.xpack.esql.expression.function.scalar.convert.ToRadians;
 import org.elasticsearch.xpack.esql.expression.function.scalar.convert.ToString;
 import org.elasticsearch.xpack.esql.expression.function.scalar.convert.ToUnsignedLong;
 import org.elasticsearch.xpack.esql.expression.function.scalar.convert.ToVersion;
@@ -47,16 +43,8 @@ import org.elasticsearch.xpack.esql.expression.function.scalar.date.DateTrunc;
 import org.elasticsearch.xpack.esql.expression.function.scalar.date.Now;
 import org.elasticsearch.xpack.esql.expression.function.scalar.ip.CIDRMatch;
 import org.elasticsearch.xpack.esql.expression.function.scalar.math.Abs;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Acos;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Asin;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Atan;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Atan2;
 import org.elasticsearch.xpack.esql.expression.function.scalar.math.AutoBucket;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Ceil;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Cos;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Cosh;
 import org.elasticsearch.xpack.esql.expression.function.scalar.math.E;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Floor;
 import org.elasticsearch.xpack.esql.expression.function.scalar.math.IsFinite;
 import org.elasticsearch.xpack.esql.expression.function.scalar.math.IsInfinite;
 import org.elasticsearch.xpack.esql.expression.function.scalar.math.IsNaN;
@@ -64,11 +52,6 @@ import org.elasticsearch.xpack.esql.expression.function.scalar.math.Log10;
 import org.elasticsearch.xpack.esql.expression.function.scalar.math.Pi;
 import org.elasticsearch.xpack.esql.expression.function.scalar.math.Pow;
 import org.elasticsearch.xpack.esql.expression.function.scalar.math.Round;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Sin;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Sinh;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Sqrt;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Tan;
-import org.elasticsearch.xpack.esql.expression.function.scalar.math.Tanh;
 import org.elasticsearch.xpack.esql.expression.function.scalar.math.Tau;
 import org.elasticsearch.xpack.esql.expression.function.scalar.multivalue.AbstractMultivalueFunction;
 import org.elasticsearch.xpack.esql.expression.function.scalar.multivalue.MvAvg;
@@ -79,22 +62,12 @@ import org.elasticsearch.xpack.esql.expression.function.scalar.multivalue.MvMax;
 import org.elasticsearch.xpack.esql.expression.function.scalar.multivalue.MvMedian;
 import org.elasticsearch.xpack.esql.expression.function.scalar.multivalue.MvMin;
 import org.elasticsearch.xpack.esql.expression.function.scalar.multivalue.MvSum;
-import org.elasticsearch.xpack.esql.expression.function.scalar.nulls.Coalesce;
 import org.elasticsearch.xpack.esql.expression.function.scalar.string.Concat;
-import org.elasticsearch.xpack.esql.expression.function.scalar.string.LTrim;
-import org.elasticsearch.xpack.esql.expression.function.scalar.string.Left;
 import org.elasticsearch.xpack.esql.expression.function.scalar.string.Length;
-import org.elasticsearch.xpack.esql.expression.function.scalar.string.RTrim;
 import org.elasticsearch.xpack.esql.expression.function.scalar.string.Split;
 import org.elasticsearch.xpack.esql.expression.function.scalar.string.StartsWith;
 import org.elasticsearch.xpack.esql.expression.function.scalar.string.Substring;
 import org.elasticsearch.xpack.esql.expression.function.scalar.string.Trim;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Add;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Div;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Mod;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Mul;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Neg;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Sub;
 import org.elasticsearch.xpack.esql.expression.predicate.operator.comparison.In;
 import org.elasticsearch.xpack.esql.plan.logical.Dissect;
 import org.elasticsearch.xpack.esql.plan.logical.Dissect.Parser;
@@ -128,7 +101,6 @@ import org.elasticsearch.xpack.ql.expression.Attribute;
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.expression.FieldAttribute;
 import org.elasticsearch.xpack.ql.expression.Literal;
-import org.elasticsearch.xpack.ql.expression.MetadataAttribute;
 import org.elasticsearch.xpack.ql.expression.NamedExpression;
 import org.elasticsearch.xpack.ql.expression.Nullability;
 import org.elasticsearch.xpack.ql.expression.Order;
@@ -141,7 +113,13 @@ import org.elasticsearch.xpack.ql.expression.predicate.logical.Not;
 import org.elasticsearch.xpack.ql.expression.predicate.logical.Or;
 import org.elasticsearch.xpack.ql.expression.predicate.nulls.IsNotNull;
 import org.elasticsearch.xpack.ql.expression.predicate.nulls.IsNull;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Add;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.ArithmeticOperation;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.DefaultBinaryArithmeticOperation;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Div;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Mod;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Mul;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Sub;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.BinaryComparison;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.BinaryComparisonProcessor;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.Equals;
@@ -174,6 +152,7 @@ import org.elasticsearch.xpack.ql.type.UnsupportedEsField;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -261,7 +240,6 @@ public final class PlanNamedTypes {
             // Attributes
             of(Attribute.class, FieldAttribute.class, PlanNamedTypes::writeFieldAttribute, PlanNamedTypes::readFieldAttribute),
             of(Attribute.class, ReferenceAttribute.class, PlanNamedTypes::writeReferenceAttr, PlanNamedTypes::readReferenceAttr),
-            of(Attribute.class, MetadataAttribute.class, PlanNamedTypes::writeMetadataAttr, PlanNamedTypes::readMetadataAttr),
             of(Attribute.class, UnsupportedAttribute.class, PlanNamedTypes::writeUnsupportedAttr, PlanNamedTypes::readUnsupportedAttr),
             // EsFields
             of(EsField.class, EsField.class, PlanNamedTypes::writeEsField, PlanNamedTypes::readEsField),
@@ -290,63 +268,41 @@ public final class PlanNamedTypes {
             // UnaryScalarFunction
             of(QL_UNARY_SCLR_CLS, IsNotNull.class, PlanNamedTypes::writeQLUnaryScalar, PlanNamedTypes::readQLUnaryScalar),
             of(QL_UNARY_SCLR_CLS, IsNull.class, PlanNamedTypes::writeQLUnaryScalar, PlanNamedTypes::readQLUnaryScalar),
+            of(ESQL_UNARY_SCLR_CLS, Length.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(QL_UNARY_SCLR_CLS, Not.class, PlanNamedTypes::writeQLUnaryScalar, PlanNamedTypes::readQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Neg.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, Abs.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Acos.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Asin.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Atan.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Ceil.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Cos.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Cosh.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Floor.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
+            of(ScalarFunction.class, E.class, PlanNamedTypes::writeNoArgScalar, PlanNamedTypes::readNoArgScalar),
             of(ESQL_UNARY_SCLR_CLS, IsFinite.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, IsInfinite.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, IsNaN.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Length.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, Log10.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, LTrim.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, RTrim.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Sin.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Sinh.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Sqrt.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Tan.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, Tanh.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
+            of(ScalarFunction.class, Pi.class, PlanNamedTypes::writeNoArgScalar, PlanNamedTypes::readNoArgScalar),
+            of(ScalarFunction.class, Tau.class, PlanNamedTypes::writeNoArgScalar, PlanNamedTypes::readNoArgScalar),
             of(ESQL_UNARY_SCLR_CLS, ToBoolean.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, ToDatetime.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, ToDegrees.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, ToDouble.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, ToIP.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, ToInteger.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, ToLong.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
-            of(ESQL_UNARY_SCLR_CLS, ToRadians.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, ToString.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, ToUnsignedLong.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, ToVersion.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             of(ESQL_UNARY_SCLR_CLS, Trim.class, PlanNamedTypes::writeESQLUnaryScalar, PlanNamedTypes::readESQLUnaryScalar),
             // ScalarFunction
-            of(ScalarFunction.class, Atan2.class, PlanNamedTypes::writeAtan2, PlanNamedTypes::readAtan2),
             of(ScalarFunction.class, AutoBucket.class, PlanNamedTypes::writeAutoBucket, PlanNamedTypes::readAutoBucket),
-            of(ScalarFunction.class, Case.class, PlanNamedTypes::writeVararg, PlanNamedTypes::readVarag),
-            of(ScalarFunction.class, CIDRMatch.class, PlanNamedTypes::writeCIDRMatch, PlanNamedTypes::readCIDRMatch),
-            of(ScalarFunction.class, Coalesce.class, PlanNamedTypes::writeVararg, PlanNamedTypes::readVarag),
-            of(ScalarFunction.class, Concat.class, PlanNamedTypes::writeVararg, PlanNamedTypes::readVarag),
+            of(ScalarFunction.class, Case.class, PlanNamedTypes::writeCase, PlanNamedTypes::readCase),
+            of(ScalarFunction.class, Concat.class, PlanNamedTypes::writeConcat, PlanNamedTypes::readConcat),
             of(ScalarFunction.class, DateExtract.class, PlanNamedTypes::writeDateExtract, PlanNamedTypes::readDateExtract),
             of(ScalarFunction.class, DateFormat.class, PlanNamedTypes::writeDateFormat, PlanNamedTypes::readDateFormat),
             of(ScalarFunction.class, DateParse.class, PlanNamedTypes::writeDateTimeParse, PlanNamedTypes::readDateTimeParse),
             of(ScalarFunction.class, DateTrunc.class, PlanNamedTypes::writeDateTrunc, PlanNamedTypes::readDateTrunc),
-            of(ScalarFunction.class, E.class, PlanNamedTypes::writeNoArgScalar, PlanNamedTypes::readNoArgScalar),
-            of(ScalarFunction.class, Greatest.class, PlanNamedTypes::writeVararg, PlanNamedTypes::readVarag),
-            of(ScalarFunction.class, Least.class, PlanNamedTypes::writeVararg, PlanNamedTypes::readVarag),
             of(ScalarFunction.class, Now.class, PlanNamedTypes::writeNow, PlanNamedTypes::readNow),
-            of(ScalarFunction.class, Pi.class, PlanNamedTypes::writeNoArgScalar, PlanNamedTypes::readNoArgScalar),
             of(ScalarFunction.class, Round.class, PlanNamedTypes::writeRound, PlanNamedTypes::readRound),
             of(ScalarFunction.class, Pow.class, PlanNamedTypes::writePow, PlanNamedTypes::readPow),
             of(ScalarFunction.class, StartsWith.class, PlanNamedTypes::writeStartsWith, PlanNamedTypes::readStartsWith),
             of(ScalarFunction.class, Substring.class, PlanNamedTypes::writeSubstring, PlanNamedTypes::readSubstring),
-            of(ScalarFunction.class, Left.class, PlanNamedTypes::writeLeft, PlanNamedTypes::readLeft),
             of(ScalarFunction.class, Split.class, PlanNamedTypes::writeSplit, PlanNamedTypes::readSplit),
-            of(ScalarFunction.class, Tau.class, PlanNamedTypes::writeNoArgScalar, PlanNamedTypes::readNoArgScalar),
+            of(ScalarFunction.class, CIDRMatch.class, PlanNamedTypes::writeCIDRMatch, PlanNamedTypes::readCIDRMatch),
             // ArithmeticOperations
             of(ArithmeticOperation.class, Add.class, PlanNamedTypes::writeArithmeticOperation, PlanNamedTypes::readArithmeticOperation),
             of(ArithmeticOperation.class, Sub.class, PlanNamedTypes::writeArithmeticOperation, PlanNamedTypes::readArithmeticOperation),
@@ -385,8 +341,7 @@ public final class PlanNamedTypes {
             in.readPhysicalPlanNode(),
             in.readList(readerFromPlanReader(PlanStreamInput::readExpression)),
             readNamedExpressions(in),
-            in.readEnum(AggregateExec.Mode.class),
-            in.readOptionalVInt()
+            in.readEnum(AggregateExec.Mode.class)
         );
     }
 
@@ -395,7 +350,6 @@ public final class PlanNamedTypes {
         out.writeCollection(aggregateExec.groupings(), writerFromPlanWriter(PlanStreamOutput::writeExpression));
         writeNamedExpressions(out, aggregateExec.aggregates());
         out.writeEnum(aggregateExec.getMode());
-        out.writeOptionalVInt(aggregateExec.estimatedRowSize());
     }
 
     static DissectExec readDissectExec(PlanStreamInput in) throws IOException {
@@ -416,8 +370,7 @@ public final class PlanNamedTypes {
             readAttributes(in),
             in.readOptionalNamedWriteable(QueryBuilder.class),
             in.readOptionalNamed(Expression.class),
-            in.readOptionalList(readerFromPlanReader(PlanNamedTypes::readFieldSort)),
-            in.readOptionalVInt()
+            in.readOptionalList(readerFromPlanReader(PlanNamedTypes::readFieldSort))
         );
     }
 
@@ -428,7 +381,6 @@ public final class PlanNamedTypes {
         out.writeOptionalNamedWriteable(esQueryExec.query());
         out.writeOptionalExpression(esQueryExec.limit());
         out.writeOptionalCollection(esQueryExec.sorts(), writerFromPlanWriter(PlanNamedTypes::writeFieldSort));
-        out.writeOptionalInt(esQueryExec.estimatedRowSize());
     }
 
     static EsSourceExec readEsSourceExec(PlanStreamInput in) throws IOException {
@@ -442,12 +394,12 @@ public final class PlanNamedTypes {
     }
 
     static EvalExec readEvalExec(PlanStreamInput in) throws IOException {
-        return new EvalExec(Source.EMPTY, in.readPhysicalPlanNode(), readAliases(in));
+        return new EvalExec(Source.EMPTY, in.readPhysicalPlanNode(), readNamedExpressions(in));
     }
 
     static void writeEvalExec(PlanStreamOutput out, EvalExec evalExec) throws IOException {
         out.writePhysicalPlanNode(evalExec.child());
-        writeAliases(out, evalExec.fields());
+        writeNamedExpressions(out, evalExec.fields());
     }
 
     static EnrichExec readEnrichExec(PlanStreamInput in) throws IOException {
@@ -472,31 +424,28 @@ public final class PlanNamedTypes {
     }
 
     static ExchangeExec readExchangeExec(PlanStreamInput in) throws IOException {
-        return new ExchangeExec(Source.EMPTY, readAttributes(in), in.readBoolean(), in.readPhysicalPlanNode());
+        return new ExchangeExec(Source.EMPTY, in.readPhysicalPlanNode());
     }
 
     static void writeExchangeExec(PlanStreamOutput out, ExchangeExec exchangeExec) throws IOException {
-        writeAttributes(out, exchangeExec.output());
-        out.writeBoolean(exchangeExec.isInBetweenAggs());
         out.writePhysicalPlanNode(exchangeExec.child());
     }
 
     static ExchangeSinkExec readExchangeSinkExec(PlanStreamInput in) throws IOException {
-        return new ExchangeSinkExec(Source.EMPTY, readAttributes(in), in.readPhysicalPlanNode());
+        return new ExchangeSinkExec(Source.EMPTY, in.readPhysicalPlanNode());
     }
 
     static void writeExchangeSinkExec(PlanStreamOutput out, ExchangeSinkExec exchangeSinkExec) throws IOException {
-        writeAttributes(out, exchangeSinkExec.output());
         out.writePhysicalPlanNode(exchangeSinkExec.child());
     }
 
     static ExchangeSourceExec readExchangeSourceExec(PlanStreamInput in) throws IOException {
-        return new ExchangeSourceExec(Source.EMPTY, readAttributes(in), in.readBoolean());
+        return new ExchangeSourceExec(Source.EMPTY, readAttributes(in), in.readPhysicalPlanNode());
     }
 
     static void writeExchangeSourceExec(PlanStreamOutput out, ExchangeSourceExec exchangeSourceExec) throws IOException {
         writeAttributes(out, exchangeSourceExec.output());
-        out.writeBoolean(exchangeSourceExec.isIntermediateAgg());
+        out.writePhysicalPlanNode(exchangeSourceExec.nodeLayout());
     }
 
     static FieldExtractExec readFieldExtractExec(PlanStreamInput in) throws IOException {
@@ -518,18 +467,12 @@ public final class PlanNamedTypes {
     }
 
     static FragmentExec readFragmentExec(PlanStreamInput in) throws IOException {
-        return new FragmentExec(
-            Source.EMPTY,
-            in.readLogicalPlanNode(),
-            in.readOptionalNamedWriteable(QueryBuilder.class),
-            in.readOptionalVInt()
-        );
+        return new FragmentExec(Source.EMPTY, in.readLogicalPlanNode(), in.readOptionalNamedWriteable(QueryBuilder.class));
     }
 
     static void writeFragmentExec(PlanStreamOutput out, FragmentExec fragmentExec) throws IOException {
         out.writeLogicalPlanNode(fragmentExec.fragment());
         out.writeOptionalNamedWriteable(fragmentExec.esFilter());
-        out.writeOptionalVInt(fragmentExec.estimatedRowSize());
     }
 
     static GrokExec readGrokExec(PlanStreamInput in) throws IOException {
@@ -586,12 +529,12 @@ public final class PlanNamedTypes {
     }
 
     static RowExec readRowExec(PlanStreamInput in) throws IOException {
-        return new RowExec(Source.EMPTY, readAliases(in));
+        return new RowExec(Source.EMPTY, readNamedExpressions(in));
     }
 
     static void writeRowExec(PlanStreamOutput out, RowExec rowExec) throws IOException {
         assert rowExec.children().size() == 0;
-        writeAliases(out, rowExec.fields());
+        writeNamedExpressions(out, rowExec.fields());
     }
 
     @SuppressWarnings("unchecked")
@@ -609,8 +552,7 @@ public final class PlanNamedTypes {
             Source.EMPTY,
             in.readPhysicalPlanNode(),
             in.readList(readerFromPlanReader(PlanNamedTypes::readOrder)),
-            in.readNamed(Expression.class),
-            in.readOptionalVInt()
+            in.readNamed(Expression.class)
         );
     }
 
@@ -618,7 +560,6 @@ public final class PlanNamedTypes {
         out.writePhysicalPlanNode(topNExec.child());
         out.writeCollection(topNExec.order(), writerFromPlanWriter(PlanNamedTypes::writeOrder));
         out.writeExpression(topNExec.limit());
-        out.writeOptionalVInt(topNExec.estimatedRowSize());
     }
 
     // -- Logical plan nodes
@@ -659,12 +600,12 @@ public final class PlanNamedTypes {
     }
 
     static Eval readEval(PlanStreamInput in) throws IOException {
-        return new Eval(Source.EMPTY, in.readLogicalPlanNode(), readAliases(in));
+        return new Eval(Source.EMPTY, in.readLogicalPlanNode(), readNamedExpressions(in));
     }
 
     static void writeEval(PlanStreamOutput out, Eval eval) throws IOException {
         out.writeLogicalPlanNode(eval.child());
-        writeAliases(out, eval.fields());
+        writeNamedExpressions(out, eval.fields());
     }
 
     static Enrich readEnrich(PlanStreamInput in) throws IOException {
@@ -776,14 +717,6 @@ public final class PlanNamedTypes {
         out.writeCollection(namedExpressions, writerFromPlanWriter(PlanStreamOutput::writeNamedExpression));
     }
 
-    private static List<Alias> readAliases(PlanStreamInput in) throws IOException {
-        return in.readList(readerFromPlanReader(PlanNamedTypes::readAlias));
-    }
-
-    static void writeAliases(PlanStreamOutput out, List<Alias> aliases) throws IOException {
-        out.writeCollection(aliases, writerFromPlanWriter(PlanNamedTypes::writeAlias));
-    }
-
     static FieldAttribute readFieldAttribute(PlanStreamInput in) throws IOException {
         return new FieldAttribute(
             Source.EMPTY,
@@ -828,29 +761,6 @@ public final class PlanNamedTypes {
         out.writeEnum(referenceAttribute.nullable());
         out.writeLong(Long.parseLong(referenceAttribute.id().toString()));
         out.writeBoolean(referenceAttribute.synthetic());
-    }
-
-    static MetadataAttribute readMetadataAttr(PlanStreamInput in) throws IOException {
-        return new MetadataAttribute(
-            Source.EMPTY,
-            in.readString(),
-            in.dataTypeFromTypeName(in.readString()),
-            in.readOptionalString(),
-            in.readEnum(Nullability.class),
-            in.nameIdFromLongValue(in.readLong()),
-            in.readBoolean(),
-            in.readBoolean()
-        );
-    }
-
-    static void writeMetadataAttr(PlanStreamOutput out, MetadataAttribute metadataAttribute) throws IOException {
-        out.writeString(metadataAttribute.name());
-        out.writeString(metadataAttribute.dataType().typeName());
-        out.writeOptionalString(metadataAttribute.qualifier());
-        out.writeEnum(metadataAttribute.nullable());
-        out.writeLong(Long.parseLong(metadataAttribute.id().toString()));
-        out.writeBoolean(metadataAttribute.synthetic());
-        out.writeBoolean(metadataAttribute.searchable());
     }
 
     static UnsupportedAttribute readUnsupportedAttr(PlanStreamInput in) throws IOException {
@@ -1034,34 +944,17 @@ public final class PlanNamedTypes {
 
     static final Map<String, BiFunction<Source, Expression, UnaryScalarFunction>> ESQL_UNARY_SCALAR_CTRS = Map.ofEntries(
         entry(name(Abs.class), Abs::new),
-        entry(name(Acos.class), Acos::new),
-        entry(name(Asin.class), Asin::new),
-        entry(name(Atan.class), Atan::new),
-        entry(name(Ceil.class), Ceil::new),
-        entry(name(Cos.class), Cos::new),
-        entry(name(Cosh.class), Cosh::new),
-        entry(name(Floor.class), Floor::new),
         entry(name(IsFinite.class), IsFinite::new),
         entry(name(IsInfinite.class), IsInfinite::new),
         entry(name(IsNaN.class), IsNaN::new),
         entry(name(Length.class), Length::new),
         entry(name(Log10.class), Log10::new),
-        entry(name(LTrim.class), LTrim::new),
-        entry(name(RTrim.class), RTrim::new),
-        entry(name(Neg.class), Neg::new),
-        entry(name(Sin.class), Sin::new),
-        entry(name(Sinh.class), Sinh::new),
-        entry(name(Sqrt.class), Sqrt::new),
-        entry(name(Tan.class), Tan::new),
-        entry(name(Tanh.class), Tanh::new),
         entry(name(ToBoolean.class), ToBoolean::new),
         entry(name(ToDatetime.class), ToDatetime::new),
-        entry(name(ToDegrees.class), ToDegrees::new),
         entry(name(ToDouble.class), ToDouble::new),
         entry(name(ToIP.class), ToIP::new),
         entry(name(ToInteger.class), ToInteger::new),
         entry(name(ToLong.class), ToLong::new),
-        entry(name(ToRadians.class), ToRadians::new),
         entry(name(ToString.class), ToString::new),
         entry(name(ToUnsignedLong.class), ToUnsignedLong::new),
         entry(name(ToVersion.class), ToVersion::new),
@@ -1121,15 +1014,6 @@ public final class PlanNamedTypes {
 
     // -- ScalarFunction
 
-    static Atan2 readAtan2(PlanStreamInput in) throws IOException {
-        return new Atan2(Source.EMPTY, in.readExpression(), in.readExpression());
-    }
-
-    static void writeAtan2(PlanStreamOutput out, Atan2 atan2) throws IOException {
-        out.writeExpression(atan2.y());
-        out.writeExpression(atan2.x());
-    }
-
     static AutoBucket readAutoBucket(PlanStreamInput in) throws IOException {
         return new AutoBucket(Source.EMPTY, in.readExpression(), in.readExpression(), in.readExpression(), in.readExpression());
     }
@@ -1141,25 +1025,22 @@ public final class PlanNamedTypes {
         out.writeExpression(bucket.to());
     }
 
-    static final Map<String, TriFunction<Source, Expression, List<Expression>, ScalarFunction>> VARARG_CTORS = Map.ofEntries(
-        entry(name(Case.class), Case::new),
-        entry(name(Coalesce.class), Coalesce::new),
-        entry(name(Concat.class), Concat::new),
-        entry(name(Greatest.class), Greatest::new),
-        entry(name(Least.class), Least::new)
-    );
-
-    static ScalarFunction readVarag(PlanStreamInput in, String name) throws IOException {
-        return VARARG_CTORS.get(name)
-            .apply(Source.EMPTY, in.readExpression(), in.readList(readerFromPlanReader(PlanStreamInput::readExpression)));
+    static Case readCase(PlanStreamInput in) throws IOException {
+        return new Case(Source.EMPTY, in.readList(readerFromPlanReader(PlanStreamInput::readExpression)));
     }
 
-    static void writeVararg(PlanStreamOutput out, ScalarFunction vararg) throws IOException {
-        out.writeExpression(vararg.children().get(0));
-        out.writeCollection(
-            vararg.children().subList(1, vararg.children().size()),
-            writerFromPlanWriter(PlanStreamOutput::writeExpression)
-        );
+    static void writeCase(PlanStreamOutput out, Case caseValue) throws IOException {
+        out.writeCollection(caseValue.children(), writerFromPlanWriter(PlanStreamOutput::writeExpression));
+    }
+
+    static Concat readConcat(PlanStreamInput in) throws IOException {
+        return new Concat(Source.EMPTY, in.readExpression(), in.readList(readerFromPlanReader(PlanStreamInput::readExpression)));
+    }
+
+    static void writeConcat(PlanStreamOutput out, Concat concat) throws IOException {
+        List<Expression> fields = concat.children();
+        out.writeExpression(fields.get(0));
+        out.writeCollection(fields.subList(1, fields.size()), writerFromPlanWriter(PlanStreamOutput::writeExpression));
     }
 
     static CountDistinct readCountDistinct(PlanStreamInput in) throws IOException {
@@ -1185,7 +1066,7 @@ public final class PlanNamedTypes {
     }
 
     static DateFormat readDateFormat(PlanStreamInput in) throws IOException {
-        return new DateFormat(Source.EMPTY, in.readExpression(), in.readOptionalNamed(Expression.class), in.configuration());
+        return new DateFormat(Source.EMPTY, in.readExpression(), in.readOptionalNamed(Expression.class));
     }
 
     static void writeDateFormat(PlanStreamOutput out, DateFormat dateFormat) throws IOException {
@@ -1275,17 +1156,6 @@ public final class PlanNamedTypes {
         out.writeOptionalWriteable(fields.size() == 3 ? o -> out.writeExpression(fields.get(2)) : null);
     }
 
-    static Left readLeft(PlanStreamInput in) throws IOException {
-        return new Left(Source.EMPTY, in.readExpression(), in.readExpression());
-    }
-
-    static void writeLeft(PlanStreamOutput out, Left left) throws IOException {
-        List<Expression> fields = left.children();
-        assert fields.size() == 2;
-        out.writeExpression(fields.get(0));
-        out.writeExpression(fields.get(1));
-    }
-
     static Split readSplit(PlanStreamInput in) throws IOException {
         return new Split(Source.EMPTY, in.readExpression(), in.readExpression());
     }
@@ -1308,18 +1178,20 @@ public final class PlanNamedTypes {
 
     // -- ArithmeticOperations
 
-    static final Map<String, TriFunction<Source, Expression, Expression, ArithmeticOperation>> ARITHMETIC_CTRS = Map.ofEntries(
-        entry(name(Add.class), Add::new),
-        entry(name(Sub.class), Sub::new),
-        entry(name(Mul.class), Mul::new),
-        entry(name(Div.class), Div::new),
-        entry(name(Mod.class), Mod::new)
-    );
+    static final Map<DefaultBinaryArithmeticOperation, TriFunction<Source, Expression, Expression, ArithmeticOperation>> ARITHMETIC_CTRS =
+        Map.ofEntries(
+            entry(DefaultBinaryArithmeticOperation.ADD, Add::new),
+            entry(DefaultBinaryArithmeticOperation.SUB, Sub::new),
+            entry(DefaultBinaryArithmeticOperation.MUL, Mul::new),
+            entry(DefaultBinaryArithmeticOperation.DIV, Div::new),
+            entry(DefaultBinaryArithmeticOperation.MOD, Mod::new)
+        );
 
     static ArithmeticOperation readArithmeticOperation(PlanStreamInput in, String name) throws IOException {
         var left = in.readExpression();
         var right = in.readExpression();
-        return ARITHMETIC_CTRS.get(name).apply(Source.EMPTY, left, right);
+        var operation = DefaultBinaryArithmeticOperation.valueOf(name.toUpperCase(Locale.ROOT));
+        return ARITHMETIC_CTRS.get(operation).apply(Source.EMPTY, left, right);
     }
 
     static void writeArithmeticOperation(PlanStreamOutput out, ArithmeticOperation arithmeticOperation) throws IOException {

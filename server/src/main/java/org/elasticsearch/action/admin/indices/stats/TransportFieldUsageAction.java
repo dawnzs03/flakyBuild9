@@ -55,7 +55,7 @@ public class TransportFieldUsageAction extends TransportBroadcastByNodeAction<
             actionFilters,
             indexNameExpressionResolver,
             FieldUsageStatsRequest::new,
-            ThreadPool.Names.MANAGEMENT
+            ThreadPool.Names.SAME
         );
         this.indicesService = indexServices;
     }

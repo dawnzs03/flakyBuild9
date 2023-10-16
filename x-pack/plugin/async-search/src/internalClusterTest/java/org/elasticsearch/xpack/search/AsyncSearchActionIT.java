@@ -24,9 +24,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
 import org.elasticsearch.search.aggregations.metrics.Max;
 import org.elasticsearch.search.aggregations.metrics.Min;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.query.ThrowingQueryBuilder;
 import org.elasticsearch.test.ESIntegTestCase.SuiteScopeTestCase;
-import org.elasticsearch.test.TransportVersionUtils;
 import org.elasticsearch.xpack.core.XPackPlugin;
 import org.elasticsearch.xpack.core.search.action.AsyncSearchResponse;
 import org.elasticsearch.xpack.core.search.action.AsyncStatusResponse;
@@ -532,7 +530,7 @@ public class AsyncSearchActionIT extends AsyncSearchIntegTestCase {
         SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(new SearchSourceBuilder().query(new DummyQueryBuilder() {
             @Override
             public TransportVersion getMinimalSupportedVersion() {
-                return TransportVersionUtils.getNextVersion(TransportVersion.MINIMUM_CCS_VERSION, true);
+                return TransportVersion.current();
             }
         }), indexName);
 

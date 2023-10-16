@@ -14,6 +14,7 @@ import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.geo.GeoEncodingUtils;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.SortedNumericSortField;
@@ -958,7 +959,9 @@ public class GeoLineAggregatorTests extends AggregatorTestCase {
                 DirectoryReader unwrapped = DirectoryReader.open(directory);
                 DirectoryReader indexReader = wrapDirectoryReader(unwrapped)
             ) {
-                A terms = (A) searchAndReduce(indexReader, aggTestConfig);
+                IndexSearcher indexSearcher = newIndexSearcher(indexReader);
+
+                A terms = (A) searchAndReduce(indexSearcher, aggTestConfig);
                 verify.accept(terms);
             }
         }

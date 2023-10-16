@@ -144,8 +144,8 @@ public class SysTables extends Command {
                 idx,
                 regex,
                 tableTypes,
-                listener.delegateFailureAndWrap(
-                    (delegate, result) -> delegate.onResponse(
+                ActionListener.wrap(
+                    result -> listener.onResponse(
                         of(
                             session,
                             result.stream()
@@ -158,7 +158,8 @@ public class SysTables extends Command {
                                 .map(t -> asList(t.cluster(), null, t.name(), t.type().toSql(), EMPTY, null, null, null, null, null))
                                 .collect(toList())
                         )
-                    )
+                    ),
+                    listener::onFailure
                 )
             );
     }

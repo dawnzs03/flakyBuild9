@@ -35,6 +35,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.license.LicenseUtils;
 import org.elasticsearch.license.XPackLicenseState;
+import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentType;
@@ -64,7 +65,7 @@ import java.util.function.Supplier;
 
 import static org.elasticsearch.index.query.QueryBuilders.existsQuery;
 import static org.elasticsearch.search.SearchService.DEFAULT_KEEPALIVE_SETTING;
-import static org.elasticsearch.transport.RemoteClusterPortSettings.TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY;
+import static org.elasticsearch.transport.RemoteClusterPortSettings.TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY_CCS;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.xpack.core.ClientHelper.SECURITY_ORIGIN;
 import static org.elasticsearch.xpack.core.ClientHelper.executeAsyncWithOrigin;
@@ -82,24 +83,11 @@ import static org.elasticsearch.xpack.security.support.SecuritySystemIndices.SEC
  */
 public class NativeRolesStore implements BiConsumer<Set<String>, ActionListener<RoleRetrievalResult>> {
 
-    /**
-     * This setting is never registered by the security plugin - in order to disable the native role APIs
-     * another plugin must register it as a boolean setting and cause it to be set to `false`.
-     *
-     * If this setting is set to <code>false</code> then
-     * <ul>
-     *     <li>the Rest APIs for native role management are disabled.</li>
-     *     <li>The native roles store will not resolve any roles</li>
-     * </ul>
-     */
-    public static final String NATIVE_ROLES_ENABLED = "xpack.security.authc.native_roles.enabled";
-
     private static final Logger logger = LogManager.getLogger(NativeRolesStore.class);
 
     private final Settings settings;
     private final Client client;
     private final XPackLicenseState licenseState;
-    private final boolean enabled;
 
     private final SecurityIndexManager securityIndex;
 
@@ -117,7 +105,6 @@ public class NativeRolesStore implements BiConsumer<Set<String>, ActionListener<
         this.licenseState = licenseState;
         this.securityIndex = securityIndex;
         this.clusterService = clusterService;
-        this.enabled = settings.getAsBoolean(NATIVE_ROLES_ENABLED, true);
     }
 
     @Override
@@ -129,11 +116,6 @@ public class NativeRolesStore implements BiConsumer<Set<String>, ActionListener<
      * Retrieve a list of roles, if rolesToGet is null or empty, fetch all roles
      */
     public void getRoleDescriptors(Set<String> names, final ActionListener<RoleRetrievalResult> listener) {
-        if (enabled == false) {
-            listener.onResponse(RoleRetrievalResult.success(Set.of()));
-            return;
-        }
-
         final SecurityIndexManager frozenSecurityIndex = this.securityIndex.freeze();
         if (frozenSecurityIndex.indexExists() == false) {
             // TODO remove this short circuiting and fix tests that fail without this!
@@ -204,11 +186,6 @@ public class NativeRolesStore implements BiConsumer<Set<String>, ActionListener<
     }
 
     public void deleteRole(final DeleteRoleRequest deleteRoleRequest, final ActionListener<Boolean> listener) {
-        if (enabled == false) {
-            listener.onFailure(new IllegalStateException("Native role management is disabled"));
-            return;
-        }
-
         final SecurityIndexManager frozenSecurityIndex = securityIndex.freeze();
         if (frozenSecurityIndex.indexExists() == false) {
             listener.onResponse(false);
@@ -245,19 +222,14 @@ public class NativeRolesStore implements BiConsumer<Set<String>, ActionListener<
     }
 
     public void putRole(final PutRoleRequest request, final RoleDescriptor role, final ActionListener<Boolean> listener) {
-        if (enabled == false) {
-            listener.onFailure(new IllegalStateException("Native role management is disabled"));
-            return;
-        }
-
         if (role.isUsingDocumentOrFieldLevelSecurity() && DOCUMENT_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState) == false) {
             listener.onFailure(LicenseUtils.newComplianceException("field and document level security"));
         } else if (role.hasRemoteIndicesPrivileges()
-            && clusterService.state().getMinTransportVersion().before(TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY)) {
+            && clusterService.state().getMinTransportVersion().before(TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY_CCS)) {
                 listener.onFailure(
                     new IllegalStateException(
                         "all nodes must have transport version ["
-                            + TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY
+                            + TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY_CCS
                             + "] or higher to support remote indices privileges"
                     )
                 );
@@ -387,10 +359,12 @@ public class NativeRolesStore implements BiConsumer<Set<String>, ActionListener<
                             } else {
                                 usageStats.put("dls", responses[2].getResponse().getHits().getTotalHits().value > 0L);
                             }
-                            if (responses[3].isFailure()) {
-                                usageStats.put("remote_indices", 0);
-                            } else {
-                                usageStats.put("remote_indices", responses[3].getResponse().getHits().getTotalHits().value);
+                            if (TcpTransport.isUntrustedRemoteClusterEnabled()) {
+                                if (responses[3].isFailure()) {
+                                    usageStats.put("remote_indices", 0);
+                                } else {
+                                    usageStats.put("remote_indices", responses[3].getResponse().getHits().getTotalHits().value);
+                                }
                             }
                             delegate.onResponse(usageStats);
                         }

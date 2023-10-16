@@ -245,36 +245,29 @@ public class CsvTestsDataLoader {
                             );
                         }
                         StringBuilder row = new StringBuilder();
-                        String idField = null;
                         for (int i = 0; i < entries.length; i++) {
                             // ignore values that belong to subfields and don't add them to the bulk request
                             if (subFieldsIndices.contains(i) == false) {
-                                if ("".equals(entries[i])) {
-                                    // Value is null, skip
-                                    continue;
-                                }
-                                if ("_id".equals(columns[i])) {
-                                    // Value is an _id
-                                    idField = entries[i];
-                                    continue;
-                                }
+                                boolean isValueNull = "".equals(entries[i]);
                                 try {
-                                    // add a comma after the previous value, only when there was actually a value before
-                                    if (i > 0 && row.length() > 0) {
-                                        row.append(",");
-                                    }
-                                    if (entries[i].contains(",")) {// multi-value
-                                        StringBuilder rowStringValue = new StringBuilder("[");
-                                        for (String s : delimitedListToStringArray(entries[i], ",")) {
-                                            rowStringValue.append("\"" + s + "\",");
+                                    if (isValueNull == false) {
+                                        // add a comma after the previous value, only when there was actually a value before
+                                        if (i > 0 && row.length() > 0) {
+                                            row.append(",");
                                         }
-                                        // remove the last comma and put a closing bracket instead
-                                        rowStringValue.replace(rowStringValue.length() - 1, rowStringValue.length(), "]");
-                                        entries[i] = rowStringValue.toString();
-                                    } else {
-                                        entries[i] = "\"" + entries[i] + "\"";
+                                        if (entries[i].contains(",")) {// multi-value
+                                            StringBuilder rowStringValue = new StringBuilder("[");
+                                            for (String s : delimitedListToStringArray(entries[i], ",")) {
+                                                rowStringValue.append("\"" + s + "\",");
+                                            }
+                                            // remove the last comma and put a closing bracket instead
+                                            rowStringValue.replace(rowStringValue.length() - 1, rowStringValue.length(), "]");
+                                            entries[i] = rowStringValue.toString();
+                                        } else {
+                                            entries[i] = "\"" + entries[i] + "\"";
+                                        }
+                                        row.append("\"" + columns[i] + "\":" + entries[i]);
                                     }
-                                    row.append("\"" + columns[i] + "\":" + entries[i]);
                                 } catch (Exception e) {
                                     throw new IllegalArgumentException(
                                         format(
@@ -289,8 +282,7 @@ public class CsvTestsDataLoader {
                                 }
                             }
                         }
-                        String idPart = idField != null ? "\", \"_id\": \"" + idField : "";
-                        builder.append("{\"index\": {\"_index\":\"" + indexName + idPart + "\"}}\n");
+                        builder.append("{\"index\": {\"_index\":\"" + indexName + "\"}}\n");
                         builder.append("{" + row + "}\n");
                     }
                 }

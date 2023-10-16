@@ -8,6 +8,7 @@ package org.elasticsearch.xpack.ml.action;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.master.TransportMasterNodeAction;
@@ -36,7 +37,6 @@ import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.common.validation.SourceDestValidator;
 import org.elasticsearch.xpack.core.ml.MachineLearningField;
 import org.elasticsearch.xpack.core.ml.MlConfigIndex;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 import org.elasticsearch.xpack.core.ml.action.PutDataFrameAnalyticsAction;
 import org.elasticsearch.xpack.core.ml.dataframe.DataFrameAnalyticsConfig;
 import org.elasticsearch.xpack.core.ml.job.messages.Messages;
@@ -157,7 +157,7 @@ public class TransportPutDataFrameAnalyticsAction extends TransportMasterNodeAct
     ) {
         DataFrameAnalyticsConfig preparedForPutConfig = new DataFrameAnalyticsConfig.Builder(config, maxModelMemoryLimitSupplier.get())
             .setCreateTime(Instant.now())
-            .setVersion(MlConfigVersion.CURRENT)
+            .setVersion(Version.CURRENT)
             .build();
 
         if (securityContext != null) {
@@ -273,8 +273,7 @@ public class TransportPutDataFrameAnalyticsAction extends TransportMasterNodeAct
             client,
             clusterState,
             masterNodeTimeout,
-            ActionListener.wrap(unused -> configProvider.put(config, headers, masterNodeTimeout, auditingListener), listener::onFailure),
-            MlConfigIndex.CONFIG_INDEX_MAPPINGS_VERSION
+            ActionListener.wrap(unused -> configProvider.put(config, headers, masterNodeTimeout, auditingListener), listener::onFailure)
         );
     }
 

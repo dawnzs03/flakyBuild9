@@ -7,33 +7,22 @@
 
 package org.elasticsearch.xpack.esql.plan.physical;
 
-import org.elasticsearch.xpack.ql.expression.Attribute;
 import org.elasticsearch.xpack.ql.tree.NodeInfo;
 import org.elasticsearch.xpack.ql.tree.Source;
 
-import java.util.List;
-
 public class ExchangeSinkExec extends UnaryExec {
 
-    private final List<Attribute> output;
-
-    public ExchangeSinkExec(Source source, List<Attribute> output, PhysicalPlan child) {
+    public ExchangeSinkExec(Source source, PhysicalPlan child) {
         super(source, child);
-        this.output = output;
-    }
-
-    @Override
-    public List<Attribute> output() {
-        return output;
     }
 
     @Override
     protected NodeInfo<? extends ExchangeSinkExec> info() {
-        return NodeInfo.create(this, ExchangeSinkExec::new, output, child());
+        return NodeInfo.create(this, ExchangeSinkExec::new, child());
     }
 
     @Override
     public ExchangeSinkExec replaceChild(PhysicalPlan newChild) {
-        return new ExchangeSinkExec(source(), output, newChild);
+        return new ExchangeSinkExec(source(), newChild);
     }
 }

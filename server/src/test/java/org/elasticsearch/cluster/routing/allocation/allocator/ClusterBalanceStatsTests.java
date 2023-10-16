@@ -8,6 +8,7 @@
 
 package org.elasticsearch.cluster.routing.allocation.allocator;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterInfo;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -22,7 +23,6 @@ import org.elasticsearch.cluster.routing.allocation.allocator.ClusterBalanceStat
 import org.elasticsearch.cluster.routing.allocation.allocator.ClusterBalanceStats.NodeBalanceStats;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.util.List;
@@ -248,7 +248,7 @@ public class ClusterBalanceStatsTests extends ESAllocationTestCase {
         var routingTableBuilder = RoutingTable.builder();
         for (var index : indices) {
             var indexMetadata = index.v1()
-                .settings(settings(IndexVersion.current()))
+                .settings(settings(Version.CURRENT))
                 .numberOfShards(index.v2().length)
                 .numberOfReplicas(0)
                 .build();

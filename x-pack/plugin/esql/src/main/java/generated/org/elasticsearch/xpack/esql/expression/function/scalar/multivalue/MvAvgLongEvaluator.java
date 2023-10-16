@@ -12,7 +12,6 @@ import org.elasticsearch.compute.data.DoubleBlock;
 import org.elasticsearch.compute.data.LongBlock;
 import org.elasticsearch.compute.data.Vector;
 import org.elasticsearch.compute.operator.EvalOperator;
-import org.elasticsearch.search.aggregations.metrics.CompensatedSum;
 
 /**
  * {@link EvalOperator.ExpressionEvaluator} implementation for {@link MvAvg}.
@@ -28,15 +27,11 @@ public final class MvAvgLongEvaluator extends AbstractMultivalueFunction.Abstrac
     return "MvAvg";
   }
 
-  /**
-   * Evaluate blocks containing at least one multivalued field.
-   */
   @Override
   public Block evalNullable(Block fieldVal) {
     LongBlock v = (LongBlock) fieldVal;
     int positionCount = v.getPositionCount();
     DoubleBlock.Builder builder = DoubleBlock.newBlockBuilder(positionCount);
-    CompensatedSum work = new CompensatedSum();
     for (int p = 0; p < positionCount; p++) {
       int valueCount = v.getValueCount(p);
       if (valueCount == 0) {
@@ -51,25 +46,22 @@ public final class MvAvgLongEvaluator extends AbstractMultivalueFunction.Abstrac
         continue;
       }
       int end = first + valueCount;
-      for (int i = first; i < end; i++) {
-        long value = v.getLong(i);
-        MvAvg.process(work, value);
+      long value = v.getLong(first);
+      for (int i = first + 1; i < end; i++) {
+        long next = v.getLong(i);
+        value = MvAvg.process(value, next);
       }
-      double result = MvAvg.finish(work, valueCount);
+      double result = MvAvg.finish(value, valueCount);
       builder.appendDouble(result);
     }
     return builder.build();
   }
 
-  /**
-   * Evaluate blocks containing at least one multivalued field.
-   */
   @Override
   public Vector evalNotNullable(Block fieldVal) {
     LongBlock v = (LongBlock) fieldVal;
     int positionCount = v.getPositionCount();
     double[] values = new double[positionCount];
-    CompensatedSum work = new CompensatedSum();
     for (int p = 0; p < positionCount; p++) {
       int valueCount = v.getValueCount(p);
       int first = v.getFirstValueIndex(p);
@@ -80,25 +72,22 @@ public final class MvAvgLongEvaluator extends AbstractMultivalueFunction.Abstrac
         continue;
       }
       int end = first + valueCount;
-      for (int i = first; i < end; i++) {
-        long value = v.getLong(i);
-        MvAvg.process(work, value);
+      long value = v.getLong(first);
+      for (int i = first + 1; i < end; i++) {
+        long next = v.getLong(i);
+        value = MvAvg.process(value, next);
       }
-      double result = MvAvg.finish(work, valueCount);
+      double result = MvAvg.finish(value, valueCount);
       values[p] = result;
     }
     return new DoubleArrayVector(values, positionCount);
   }
 
-  /**
-   * Evaluate blocks containing only single valued fields.
-   */
   @Override
   public Block evalSingleValuedNullable(Block fieldVal) {
     LongBlock v = (LongBlock) fieldVal;
     int positionCount = v.getPositionCount();
     DoubleBlock.Builder builder = DoubleBlock.newBlockBuilder(positionCount);
-    CompensatedSum work = new CompensatedSum();
     for (int p = 0; p < positionCount; p++) {
       int valueCount = v.getValueCount(p);
       if (valueCount == 0) {
@@ -114,15 +103,11 @@ public final class MvAvgLongEvaluator extends AbstractMultivalueFunction.Abstrac
     return builder.build();
   }
 
-  /**
-   * Evaluate blocks containing only single valued fields.
-   */
   @Override
   public Vector evalSingleValuedNotNullable(Block fieldVal) {
     LongBlock v = (LongBlock) fieldVal;
     int positionCount = v.getPositionCount();
     double[] values = new double[positionCount];
-    CompensatedSum work = new CompensatedSum();
     for (int p = 0; p < positionCount; p++) {
       int valueCount = v.getValueCount(p);
       assert valueCount == 1;

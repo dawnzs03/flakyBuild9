@@ -40,6 +40,7 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.elasticsearch.index.IndexSortConfig.TIME_SERIES_SORT;
@@ -51,7 +52,7 @@ public class TimeSeriesIndexSearcherTests extends ESTestCase {
     // Open a searcher over a set of leaves
     // Collection should be in order
 
-    public void testCollectInOrderAcrossSegments() throws IOException {
+    public void testCollectInOrderAcrossSegments() throws IOException, InterruptedException {
         Directory dir = newDirectory();
         RandomIndexWriter iw = getIndexWriter(dir);
 
@@ -60,31 +61,29 @@ public class TimeSeriesIndexSearcherTests extends ESTestCase {
         final int THREADS = 5;
         final int DOC_COUNTS = 500;
         ExecutorService indexer = Executors.newFixedThreadPool(THREADS);
-        try {
-            for (int i = 0; i < THREADS; i++) {
-                indexer.submit(() -> {
-                    Document doc = new Document();
-                    for (int j = 0; j < DOC_COUNTS; j++) {
-                        String tsid = "tsid" + randomIntBetween(0, 30);
-                        long time = clock.addAndGet(randomIntBetween(0, 10));
-                        doc.clear();
-                        doc.add(new SortedDocValuesField(TimeSeriesIdFieldMapper.NAME, new BytesRef(tsid)));
-                        doc.add(new NumericDocValuesField(DataStream.TIMESTAMP_FIELD_NAME, time));
-                        try {
-                            iw.addDocument(doc);
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
+        for (int i = 0; i < THREADS; i++) {
+            indexer.submit(() -> {
+                Document doc = new Document();
+                for (int j = 0; j < DOC_COUNTS; j++) {
+                    String tsid = "tsid" + randomIntBetween(0, 30);
+                    long time = clock.addAndGet(randomIntBetween(0, 10));
+                    doc.clear();
+                    doc.add(new SortedDocValuesField(TimeSeriesIdFieldMapper.NAME, new BytesRef(tsid)));
+                    doc.add(new NumericDocValuesField(DataStream.TIMESTAMP_FIELD_NAME, time));
+                    try {
+                        iw.addDocument(doc);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
                     }
-                });
-            }
-        } finally {
-            terminate(indexer);
+                }
+            });
         }
+        indexer.shutdown();
+        assertTrue(indexer.awaitTermination(30, TimeUnit.SECONDS));
         iw.close();
 
         IndexReader reader = DirectoryReader.open(dir);
-        IndexSearcher searcher = newSearcher(reader);
+        IndexSearcher searcher = new IndexSearcher(reader);
 
         TimeSeriesIndexSearcher indexSearcher = new TimeSeriesIndexSearcher(searcher, List.of());
 
@@ -97,7 +96,7 @@ public class TimeSeriesIndexSearcherTests extends ESTestCase {
         dir.close();
     }
 
-    public void testCollectMinScoreAcrossSegments() throws IOException {
+    public void testCollectMinScoreAcrossSegments() throws IOException, InterruptedException {
         Directory dir = newDirectory();
         RandomIndexWriter iw = getIndexWriter(dir);
 
@@ -120,7 +119,7 @@ public class TimeSeriesIndexSearcherTests extends ESTestCase {
         iw.close();
 
         IndexReader reader = DirectoryReader.open(dir);
-        IndexSearcher searcher = newSearcher(reader);
+        IndexSearcher searcher = new IndexSearcher(reader);
 
         TimeSeriesIndexSearcher indexSearcher = new TimeSeriesIndexSearcher(searcher, List.of());
         indexSearcher.setMinimumScore(2f);
@@ -193,7 +192,7 @@ public class TimeSeriesIndexSearcherTests extends ESTestCase {
 
         iw.close();
         IndexReader reader = DirectoryReader.open(dir);
-        IndexSearcher searcher = newSearcher(reader);
+        IndexSearcher searcher = new IndexSearcher(reader);
 
         TimeSeriesIndexSearcher indexSearcher = new TimeSeriesIndexSearcher(searcher, List.of());
 

@@ -7,14 +7,13 @@
 
 package org.elasticsearch.xpack.application.rules.action;
 
-import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xpack.core.ml.AbstractBWCWireSerializationTestCase;
+import org.elasticsearch.test.AbstractWireSerializingTestCase;
 
 import java.io.IOException;
 
-public class PutQueryRulesetActionResponseSerializingTests extends AbstractBWCWireSerializationTestCase<PutQueryRulesetAction.Response> {
+public class PutQueryRulesetActionResponseSerializingTests extends AbstractWireSerializingTestCase<PutQueryRulesetAction.Response> {
 
     @Override
     protected Writeable.Reader<PutQueryRulesetAction.Response> instanceReader() {
@@ -29,10 +28,5 @@ public class PutQueryRulesetActionResponseSerializingTests extends AbstractBWCWi
     @Override
     protected PutQueryRulesetAction.Response mutateInstance(PutQueryRulesetAction.Response instance) throws IOException {
         return randomValueOtherThan(instance, this::createTestInstance);
-    }
-
-    @Override
-    protected PutQueryRulesetAction.Response mutateInstanceForVersion(PutQueryRulesetAction.Response instance, TransportVersion version) {
-        return instance;
     }
 }

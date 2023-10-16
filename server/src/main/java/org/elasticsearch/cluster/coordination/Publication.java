@@ -19,6 +19,7 @@ import org.elasticsearch.cluster.coordination.ClusterStatePublisher.AckListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.transport.TransportException;
+import org.elasticsearch.transport.TransportResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -191,7 +192,7 @@ public abstract class Publication {
     protected abstract void sendApplyCommit(
         DiscoveryNode destination,
         ApplyCommitRequest applyCommit,
-        ActionListener<Void> responseActionListener
+        ActionListener<TransportResponse.Empty> responseActionListener
     );
 
     protected abstract <T> ActionListener<T> wrapListener(ActionListener<T> listener);
@@ -404,10 +405,10 @@ public abstract class Publication {
             return e;
         }
 
-        private class ApplyCommitResponseHandler implements ActionListener<Void> {
+        private class ApplyCommitResponseHandler implements ActionListener<TransportResponse.Empty> {
 
             @Override
-            public void onResponse(Void ignored) {
+            public void onResponse(TransportResponse.Empty ignored) {
                 if (isFailed()) {
                     logger.debug("ApplyCommitResponseHandler.handleResponse: already failed, ignoring response from [{}]", discoveryNode);
                     return;

@@ -393,7 +393,7 @@ public abstract class AbstractTermVectorsTestCase extends ESIntegTestCase {
     }
 
     protected Fields getTermVectorsFromLucene(DirectoryReader directoryReader, TestDoc doc) throws IOException {
-        IndexSearcher searcher = newSearcher(directoryReader);
+        IndexSearcher searcher = new IndexSearcher(directoryReader);
         TopDocs search = searcher.search(new TermQuery(new Term("id", doc.id)), 1);
 
         ScoreDoc[] scoreDocs = search.scoreDocs;

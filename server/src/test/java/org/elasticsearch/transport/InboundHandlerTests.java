@@ -43,7 +43,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -136,11 +135,6 @@ public class InboundHandlerTests extends ESTestCase {
         AtomicReference<TransportChannel> channelCaptor = new AtomicReference<>();
 
         long requestId = responseHandlers.add(new Transport.ResponseContext<>(new TransportResponseHandler<TestResponse>() {
-            @Override
-            public Executor executor(ThreadPool threadPool) {
-                return TransportResponseHandler.TRANSPORT_WORKER;
-            }
-
             @Override
             public void handleResponse(TestResponse response) {
                 responseCaptor.set(response);

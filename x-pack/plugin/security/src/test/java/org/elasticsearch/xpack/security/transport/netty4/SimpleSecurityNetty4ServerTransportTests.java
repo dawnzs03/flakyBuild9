@@ -58,7 +58,6 @@ import org.elasticsearch.transport.netty4.SharedGroupFactory;
 import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.common.socket.SocketAccess;
 import org.elasticsearch.xpack.core.ssl.SSLService;
-import org.elasticsearch.xpack.security.authc.CrossClusterAccessAuthenticationService;
 import org.elasticsearch.xpack.security.transport.SSLEngineUtils;
 import org.elasticsearch.xpack.security.transport.filter.IPFilter;
 
@@ -108,7 +107,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
-import static org.mockito.Mockito.mock;
 
 public class SimpleSecurityNetty4ServerTransportTests extends AbstractSimpleTransportTestCase {
     @Override
@@ -1052,8 +1050,7 @@ public class SimpleSecurityNetty4ServerTransportTests extends AbstractSimpleTran
                 circuitBreakerService,
                 authenticator,
                 sslService,
-                sharedGroupFactory,
-                mock(CrossClusterAccessAuthenticationService.class)
+                sharedGroupFactory
             );
             this.doHandshake = doHandshake;
         }

@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.transform.transforms;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionListenerResponseHandler;
 import org.elasticsearch.cluster.ClusterState;
@@ -21,10 +22,8 @@ import org.elasticsearch.persistent.PersistentTasksCustomMetadata.Assignment;
 import org.elasticsearch.persistent.PersistentTasksCustomMetadata.PersistentTask;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportResponse;
-import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.core.ml.utils.ExceptionsHelper;
-import org.elasticsearch.xpack.core.transform.TransformConfigVersion;
 import org.elasticsearch.xpack.core.transform.TransformMessages;
 import org.elasticsearch.xpack.core.transform.TransformMetadata;
 
@@ -177,7 +176,7 @@ public final class TransformNodes {
                     appropriateNode.get(),
                     actionName,
                     request,
-                    new ActionListenerResponseHandler<>(listener, reader, TransportResponseHandler.TRANSPORT_WORKER)
+                    new ActionListenerResponseHandler<>(listener, reader)
                 );
             } else {
                 Map<String, String> explain = new TreeMap<>();
@@ -212,19 +211,16 @@ public final class TransformNodes {
 
     public static boolean nodeCanRunThisTransform(
         DiscoveryNode node,
-        TransformConfigVersion minRequiredVersion,
+        Version minRequiredVersion,
         boolean requiresRemote,
         Map<String, String> explain
     ) {
         // version of the transform run on a node that has at least the same version
-        if (minRequiredVersion != null && TransformConfigVersion.fromNode(node).onOrAfter(minRequiredVersion) == false) {
+        if (minRequiredVersion != null && node.getVersion().onOrAfter(minRequiredVersion) == false) {
             if (explain != null) {
                 explain.put(
                     node.getId(),
-                    "node supports transform config version: "
-                        + TransformConfigVersion.fromNode(node)
-                        + " but transform requires at least "
-                        + minRequiredVersion
+                    "node has version: " + node.getVersion() + " but transform requires at least " + minRequiredVersion
                 );
             }
             return false;

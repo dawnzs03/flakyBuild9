@@ -52,7 +52,6 @@ import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportResponse;
-import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
@@ -111,11 +110,7 @@ public class SearchTransportService {
             new SearchFreeContextRequest(originalIndices, contextId),
             TransportRequestOptions.EMPTY,
             // no need to respond if it was freed or not
-            new ActionListenerResponseHandler<>(
-                ActionListener.noop(),
-                SearchFreeContextResponse::new,
-                TransportResponseHandler.TRANSPORT_WORKER
-            )
+            new ActionListenerResponseHandler<>(ActionListener.noop(), SearchFreeContextResponse::new)
         );
     }
 
@@ -129,7 +124,7 @@ public class SearchTransportService {
             FREE_CONTEXT_SCROLL_ACTION_NAME,
             new ScrollFreeContextRequest(contextId),
             TransportRequestOptions.EMPTY,
-            new ActionListenerResponseHandler<>(listener, SearchFreeContextResponse::new, TransportResponseHandler.TRANSPORT_WORKER)
+            new ActionListenerResponseHandler<>(listener, SearchFreeContextResponse::new)
         );
     }
 
@@ -145,7 +140,7 @@ public class SearchTransportService {
             request,
             task,
             TransportRequestOptions.EMPTY,
-            new ActionListenerResponseHandler<>(listener, CanMatchShardResponse::new, TransportResponseHandler.TRANSPORT_WORKER)
+            new ActionListenerResponseHandler<>(listener, CanMatchShardResponse::new)
         );
     }
 
@@ -163,7 +158,7 @@ public class SearchTransportService {
                 request,
                 task,
                 TransportRequestOptions.EMPTY,
-                new ActionListenerResponseHandler<>(listener, CanMatchNodeResponse::new, TransportResponseHandler.TRANSPORT_WORKER)
+                new ActionListenerResponseHandler<>(listener, CanMatchNodeResponse::new)
             );
         } else {
             // BWC layer: translate into shard-level requests
@@ -214,11 +209,7 @@ public class SearchTransportService {
             CLEAR_SCROLL_CONTEXTS_ACTION_NAME,
             TransportRequest.Empty.INSTANCE,
             TransportRequestOptions.EMPTY,
-            new ActionListenerResponseHandler<>(
-                listener,
-                (in) -> TransportResponse.Empty.INSTANCE,
-                TransportResponseHandler.TRANSPORT_WORKER
-            )
+            new ActionListenerResponseHandler<>(listener, (in) -> TransportResponse.Empty.INSTANCE)
         );
     }
 
@@ -609,7 +600,7 @@ public class SearchTransportService {
             final Map<String, Long> clientConnections,
             final String nodeId
         ) {
-            super(listener, responseReader, TransportResponseHandler.TRANSPORT_WORKER);
+            super(listener, responseReader);
             this.clientConnections = clientConnections;
             this.nodeId = nodeId;
             // Increment the number of connections for this node by one

@@ -137,7 +137,7 @@ public class VariableWidthHistogramAggregationBuilder extends ValuesSourceAggreg
     }
 
     @Override
-    public boolean supportsParallelCollection() {
+    public boolean supportsConcurrentExecution() {
         return false;
     }
 

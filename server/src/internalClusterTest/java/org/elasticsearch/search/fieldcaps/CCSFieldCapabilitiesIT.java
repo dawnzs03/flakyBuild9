@@ -66,7 +66,7 @@ public class CCSFieldCapabilitiesIT extends AbstractMultiClustersTestCase {
             .setIndexFilter(new ExceptionOnRewriteQueryBuilder())
             .get();
         assertThat(response.getIndices()[0], equalTo(localIndex));
-        assertThat(response.getFailedIndicesCount(), equalTo(1));
+        assertThat(response.getFailedIndices()[0], equalTo("remote_cluster:*"));
         FieldCapabilitiesFailure failure = response.getFailures()
             .stream()
             .filter(f -> Arrays.asList(f.getIndices()).contains("remote_cluster:*"))
@@ -95,7 +95,7 @@ public class CCSFieldCapabilitiesIT extends AbstractMultiClustersTestCase {
             .setIndexFilter(new ExceptionOnRewriteQueryBuilder())
             .get();
         assertThat(Arrays.asList(response.getIndices()), containsInAnyOrder(localIndex, "remote_cluster:okay_remote_index"));
-        assertThat(response.getFailedIndicesCount(), equalTo(1));
+        assertThat(response.getFailedIndices()[0], equalTo("remote_cluster:" + remoteErrorIndex));
         failure = response.getFailures()
             .stream()
             .filter(f -> Arrays.asList(f.getIndices()).contains("remote_cluster:" + remoteErrorIndex))

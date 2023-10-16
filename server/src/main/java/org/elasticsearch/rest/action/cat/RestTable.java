@@ -8,14 +8,20 @@
 
 package org.elasticsearch.rest.action.cat;
 
+import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.Table;
+import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.collect.Iterators;
+import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
+import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.SizeValue;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Booleans;
+import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.rest.ChunkedRestResponseBody;
 import org.elasticsearch.rest.RestChannel;
@@ -26,10 +32,14 @@ import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -61,19 +71,19 @@ public class RestTable {
         final List<Integer> rowOrder = getRowOrder(table, channel.request());
         final List<DisplayHeader> displayHeaders = buildDisplayHeaders(table, request);
 
-        return RestResponse.chunked(
+        return new RestResponse(
             RestStatus.OK,
             ChunkedRestResponseBody.fromXContent(
                 ignored -> Iterators.concat(
                     Iterators.single((builder, params) -> builder.startArray()),
-                    Iterators.map(rowOrder.iterator(), row -> (builder, params) -> {
+                    rowOrder.stream().<ToXContent>map(row -> (builder, params) -> {
                         builder.startObject();
                         for (DisplayHeader header : displayHeaders) {
                             builder.field(header.display, renderValue(request, table.getAsMap().get(header.name).get(row).value));
                         }
                         builder.endObject();
                         return builder;
-                    }),
+                    }).iterator(),
                     Iterators.single((builder, params) -> builder.endArray())
                 ),
                 ToXContent.EMPTY_PARAMS,
@@ -91,13 +101,55 @@ public class RestTable {
         int lastHeader = headers.size() - 1;
         List<Integer> rowOrder = getRowOrder(table, request);
 
-        return RestResponse.chunked(
-            RestStatus.OK,
-            ChunkedRestResponseBody.fromTextChunks(
-                RestResponse.TEXT_CONTENT_TYPE,
-                Iterators.concat(
-                    // optional header
-                    verbose ? Iterators.single(writer -> {
+        if (verbose == false && rowOrder.isEmpty()) {
+            return new RestResponse(RestStatus.OK, RestResponse.TEXT_CONTENT_TYPE, BytesArray.EMPTY);
+        }
+
+        return new RestResponse(RestStatus.OK, new ChunkedRestResponseBody() {
+
+            private boolean needsHeader = verbose;
+            private final Iterator<Integer> rowIterator = rowOrder.iterator();
+
+            private RecyclerBytesStreamOutput currentOutput;
+            private final Writer writer = new OutputStreamWriter(new OutputStream() {
+                @Override
+                public void write(int b) throws IOException {
+                    assert currentOutput != null;
+                    currentOutput.write(b);
+                }
+
+                @Override
+                public void write(byte[] b, int off, int len) throws IOException {
+                    assert currentOutput != null;
+                    currentOutput.write(b, off, len);
+                }
+
+                @Override
+                public void flush() {
+                    assert currentOutput != null;
+                    currentOutput.flush();
+                }
+
+                @Override
+                public void close() {
+                    assert currentOutput != null;
+                    currentOutput.flush();
+                }
+            }, StandardCharsets.UTF_8);
+
+            @Override
+            public boolean isDone() {
+                return needsHeader == false && rowIterator.hasNext() == false;
+            }
+
+            @Override
+            public ReleasableBytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) throws IOException {
+                try {
+                    assert currentOutput == null;
+                    currentOutput = new RecyclerBytesStreamOutput(recycler);
+
+                    if (needsHeader) {
+                        needsHeader = false;
                         for (int col = 0; col < headers.size(); col++) {
                             DisplayHeader header = headers.get(col);
                             boolean isLastColumn = col == lastHeader;
@@ -113,9 +165,10 @@ public class RestTable {
                             }
                         }
                         writer.append("\n");
-                    }) : Collections.emptyIterator(),
-                    // body
-                    Iterators.map(rowOrder.iterator(), row -> writer -> {
+                    }
+
+                    while (rowIterator.hasNext() && currentOutput.size() < sizeHint) {
+                        final var row = rowIterator.next();
                         for (int col = 0; col < headers.size(); col++) {
                             DisplayHeader header = headers.get(col);
                             boolean isLastColumn = col == lastHeader;
@@ -125,10 +178,35 @@ public class RestTable {
                             }
                         }
                         writer.append("\n");
-                    })
-                )
-            )
-        );
+                    }
+
+                    if (rowIterator.hasNext()) {
+                        writer.flush();
+                    } else {
+                        writer.close();
+                    }
+
+                    final var chunkOutput = currentOutput;
+                    final var result = new ReleasableBytesReference(
+                        chunkOutput.bytes(),
+                        () -> Releasables.closeExpectNoException(chunkOutput)
+                    );
+                    currentOutput = null;
+                    return result;
+                } finally {
+                    if (currentOutput != null) {
+                        assert false : "failure encoding table chunk";
+                        Releasables.closeExpectNoException(currentOutput);
+                        currentOutput = null;
+                    }
+                }
+            }
+
+            @Override
+            public String getResponseContentTypeString() {
+                return RestResponse.TEXT_CONTENT_TYPE;
+            }
+        });
     }
 
     static List<Integer> getRowOrder(Table table, RestRequest request) {

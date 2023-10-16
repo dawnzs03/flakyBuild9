@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.esql.planner;
 
-import org.elasticsearch.xpack.esql.EsqlUnsupportedOperationException;
 import org.elasticsearch.xpack.esql.plan.logical.Dissect;
 import org.elasticsearch.xpack.esql.plan.logical.Enrich;
 import org.elasticsearch.xpack.esql.plan.logical.Eval;
@@ -107,7 +106,7 @@ public class Mapper {
             return plan;
         }
 
-        throw new EsqlUnsupportedOperationException("unsupported logical plan node [" + p.nodeName() + "]");
+        throw new UnsupportedOperationException(p.nodeName());
     }
 
     private static boolean isPipelineBreaker(LogicalPlan p) {
@@ -173,7 +172,7 @@ public class Mapper {
             return map(aggregate, child);
         }
 
-        throw new EsqlUnsupportedOperationException("unsupported unary logical plan node [" + p.nodeName() + "]");
+        throw new UnsupportedOperationException(p.nodeName());
     }
 
     private PhysicalPlan map(Aggregate aggregate, PhysicalPlan child) {
@@ -185,17 +184,10 @@ public class Mapper {
         // TODO: might be easier long term to end up with just one node and split if necessary instead of doing that always at this stage
         else {
             child = addExchangeForFragment(aggregate, child);
-            // exchange was added - use the intermediates for the output
-            if (child instanceof ExchangeExec exchange) {
-                var output = AbstractPhysicalOperationProviders.intermediateAttributes(aggregate.aggregates(), aggregate.groupings());
-                child = new ExchangeExec(child.source(), output, true, exchange.child());
-            }
             // if no exchange was added, create the partial aggregate
-            else {
+            if (child instanceof ExchangeExec == false) {
                 child = aggExec(aggregate, child, PARTIAL);
             }
-
-            // regardless, always add the final agg
             child = aggExec(aggregate, child, FINAL);
         }
 
@@ -203,7 +195,7 @@ public class Mapper {
     }
 
     private static AggregateExec aggExec(Aggregate aggregate, PhysicalPlan child, Mode aggMode) {
-        return new AggregateExec(aggregate.source(), child, aggregate.groupings(), aggregate.aggregates(), aggMode, null);
+        return new AggregateExec(aggregate.source(), child, aggregate.groupings(), aggregate.aggregates(), aggMode);
     }
 
     private PhysicalPlan map(Limit limit, PhysicalPlan child) {
@@ -218,7 +210,7 @@ public class Mapper {
 
     private PhysicalPlan map(TopN topN, PhysicalPlan child) {
         child = addExchangeForFragment(topN, child);
-        return new TopNExec(topN.source(), child, topN.order(), topN.limit(), null);
+        return new TopNExec(topN.source(), child, topN.order(), topN.limit());
     }
 
     private PhysicalPlan addExchangeForFragment(LogicalPlan logical, PhysicalPlan child) {

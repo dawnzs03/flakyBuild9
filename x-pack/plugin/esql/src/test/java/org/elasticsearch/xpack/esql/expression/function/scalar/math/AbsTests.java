@@ -7,70 +7,60 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.math;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.elasticsearch.xpack.esql.expression.function.scalar.AbstractScalarFunctionTestCase;
 import org.elasticsearch.xpack.ql.expression.Expression;
+import org.elasticsearch.xpack.ql.expression.Literal;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.type.DataType;
 import org.elasticsearch.xpack.ql.type.DataTypes;
+import org.hamcrest.Matcher;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
+import static org.elasticsearch.compute.data.BlockUtils.toJavaObject;
 import static org.hamcrest.Matchers.equalTo;
 
 public class AbsTests extends AbstractScalarFunctionTestCase {
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        List<TestCaseSupplier> suppliers = new ArrayList<>();
-        suppliers.add(new TestCaseSupplier(List.of(DataTypes.INTEGER), () -> {
-            int arg = randomInt();
-            return new TestCase(
-                List.of(new TypedData(arg, DataTypes.INTEGER, "arg")),
-                "AbsIntEvaluator[fieldVal=Attribute[channel=0]]",
-                DataTypes.INTEGER,
-                equalTo(Math.abs(arg))
-            );
-        }));
-        suppliers.add(new TestCaseSupplier(List.of(DataTypes.UNSIGNED_LONG), () -> {
-            long arg = randomLong();
-            return new TestCase(
-                List.of(new TypedData(arg, DataTypes.UNSIGNED_LONG, "arg")),
-                "Attribute[channel=0]",
-                DataTypes.UNSIGNED_LONG,
-                equalTo(arg)
-            );
-        }));
-        suppliers.add(new TestCaseSupplier(List.of(DataTypes.LONG), () -> {
-            long arg = randomLong();
-            return new TestCase(
-                List.of(new TypedData(arg, DataTypes.LONG, "arg")),
-                "AbsLongEvaluator[fieldVal=Attribute[channel=0]]",
-                DataTypes.LONG,
-                equalTo(Math.abs(arg))
-            );
-        }));
-        suppliers.add(new TestCaseSupplier(List.of(DataTypes.DOUBLE), () -> {
-            double arg = randomDouble();
-            return new TestCase(
-                List.of(new TypedData(arg, DataTypes.DOUBLE, "arg")),
-                "AbsDoubleEvaluator[fieldVal=Attribute[channel=0]]",
-                DataTypes.DOUBLE,
-                equalTo(Math.abs(arg))
-            );
-        }));
-        return parameterSuppliersFromTypedData(errorsForCasesWithoutExamples(anyNullIsNull(false, suppliers)));
-    }
-
-    public AbsTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
+    @Override
+    protected List<Object> simpleData() {
+        return List.of(randomInt());
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
+    protected Expression expressionForSimpleData() {
+        return new Abs(Source.EMPTY, field("arg", DataTypes.INTEGER));
+    }
+
+    @Override
+    protected Matcher<Object> resultMatcher(List<Object> data, DataType dataType) {
+        Object in = data.get(0);
+        if (dataType == DataTypes.INTEGER) {
+            return equalTo(Math.abs(((Integer) in).intValue()));
+        }
+        if (dataType == DataTypes.LONG) {
+            return equalTo(Math.abs(((Long) in).longValue()));
+        }
+        if (dataType == DataTypes.UNSIGNED_LONG) {
+            return equalTo(in);
+        }
+        if (dataType == DataTypes.DOUBLE) {
+            return equalTo(Math.abs(((Double) in).doubleValue()));
+        }
+        throw new IllegalArgumentException("can't match " + in);
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "AbsIntEvaluator[fieldVal=Attribute[channel=0]]";
+    }
+
+    @Override
+    protected Expression constantFoldable(List<Object> data) {
+        return new Abs(Source.EMPTY, new Literal(Source.EMPTY, data.get(0), DataTypes.INTEGER));
+    }
+
+    @Override
+    protected Expression build(Source source, List<Literal> args) {
         return new Abs(source, args.get(0));
     }
 
@@ -82,5 +72,33 @@ public class AbsTests extends AbstractScalarFunctionTestCase {
     @Override
     protected DataType expectedType(List<DataType> argTypes) {
         return argTypes.get(0);
+    }
+
+    public final void testLong() {
+        List<Object> data = List.of(randomLong());
+        Expression expression = new Abs(Source.EMPTY, field("arg", DataTypes.LONG));
+        Object result = toJavaObject(evaluator(expression).get().eval(row(data)), 0);
+        assertThat(result, resultMatcher(data, DataTypes.LONG));
+    }
+
+    public final void testUnsignedLong() {
+        List<Object> data = List.of(randomLong());
+        Expression expression = new Abs(Source.EMPTY, field("arg", DataTypes.UNSIGNED_LONG));
+        Object result = toJavaObject(evaluator(expression).get().eval(row(data)), 0);
+        assertThat(result, resultMatcher(data, DataTypes.UNSIGNED_LONG));
+    }
+
+    public final void testInt() {
+        List<Object> data = List.of(randomInt());
+        Expression expression = new Abs(Source.EMPTY, field("arg", DataTypes.INTEGER));
+        Object result = toJavaObject(evaluator(expression).get().eval(row(data)), 0);
+        assertThat(result, resultMatcher(data, DataTypes.INTEGER));
+    }
+
+    public final void testDouble() {
+        List<Object> data = List.of(randomDouble());
+        Expression expression = new Abs(Source.EMPTY, field("arg", DataTypes.DOUBLE));
+        Object result = toJavaObject(evaluator(expression).get().eval(row(data)), 0);
+        assertThat(result, resultMatcher(data, DataTypes.DOUBLE));
     }
 }

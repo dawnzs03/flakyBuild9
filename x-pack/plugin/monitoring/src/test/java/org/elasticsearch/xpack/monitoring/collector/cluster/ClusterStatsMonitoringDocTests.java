@@ -54,7 +54,6 @@ import org.elasticsearch.monitor.os.OsStats;
 import org.elasticsearch.monitor.process.ProcessStats;
 import org.elasticsearch.plugins.PluginDescriptor;
 import org.elasticsearch.plugins.PluginRuntimeInfo;
-import org.elasticsearch.test.BuildUtils;
 import org.elasticsearch.test.VersionUtils;
 import org.elasticsearch.transport.TransportInfo;
 import org.elasticsearch.xcontent.XContentType;
@@ -366,7 +365,8 @@ public class ClusterStatsMonitoringDocTests extends BaseMonitoringDocTestCase<Cl
         when(mockJvmInfo.getVmVendor()).thenReturn("_jvm_vm_vendor");
         when(mockJvmInfo.getUsingBundledJdk()).thenReturn(true);
 
-        when(mockNodeInfo.getBuild()).thenReturn(BuildUtils.newBuild(Build.current(), Map.of("type", Build.Type.DOCKER)));
+        final Build mockBuild = new Build("default", Build.Type.DOCKER, "", "", false, "");
+        when(mockNodeInfo.getBuild()).thenReturn(mockBuild);
 
         final NodeStats mockNodeStats = mock(NodeStats.class);
         when(mockNodeStats.getTimestamp()).thenReturn(0L);
@@ -575,17 +575,13 @@ public class ClusterStatsMonitoringDocTests extends BaseMonitoringDocTestCase<Cl
                     "built_in_char_filters": [],
                     "built_in_tokenizers": [],
                     "built_in_filters": [],
-                    "built_in_analyzers": [],
-                    "synonyms": {}
+                    "built_in_analyzers": []
                   },
                   "versions": [],
                   "search" : {
                     "total" : 0,
                     "queries" : {},
                     "sections" : {}
-                  },
-                  "dense_vector": {
-                    "value_count": 0
                   }
                 },
                 "nodes": {

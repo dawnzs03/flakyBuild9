@@ -12,7 +12,7 @@ setup:
               criteria:
                 - type: exact
                   metadata: query_string
-                  values: [elastic]
+                  value: elastic
               actions:
                 ids:
                   - 'id1'

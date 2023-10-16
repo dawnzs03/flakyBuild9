@@ -14,6 +14,7 @@ import org.elasticsearch.compute.data.Page;
  * A source operator - produces output, accepts no input.
  */
 public abstract class SourceOperator implements Operator {
+
     /**
      * A source operator needs no input - unconditionally returns false.
      * @return false
@@ -34,9 +35,8 @@ public abstract class SourceOperator implements Operator {
     /**
      * A factory for creating source operators.
      */
-    public interface SourceOperatorFactory extends OperatorFactory, Describable {
+    public interface SourceOperatorFactory extends Describable {
         /** Creates a new source operator. */
-        @Override
         SourceOperator get(DriverContext driverContext);
     }
 }

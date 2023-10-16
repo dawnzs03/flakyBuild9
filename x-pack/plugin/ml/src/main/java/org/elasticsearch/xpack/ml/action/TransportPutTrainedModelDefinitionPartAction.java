@@ -110,8 +110,7 @@ public class TransportPutTrainedModelDefinitionPartAction extends HandledTranspo
                         return;
                     }
                     listener.onResponse(AcknowledgedResponse.TRUE);
-                }, listener::onFailure),
-                request.isOverwritingAllowed()
+                }, listener::onFailure)
             );
         }, listener::onFailure);
 

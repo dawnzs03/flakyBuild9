@@ -110,7 +110,6 @@ public class ClientYamlSuiteRestApiParser {
                                 String path = null;
                                 Set<String> methods = new HashSet<>();
                                 Set<String> pathParts = new HashSet<>();
-                                boolean deprecated = false;
                                 while (parser.nextToken() != XContentParser.Token.END_OBJECT) {
                                     if ("path".equals(parser.currentName())) {
                                         parser.nextToken();
@@ -161,7 +160,6 @@ public class ClientYamlSuiteRestApiParser {
                                                 apiName + " API: expected [deprecated] field in rest api definition to hold an object"
                                             );
                                         }
-                                        deprecated = true;
                                         parser.skipChildren();
                                     } else {
                                         throw new ParsingException(
@@ -175,7 +173,7 @@ public class ClientYamlSuiteRestApiParser {
                                         );
                                     }
                                 }
-                                restApi.addPath(path, methods.toArray(new String[0]), pathParts, deprecated);
+                                restApi.addPath(path, methods.toArray(new String[0]), pathParts);
                             }
                         } else {
                             throw new ParsingException(

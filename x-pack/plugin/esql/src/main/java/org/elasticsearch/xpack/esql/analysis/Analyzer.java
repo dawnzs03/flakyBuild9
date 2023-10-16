@@ -33,7 +33,6 @@ import org.elasticsearch.xpack.ql.expression.Expressions;
 import org.elasticsearch.xpack.ql.expression.FieldAttribute;
 import org.elasticsearch.xpack.ql.expression.Literal;
 import org.elasticsearch.xpack.ql.expression.NamedExpression;
-import org.elasticsearch.xpack.ql.expression.Nullability;
 import org.elasticsearch.xpack.ql.expression.ReferenceAttribute;
 import org.elasticsearch.xpack.ql.expression.UnresolvedAttribute;
 import org.elasticsearch.xpack.ql.expression.UnresolvedStar;
@@ -287,7 +286,7 @@ public class Analyzer extends ParameterizedRuleExecutor<LogicalPlan, AnalyzerCon
                 }
                 return new UnresolvedAttribute(source, enrichFieldName, null, msg);
             } else {
-                return new ReferenceAttribute(source, enrichFieldName, mappedField.dataType(), null, Nullability.TRUE, null, false);
+                return new ReferenceAttribute(source, enrichFieldName, mappedField.dataType());
             }
         }
     }
@@ -348,10 +347,13 @@ public class Analyzer extends ParameterizedRuleExecutor<LogicalPlan, AnalyzerCon
 
         private LogicalPlan resolveEval(Eval eval, List<Attribute> childOutput) {
             List<Attribute> allResolvedInputs = new ArrayList<>(childOutput);
-            List<Alias> newFields = new ArrayList<>();
+            List<NamedExpression> newFields = new ArrayList<>();
             boolean changed = false;
-            for (Alias field : eval.fields()) {
-                Alias result = (Alias) field.transformUp(UnresolvedAttribute.class, ua -> resolveAttribute(ua, allResolvedInputs));
+            for (NamedExpression field : eval.fields()) {
+                NamedExpression result = (NamedExpression) field.transformUp(
+                    UnresolvedAttribute.class,
+                    ua -> resolveAttribute(ua, allResolvedInputs)
+                );
 
                 changed |= result != field;
                 newFields.add(result);
@@ -433,12 +435,12 @@ public class Analyzer extends ParameterizedRuleExecutor<LogicalPlan, AnalyzerCon
 
             int renamingsCount = rename.renamings().size();
             List<NamedExpression> unresolved = new ArrayList<>(renamingsCount);
-            Map<String, String> reverseAliasing = new HashMap<>(renamingsCount); // `| rename a as x` => map(a: x)
+            Map<String, String> reverseAliasing = new HashMap<>(renamingsCount); // `| rename x = a` => map(a: x)
 
             rename.renamings().forEach(alias -> {
-                // skip NOPs: `| rename a as a`
+                // skip NOPs: `| rename a = a`
                 if (alias.child() instanceof UnresolvedAttribute ua && alias.name().equals(ua.name()) == false) {
-                    // remove attributes overwritten by a renaming: `| keep a, b, c | rename a as b`
+                    // remove attributes overwritten by a renaming: `| keep a, b, c | rename b = a`
                     projections.removeIf(x -> x.name().equals(alias.name()));
 
                     var resolved = resolveAttribute(ua, childrenOutput);
@@ -452,7 +454,7 @@ public class Analyzer extends ParameterizedRuleExecutor<LogicalPlan, AnalyzerCon
                         boolean updated = false;
                         if (reverseAliasing.containsValue(resolved.name())) {
                             for (var li = projections.listIterator(); li.hasNext();) {
-                                // does alias still exist? i.e. it hasn't been renamed again (`| rename a as b, b as c, b as d`)
+                                // does alias still exist? i.e. it hasn't been renamed again (`| rename b=a, c=b, d=b`)
                                 if (li.next() instanceof Alias a && a.name().equals(resolved.name())) {
                                     reverseAliasing.put(resolved.name(), alias.name());
                                     // update aliased projection in place

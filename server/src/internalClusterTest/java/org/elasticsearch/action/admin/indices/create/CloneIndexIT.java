@@ -7,16 +7,16 @@
  */
 package org.elasticsearch.action.admin.indices.create;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.shrink.ResizeType;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.cluster.routing.allocation.decider.EnableAllocationDecider;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.elasticsearch.index.seqno.SeqNoStats;
 import org.elasticsearch.test.ESIntegTestCase;
-import org.elasticsearch.test.index.IndexVersionUtils;
+import org.elasticsearch.test.VersionUtils;
 import org.elasticsearch.xcontent.XContentType;
 
 import static org.elasticsearch.action.admin.indices.create.ShrinkIndexIT.assertNoResizeSourceIndexSettings;
@@ -32,7 +32,7 @@ public class CloneIndexIT extends ESIntegTestCase {
     }
 
     public void testCreateCloneIndex() {
-        IndexVersion version = IndexVersionUtils.randomCompatibleVersion(random());
+        Version version = VersionUtils.randomIndexCompatibleVersion(random());
         int numPrimaryShards = randomIntBetween(1, 5);
         prepareCreate("source").setSettings(
             Settings.builder().put(indexSettings()).put("number_of_shards", numPrimaryShards).put("index.version.created", version)
@@ -99,10 +99,7 @@ public class CloneIndexIT extends ESIntegTestCase {
             );
             assertHitCount(client().prepareSearch("source").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")).get(), docs);
             GetSettingsResponse target = indicesAdmin().prepareGetSettings("target").get();
-            assertThat(
-                target.getIndexToSettings().get("target").getAsVersionId("index.version.created", IndexVersion::fromId),
-                equalTo(version)
-            );
+            assertEquals(version, target.getIndexToSettings().get("target").getAsVersion("index.version.created", null));
         } finally {
             // clean up
             updateClusterSettings(

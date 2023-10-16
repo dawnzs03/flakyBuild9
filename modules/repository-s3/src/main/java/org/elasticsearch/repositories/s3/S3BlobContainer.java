@@ -17,7 +17,6 @@ import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
-import com.amazonaws.services.s3.model.ListNextBatchOfObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.MultiObjectDeleteException;
 import com.amazonaws.services.s3.model.MultipartUpload;
@@ -61,10 +60,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -253,7 +250,6 @@ class S3BlobContainer extends AbstractBlobContainer {
 
     private void abortMultiPartUpload(String uploadId, String blobName) {
         final AbortMultipartUploadRequest abortRequest = new AbortMultipartUploadRequest(blobStore.bucket(), blobName, uploadId);
-        abortRequest.setRequestMetricCollector(blobStore.abortPartUploadMetricCollector);
         try (AmazonS3Reference clientReference = blobStore.clientReference()) {
             SocketAccess.doPrivilegedVoid(() -> clientReference.client().abortMultipartUpload(abortRequest));
         }
@@ -292,9 +288,8 @@ class S3BlobContainer extends AbstractBlobContainer {
             while (true) {
                 ObjectListing list;
                 if (prevListing != null) {
-                    final var listNextBatchOfObjectsRequest = new ListNextBatchOfObjectsRequest(prevListing);
-                    listNextBatchOfObjectsRequest.setRequestMetricCollector(blobStore.listMetricCollector);
-                    list = SocketAccess.doPrivileged(() -> clientReference.client().listNextBatchOfObjects(listNextBatchOfObjectsRequest));
+                    final ObjectListing finalPrevListing = prevListing;
+                    list = SocketAccess.doPrivileged(() -> clientReference.client().listNextBatchOfObjects(finalPrevListing));
                 } else {
                     final ListObjectsRequest listObjectsRequest = new ListObjectsRequest();
                     listObjectsRequest.setBucketName(blobStore.bucket());
@@ -383,7 +378,7 @@ class S3BlobContainer extends AbstractBlobContainer {
 
     private void deletePartition(AmazonS3Reference clientReference, List<String> partition, AtomicReference<Exception> aex) {
         try {
-            clientReference.client().deleteObjects(bulkDelete(blobStore, partition));
+            clientReference.client().deleteObjects(bulkDelete(blobStore.bucket(), partition));
         } catch (MultiObjectDeleteException e) {
             // We are sending quiet mode requests so we can't use the deleted keys entry on the exception and instead
             // first remove all keys that were sent in the request and then add back those that ran into an exception.
@@ -402,10 +397,8 @@ class S3BlobContainer extends AbstractBlobContainer {
         }
     }
 
-    private static DeleteObjectsRequest bulkDelete(S3BlobStore blobStore, List<String> blobs) {
-        return new DeleteObjectsRequest(blobStore.bucket()).withKeys(blobs.toArray(Strings.EMPTY_ARRAY))
-            .withQuiet(true)
-            .withRequestMetricCollector(blobStore.deleteMetricCollector);
+    private static DeleteObjectsRequest bulkDelete(String bucket, List<String> blobs) {
+        return new DeleteObjectsRequest(bucket).withKeys(blobs.toArray(Strings.EMPTY_ARRAY)).withQuiet(true);
     }
 
     @Override
@@ -449,15 +442,14 @@ class S3BlobContainer extends AbstractBlobContainer {
         }
     }
 
-    private List<ObjectListing> executeListing(AmazonS3Reference clientReference, ListObjectsRequest listObjectsRequest) {
+    private static List<ObjectListing> executeListing(AmazonS3Reference clientReference, ListObjectsRequest listObjectsRequest) {
         final List<ObjectListing> results = new ArrayList<>();
         ObjectListing prevListing = null;
         while (true) {
             ObjectListing list;
             if (prevListing != null) {
-                final var listNextBatchOfObjectsRequest = new ListNextBatchOfObjectsRequest(prevListing);
-                listNextBatchOfObjectsRequest.setRequestMetricCollector(blobStore.listMetricCollector);
-                list = SocketAccess.doPrivileged(() -> clientReference.client().listNextBatchOfObjects(listNextBatchOfObjectsRequest));
+                final ObjectListing finalPrevListing = prevListing;
+                list = SocketAccess.doPrivileged(() -> clientReference.client().listNextBatchOfObjects(finalPrevListing));
             } else {
                 list = SocketAccess.doPrivileged(() -> clientReference.client().listObjects(listObjectsRequest));
             }
@@ -478,8 +470,7 @@ class S3BlobContainer extends AbstractBlobContainer {
             .withRequestMetricCollector(blobStore.listMetricCollector);
     }
 
-    // exposed for tests
-    String buildKey(String blobName) {
+    private String buildKey(String blobName) {
         return keyPath + blobName;
     }
 
@@ -668,22 +659,6 @@ class S3BlobContainer extends AbstractBlobContainer {
             for (MultipartUpload multipartUpload : multipartUploads) {
                 final var observedUploadId = multipartUpload.getUploadId();
                 if (observedUploadId.equals(targetUploadId)) {
-                    final var currentTimeMillis = blobStore.getThreadPool().absoluteTimeInMillis();
-                    final var ageMillis = currentTimeMillis - multipartUpload.getInitiated().toInstant().toEpochMilli();
-                    final var expectedAgeRangeMillis = blobStore.getCompareAndExchangeTimeToLive().millis();
-                    if (ageMillis < -expectedAgeRangeMillis || ageMillis > expectedAgeRangeMillis) {
-                        logger.warn(
-                            """
-                                compare-and-exchange of blob [{}:{}] was initiated at [{}={}] \
-                                which deviates from local node epoch time [{}] by more than the warn threshold of [{}ms]""",
-                            bucket,
-                            blobKey,
-                            multipartUpload.getInitiated(),
-                            multipartUpload.getInitiated().toInstant().toEpochMilli(),
-                            currentTimeMillis,
-                            expectedAgeRangeMillis
-                        );
-                    }
                     found = true;
                 } else if (observedUploadId.compareTo(targetUploadId) < 0) {
                     uploadIndex += 1;
@@ -693,47 +668,12 @@ class S3BlobContainer extends AbstractBlobContainer {
             return found ? uploadIndex : -1;
         }
 
-        /**
-         * @return {@code true} if there are already ongoing uploads, so we should not proceed with the operation
-         */
-        private boolean hasPreexistingUploads() {
-            final var uploads = listMultipartUploads();
-            if (uploads.isEmpty()) {
-                return false;
-            }
-
-            final var expiryDate = Date.from(
-                Instant.ofEpochMilli(
-                    blobStore.getThreadPool().absoluteTimeInMillis() - blobStore.getCompareAndExchangeTimeToLive().millis()
-                )
-            );
-            if (uploads.stream().anyMatch(upload -> upload.getInitiated().after(expiryDate))) {
-                return true;
-            }
-
-            // there are uploads, but they are all older than the TTL, so clean them up before carrying on (should be rare)
-            for (final var upload : uploads) {
-                logger.warn(
-                    "cleaning up stale compare-and-swap upload [{}] initiated at [{}]",
-                    upload.getUploadId(),
-                    upload.getInitiated()
-                );
-                safeAbortMultipartUpload(upload.getUploadId());
-            }
-
-            return false;
-        }
-
         void run(BytesReference expected, BytesReference updated, ActionListener<OptionalBytesReference> listener) throws Exception {
+
             BlobContainerUtils.ensureValidRegisterContent(updated);
 
-            if (hasPreexistingUploads()) {
-
-                // This is a small optimization to improve the liveness properties of this algorithm.
-                //
-                // We can safely proceed even if there are other uploads in progress, but that would add to the potential for collisions and
-                // delays. Thus in this case we prefer avoid disturbing the ongoing attempts and just fail up front.
-
+            if (listMultipartUploads().isEmpty() == false) {
+                // TODO What if the previous writer crashed? We should consider the age of any ongoing uploads before bailing out like this.
                 listener.onResponse(OptionalBytesReference.MISSING);
                 return;
             }
@@ -765,7 +705,13 @@ class S3BlobContainer extends AbstractBlobContainer {
             final var isComplete = new AtomicBoolean();
             final Runnable doCleanup = () -> {
                 if (isComplete.compareAndSet(false, true)) {
-                    safeAbortMultipartUpload(uploadId);
+                    try {
+                        abortMultipartUploadIfExists(uploadId);
+                    } catch (Exception e) {
+                        // cleanup is a best-effort thing, we can't do anything better than log and fall through here
+                        logger.error("unexpected error cleaning up upload [" + uploadId + "] of [" + blobKey + "]", e);
+                        assert false : e;
+                    }
                 }
             };
 
@@ -809,7 +755,9 @@ class S3BlobContainer extends AbstractBlobContainer {
                                 final var currentUploadId = currentUpload.getUploadId();
                                 if (uploadId.equals(currentUploadId) == false) {
                                     threadPool.executor(ThreadPool.Names.SNAPSHOT)
-                                        .execute(ActionRunnable.run(listeners.acquire(), () -> safeAbortMultipartUpload(currentUploadId)));
+                                        .execute(
+                                            ActionRunnable.run(listeners.acquire(), () -> abortMultipartUploadIfExists(currentUploadId))
+                                        );
                                 }
                             }
                         } finally {
@@ -830,19 +778,9 @@ class S3BlobContainer extends AbstractBlobContainer {
             }
         }
 
-        private void safeAbortMultipartUpload(String uploadId) {
-            try {
-                abortMultipartUploadIfExists(uploadId);
-            } catch (Exception e) {
-                // cleanup is a best-effort thing, we can't do anything better than log and fall through here
-                logger.error("unexpected error cleaning up upload [" + uploadId + "] of [" + blobKey + "]", e);
-            }
-        }
-
         private void abortMultipartUploadIfExists(String uploadId) {
             try {
                 final var request = new AbortMultipartUploadRequest(bucket, blobKey, uploadId);
-                request.setRequestMetricCollector(blobStore.abortPartUploadMetricCollector);
                 SocketAccess.doPrivilegedVoid(() -> client.abortMultipartUpload(request));
             } catch (AmazonS3Exception e) {
                 if (e.getStatusCode() != 404) {

@@ -97,8 +97,6 @@ public class EsqlNodeSubclassTests<T extends B, B extends Node<B>> extends NodeS
                 ),
                 IndexResolution.invalid(randomAlphaOfLength(5))
             );
-        } else if (argClass == Integer.class) {
-            return randomInt();
         }
 
         return null;

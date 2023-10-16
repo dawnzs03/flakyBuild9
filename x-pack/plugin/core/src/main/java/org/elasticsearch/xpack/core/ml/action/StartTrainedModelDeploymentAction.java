@@ -8,6 +8,7 @@
 package org.elasticsearch.xpack.core.ml.action;
 
 import org.elasticsearch.TransportVersion;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.master.MasterNodeRequest;
@@ -27,7 +28,6 @@ import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 import org.elasticsearch.xpack.core.ml.inference.TrainedModelConfig;
 import org.elasticsearch.xpack.core.ml.inference.assignment.AllocationStatus;
 import org.elasticsearch.xpack.core.ml.inference.assignment.Priority;
@@ -375,11 +375,10 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
         // NOTE, whatever determines assignment should not be dynamically set on the node
         // Otherwise assignment logic might fail
         public static boolean mayAssignToNode(DiscoveryNode node) {
-            return node.getRoles().contains(DiscoveryNodeRole.ML_ROLE) && MlConfigVersion.fromNode(node).onOrAfter(VERSION_INTRODUCED);
+            return node.getRoles().contains(DiscoveryNodeRole.ML_ROLE) && node.getVersion().onOrAfter(VERSION_INTRODUCED);
         }
 
-        public static final MlConfigVersion VERSION_INTRODUCED = MlConfigVersion.V_8_0_0;
-
+        public static final Version VERSION_INTRODUCED = Version.V_8_0_0;
         private static final ParseField MODEL_BYTES = new ParseField("model_bytes");
         public static final ParseField NUMBER_OF_ALLOCATIONS = new ParseField("number_of_allocations");
         public static final ParseField THREADS_PER_ALLOCATION = new ParseField("threads_per_allocation");
@@ -390,8 +389,6 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
         public static final ParseField QUEUE_CAPACITY = new ParseField("queue_capacity");
         public static final ParseField CACHE_SIZE = new ParseField("cache_size");
         public static final ParseField PRIORITY = new ParseField("priority");
-        public static final ParseField PER_DEPLOYMENT_MEMORY_BYTES = new ParseField("per_deployment_memory_bytes");
-        public static final ParseField PER_ALLOCATION_MEMORY_BYTES = new ParseField("per_allocation_memory_bytes");
 
         private static final ConstructingObjectParser<TaskParams, Void> PARSER = new ConstructingObjectParser<>(
             "trained_model_deployment_params",
@@ -406,9 +403,7 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
                 (ByteSizeValue) a[6],
                 (Integer) a[7],
                 (Integer) a[8],
-                a[9] == null ? null : Priority.fromString((String) a[9]),
-                (Long) a[10],
-                (Long) a[11]
+                a[9] == null ? null : Priority.fromString((String) a[9])
             )
         );
 
@@ -428,8 +423,6 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
             PARSER.declareInt(ConstructingObjectParser.optionalConstructorArg(), LEGACY_MODEL_THREADS);
             PARSER.declareInt(ConstructingObjectParser.optionalConstructorArg(), LEGACY_INFERENCE_THREADS);
             PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), PRIORITY);
-            PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), PER_DEPLOYMENT_MEMORY_BYTES);
-            PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), PER_ALLOCATION_MEMORY_BYTES);
         }
 
         public static TaskParams fromXContent(XContentParser parser) {
@@ -446,8 +439,6 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
         private final int numberOfAllocations;
         private final int queueCapacity;
         private final Priority priority;
-        private final long perDeploymentMemoryBytes;
-        private final long perAllocationMemoryBytes;
 
         private TaskParams(
             String modelId,
@@ -459,9 +450,7 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
             ByteSizeValue cacheSizeValue,
             Integer legacyModelThreads,
             Integer legacyInferenceThreads,
-            Priority priority,
-            Long perDeploymentMemoryBytes,
-            Long perAllocationMemoryBytes
+            Priority priority
         ) {
             this(
                 modelId,
@@ -473,9 +462,7 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
                 threadsPerAllocation == null ? legacyInferenceThreads : threadsPerAllocation,
                 queueCapacity,
                 cacheSizeValue,
-                priority == null ? Priority.NORMAL : priority,
-                perDeploymentMemoryBytes == null ? 0 : perDeploymentMemoryBytes,
-                perAllocationMemoryBytes == null ? 0 : perAllocationMemoryBytes
+                priority == null ? Priority.NORMAL : priority
             );
         }
 
@@ -487,9 +474,7 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
             int threadsPerAllocation,
             int queueCapacity,
             @Nullable ByteSizeValue cacheSize,
-            Priority priority,
-            long perDeploymentMemoryBytes,
-            long perAllocationMemoryBytes
+            Priority priority
         ) {
             this.modelId = Objects.requireNonNull(modelId);
             this.deploymentId = Objects.requireNonNull(deploymentId);
@@ -499,8 +484,6 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
             this.queueCapacity = queueCapacity;
             this.cacheSize = cacheSize;
             this.priority = Objects.requireNonNull(priority);
-            this.perDeploymentMemoryBytes = perDeploymentMemoryBytes;
-            this.perAllocationMemoryBytes = perAllocationMemoryBytes;
         }
 
         public TaskParams(StreamInput in) throws IOException {
@@ -524,15 +507,6 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
             } else {
                 this.deploymentId = modelId;
             }
-
-            if (in.getTransportVersion().onOrAfter(TrainedModelConfig.VERSION_ALLOCATION_MEMORY_ADDED)) {
-                // We store additional model usage per allocation in the task params.
-                this.perDeploymentMemoryBytes = in.readLong();
-                this.perAllocationMemoryBytes = in.readLong();
-            } else {
-                this.perDeploymentMemoryBytes = 0L;
-                this.perAllocationMemoryBytes = 0L;
-            }
         }
 
         public String getModelId() {
@@ -547,24 +521,13 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
             // We already take into account 2x the model bytes. If the cache size is larger than the model bytes, then
             // we need to take it into account when returning the estimate.
             if (cacheSize != null && cacheSize.getBytes() > modelBytes) {
-                return StartTrainedModelDeploymentAction.estimateMemoryUsageBytes(
-                    modelId,
-                    modelBytes,
-                    perDeploymentMemoryBytes,
-                    perAllocationMemoryBytes,
-                    numberOfAllocations
-                ) + (cacheSize.getBytes() - modelBytes);
+                return StartTrainedModelDeploymentAction.estimateMemoryUsageBytes(modelId, modelBytes) + (cacheSize.getBytes()
+                    - modelBytes);
             }
-            return StartTrainedModelDeploymentAction.estimateMemoryUsageBytes(
-                modelId,
-                modelBytes,
-                perDeploymentMemoryBytes,
-                perAllocationMemoryBytes,
-                numberOfAllocations
-            );
+            return StartTrainedModelDeploymentAction.estimateMemoryUsageBytes(modelId, modelBytes);
         }
 
-        public MlConfigVersion getMinimalSupportedVersion() {
+        public Version getMinimalSupportedVersion() {
             return VERSION_INTRODUCED;
         }
 
@@ -584,10 +547,6 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
             if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_8_0)) {
                 out.writeString(deploymentId);
             }
-            if (out.getTransportVersion().onOrAfter(TrainedModelConfig.VERSION_ALLOCATION_MEMORY_ADDED)) {
-                out.writeLong(perDeploymentMemoryBytes);
-                out.writeLong(perAllocationMemoryBytes);
-            }
         }
 
         @Override
@@ -603,8 +562,6 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
                 builder.field(CACHE_SIZE.getPreferredName(), cacheSize.getStringRep());
             }
             builder.field(PRIORITY.getPreferredName(), priority);
-            builder.field(PER_DEPLOYMENT_MEMORY_BYTES.getPreferredName(), perDeploymentMemoryBytes);
-            builder.field(PER_ALLOCATION_MEMORY_BYTES.getPreferredName(), perAllocationMemoryBytes);
             builder.endObject();
             return builder;
         }
@@ -619,9 +576,7 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
                 numberOfAllocations,
                 queueCapacity,
                 cacheSize,
-                priority,
-                perDeploymentMemoryBytes,
-                perAllocationMemoryBytes
+                priority
             );
         }
 
@@ -638,9 +593,7 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
                 && numberOfAllocations == other.numberOfAllocations
                 && Objects.equals(cacheSize, other.cacheSize)
                 && queueCapacity == other.queueCapacity
-                && priority == other.priority
-                && perDeploymentMemoryBytes == other.perDeploymentMemoryBytes
-                && perAllocationMemoryBytes == other.perAllocationMemoryBytes;
+                && priority == other.priority;
         }
 
         @Override
@@ -676,14 +629,6 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
             return priority;
         }
 
-        public long getPerAllocationMemoryBytes() {
-            return perAllocationMemoryBytes;
-        }
-
-        public long getPerDeploymentMemoryBytes() {
-            return perDeploymentMemoryBytes;
-        }
-
         @Override
         public String toString() {
             return Strings.toString(this);
@@ -704,37 +649,12 @@ public class StartTrainedModelDeploymentAction extends ActionType<CreateTrainedM
         }
     }
 
-    public static long estimateMemoryUsageBytes(
-        String modelId,
-        long totalDefinitionLength,
-        long perDeploymentMemoryBytes,
-        long perAllocationMemoryBytes,
-        int numberOfAllocations
-    ) {
+    public static long estimateMemoryUsageBytes(String modelId, long totalDefinitionLength) {
         // While loading the model in the process we need twice the model size.
-
-        // 1. If ELSER v1 then 2004MB
-        // 2. If static memory and dynamic memory are not set then 240MB + 2 * model size
-        // 3. Else static memory + dynamic memory * allocations + model size
-
-        // The model size is still added in option 3 to account for the temporary requirement to hold the zip file in memory
-        // in `pytorch_inference`.
-        if (isElserV1Model(modelId)) {
-            return ELSER_1_MEMORY_USAGE.getBytes();
-        } else {
-            long baseSize = MEMORY_OVERHEAD.getBytes() + 2 * totalDefinitionLength;
-            if (perDeploymentMemoryBytes == 0 && perAllocationMemoryBytes == 0) {
-                return baseSize;
-            } else {
-                return Math.max(
-                    baseSize,
-                    perDeploymentMemoryBytes + perAllocationMemoryBytes * numberOfAllocations + totalDefinitionLength
-                );
-            }
-        }
+        return isElserModel(modelId) ? ELSER_1_MEMORY_USAGE.getBytes() : MEMORY_OVERHEAD.getBytes() + 2 * totalDefinitionLength;
     }
 
-    private static boolean isElserV1Model(String modelId) {
+    private static boolean isElserModel(String modelId) {
         return modelId.startsWith(".elser_model_1");
     }
 }

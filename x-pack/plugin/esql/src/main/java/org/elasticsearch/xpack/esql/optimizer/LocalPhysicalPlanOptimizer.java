@@ -8,7 +8,7 @@
 package org.elasticsearch.xpack.esql.optimizer;
 
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.xpack.esql.EsqlIllegalArgumentException;
+import org.elasticsearch.xpack.esql.expression.MetadataAttribute;
 import org.elasticsearch.xpack.esql.expression.predicate.operator.comparison.In;
 import org.elasticsearch.xpack.esql.optimizer.PhysicalOptimizerRules.OptimizerRule;
 import org.elasticsearch.xpack.esql.plan.physical.AggregateExec;
@@ -29,7 +29,6 @@ import org.elasticsearch.xpack.ql.expression.Attribute;
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.expression.Expressions;
 import org.elasticsearch.xpack.ql.expression.FieldAttribute;
-import org.elasticsearch.xpack.ql.expression.MetadataAttribute;
 import org.elasticsearch.xpack.ql.expression.Order;
 import org.elasticsearch.xpack.ql.expression.TypedAttribute;
 import org.elasticsearch.xpack.ql.expression.function.scalar.ScalarFunction;
@@ -37,10 +36,7 @@ import org.elasticsearch.xpack.ql.expression.predicate.Predicates;
 import org.elasticsearch.xpack.ql.expression.predicate.logical.BinaryLogic;
 import org.elasticsearch.xpack.ql.expression.predicate.logical.Not;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.BinaryComparison;
-import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.Equals;
-import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.NotEquals;
 import org.elasticsearch.xpack.ql.expression.predicate.regex.RegexMatch;
-import org.elasticsearch.xpack.ql.expression.predicate.regex.WildcardLike;
 import org.elasticsearch.xpack.ql.planner.ExpressionTranslator;
 import org.elasticsearch.xpack.ql.planner.QlTranslatorHandler;
 import org.elasticsearch.xpack.ql.querydsl.query.Query;
@@ -86,7 +82,8 @@ public class LocalPhysicalPlanOptimizer extends ParameterizedRuleExecutor<Physic
         esSourceRules.add(new ReplaceAttributeSourceWithDocId());
 
         if (optimizeForEsSource) {
-            esSourceRules.add(new PushTopNToSource());
+            int pageSize = context().configuration().pragmas().pageSize();
+            esSourceRules.add(new PushTopNToSource(pageSize));
             esSourceRules.add(new PushLimitToSource());
             esSourceRules.add(new PushFiltersToSource());
         }
@@ -202,8 +199,7 @@ public class LocalPhysicalPlanOptimizer extends ParameterizedRuleExecutor<Physic
                         queryExec.output(),
                         query,
                         queryExec.limit(),
-                        queryExec.sorts(),
-                        queryExec.estimatedRowSize()
+                        queryExec.sorts()
                     );
                     if (nonPushable.size() > 0) { // update filter with remaining non-pushable conditions
                         plan = new FilterExec(filterExec.source(), queryExec, Predicates.combineAnd(nonPushable));
@@ -218,29 +214,15 @@ public class LocalPhysicalPlanOptimizer extends ParameterizedRuleExecutor<Physic
 
         private static boolean canPushToSource(Expression exp) {
             if (exp instanceof BinaryComparison bc) {
-                return isAttributePushable(bc.left(), bc) && bc.right().foldable();
+                return bc.left() instanceof FieldAttribute && bc.right().foldable();
             } else if (exp instanceof BinaryLogic bl) {
                 return canPushToSource(bl.left()) && canPushToSource(bl.right());
             } else if (exp instanceof RegexMatch<?> rm) {
-                return isAttributePushable(rm.field(), rm);
+                return rm.field() instanceof FieldAttribute;
             } else if (exp instanceof In in) {
-                return isAttributePushable(in.value(), null) && Expressions.foldable(in.list());
+                return in.value() instanceof FieldAttribute && Expressions.foldable(in.list());
             } else if (exp instanceof Not not) {
                 return canPushToSource(not.field());
-            }
-            return false;
-        }
-
-        private static boolean isAttributePushable(Expression expression, ScalarFunction operation) {
-            if (expression instanceof FieldAttribute) {
-                return true;
-            }
-            if (expression instanceof MetadataAttribute ma && ma.searchable()) {
-                return operation == null
-                    // no range or regex queries supported with metadata fields
-                    || operation instanceof Equals
-                    || operation instanceof NotEquals
-                    || operation instanceof WildcardLike;
             }
             return false;
         }
@@ -261,6 +243,12 @@ public class LocalPhysicalPlanOptimizer extends ParameterizedRuleExecutor<Physic
     }
 
     private static class PushTopNToSource extends OptimizerRule<TopNExec> {
+        private final int maxPageSize;
+
+        PushTopNToSource(int maxPageSize) {
+            this.maxPageSize = maxPageSize;
+        }
+
         @Override
         protected PhysicalPlan rule(TopNExec topNExec) {
             PhysicalPlan plan = topNExec;
@@ -268,7 +256,7 @@ public class LocalPhysicalPlanOptimizer extends ParameterizedRuleExecutor<Physic
 
             boolean canPushDownTopN = child instanceof EsQueryExec
                 || (child instanceof ExchangeExec exchangeExec && exchangeExec.child() instanceof EsQueryExec);
-            if (canPushDownTopN && canPushDownOrders(topNExec.order())) {
+            if (canPushDownTopN && canPushDownOrders(topNExec.order()) && ((Integer) topNExec.limit().fold()) <= maxPageSize) {
                 var sorts = buildFieldSorts(topNExec.order());
                 var limit = topNExec.limit();
 
@@ -301,10 +289,7 @@ public class LocalPhysicalPlanOptimizer extends ParameterizedRuleExecutor<Physic
             if (field instanceof FieldAttribute fa) {
                 return ExpressionTranslator.wrapIfNested(new SingleValueQuery(querySupplier.get(), fa.name()), field);
             }
-            if (field instanceof MetadataAttribute) {
-                return querySupplier.get(); // MetadataAttributes are always single valued
-            }
-            throw new EsqlIllegalArgumentException("Expected a FieldAttribute or MetadataAttribute but received [" + field + "]");
+            throw new IllegalStateException("Should always be field attributes");
         }
     }
 }

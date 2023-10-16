@@ -146,10 +146,9 @@ public class ESIndexInputTestCase extends ESTestCase {
                             @Override
                             protected void doRun() throws Exception {
                                 final IndexInput clone;
-                                final boolean keepPosition = randomBoolean();
-                                final int readStart = keepPosition ? (int) indexInput.getFilePointer() : between(0, length);
+                                final int readStart = between(0, length);
                                 final int readEnd = between(readStart, length);
-                                if (keepPosition || randomBoolean()) {
+                                if (randomBoolean()) {
                                     clone = indexInput.clone();
                                 } else {
                                     final int sliceEnd = between(readEnd, length);
@@ -158,9 +157,7 @@ public class ESIndexInputTestCase extends ESTestCase {
                                 }
                                 startLatch.countDown();
                                 startLatch.await();
-                                if (keepPosition == false) {
-                                    clone.seek(readStart);
-                                }
+                                clone.seek(readStart);
                                 final byte[] cloneResult = randomReadAndSlice(clone, readEnd);
                                 if (randomBoolean()) {
                                     clone.close();

@@ -26,7 +26,6 @@ import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.monitor.NodeHealthService;
 import org.elasticsearch.monitor.StatusInfo;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.threadpool.ThreadPool.Names;
 import org.elasticsearch.transport.ConnectTransportException;
 import org.elasticsearch.transport.ReceiveTimeoutTransportException;
@@ -36,6 +35,7 @@ import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportRequestOptions.Type;
+import org.elasticsearch.transport.TransportResponse;
 import org.elasticsearch.transport.TransportResponse.Empty;
 import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
@@ -45,7 +45,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -127,10 +126,7 @@ public class FollowersChecker {
             false,
             false,
             FollowerCheckRequest::new,
-            (request, transportChannel, task) -> handleFollowerCheck(
-                request,
-                new ChannelActionListener<>(transportChannel).map(ignored -> Empty.INSTANCE)
-            )
+            (request, transportChannel, task) -> handleFollowerCheck(request, new ChannelActionListener<>(transportChannel))
         );
         transportService.addConnectionListener(new TransportConnectionListener() {
             @Override
@@ -179,7 +175,7 @@ public class FollowersChecker {
         fastResponseState = new FastResponseState(term, mode);
     }
 
-    private void handleFollowerCheck(FollowerCheckRequest request, ActionListener<Void> listener) {
+    private void handleFollowerCheck(FollowerCheckRequest request, ActionListener<Empty> listener) {
         final StatusInfo statusInfo = nodeHealthService.getHealth();
         if (statusInfo.getStatus() == UNHEALTHY) {
             final String message = "handleFollowerCheck: node is unhealthy ["
@@ -193,7 +189,7 @@ public class FollowersChecker {
         final FastResponseState responder = this.fastResponseState;
         if (responder.mode == Mode.FOLLOWER && responder.term == request.term) {
             logger.trace("responding to {} on fast path", request);
-            listener.onResponse(null);
+            listener.onResponse(Empty.INSTANCE);
             return;
         }
 
@@ -205,10 +201,10 @@ public class FollowersChecker {
             .executor(Names.CLUSTER_COORDINATION)
             .execute(ActionRunnable.supply(listener, new CheckedSupplier<>() {
                 @Override
-                public Void get() {
+                public Empty get() {
                     logger.trace("responding to {} on slow path", request);
                     handleRequestAndUpdateState.accept(request);
-                    return null;
+                    return Empty.INSTANCE;
                 }
 
                 @Override
@@ -306,12 +302,7 @@ public class FollowersChecker {
                 new TransportResponseHandler.Empty() {
 
                     @Override
-                    public Executor executor(ThreadPool threadPool) {
-                        return TransportResponseHandler.TRANSPORT_WORKER;
-                    }
-
-                    @Override
-                    public void handleResponse() {
+                    public void handleResponse(TransportResponse.Empty response) {
                         if (running() == false) {
                             logger.trace("{} no longer running", FollowerChecker.this);
                             return;

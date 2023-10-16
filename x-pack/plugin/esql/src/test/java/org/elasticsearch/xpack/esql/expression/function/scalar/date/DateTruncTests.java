@@ -134,7 +134,7 @@ public class DateTruncTests extends ESTestCase {
     }
 
     public void testSerialization() {
-        var dateTrunc = new DateTrunc(Source.EMPTY, randomDateIntervalLiteral(), randomDateField());
+        var dateTrunc = new DateTrunc(Source.EMPTY, randomDateField(), randomDateIntervalLiteral());
         SerializationTestUtils.assertSerialization(dateTrunc);
     }
 

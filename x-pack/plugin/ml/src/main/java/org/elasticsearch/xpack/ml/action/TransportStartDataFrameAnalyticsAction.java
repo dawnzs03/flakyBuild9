@@ -48,7 +48,6 @@ import org.elasticsearch.xpack.core.XPackField;
 import org.elasticsearch.xpack.core.common.validation.SourceDestValidator;
 import org.elasticsearch.xpack.core.ml.MachineLearningField;
 import org.elasticsearch.xpack.core.ml.MlConfigIndex;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 import org.elasticsearch.xpack.core.ml.MlStatsIndex;
 import org.elasticsearch.xpack.core.ml.MlTasks;
 import org.elasticsearch.xpack.core.ml.action.ExplainDataFrameAnalyticsAction;
@@ -809,7 +808,7 @@ public class TransportStartDataFrameAnalyticsAction extends TransportMasterNodeA
         public static String nodeFilter(DiscoveryNode node, TaskParams params) {
             String id = params.getId();
 
-            if (MlConfigVersion.fromNode(node).before(TaskParams.VERSION_INTRODUCED)) {
+            if (node.getVersion().before(TaskParams.VERSION_INTRODUCED)) {
                 return "Not opening job ["
                     + id
                     + "] on node ["
@@ -819,7 +818,7 @@ public class TransportStartDataFrameAnalyticsAction extends TransportMasterNodeA
                     + "] or higher";
             }
             if (node.getVersion().before(TaskParams.VERSION_DESTINATION_INDEX_MAPPINGS_CHANGED)
-                && params.getVersion().onOrAfter(MlConfigVersion.fromVersion(TaskParams.VERSION_DESTINATION_INDEX_MAPPINGS_CHANGED))) {
+                && params.getVersion().onOrAfter(TaskParams.VERSION_DESTINATION_INDEX_MAPPINGS_CHANGED)) {
                 return "Not opening job ["
                     + id
                     + "] on node ["

@@ -8,7 +8,7 @@ package org.elasticsearch.xpack.transform.action;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.TransportVersion;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionListenerResponseHandler;
 import org.elasticsearch.action.NoShardAvailableActionException;
@@ -30,7 +30,6 @@ import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.ActionNotFoundTransportException;
 import org.elasticsearch.transport.TransportRequestOptions;
-import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.core.transform.action.GetCheckpointAction;
 import org.elasticsearch.xpack.core.transform.action.GetCheckpointAction.Request;
@@ -105,8 +104,8 @@ public class TransportGetCheckpointAction extends HandledTransportAction<Request
                 continue;
             }
             if (shard.assignedToNode() && nodes.get(shard.currentNodeId()) != null) {
-                // special case: The minimum TransportVersion in the cluster is on an old version
-                if (state.getMinTransportVersion().before(TransportVersion.V_8_2_0)) {
+                // special case: a node that holds the shard is on an old version
+                if (nodes.get(shard.currentNodeId()).getVersion().before(Version.V_8_2_0)) {
                     throw new ActionNotFoundTransportException(GetCheckpointNodeAction.NAME);
                 }
 
@@ -198,11 +197,7 @@ public class TransportGetCheckpointAction extends HandledTransportAction<Request
                     nodeCheckpointsRequest,
                     task,
                     TransportRequestOptions.EMPTY,
-                    new ActionListenerResponseHandler<>(
-                        groupedListener,
-                        GetCheckpointNodeAction.Response::new,
-                        TransportResponseHandler.TRANSPORT_WORKER
-                    )
+                    new ActionListenerResponseHandler<>(groupedListener, GetCheckpointNodeAction.Response::new)
                 );
             }
         }

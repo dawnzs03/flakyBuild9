@@ -7,9 +7,6 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.string;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.compute.data.Block;
 import org.elasticsearch.xpack.esql.expression.function.scalar.AbstractScalarFunctionTestCase;
@@ -21,34 +18,27 @@ import org.elasticsearch.xpack.ql.type.DataTypes;
 import org.hamcrest.Matcher;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.elasticsearch.compute.data.BlockUtils.toJavaObject;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
 public class SubstringTests extends AbstractScalarFunctionTestCase {
-    public SubstringTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
+    @Override
+    protected List<Object> simpleData() {
+        int start = between(0, 8);
+        int length = between(0, 10 - start);
+        return List.of(new BytesRef(randomAlphaOfLength(10)), start + 1, length);
     }
 
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        return parameterSuppliersFromTypedData(List.of(new TestCaseSupplier("Substring basic test", () -> {
-            int start = between(1, 8);
-            int length = between(1, 10 - start);
-            String text = randomAlphaOfLength(10);
-            return new TestCase(
-                List.of(
-                    new TypedData(new BytesRef(text), DataTypes.KEYWORD, "str"),
-                    new TypedData(start, DataTypes.INTEGER, "start"),
-                    new TypedData(length, DataTypes.INTEGER, "end")
-                ),
-                "SubstringEvaluator[str=Attribute[channel=0], start=Attribute[channel=1], length=Attribute[channel=2]]",
-                DataTypes.KEYWORD,
-                equalTo(new BytesRef(text.substring(start - 1, start + length - 1)))
-            );
-        })));
+    @Override
+    protected Expression expressionForSimpleData() {
+        return new Substring(
+            Source.EMPTY,
+            field("str", DataTypes.KEYWORD),
+            field("start", DataTypes.INTEGER),
+            field("end", DataTypes.INTEGER)
+        );
     }
 
     @Override
@@ -56,11 +46,17 @@ public class SubstringTests extends AbstractScalarFunctionTestCase {
         return DataTypes.KEYWORD;
     }
 
-    public Matcher<Object> resultsMatcher(List<TypedData> typedData) {
-        String str = ((BytesRef) typedData.get(0).data()).utf8ToString();
-        int start = (Integer) typedData.get(1).data();
-        int end = (Integer) typedData.get(2).data();
+    @Override
+    protected Matcher<Object> resultMatcher(List<Object> data, DataType dataType) {
+        String str = ((BytesRef) data.get(0)).utf8ToString();
+        int start = (Integer) data.get(1);
+        int end = (Integer) data.get(2);
         return equalTo(new BytesRef(str.substring(start - 1, start + end - 1)));
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "SubstringEvaluator[str=Attribute[channel=0], start=Attribute[channel=1], length=Attribute[channel=2]]";
     }
 
     public void testNoLengthToString() {
@@ -72,12 +68,22 @@ public class SubstringTests extends AbstractScalarFunctionTestCase {
     }
 
     @Override
+    protected Expression constantFoldable(List<Object> data) {
+        return new Substring(
+            Source.EMPTY,
+            new Literal(Source.EMPTY, data.get(0), DataTypes.KEYWORD),
+            new Literal(Source.EMPTY, data.get(1), DataTypes.INTEGER),
+            new Literal(Source.EMPTY, data.get(2), DataTypes.INTEGER)
+        );
+    }
+
+    @Override
     protected List<AbstractScalarFunctionTestCase.ArgumentSpec> argSpec() {
         return List.of(required(strings()), required(integers()), optional(integers()));
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
+    protected Expression build(Source source, List<Literal> args) {
         return new Substring(source, args.get(0), args.get(1), args.size() < 3 ? null : args.get(2));
     }
 

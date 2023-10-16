@@ -77,8 +77,4 @@ public class XContentSubParser extends FilterXContentParserWrapper {
             }
         }
     }
-
-    int level() {
-        return level;
-    }
 }

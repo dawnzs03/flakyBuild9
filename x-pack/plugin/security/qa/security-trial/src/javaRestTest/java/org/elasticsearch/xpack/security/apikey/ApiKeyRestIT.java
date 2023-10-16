@@ -18,6 +18,7 @@ import org.elasticsearch.core.Strings;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.test.XContentTestUtils;
 import org.elasticsearch.test.rest.ObjectPath;
+import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xcontent.json.JsonXContent;
@@ -596,6 +597,8 @@ public class ApiKeyRestIT extends SecurityOnTrialLicenseRestTestCase {
     }
 
     public void testRemoteIndicesSupportForApiKeys() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
+
         createUser(REMOTE_INDICES_USER, END_USER_PASSWORD, List.of("remote_indices_role"));
         createRole("remote_indices_role", Set.of("grant_api_key", "manage_own_api_key"), "remote");
         final String remoteIndicesSection = """
@@ -684,6 +687,8 @@ public class ApiKeyRestIT extends SecurityOnTrialLicenseRestTestCase {
     }
 
     public void testCreateCrossClusterApiKey() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
+
         final Request createRequest = new Request("POST", "/_security/cross_cluster/api_key");
         createRequest.setJsonEntity("""
             {
@@ -816,6 +821,8 @@ public class ApiKeyRestIT extends SecurityOnTrialLicenseRestTestCase {
     }
 
     public void testCannotCreateDerivedCrossClusterApiKey() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
+
         final Request createRestApiKeyRequest = new Request("POST", "_security/api_key");
         setUserForRequest(createRestApiKeyRequest, MANAGE_SECURITY_USER, END_USER_PASSWORD);
         createRestApiKeyRequest.setJsonEntity("{\"name\":\"rest-key\"}");
@@ -845,6 +852,8 @@ public class ApiKeyRestIT extends SecurityOnTrialLicenseRestTestCase {
     }
 
     public void testCrossClusterApiKeyDoesNotAllowEmptyAccess() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
+
         assertBadCreateCrossClusterApiKeyRequest("""
             {"name": "my-key"}""", "Required [access]");
 
@@ -868,6 +877,8 @@ public class ApiKeyRestIT extends SecurityOnTrialLicenseRestTestCase {
     }
 
     public void testCrossClusterApiKeyDoesNotAllowDlsFlsForReplication() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
+
         assertBadCreateCrossClusterApiKeyRequest("""
             {
               "name": "key",
@@ -898,6 +909,8 @@ public class ApiKeyRestIT extends SecurityOnTrialLicenseRestTestCase {
     }
 
     public void testCrossClusterApiKeyRequiresName() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
+
         assertBadCreateCrossClusterApiKeyRequest("""
             {
               "access": {
@@ -907,6 +920,7 @@ public class ApiKeyRestIT extends SecurityOnTrialLicenseRestTestCase {
     }
 
     public void testUpdateCrossClusterApiKey() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
         final Request createRequest = new Request("POST", "/_security/cross_cluster/api_key");
         createRequest.setJsonEntity("""
             {
@@ -1080,6 +1094,7 @@ public class ApiKeyRestIT extends SecurityOnTrialLicenseRestTestCase {
     }
 
     public void testUpdateFailureCases() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
         final Request createRequest = new Request("POST", "/_security/cross_cluster/api_key");
         createRequest.setJsonEntity("""
             {
@@ -1174,6 +1189,8 @@ public class ApiKeyRestIT extends SecurityOnTrialLicenseRestTestCase {
     }
 
     public void testCrossClusterApiKeyAccessInResponseCanBeUsedAsInputForUpdate() throws IOException {
+        assumeTrue("untrusted remote cluster feature flag must be enabled", TcpTransport.isUntrustedRemoteClusterEnabled());
+
         final Request createRequest = new Request("POST", "/_security/cross_cluster/api_key");
         createRequest.setJsonEntity(Strings.format("""
             {

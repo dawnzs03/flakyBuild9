@@ -6,11 +6,9 @@
  */
 package org.elasticsearch.xpack.esql.plugin;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.FailedNodeException;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.nodes.TransportNodesAction;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
@@ -21,7 +19,6 @@ import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.esql.execution.PlanExecutor;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -55,16 +52,6 @@ public class TransportEsqlStatsAction extends TransportNodesAction<
             ThreadPool.Names.MANAGEMENT
         );
         this.planExecutor = planExecutor;
-    }
-
-    @Override
-    protected void resolveRequest(EsqlStatsRequest request, ClusterState clusterState) {
-        String[] nodesIds = clusterState.nodes().resolveNodes(request.nodesIds());
-        DiscoveryNode[] concreteNodes = Arrays.stream(nodesIds)
-            .map(clusterState.nodes()::get)
-            .filter(n -> n.getVersion().onOrAfter(Version.V_8_11_0))
-            .toArray(DiscoveryNode[]::new);
-        request.setConcreteNodes(concreteNodes);
     }
 
     @Override

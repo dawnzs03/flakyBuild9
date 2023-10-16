@@ -105,7 +105,7 @@ public class TermVectorsUnitTests extends ESTestCase {
         writer.commit();
         writer.close();
         DirectoryReader dr = DirectoryReader.open(dir);
-        IndexSearcher s = newSearcher(dr);
+        IndexSearcher s = new IndexSearcher(dr);
         TopDocs search = s.search(new TermQuery(new Term("id", "abc")), 1);
         ScoreDoc[] scoreDocs = search.scoreDocs;
         int doc = scoreDocs[0].doc;
@@ -140,7 +140,7 @@ public class TermVectorsUnitTests extends ESTestCase {
         writer.commit();
         writer.close();
         DirectoryReader dr = DirectoryReader.open(dir);
-        IndexSearcher s = newSearcher(dr);
+        IndexSearcher s = new IndexSearcher(dr);
         TopDocs search = s.search(new TermQuery(new Term("id", "abc")), 1);
         ScoreDoc[] scoreDocs = search.scoreDocs;
         int doc = scoreDocs[0].doc;

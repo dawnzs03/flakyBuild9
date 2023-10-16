@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.core.transform.transforms.pivot;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.ValidationException;
 import org.elasticsearch.common.io.stream.Writeable.Reader;
@@ -14,7 +15,6 @@ import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xpack.core.transform.AbstractSerializingTransformTestCase;
-import org.elasticsearch.xpack.core.transform.TransformConfigVersion;
 import org.elasticsearch.xpack.core.transform.TransformDeprecations;
 
 import java.io.IOException;
@@ -30,10 +30,10 @@ import static org.hamcrest.Matchers.notNullValue;
 public class PivotConfigTests extends AbstractSerializingTransformTestCase<PivotConfig> {
 
     public static PivotConfig randomPivotConfigWithDeprecatedFields() {
-        return randomPivotConfigWithDeprecatedFields(TransformConfigVersion.CURRENT);
+        return randomPivotConfigWithDeprecatedFields(Version.CURRENT);
     }
 
-    public static PivotConfig randomPivotConfigWithDeprecatedFields(TransformConfigVersion version) {
+    public static PivotConfig randomPivotConfigWithDeprecatedFields(Version version) {
         return new PivotConfig(
             GroupConfigTests.randomGroupConfig(version),
             AggregationConfigTests.randomAggregationConfig(),
@@ -42,10 +42,10 @@ public class PivotConfigTests extends AbstractSerializingTransformTestCase<Pivot
     }
 
     public static PivotConfig randomPivotConfig() {
-        return randomPivotConfig(TransformConfigVersion.CURRENT);
+        return randomPivotConfig(Version.CURRENT);
     }
 
-    public static PivotConfig randomPivotConfig(TransformConfigVersion version) {
+    public static PivotConfig randomPivotConfig(Version version) {
         return new PivotConfig(
             GroupConfigTests.randomGroupConfig(version),
             AggregationConfigTests.randomAggregationConfig(),

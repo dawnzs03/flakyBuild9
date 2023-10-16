@@ -60,7 +60,7 @@ public class PendingClusterTasksResponse extends ActionResponse implements Chunk
             builder.startObject();
             builder.startArray(Fields.TASKS);
             return builder;
-        }), Iterators.map(pendingTasks.iterator(), pendingClusterTask -> (builder, p) -> {
+        }), pendingTasks.stream().<ToXContent>map(pendingClusterTask -> (builder, p) -> {
             builder.startObject();
             builder.field(Fields.INSERT_ORDER, pendingClusterTask.getInsertOrder());
             builder.field(Fields.PRIORITY, pendingClusterTask.getPriority());
@@ -70,7 +70,7 @@ public class PendingClusterTasksResponse extends ActionResponse implements Chunk
             builder.field(Fields.TIME_IN_QUEUE, pendingClusterTask.getTimeInQueue());
             builder.endObject();
             return builder;
-        }), Iterators.single((builder, p) -> {
+        }).iterator(), Iterators.single((builder, p) -> {
             builder.endArray();
             builder.endObject();
             return builder;

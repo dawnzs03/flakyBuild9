@@ -103,7 +103,7 @@ public class StackTemplateRegistryTests extends ESTestCase {
         );
         assertThat(disabledRegistry.getComponentTemplateConfigs(), anEmptyMap());
         assertThat(disabledRegistry.getComposableTemplateConfigs(), anEmptyMap());
-        assertThat(disabledRegistry.getLifecyclePolicies(), hasSize(0));
+        assertThat(disabledRegistry.getPolicyConfigs(), hasSize(0));
     }
 
     public void testThatNonExistingTemplatesAreAddedImmediately() throws Exception {
@@ -179,15 +179,12 @@ public class StackTemplateRegistryTests extends ESTestCase {
         DiscoveryNodes nodes = DiscoveryNodes.builder().localNodeId("node").masterNodeId("node").add(node).build();
 
         Map<String, LifecyclePolicy> policyMap = new HashMap<>();
-        List<LifecyclePolicy> policies = registry.getLifecyclePolicies();
+        List<LifecyclePolicy> policies = registry.getPolicyConfigs();
         assertThat(policies, hasSize(8));
         policies.forEach(p -> policyMap.put(p.getName(), p));
 
         client.setVerifier((action, request, listener) -> {
             if (action instanceof PutComponentTemplateAction) {
-                // Ignore this, it's verified in another test
-                return AcknowledgedResponse.TRUE;
-            } else if (action instanceof PutComposableIndexTemplateAction) {
                 // Ignore this, it's verified in another test
                 return AcknowledgedResponse.TRUE;
             } else if (action instanceof PutLifecycleAction) {
@@ -250,15 +247,12 @@ public class StackTemplateRegistryTests extends ESTestCase {
 
         Map<String, LifecyclePolicy> policyMap = new HashMap<>();
         String policyStr = "{\"phases\":{\"delete\":{\"min_age\":\"1m\",\"actions\":{\"delete\":{}}}}}";
-        List<LifecyclePolicy> policies = registry.getLifecyclePolicies();
+        List<LifecyclePolicy> policies = registry.getPolicyConfigs();
         assertThat(policies, hasSize(8));
         policies.forEach(p -> policyMap.put(p.getName(), p));
 
         client.setVerifier((action, request, listener) -> {
             if (action instanceof PutComponentTemplateAction) {
-                // Ignore this, it's verified in another test
-                return AcknowledgedResponse.TRUE;
-            } else if (action instanceof PutComposableIndexTemplateAction) {
                 // Ignore this, it's verified in another test
                 return AcknowledgedResponse.TRUE;
             } else if (action instanceof PutLifecycleAction) {
@@ -382,7 +376,6 @@ public class StackTemplateRegistryTests extends ESTestCase {
         versions.put(StackTemplateRegistry.LOGS_SETTINGS_COMPONENT_TEMPLATE_NAME, StackTemplateRegistry.REGISTRY_VERSION);
         versions.put(StackTemplateRegistry.LOGS_MAPPINGS_COMPONENT_TEMPLATE_NAME, StackTemplateRegistry.REGISTRY_VERSION);
         versions.put(StackTemplateRegistry.METRICS_SETTINGS_COMPONENT_TEMPLATE_NAME, StackTemplateRegistry.REGISTRY_VERSION);
-        versions.put(StackTemplateRegistry.METRICS_TSDB_SETTINGS_COMPONENT_TEMPLATE_NAME, StackTemplateRegistry.REGISTRY_VERSION);
         versions.put(StackTemplateRegistry.METRICS_MAPPINGS_COMPONENT_TEMPLATE_NAME, StackTemplateRegistry.REGISTRY_VERSION);
         versions.put(StackTemplateRegistry.SYNTHETICS_SETTINGS_COMPONENT_TEMPLATE_NAME, StackTemplateRegistry.REGISTRY_VERSION);
         versions.put(StackTemplateRegistry.SYNTHETICS_MAPPINGS_COMPONENT_TEMPLATE_NAME, StackTemplateRegistry.REGISTRY_VERSION);
@@ -423,10 +416,6 @@ public class StackTemplateRegistryTests extends ESTestCase {
         );
         versions.put(
             StackTemplateRegistry.METRICS_SETTINGS_COMPONENT_TEMPLATE_NAME,
-            StackTemplateRegistry.REGISTRY_VERSION + randomIntBetween(1, 1000)
-        );
-        versions.put(
-            StackTemplateRegistry.METRICS_TSDB_SETTINGS_COMPONENT_TEMPLATE_NAME,
             StackTemplateRegistry.REGISTRY_VERSION + randomIntBetween(1, 1000)
         );
         versions.put(

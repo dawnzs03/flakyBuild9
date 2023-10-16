@@ -10,6 +10,7 @@ package org.elasticsearch.xpack.spatial.search.aggregations.metrics;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.XYPointField;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.elasticsearch.common.geo.Orientation;
@@ -61,7 +62,8 @@ public class CartesianShapeCentroidAggregatorTests extends AggregatorTestCase {
                 Collections.emptyMap()
             );
             try (IndexReader reader = w.getReader()) {
-                InternalCartesianCentroid result = searchAndReduce(reader, new AggTestConfig(aggBuilder, fieldType));
+                IndexSearcher searcher = new IndexSearcher(reader);
+                InternalCartesianCentroid result = searchAndReduce(searcher, new AggTestConfig(aggBuilder, fieldType));
                 assertNull(result.centroid());
                 assertFalse(AggregationInspectionHelper.hasValue(result));
             }
@@ -76,6 +78,8 @@ public class CartesianShapeCentroidAggregatorTests extends AggregatorTestCase {
             document.add(new XYPointField("field", 10, 10));
             w.addDocument(document);
             try (IndexReader reader = w.getReader()) {
+                IndexSearcher searcher = new IndexSearcher(reader);
+
                 MappedFieldType fieldType = new ShapeFieldMapper.ShapeFieldType(
                     "another_field",
                     true,
@@ -84,11 +88,11 @@ public class CartesianShapeCentroidAggregatorTests extends AggregatorTestCase {
                     null,
                     Collections.emptyMap()
                 );
-                InternalCartesianCentroid result = searchAndReduce(reader, new AggTestConfig(aggBuilder, fieldType));
+                InternalCartesianCentroid result = searchAndReduce(searcher, new AggTestConfig(aggBuilder, fieldType));
                 assertNull(result.centroid());
 
                 fieldType = new ShapeFieldMapper.ShapeFieldType("field", true, true, Orientation.RIGHT, null, Collections.emptyMap());
-                result = searchAndReduce(reader, new AggTestConfig(aggBuilder, fieldType));
+                result = searchAndReduce(searcher, new AggTestConfig(aggBuilder, fieldType));
                 assertNull(result.centroid());
                 assertFalse(AggregationInspectionHelper.hasValue(result));
             }
@@ -106,6 +110,8 @@ public class CartesianShapeCentroidAggregatorTests extends AggregatorTestCase {
             document.add(new XYPointField("field", 10, 10));
             w.addDocument(document);
             try (IndexReader reader = w.getReader()) {
+                IndexSearcher searcher = new IndexSearcher(reader);
+
                 MappedFieldType fieldType = new ShapeFieldMapper.ShapeFieldType(
                     "another_field",
                     true,
@@ -114,7 +120,7 @@ public class CartesianShapeCentroidAggregatorTests extends AggregatorTestCase {
                     null,
                     Collections.emptyMap()
                 );
-                InternalCartesianCentroid result = searchAndReduce(reader, new AggTestConfig(aggBuilder, fieldType));
+                InternalCartesianCentroid result = searchAndReduce(searcher, new AggTestConfig(aggBuilder, fieldType));
                 assertThat(result.centroid(), equalTo(expectedCentroid));
                 assertTrue(AggregationInspectionHelper.hasValue(result));
             }
@@ -188,7 +194,8 @@ public class CartesianShapeCentroidAggregatorTests extends AggregatorTestCase {
         );
         CartesianCentroidAggregationBuilder aggBuilder = new CartesianCentroidAggregationBuilder("my_agg").field("field");
         try (IndexReader reader = w.getReader()) {
-            InternalCartesianCentroid result = searchAndReduce(reader, new AggTestConfig(aggBuilder, fieldType));
+            IndexSearcher searcher = new IndexSearcher(reader);
+            InternalCartesianCentroid result = searchAndReduce(searcher, new AggTestConfig(aggBuilder, fieldType));
 
             assertEquals("my_agg", result.getName());
             SpatialPoint centroid = result.centroid();

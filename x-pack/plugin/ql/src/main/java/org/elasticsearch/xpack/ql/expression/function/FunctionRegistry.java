@@ -410,13 +410,10 @@ public class FunctionRegistry {
         String... names
     ) {
         FunctionBuilder builder = (source, children, cfg) -> {
-            boolean isBinaryOptionalParamFunction = OptionalArgument.class.isAssignableFrom(function);
-            if (isBinaryOptionalParamFunction && (children.size() > 2 || children.size() < 1)) {
-                throw new QlIllegalArgumentException("expects one or two arguments");
-            } else if (isBinaryOptionalParamFunction == false && children.size() != 2) {
+            if (children.size() != 2) {
                 throw new QlIllegalArgumentException("expects exactly two arguments");
             }
-            return ctorRef.build(source, children.get(0), children.size() == 2 ? children.get(1) : null, cfg);
+            return ctorRef.build(source, children.get(0), children.get(1), cfg);
         };
         return def(function, builder, names);
     }

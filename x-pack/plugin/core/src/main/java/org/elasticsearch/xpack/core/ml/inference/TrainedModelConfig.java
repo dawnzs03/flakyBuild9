@@ -7,6 +7,7 @@
 package org.elasticsearch.xpack.core.ml.inference;
 
 import org.elasticsearch.TransportVersion;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -25,7 +26,6 @@ import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xpack.core.common.time.TimeUtils;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 import org.elasticsearch.xpack.core.ml.inference.persistence.InferenceIndexConstants;
 import org.elasticsearch.xpack.core.ml.inference.trainedmodel.InferenceConfig;
 import org.elasticsearch.xpack.core.ml.inference.trainedmodel.LenientlyParsedInferenceConfig;
@@ -100,11 +100,7 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
     public static final ParseField LOCATION = new ParseField("location");
     public static final ParseField MODEL_PACKAGE = new ParseField("model_package");
 
-    public static final ParseField PER_DEPLOYMENT_MEMORY_BYTES = new ParseField("per_deployment_memory_bytes");
-    public static final ParseField PER_ALLOCATION_MEMORY_BYTES = new ParseField("per_allocation_memory_bytes");
-
     public static final TransportVersion VERSION_3RD_PARTY_CONFIG_ADDED = TransportVersion.V_8_0_0;
-    public static final TransportVersion VERSION_ALLOCATION_MEMORY_ADDED = TransportVersion.V_8_500_064;
 
     // These parsers follow the pattern that metadata is parsed leniently (to allow for enhancements), whilst config is parsed strictly
     public static final ObjectParser<TrainedModelConfig.Builder, Void> LENIENT_PARSER = createParser(true);
@@ -167,7 +163,6 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
             (p, c) -> ignoreUnknownFields ? ModelPackageConfig.fromXContentLenient(p) : ModelPackageConfig.fromXContentStrict(p),
             MODEL_PACKAGE
         );
-
         return parser;
     }
 
@@ -177,7 +172,7 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
 
     private final String modelId;
     private final String createdBy;
-    private final MlConfigVersion version;
+    private final Version version;
     private final String description;
     private final Instant createTime;
     private final TrainedModelType modelType;
@@ -199,7 +194,7 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
         String modelId,
         TrainedModelType modelType,
         String createdBy,
-        MlConfigVersion version,
+        Version version,
         String description,
         Instant createTime,
         LazyModelDefinition definition,
@@ -251,7 +246,7 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
     public TrainedModelConfig(StreamInput in) throws IOException {
         modelId = in.readString();
         createdBy = in.readString();
-        version = MlConfigVersion.readVersion(in);
+        version = Version.readVersion(in);
         description = in.readOptionalString();
         createTime = in.readInstant();
         definition = in.readOptionalWriteable(LazyModelDefinition::fromStreamInput);
@@ -297,7 +292,7 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
         return createdBy;
     }
 
-    public MlConfigVersion getVersion() {
+    public Version getVersion() {
         return version;
     }
 
@@ -408,23 +403,11 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
         this.fullDefinition = fullDefinition;
     }
 
-    public long getPerDeploymentMemoryBytes() {
-        return metadata != null && metadata.containsKey(PER_DEPLOYMENT_MEMORY_BYTES.getPreferredName())
-            ? ((Number) metadata.get(PER_DEPLOYMENT_MEMORY_BYTES.getPreferredName())).longValue()
-            : 0L;
-    }
-
-    public long getPerAllocationMemoryBytes() {
-        return metadata != null && metadata.containsKey(PER_ALLOCATION_MEMORY_BYTES.getPreferredName())
-            ? ((Number) metadata.get(PER_ALLOCATION_MEMORY_BYTES.getPreferredName())).longValue()
-            : 0L;
-    }
-
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         out.writeString(modelId);
         out.writeString(createdBy);
-        MlConfigVersion.writeVersion(version, out);
+        Version.writeVersion(version, out);
         out.writeOptionalString(description);
         out.writeInstant(createTime);
         out.writeOptionalWriteable(definition);
@@ -573,7 +556,7 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
         private String modelId;
         private TrainedModelType modelType;
         private String createdBy;
-        private MlConfigVersion version;
+        private Version version;
         private String description;
         private Instant createTime;
         private List<String> tags = Collections.emptyList();
@@ -587,8 +570,6 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
         private InferenceConfig inferenceConfig;
         private TrainedModelLocation location;
         private ModelPackageConfig modelPackageConfig;
-        private Long perDeploymentMemoryBytes;
-        private Long perAllocationMemoryBytes;
 
         public Builder() {}
 
@@ -645,17 +626,17 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
             return this;
         }
 
-        public MlConfigVersion getVersion() {
+        public Version getVersion() {
             return version;
         }
 
-        public Builder setVersion(MlConfigVersion version) {
+        public Builder setVersion(Version version) {
             this.version = version;
             return this;
         }
 
         private Builder setVersion(String version) {
-            return this.setVersion(MlConfigVersion.fromString(version));
+            return this.setVersion(Version.fromString(version));
         }
 
         public Builder setDescription(String description) {
@@ -1008,7 +989,7 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
                 modelId,
                 modelType,
                 createdBy == null ? "user" : createdBy,
-                version == null ? MlConfigVersion.CURRENT : version,
+                version == null ? Version.CURRENT : version,
                 description,
                 createTime == null ? Instant.now() : createTime,
                 definition,

@@ -11,13 +11,11 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.translog.Translog;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.concurrent.CountDownLatch;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public abstract class TransportWriteActionTestHelper {
 
@@ -39,17 +37,13 @@ public abstract class TransportWriteActionTestHelper {
                 throw new AssertionError(ex);
             }
         };
-
-        final var threadpool = mock(ThreadPool.class);
-        final var transportService = mock(TransportService.class);
-        when(transportService.getThreadPool()).thenReturn(threadpool);
         new TransportWriteAction.AsyncAfterWriteAction(
             indexShard,
             request,
             location,
             writerResult,
             logger,
-            new PostWriteRefresh(transportService),
+            new PostWriteRefresh(mock(TransportService.class)),
             null
         ).run();
         try {

@@ -7,8 +7,8 @@
 
 package org.elasticsearch.xpack.esql.plan.physical;
 
-import org.elasticsearch.xpack.ql.expression.Alias;
 import org.elasticsearch.xpack.ql.expression.Attribute;
+import org.elasticsearch.xpack.ql.expression.NamedExpression;
 import org.elasticsearch.xpack.ql.tree.NodeInfo;
 import org.elasticsearch.xpack.ql.tree.Source;
 
@@ -17,15 +17,16 @@ import java.util.Objects;
 
 import static org.elasticsearch.xpack.esql.expression.NamedExpressions.mergeOutputAttributes;
 
-public class EvalExec extends UnaryExec implements EstimatesRowSize {
-    private final List<Alias> fields;
+public class EvalExec extends UnaryExec {
 
-    public EvalExec(Source source, PhysicalPlan child, List<Alias> fields) {
+    private final List<NamedExpression> fields;
+
+    public EvalExec(Source source, PhysicalPlan child, List<NamedExpression> fields) {
         super(source, child);
         this.fields = fields;
     }
 
-    public List<Alias> fields() {
+    public List<NamedExpression> fields() {
         return fields;
     }
 
@@ -42,12 +43,6 @@ public class EvalExec extends UnaryExec implements EstimatesRowSize {
     @Override
     protected NodeInfo<? extends PhysicalPlan> info() {
         return NodeInfo.create(this, EvalExec::new, child(), fields);
-    }
-
-    @Override
-    public PhysicalPlan estimateRowSize(State state) {
-        state.add(false, fields);
-        return this;
     }
 
     @Override

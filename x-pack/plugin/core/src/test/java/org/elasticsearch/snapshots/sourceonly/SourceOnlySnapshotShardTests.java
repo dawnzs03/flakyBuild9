@@ -21,6 +21,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.util.Bits;
 import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.PlainActionFuture;
@@ -100,7 +101,7 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
             RecoverySource.EmptyStoreRecoverySource.INSTANCE
         );
         Settings settings = Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
+            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
             .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
             .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
             .build();
@@ -448,7 +449,7 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
             RecoverySource.EmptyStoreRecoverySource.INSTANCE
         );
         Settings settings = Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
+            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
             .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
             .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
             .build();
@@ -476,14 +477,7 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
                         Engine.Result result = targetShard.applyIndexOperationOnPrimary(
                             Versions.MATCH_ANY,
                             VersionType.INTERNAL,
-                            new SourceToParse(
-                                id,
-                                source,
-                                XContentHelper.xContentType(source),
-                                rootFieldsVisitor.routing(),
-                                Map.of(),
-                                false
-                            ),
+                            new SourceToParse(id, source, XContentHelper.xContentType(source), rootFieldsVisitor.routing(), Map.of()),
                             SequenceNumbers.UNASSIGNED_SEQ_NO,
                             0,
                             IndexRequest.UNSET_AUTO_GENERATED_TIMESTAMP,

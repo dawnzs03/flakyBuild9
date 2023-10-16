@@ -19,6 +19,7 @@ import org.elasticsearch.rest.action.RestBuilderListener;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.security.action.role.PutRoleRequestBuilder;
 import org.elasticsearch.xpack.core.security.action.role.PutRoleResponse;
+import org.elasticsearch.xpack.security.rest.action.SecurityBaseRestHandler;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,7 +31,7 @@ import static org.elasticsearch.rest.RestRequest.Method.PUT;
  * Rest endpoint to add a Role to the security index
  */
 @ServerlessScope(Scope.INTERNAL)
-public class RestPutRoleAction extends NativeRoleBaseRestHandler {
+public class RestPutRoleAction extends SecurityBaseRestHandler {
 
     public RestPutRoleAction(Settings settings, XPackLicenseState licenseState) {
         super(settings, licenseState);

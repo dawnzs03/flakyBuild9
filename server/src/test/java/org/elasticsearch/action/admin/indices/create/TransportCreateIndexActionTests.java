@@ -24,13 +24,11 @@ import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
-import java.util.Locale;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_INDEX_HIDDEN;
 import static org.hamcrest.Matchers.equalTo;
@@ -64,14 +62,7 @@ public class TransportCreateIndexActionTests extends ESTestCase {
                         .setPrimaryIndex(MANAGED_SYSTEM_INDEX_NAME + "-primary")
                         .setType(SystemIndexDescriptor.Type.INTERNAL_MANAGED)
                         .setSettings(SystemIndexDescriptor.DEFAULT_SETTINGS)
-                        .setMappings(String.format(Locale.ROOT, """
-                            {
-                              "_meta": {
-                                "version": "1.0.0",
-                                "%s": 0
-                              }
-                            }"
-                            """, SystemIndexDescriptor.VERSION_META_KEY))
+                        .setMappings("{\"_meta\":  {\"version\":  \"1.0.0\"}}")
                         .setVersionMetaKey("version")
                         .setOrigin("origin")
                         .build()
@@ -93,7 +84,7 @@ public class TransportCreateIndexActionTests extends ESTestCase {
         this.action = new TransportCreateIndexAction(
             mock(TransportService.class),
             mock(ClusterService.class),
-            mock(ThreadPool.class),
+            null,
             metadataCreateIndexService,
             mock(ActionFilters.class),
             indexNameExpressionResolver,

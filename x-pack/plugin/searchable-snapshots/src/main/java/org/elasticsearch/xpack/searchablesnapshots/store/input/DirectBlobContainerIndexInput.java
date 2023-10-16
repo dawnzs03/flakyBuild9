@@ -11,9 +11,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 import org.elasticsearch.blobcache.BlobCacheUtils;
-import org.elasticsearch.blobcache.common.BlobCacheBufferedIndexInput;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.blobstore.BlobContainer;
+import org.elasticsearch.core.CheckedRunnable;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Streams;
@@ -27,11 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 
 import static org.elasticsearch.blobcache.BlobCacheUtils.toIntBytes;
-import static org.elasticsearch.xpack.searchablesnapshots.store.input.MetadataCachingIndexInput.assertCurrentThreadIsNotCacheFetchAsync;
 
 /**
  * A {@link DirectBlobContainerIndexInput} instance corresponds to a single file from a Lucene directory that has been snapshotted. Because
@@ -57,7 +55,7 @@ import static org.elasticsearch.xpack.searchablesnapshots.store.input.MetadataCa
  * {@link InputStream} in {@code streamForSequentialReads}. Clones and slices, however, do not expect to be read sequentially and so make
  * a new request to the {@link BlobContainer} each time their internal buffer needs refilling.
  */
-public final class DirectBlobContainerIndexInput extends BlobCacheBufferedIndexInput {
+public class DirectBlobContainerIndexInput extends BaseSearchableSnapshotIndexInput {
 
     private static final Logger logger = LogManager.getLogger(DirectBlobContainerIndexInput.class);
 
@@ -67,15 +65,6 @@ public final class DirectBlobContainerIndexInput extends BlobCacheBufferedIndexI
     private StreamForSequentialReads streamForSequentialReads;
     private long sequentialReadSize;
     private static final long NO_SEQUENTIAL_READ_OPTIMIZATION = 0L;
-    private final BlobContainer blobContainer;
-    private final FileInfo fileInfo;
-    private final IndexInputStats stats;
-    private final long offset;
-    private final long length;
-
-    // the following are only mutable so they can be adjusted after cloning/slicing
-    private volatile boolean isClone;
-    private AtomicBoolean closed;
 
     public DirectBlobContainerIndexInput(
         String name,
@@ -85,7 +74,7 @@ public final class DirectBlobContainerIndexInput extends BlobCacheBufferedIndexI
         IndexInputStats stats,
         long sequentialReadSize
     ) {
-        this(name, blobContainer, fileInfo, bufferSize(context), stats, 0L, 0L, fileInfo.length(), sequentialReadSize);
+        this(name, blobContainer, fileInfo, context, stats, 0L, 0L, fileInfo.length(), sequentialReadSize);
         stats.incrementOpenCount();
     }
 
@@ -93,45 +82,21 @@ public final class DirectBlobContainerIndexInput extends BlobCacheBufferedIndexI
         String name,
         BlobContainer blobContainer,
         FileInfo fileInfo,
-        int bufferSize,
+        IOContext context,
         IndexInputStats stats,
         long position,
         long offset,
         long length,
         long sequentialReadSize
     ) {
-        super(name, bufferSize); // TODO should use blob cache
+        super(logger, name, blobContainer, fileInfo, context, stats, offset, length); // TODO should use blob cache
         this.position = position;
         assert sequentialReadSize >= 0;
         this.sequentialReadSize = sequentialReadSize;
-        this.blobContainer = Objects.requireNonNull(blobContainer);
-        this.fileInfo = Objects.requireNonNull(fileInfo);
-        assert fileInfo.metadata().hashEqualsContents() == false
-            : "this method should only be used with blobs that are NOT stored in metadata's hash field " + "(fileInfo: " + fileInfo + ')';
-        this.stats = Objects.requireNonNull(stats);
-        this.offset = offset;
-        this.length = length;
-        this.closed = new AtomicBoolean(false);
-        this.isClone = false;
     }
 
     @Override
-    protected void readInternal(ByteBuffer b) throws IOException {
-        assert assertCurrentThreadIsNotCacheFetchAsync();
-
-        final int bytesToRead = b.remaining();
-        // We can detect that we're going to read the last 16 bytes (that contains the footer checksum) of the file. Such reads are often
-        // executed when opening a Directory and since we have the checksum in the snapshot metadata we can use it to fill the ByteBuffer.
-        if (MetadataCachingIndexInput.maybeReadChecksumFromFileInfo(fileInfo, getFilePointer() + offset, isClone, b)) {
-            logger.trace("read footer of file [{}], bypassing all caches", fileInfo.physicalName());
-        } else {
-            doReadInternal(b);
-        }
-        assert b.remaining() == 0L : b.remaining();
-        stats.addLuceneBytesRead(bytesToRead);
-    }
-
-    private void doReadInternal(ByteBuffer b) throws IOException {
+    protected void doReadInternal(ByteBuffer b) throws IOException {
         if (closed.get()) {
             throw new IOException(this + " is closed");
         }
@@ -161,10 +126,9 @@ public final class DirectBlobContainerIndexInput extends BlobCacheBufferedIndexI
             // we did not read everything in an optimized fashion, so read the remainder directly
             final long startTimeNanos = stats.currentTimeNanos();
             try (InputStream inputStream = openBlobStream(part, pos + optimizedReadSize, length - optimizedReadSize)) {
-                int directReadSize = Streams.read(inputStream, b, length - optimizedReadSize);
-                if (directReadSize < length - optimizedReadSize) {
+                final int directReadSize = readFully(inputStream, b, length - optimizedReadSize, () -> {
                     throw new EOFException("Read past EOF at [" + position + "] with length [" + fileInfo.partBytes(part) + "]");
-                }
+                });
                 assert optimizedReadSize + directReadSize == length : optimizedReadSize + " and " + directReadSize + " vs " + length;
                 position += directReadSize;
                 final long endTimeNanos = stats.currentTimeNanos();
@@ -291,7 +255,6 @@ public final class DirectBlobContainerIndexInput extends BlobCacheBufferedIndexI
         // Clones might not be closed when they are no longer needed, but we must always close streamForSequentialReads. The simple
         // solution: do not optimize sequential reads on clones.
         clone.sequentialReadSize = NO_SEQUENTIAL_READ_OPTIMIZATION;
-        clone.closed = new AtomicBoolean(false);
         clone.isClone = true;
         return clone;
     }
@@ -303,7 +266,7 @@ public final class DirectBlobContainerIndexInput extends BlobCacheBufferedIndexI
             sliceName,
             blobContainer,
             fileInfo,
-            getBufferSize(),
+            context,
             stats,
             position,
             this.offset + offset,
@@ -318,18 +281,8 @@ public final class DirectBlobContainerIndexInput extends BlobCacheBufferedIndexI
     }
 
     @Override
-    public void close() throws IOException {
-        if (closed.compareAndSet(false, true)) {
-            if (isClone == false) {
-                stats.incrementCloseCount();
-            }
-            closeStreamForSequentialReads();
-        }
-    }
-
-    @Override
-    public long length() {
-        return length;
+    public void doClose() throws IOException {
+        closeStreamForSequentialReads();
     }
 
     @Override
@@ -338,9 +291,21 @@ public final class DirectBlobContainerIndexInput extends BlobCacheBufferedIndexI
     }
 
     private InputStream openBlobStream(int part, long pos, long length) throws IOException {
-        assert MetadataCachingIndexInput.assertCurrentThreadMayAccessBlobStore();
+        assert assertCurrentThreadMayAccessBlobStore();
         stats.addBlobStoreBytesRequested(length);
         return blobContainer.readBlob(fileInfo.partName(part), pos, length);
+    }
+
+    /**
+     * Fully read up to {@code length} bytes from the given {@link InputStream}
+     */
+    private static int readFully(InputStream inputStream, final ByteBuffer b, int length, CheckedRunnable<IOException> onEOF)
+        throws IOException {
+        int totalRead = Streams.read(inputStream, b, length);
+        if (totalRead < length) {
+            onEOF.run();
+        }
+        return totalRead > 0 ? totalRead : -1;
     }
 
     private static class StreamForSequentialReads implements Closeable {
@@ -362,8 +327,7 @@ public final class DirectBlobContainerIndexInput extends BlobCacheBufferedIndexI
 
         int read(ByteBuffer b, int length) throws IOException {
             assert this.pos < maxPos : "should not try and read from a fully-read stream";
-            int totalRead = Streams.read(inputStream, b, length);
-            final int read = totalRead > 0 ? totalRead : -1;
+            final int read = readFully(inputStream, b, length, () -> {});
             assert read <= length : read + " vs " + length;
             pos += read;
             return read;

@@ -17,7 +17,6 @@ public record MlAutoscalingStats(
     int nodes,
     long perNodeMemoryInBytes,
     long modelMemoryInBytesSum,
-    int processorsSum,
     int minNodes,
     long extraSingleNodeModelMemoryInBytes,
     int extraSingleNodeProcessors,
@@ -32,7 +31,6 @@ public record MlAutoscalingStats(
             in.readVInt(), // nodes
             in.readVLong(),  // perNodeMemoryInBytes
             in.readVLong(), // modelMemoryInBytes
-            in.readVInt(), // processorsSum
             in.readVInt(), // minNodes
             in.readVLong(), // extraSingleNodeModelMemoryInBytes
             in.readVInt(), // extraSingleNodeProcessors
@@ -48,7 +46,6 @@ public record MlAutoscalingStats(
         out.writeVInt(nodes);
         out.writeVLong(perNodeMemoryInBytes);
         out.writeVLong(modelMemoryInBytesSum);
-        out.writeVLong(processorsSum);
         out.writeVInt(minNodes);
         out.writeVLong(extraSingleNodeModelMemoryInBytes);
         out.writeVInt(extraSingleNodeProcessors);

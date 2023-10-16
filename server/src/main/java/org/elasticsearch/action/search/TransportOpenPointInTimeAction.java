@@ -37,7 +37,6 @@ import org.elasticsearch.transport.TransportActionProxy;
 import org.elasticsearch.transport.TransportChannel;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportRequestHandler;
-import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
@@ -156,11 +155,7 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
                         OPEN_SHARD_READER_CONTEXT_NAME,
                         shardRequest,
                         task,
-                        new ActionListenerResponseHandler<>(
-                            phaseListener,
-                            ShardOpenReaderResponse::new,
-                            TransportResponseHandler.TRANSPORT_WORKER
-                        )
+                        new ActionListenerResponseHandler<>(phaseListener, ShardOpenReaderResponse::new)
                     );
                 }
 

@@ -26,9 +26,6 @@ public final class MvMedianDoubleEvaluator extends AbstractMultivalueFunction.Ab
     return "MvMedian";
   }
 
-  /**
-   * Evaluate blocks containing at least one multivalued field.
-   */
   @Override
   public Block evalNullable(Block fieldVal) {
     DoubleBlock v = (DoubleBlock) fieldVal;
@@ -53,9 +50,6 @@ public final class MvMedianDoubleEvaluator extends AbstractMultivalueFunction.Ab
     return builder.build();
   }
 
-  /**
-   * Evaluate blocks containing at least one multivalued field.
-   */
   @Override
   public Vector evalNotNullable(Block fieldVal) {
     DoubleBlock v = (DoubleBlock) fieldVal;

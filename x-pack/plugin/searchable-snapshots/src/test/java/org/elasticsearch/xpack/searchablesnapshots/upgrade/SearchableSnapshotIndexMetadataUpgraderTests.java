@@ -7,17 +7,17 @@
 
 package org.elasticsearch.xpack.searchablesnapshots.upgrade;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexModule;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.indices.ShardLimitValidator;
 import org.elasticsearch.snapshots.SearchableSnapshotsSettings;
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.test.index.IndexVersionUtils;
+import org.elasticsearch.test.VersionUtils;
 
 import static org.elasticsearch.snapshots.SearchableSnapshotsSettings.SEARCHABLE_SNAPSHOT_STORE_TYPE;
 import static org.hamcrest.Matchers.equalTo;
@@ -107,7 +107,7 @@ public class SearchableSnapshotIndexMetadataUpgraderTests extends ESTestCase {
     }
 
     private Settings normal() {
-        return settings(IndexVersionUtils.randomVersion(random())).build();
+        return settings(VersionUtils.randomVersion(random())).build();
     }
 
     /**
@@ -116,11 +116,7 @@ public class SearchableSnapshotIndexMetadataUpgraderTests extends ESTestCase {
      */
     private Settings partialNeedsUpgrade() {
         return searchableSnapshotSettings(
-            IndexVersionUtils.randomVersionBetween(
-                random(),
-                IndexVersion.V_7_12_0,
-                IndexVersionUtils.getPreviousVersion(IndexVersion.V_8_0_0)
-            ),
+            VersionUtils.randomVersionBetween(random(), Version.V_7_12_0, VersionUtils.getPreviousVersion(Version.V_8_0_0)),
             true
         );
     }
@@ -130,10 +126,7 @@ public class SearchableSnapshotIndexMetadataUpgraderTests extends ESTestCase {
      */
     private Settings partial_7_13plus() {
         return shardLimitGroupFrozen(
-            searchableSnapshotSettings(
-                IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_7_13_0, IndexVersion.current()),
-                true
-            )
+            searchableSnapshotSettings(VersionUtils.randomVersionBetween(random(), Version.V_7_13_0, Version.CURRENT), true)
         );
     }
 
@@ -141,17 +134,14 @@ public class SearchableSnapshotIndexMetadataUpgraderTests extends ESTestCase {
      * This is an illegal state, but we simulate it to capture that we do the version check
      */
     private Settings partial_8plusNoShardLimit() {
-        return searchableSnapshotSettings(
-            IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_8_0_0, IndexVersion.current()),
-            true
-        );
+        return searchableSnapshotSettings(VersionUtils.randomVersionBetween(random(), Version.V_8_0_0, Version.CURRENT), true);
     }
 
     private Settings full() {
-        return searchableSnapshotSettings(IndexVersionUtils.randomVersion(random()), false);
+        return searchableSnapshotSettings(VersionUtils.randomVersion(random()), false);
     }
 
-    private Settings searchableSnapshotSettings(IndexVersion version, boolean partial) {
+    private Settings searchableSnapshotSettings(Version version, boolean partial) {
         Settings.Builder settings = settings(version);
         settings.put(IndexModule.INDEX_STORE_TYPE_SETTING.getKey(), SEARCHABLE_SNAPSHOT_STORE_TYPE);
         if (partial || randomBoolean()) {

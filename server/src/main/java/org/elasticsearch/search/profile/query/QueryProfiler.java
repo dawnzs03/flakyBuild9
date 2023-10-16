@@ -12,6 +12,7 @@ import org.apache.lucene.search.Query;
 import org.elasticsearch.search.profile.AbstractProfiler;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * This class acts as a thread-local storage for profiling a query.  It also
@@ -27,20 +28,20 @@ import java.util.Objects;
 public final class QueryProfiler extends AbstractProfiler<QueryProfileBreakdown, Query> {
 
     /**
-     * The root CollectorResult used in the search
+     * The root Collector used in the search
      */
-    private CollectorResult collectorResult;
+    private Supplier<CollectorResult> collectorResultSupplier;
 
     public QueryProfiler() {
         super(new InternalQueryProfileTree());
     }
 
-    /** Set the collector result that is associated with this profiler. */
-    public void setCollectorResult(CollectorResult collectorResult) {
-        if (this.collectorResult != null) {
-            throw new IllegalStateException("The collector result can only be set once.");
+    /** Set the collector manager that is associated with this profiler. */
+    public void setCollectorManager(Supplier<CollectorResult> collectorResultSupplier) {
+        if (this.collectorResultSupplier != null) {
+            throw new IllegalStateException("The collector result supplier can only be set once.");
         }
-        this.collectorResult = Objects.requireNonNull(collectorResult);
+        this.collectorResultSupplier = Objects.requireNonNull(collectorResultSupplier);
     }
 
     /**
@@ -72,7 +73,7 @@ public final class QueryProfiler extends AbstractProfiler<QueryProfileBreakdown,
      * Return the current root Collector for this search
      */
     public CollectorResult getCollectorResult() {
-        return this.collectorResult;
+        return this.collectorResultSupplier.get();
     }
 
 }

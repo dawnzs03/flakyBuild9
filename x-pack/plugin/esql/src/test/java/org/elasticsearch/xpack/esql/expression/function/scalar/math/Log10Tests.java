@@ -7,41 +7,62 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.math;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
-import org.elasticsearch.xpack.esql.expression.function.AbstractFunctionTestCase;
+import org.elasticsearch.xpack.esql.expression.function.scalar.AbstractScalarFunctionTestCase;
 import org.elasticsearch.xpack.ql.expression.Expression;
+import org.elasticsearch.xpack.ql.expression.Literal;
 import org.elasticsearch.xpack.ql.tree.Source;
-import org.elasticsearch.xpack.ql.type.DataTypes;
+import org.elasticsearch.xpack.ql.type.DataType;
+import org.hamcrest.Matcher;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
-public class Log10Tests extends AbstractFunctionTestCase {
-    public Log10Tests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
-    }
+import static org.elasticsearch.xpack.ql.type.DataTypes.DOUBLE;
+import static org.hamcrest.Matchers.equalTo;
 
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        String read = "Attribute[channel=0]";
-        List<TestCaseSupplier> suppliers = new ArrayList<>();
-        TestCaseSupplier.forUnaryInt(suppliers, "Log10IntEvaluator[val=" + read + "]", DataTypes.DOUBLE, Math::log10);
-        TestCaseSupplier.forUnaryLong(suppliers, "Log10LongEvaluator[val=" + read + "]", DataTypes.DOUBLE, Math::log10);
-        TestCaseSupplier.forUnaryUnsignedLong(
-            suppliers,
-            "Log10UnsignedLongEvaluator[val=" + read + "]",
-            DataTypes.DOUBLE,
-            ul -> Math.log10(ul.doubleValue())
-        );
-        TestCaseSupplier.forUnaryDouble(suppliers, "Log10DoubleEvaluator[val=" + read + "]", DataTypes.DOUBLE, Math::log10);
-        return parameterSuppliersFromTypedData(errorsForCasesWithoutExamples(anyNullIsNull(true, suppliers)));
+public class Log10Tests extends AbstractScalarFunctionTestCase {
+
+    @Override
+    protected List<Object> simpleData() {
+        return List.of(1000.0d);
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
+    protected Expression expressionForSimpleData() {
+        return new Log10(Source.EMPTY, field("arg", DOUBLE));
+    }
+
+    @Override
+    protected Matcher<Object> resultMatcher(List<Object> data, DataType dataType) {
+        return equalTo(Math.log10((Double) data.get(0)));
+    }
+
+    @Override
+    protected Matcher<Object> resultMatcher(List<Object> data) {
+        return equalTo(Math.log10((Double) data.get(0)));
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "Log10DoubleEvaluator[val=Attribute[channel=0]]";
+    }
+
+    @Override
+    protected Expression constantFoldable(List<Object> data) {
+        return new Log10(Source.EMPTY, new Literal(Source.EMPTY, data.get(0), DOUBLE));
+    }
+
+    @Override
+    protected Expression build(Source source, List<Literal> args) {
         return new Log10(source, args.get(0));
+    }
+
+    @Override
+    protected List<ArgumentSpec> argSpec() {
+        return List.of(required(numerics()));
+    }
+
+    @Override
+    protected DataType expectedType(List<DataType> argTypes) {
+        return DOUBLE;
     }
 }

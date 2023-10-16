@@ -12,6 +12,7 @@ import org.apache.lucene.document.BinaryDocValuesField;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
@@ -126,7 +127,8 @@ public class DateRangeHistogramAggregatorTests extends AggregatorTestCase {
             MappedFieldType fieldType = new RangeFieldMapper.RangeFieldType(fieldName, rangeType);
 
             try (IndexReader reader = w.getReader()) {
-                expectThrows(IllegalArgumentException.class, () -> searchAndReduce(reader, new AggTestConfig(aggBuilder, fieldType)));
+                IndexSearcher searcher = new IndexSearcher(reader);
+                expectThrows(IllegalArgumentException.class, () -> searchAndReduce(searcher, new AggTestConfig(aggBuilder, fieldType)));
             }
         }
     }
@@ -1080,8 +1082,10 @@ public class DateRangeHistogramAggregatorTests extends AggregatorTestCase {
             indexWriter.close();
 
             try (DirectoryReader indexReader = DirectoryReader.open(directory)) {
+                IndexSearcher indexSearcher = newIndexSearcher(indexReader);
+
                 InternalDateHistogram histogram = searchAndReduce(
-                    indexReader,
+                    indexSearcher,
                     new AggTestConfig(aggregationBuilder, fieldType).withQuery(query)
                 );
                 verify.accept(histogram);

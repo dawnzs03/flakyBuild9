@@ -35,7 +35,6 @@ import org.elasticsearch.persistent.PersistentTasksCustomMetadata;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 import org.elasticsearch.xpack.core.ml.MlMetadata;
 import org.elasticsearch.xpack.core.ml.MlTasks;
 import org.elasticsearch.xpack.core.ml.action.StartDataFrameAnalyticsAction;
@@ -98,8 +97,7 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
                 MachineLearning.USE_AUTO_MACHINE_MEMORY_PERCENT,
                 MachineLearning.MAX_OPEN_JOBS_PER_NODE,
                 MachineLearning.MAX_LAZY_ML_NODES,
-                MachineLearning.MAX_ML_NODE_SIZE,
-                MachineLearning.ALLOCATED_PROCESSORS_SCALE
+                MachineLearning.MAX_ML_NODE_SIZE
             )
         );
         when(clusterService.getClusterSettings()).thenReturn(clusterSettings);
@@ -1038,7 +1036,7 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
         previousTasksBuilder.addTask(
             MlTasks.dataFrameAnalyticsTaskId("dfa-1"),
             MlTasks.DATA_FRAME_ANALYTICS_TASK_NAME,
-            new StartDataFrameAnalyticsAction.TaskParams("dfa-1", MlConfigVersion.CURRENT, true),
+            new StartDataFrameAnalyticsAction.TaskParams("dfa-1", Version.CURRENT, true),
             new PersistentTasksCustomMetadata.Assignment(mlNodeId, "test assignment")
         );
 
@@ -1109,7 +1107,7 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
         previousTasksBuilder.addTask(
             MlTasks.dataFrameAnalyticsTaskId("dfa-1"),
             MlTasks.DATA_FRAME_ANALYTICS_TASK_NAME,
-            new StartDataFrameAnalyticsAction.TaskParams("dfa-1", MlConfigVersion.CURRENT, true),
+            new StartDataFrameAnalyticsAction.TaskParams("dfa-1", Version.CURRENT, true),
             new PersistentTasksCustomMetadata.Assignment(mlNodeId, "test assignment")
         );
 
@@ -1129,7 +1127,7 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
         currentTasksBuilder.addTask(
             MlTasks.dataFrameAnalyticsTaskId("dfa-1"),
             MlTasks.DATA_FRAME_ANALYTICS_TASK_NAME,
-            new StartDataFrameAnalyticsAction.TaskParams("dfa-1", MlConfigVersion.CURRENT, true),
+            new StartDataFrameAnalyticsAction.TaskParams("dfa-1", Version.CURRENT, true),
             new PersistentTasksCustomMetadata.Assignment(mlNodeId, "test assignment")
         );
 
@@ -1479,7 +1477,7 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
     }
 
     private static DiscoveryNode buildNode(String name, boolean isML, long nativeMemory, int allocatedProcessors) {
-        return buildNode(name, isML, nativeMemory, allocatedProcessors, VersionInformation.CURRENT, MlConfigVersion.CURRENT);
+        return buildNode(name, isML, nativeMemory, allocatedProcessors, VersionInformation.CURRENT);
     }
 
     private static DiscoveryNode buildNode(
@@ -1487,8 +1485,7 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
         boolean isML,
         long nativeMemory,
         int allocatedProcessors,
-        VersionInformation versionInfo,
-        MlConfigVersion mlConfigVersion
+        VersionInformation version
     ) {
         return DiscoveryNodeUtils.builder(name)
             .name(name)
@@ -1496,12 +1493,11 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
                 Map.ofEntries(
                     entry(MachineLearning.MACHINE_MEMORY_NODE_ATTR, String.valueOf(nativeMemory)),
                     entry(MachineLearning.MAX_JVM_SIZE_NODE_ATTR, String.valueOf(10)),
-                    entry(MachineLearning.ALLOCATED_PROCESSORS_NODE_ATTR, String.valueOf(allocatedProcessors)),
-                    entry(MachineLearning.ML_CONFIG_VERSION_NODE_ATTR, mlConfigVersion.toString())
+                    entry(MachineLearning.ALLOCATED_PROCESSORS_NODE_ATTR, String.valueOf(allocatedProcessors))
                 )
             )
             .roles(isML ? DiscoveryNodeRole.roles() : Set.of(DiscoveryNodeRole.DATA_ROLE, DiscoveryNodeRole.MASTER_ROLE))
-            .version(versionInfo)
+            .version(version)
             .build();
     }
 
@@ -1510,14 +1506,7 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
     }
 
     private static DiscoveryNode buildOldNode(String name, boolean isML, long nativeMemory, int allocatedProcessors) {
-        return buildNode(
-            name,
-            isML,
-            nativeMemory,
-            allocatedProcessors,
-            VersionInformation.inferVersions(Version.V_7_15_0),
-            MlConfigVersion.V_7_15_0
-        );
+        return buildNode(name, isML, nativeMemory, allocatedProcessors, VersionInformation.inferVersions(Version.V_7_15_0));
     }
 
     private static StartTrainedModelDeploymentAction.TaskParams newParams(String modelId, long modelSize) {
@@ -1538,9 +1527,7 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
             threadsPerAllocation,
             1024,
             ByteSizeValue.ofBytes(modelSize),
-            Priority.NORMAL,
-            0L,
-            0L
+            Priority.NORMAL
         );
     }
 

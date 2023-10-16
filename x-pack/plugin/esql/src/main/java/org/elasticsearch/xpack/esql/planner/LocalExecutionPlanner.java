@@ -33,7 +33,6 @@ import org.elasticsearch.compute.operator.SinkOperator.SinkOperatorFactory;
 import org.elasticsearch.compute.operator.SourceOperator;
 import org.elasticsearch.compute.operator.SourceOperator.SourceOperatorFactory;
 import org.elasticsearch.compute.operator.StringExtractOperator;
-import org.elasticsearch.compute.operator.TopNEncoder;
 import org.elasticsearch.compute.operator.TopNOperator;
 import org.elasticsearch.compute.operator.TopNOperator.TopNOperatorFactory;
 import org.elasticsearch.compute.operator.exchange.ExchangeSinkHandler;
@@ -44,11 +43,8 @@ import org.elasticsearch.core.Releasables;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.xpack.esql.EsqlIllegalArgumentException;
-import org.elasticsearch.xpack.esql.EsqlUnsupportedOperationException;
 import org.elasticsearch.xpack.esql.enrich.EnrichLookupOperator;
 import org.elasticsearch.xpack.esql.enrich.EnrichLookupService;
-import org.elasticsearch.xpack.esql.evaluator.EvalMapper;
-import org.elasticsearch.xpack.esql.evaluator.command.GrokEvaluatorExtracter;
 import org.elasticsearch.xpack.esql.plan.physical.AggregateExec;
 import org.elasticsearch.xpack.esql.plan.physical.DissectExec;
 import org.elasticsearch.xpack.esql.plan.physical.EnrichExec;
@@ -83,6 +79,7 @@ import org.elasticsearch.xpack.ql.type.DataTypes;
 import org.elasticsearch.xpack.ql.util.Holder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -190,7 +187,7 @@ public class LocalExecutionPlanner {
         } else if (node instanceof ShowExec show) {
             return planShow(show);
         } else if (node instanceof ExchangeSourceExec exchangeSource) {
-            return planExchangeSource(exchangeSource, context);
+            return planExchangeSource(exchangeSource);
         }
         // lookups and joins
         else if (node instanceof EnrichExec enrich) {
@@ -203,12 +200,11 @@ public class LocalExecutionPlanner {
             return planExchangeSink(exchangeSink, context);
         }
 
-        throw new EsqlUnsupportedOperationException("unknown physical plan node [" + node.nodeName() + "]");
+        throw new UnsupportedOperationException(node.nodeName());
     }
 
     private PhysicalOperation planAggregation(AggregateExec aggregate, LocalExecutionPlannerContext context) {
-        var source = plan(aggregate.child(), context);
-        return physicalOperationProviders.groupingPhysicalOperation(aggregate, source, context);
+        return physicalOperationProviders.groupingPhysicalOperation(aggregate, plan(aggregate.child(), context), context);
     }
 
     private PhysicalOperation planEsQueryNode(EsQueryExec esQuery, LocalExecutionPlannerContext context) {
@@ -219,8 +215,7 @@ public class LocalExecutionPlanner {
                 esQuery.output(),
                 new MatchAllQueryBuilder(),
                 esQuery.limit(),
-                esQuery.sorts(),
-                esQuery.estimatedRowSize()
+                esQuery.sorts()
             );
         }
         return physicalOperationProviders.sourcePhysicalOperation(esQuery, context);
@@ -257,35 +252,26 @@ public class LocalExecutionPlanner {
         if (dataType == DataTypes.BOOLEAN) {
             return ElementType.BOOLEAN;
         }
-        throw EsqlUnsupportedOperationException.unsupportedDataType(dataType);
+        throw new UnsupportedOperationException("unsupported data type [" + dataType + "]");
     }
 
     private PhysicalOperation planOutput(OutputExec outputExec, LocalExecutionPlannerContext context) {
         PhysicalOperation source = plan(outputExec.child(), context);
         var output = outputExec.output();
 
-        return source.withSink(
-            new OutputOperatorFactory(
-                Expressions.names(output),
-                alignPageToAttributes(output, source.layout),
-                outputExec.getPageConsumer()
-            ),
-            source.layout
-        );
-    }
-
-    private static Function<Page, Page> alignPageToAttributes(List<Attribute> attrs, Layout layout) {
         // align the page layout with the operator output
         // extraction order - the list ordinal is the same as the column one
         // while the value represents the position in the original page
-        final int[] mappedPosition = new int[attrs.size()];
+        final int[] mappedPosition = new int[output.size()];
         int index = -1;
         boolean transformRequired = false;
-        for (var attribute : attrs) {
-            mappedPosition[++index] = layout.getChannel(attribute.id());
-            transformRequired |= mappedPosition[index] != index;
+        for (var attribute : output) {
+            mappedPosition[++index] = source.layout.getChannel(attribute.id());
+            if (transformRequired == false) {
+                transformRequired = mappedPosition[index] != index;
+            }
         }
-        Function<Page, Page> transformer = transformRequired ? p -> {
+        Function<Page, Page> mapper = transformRequired ? p -> {
             var blocks = new Block[mappedPosition.length];
             for (int i = 0; i < blocks.length; i++) {
                 blocks[i] = p.getBlock(mappedPosition[i]);
@@ -293,36 +279,36 @@ public class LocalExecutionPlanner {
             return new Page(blocks);
         } : Function.identity();
 
-        return transformer;
+        return source.withSink(new OutputOperatorFactory(Expressions.names(output), mapper, outputExec.getPageConsumer()), source.layout);
     }
 
     private PhysicalOperation planExchange(ExchangeExec exchangeExec, LocalExecutionPlannerContext context) {
-        throw new EsqlUnsupportedOperationException("Exchange needs to be replaced with a sink/source");
+        throw new EsqlIllegalArgumentException("Exchange needs to be replaced with a sink/source");
     }
 
     private PhysicalOperation planExchangeSink(ExchangeSinkExec exchangeSink, LocalExecutionPlannerContext context) {
         Objects.requireNonNull(exchangeSinkHandler, "ExchangeSinkHandler wasn't provided");
         PhysicalOperation source = plan(exchangeSink.child(), context);
-
-        Function<Page, Page> transformer = exchangeSink.child() instanceof AggregateExec
-            ? Function.identity()
-            : alignPageToAttributes(exchangeSink.output(), source.layout);
-
-        return source.withSink(new ExchangeSinkOperatorFactory(exchangeSinkHandler::createExchangeSink, transformer), source.layout);
+        return source.withSink(new ExchangeSinkOperatorFactory(exchangeSinkHandler::createExchangeSink), source.layout);
     }
 
-    private PhysicalOperation planExchangeSource(ExchangeSourceExec exchangeSource, LocalExecutionPlannerContext context) {
+    private PhysicalOperation planExchangeSource(ExchangeSourceExec exchangeSource) {
+        // TODO: ugly hack for now to get the same layout - need to properly support it and have it exposed in the plan and over the wire
+        LocalExecutionPlannerContext dummyContext = new LocalExecutionPlannerContext(
+            new ArrayList<>(),
+            new Holder<>(DriverParallelism.SINGLE),
+            1,
+            DataPartitioning.SHARD,
+            1,
+            BigArrays.NON_RECYCLING_INSTANCE
+        );
+
+        var planToGetLayout = plan(exchangeSource.nodeLayout(), dummyContext);
         Objects.requireNonNull(exchangeSourceHandler, "ExchangeSourceHandler wasn't provided");
-
-        var builder = new Layout.Builder();
-        for (var attr : exchangeSource.output()) {
-            builder.appendChannel(attr.id());
-        }
-        // decorate the layout
-        var l = builder.build();
-        var layout = exchangeSource.isIntermediateAgg() ? new ExchangeLayout(l) : l;
-
-        return PhysicalOperation.fromSource(new ExchangeSourceOperatorFactory(exchangeSourceHandler::createExchangeSource), layout);
+        return PhysicalOperation.fromSource(
+            new ExchangeSourceOperatorFactory(exchangeSourceHandler::createExchangeSource),
+            planToGetLayout.layout
+        );
     }
 
     private PhysicalOperation planTopN(TopNExec topNExec, LocalExecutionPlannerContext context) {
@@ -333,31 +319,13 @@ public class LocalExecutionPlanner {
             if (order.child() instanceof Attribute a) {
                 sortByChannel = source.layout.getChannel(a.id());
             } else {
-                throw new EsqlIllegalArgumentException("order by expression must be an attribute");
+                throw new UnsupportedOperationException();
             }
 
-            TopNEncoder encoder = switch (a.dataType().typeName()) {
-                case "ip": {
-                    yield TopNOperator.BYTESREF_FIXED_LENGTH_ENCODER;
-                }
-                case "text", "keyword": {
-                    yield TopNOperator.BYTESREF_UTF8_ENCODER;
-                }
-                case "version": {
-                    yield TopNOperator.BYTESREF_FIXED_LENGTH_ENCODER;
-                }
-                case "boolean", "null", "byte", "short", "integer", "long", "double", "float", "half_float", "datetime", "date_period",
-                    "time_duration", "object", "nested", "scaled_float", "unsigned_long": {
-                    yield TopNOperator.DEFAULT_ENCODER;
-                }
-                default:
-                    throw new EsqlIllegalArgumentException("No TopN sorting encoder for type " + a.dataType().typeName());
-            };
             return new TopNOperator.SortOrder(
                 sortByChannel,
                 order.direction().equals(Order.OrderDirection.ASC),
-                order.nullsPosition().equals(Order.NullsPosition.FIRST),
-                encoder
+                order.nullsPosition().equals(Order.NullsPosition.FIRST)
             );
         }).toList();
 
@@ -365,29 +333,24 @@ public class LocalExecutionPlanner {
         if (topNExec.limit() instanceof Literal literal) {
             limit = Integer.parseInt(literal.value().toString());
         } else {
-            throw new EsqlUnsupportedOperationException("limit only supported with literal values");
+            throw new UnsupportedOperationException();
         }
 
-        // TODO Replace page size with passing estimatedRowSize down
-        /*
-         * The 2000 below is a hack to account for incoming size and to make
-         * sure the estimated row size is never 0 which'd cause a divide by 0.
-         * But we should replace this with passing the estimate into the real
-         * topn and letting it actually measure the size of rows it produces.
-         * That'll be more accurate. And we don't have a path for estimating
-         * incoming rows. And we don't need one because we can estimate.
-         */
-        return source.with(new TopNOperatorFactory(limit, orders, context.pageSize(2000 + topNExec.estimatedRowSize())), source.layout);
+        return source.with(new TopNOperatorFactory(limit, orders, context.pageSize), source.layout);
     }
 
     private PhysicalOperation planEval(EvalExec eval, LocalExecutionPlannerContext context) {
         PhysicalOperation source = plan(eval.child(), context);
 
-        for (Alias field : eval.fields()) {
+        for (NamedExpression namedExpression : eval.fields()) {
             Supplier<ExpressionEvaluator> evaluatorSupplier;
-            evaluatorSupplier = EvalMapper.toEvaluator(field.child(), source.layout);
+            if (namedExpression instanceof Alias alias) {
+                evaluatorSupplier = EvalMapper.toEvaluator(alias.child(), source.layout);
+            } else {
+                throw new UnsupportedOperationException();
+            }
             Layout.Builder layout = source.layout.builder();
-            layout.appendChannel(field.toAttribute().id());
+            layout.appendChannel(namedExpression.toAttribute().id());
             source = source.with(new EvalOperatorFactory(evaluatorSupplier), layout.build());
         }
         return source;
@@ -401,6 +364,8 @@ public class LocalExecutionPlanner {
         }
         final Expression expr = dissect.inputExpression();
         String[] attributeNames = Expressions.names(dissect.extractedFields()).toArray(new String[0]);
+        ElementType[] types = new ElementType[dissect.extractedFields().size()];
+        Arrays.fill(types, ElementType.BYTES_REF);
 
         Layout layout = layoutBuilder.build();
         source = source.with(
@@ -479,7 +444,13 @@ public class LocalExecutionPlanner {
     }
 
     private PhysicalOperation planRow(RowExec row, LocalExecutionPlannerContext context) {
-        List<Object> obj = row.fields().stream().map(f -> f.child().fold()).toList();
+        List<Object> obj = row.fields().stream().map(f -> {
+            if (f instanceof Alias) {
+                return ((Alias) f).child().fold();
+            } else {
+                return f.fold();
+            }
+        }).toList();
         Layout.Builder layout = new Layout.Builder();
         var output = row.output();
         for (Attribute attribute : output) {
@@ -563,9 +534,9 @@ public class LocalExecutionPlanner {
      * Immutable physical operation.
      */
     public static class PhysicalOperation implements Describable {
-        final SourceOperatorFactory sourceOperatorFactory;
-        final List<OperatorFactory> intermediateOperatorFactories;
-        final SinkOperatorFactory sinkOperatorFactory;
+        private final SourceOperatorFactory sourceOperatorFactory;
+        private final List<OperatorFactory> intermediateOperatorFactories;
+        private final SinkOperatorFactory sinkOperatorFactory;
 
         final Layout layout; // maps field names to channels
 
@@ -660,7 +631,7 @@ public class LocalExecutionPlanner {
         Holder<DriverParallelism> driverParallelism,
         int taskConcurrency,
         DataPartitioning dataPartitioning,
-        int configuredPageSize,
+        int pageSize,
         BigArrays bigArrays
     ) {
         void addDriverFactory(DriverFactory driverFactory) {
@@ -669,19 +640,6 @@ public class LocalExecutionPlanner {
 
         void driverParallelism(DriverParallelism parallelism) {
             driverParallelism.set(parallelism);
-        }
-
-        int pageSize(Integer estimatedRowSize) {
-            if (estimatedRowSize == null) {
-                throw new IllegalStateException("estimated row size hasn't been set");
-            }
-            if (estimatedRowSize == 0) {
-                throw new IllegalStateException("estimated row size can't be 0");
-            }
-            if (configuredPageSize != 0) {
-                return configuredPageSize;
-            }
-            return Math.max(SourceOperator.MIN_TARGET_PAGE_SIZE, SourceOperator.TARGET_PAGE_SIZE / estimatedRowSize);
         }
     }
 

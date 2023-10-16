@@ -21,7 +21,6 @@ import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.IndexShardTestCase;
 import org.elasticsearch.index.translog.Translog;
 import org.elasticsearch.indices.recovery.RecoveryState;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.ccr.CcrSettings;
 import org.elasticsearch.xpack.ccr.index.engine.FollowingEngineFactory;
@@ -37,7 +36,6 @@ import static java.util.Collections.emptySet;
 import static org.elasticsearch.xpack.ccr.action.bulk.TransportBulkShardOperationsAction.rewriteOperationWithPrimaryTerm;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class BulkShardOperationsTests extends IndexShardTestCase {
 
@@ -68,9 +66,6 @@ public class BulkShardOperationsTests extends IndexShardTestCase {
             }
         }
 
-        final var threadpool = mock(ThreadPool.class);
-        final var transportService = mock(TransportService.class);
-        when(transportService.getThreadPool()).thenReturn(threadpool);
         final TransportWriteAction.WritePrimaryResult<BulkShardOperationsRequest, BulkShardOperationsResponse> result =
             TransportBulkShardOperationsAction.shardOperationOnPrimary(
                 followerPrimary.shardId(),
@@ -79,7 +74,7 @@ public class BulkShardOperationsTests extends IndexShardTestCase {
                 numOps - 1,
                 followerPrimary,
                 logger,
-                new PostWriteRefresh(transportService)
+                new PostWriteRefresh(mock(TransportService.class))
             );
 
         boolean accessStats = randomBoolean();
@@ -134,9 +129,6 @@ public class BulkShardOperationsTests extends IndexShardTestCase {
         Randomness.shuffle(firstBulk);
         Randomness.shuffle(secondBulk);
         oldPrimary.advanceMaxSeqNoOfUpdatesOrDeletes(seqno);
-        final var threadpool = mock(ThreadPool.class);
-        final var transportService = mock(TransportService.class);
-        when(transportService.getThreadPool()).thenReturn(threadpool);
         final TransportWriteAction.WritePrimaryResult<BulkShardOperationsRequest, BulkShardOperationsResponse> fullResult =
             TransportBulkShardOperationsAction.shardOperationOnPrimary(
                 oldPrimary.shardId(),
@@ -145,7 +137,7 @@ public class BulkShardOperationsTests extends IndexShardTestCase {
                 seqno,
                 oldPrimary,
                 logger,
-                new PostWriteRefresh(transportService)
+                new PostWriteRefresh(mock(TransportService.class))
             );
         assertThat(
             fullResult.replicaRequest().getOperations(),
@@ -172,7 +164,7 @@ public class BulkShardOperationsTests extends IndexShardTestCase {
                 seqno,
                 newPrimary,
                 logger,
-                new PostWriteRefresh(transportService)
+                new PostWriteRefresh(mock(TransportService.class))
             );
         final long newPrimaryTerm = newPrimary.getOperationPrimaryTerm();
         final long globalCheckpoint = newPrimary.getLastKnownGlobalCheckpoint();

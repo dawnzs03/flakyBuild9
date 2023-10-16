@@ -79,12 +79,8 @@ public class RestResponse {
         this(status, responseMediaType, content, null);
     }
 
-    public static RestResponse chunked(RestStatus restStatus, ChunkedRestResponseBody content) {
-        if (content.isDone()) {
-            return new RestResponse(restStatus, content.getResponseContentTypeString(), BytesArray.EMPTY);
-        } else {
-            return new RestResponse(restStatus, content.getResponseContentTypeString(), null, content);
-        }
+    public RestResponse(RestStatus status, ChunkedRestResponseBody content) {
+        this(status, content.getResponseContentTypeString(), null, content);
     }
 
     /**

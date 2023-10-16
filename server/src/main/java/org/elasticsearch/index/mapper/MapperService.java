@@ -27,7 +27,6 @@ import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.index.similarity.SimilarityService;
 import org.elasticsearch.indices.IndicesModule;
-import org.elasticsearch.plugins.internal.DocumentParsingObserver;
 import org.elasticsearch.script.ScriptCompiler;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.ToXContent;
@@ -94,8 +93,7 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         1000L,
         0,
         Property.Dynamic,
-        Property.IndexScope,
-        Property.ServerlessPublic
+        Property.IndexScope
     );
     public static final Setting<Long> INDEX_MAPPING_DEPTH_LIMIT_SETTING = Setting.longSetting(
         "index.mapping.depth.limit",
@@ -125,8 +123,6 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
     private final IndexVersion indexVersionCreated;
     private final MapperRegistry mapperRegistry;
     private final Supplier<MappingParserContext> mappingParserContextSupplier;
-    private final Supplier<DocumentParsingObserver> documentParsingObserverSupplier;
-
     private volatile DocumentMapper mapper;
 
     public MapperService(
@@ -138,8 +134,7 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         MapperRegistry mapperRegistry,
         Supplier<SearchExecutionContext> searchExecutionContextSupplier,
         IdFieldMapper idFieldMapper,
-        ScriptCompiler scriptCompiler,
-        Supplier<DocumentParsingObserver> documentParsingObserverSupplier
+        ScriptCompiler scriptCompiler
     ) {
         this(
             () -> clusterService.state().getMinTransportVersion(),
@@ -150,8 +145,7 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
             mapperRegistry,
             searchExecutionContextSupplier,
             idFieldMapper,
-            scriptCompiler,
-            documentParsingObserverSupplier
+            scriptCompiler
         );
     }
 
@@ -164,8 +158,7 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         MapperRegistry mapperRegistry,
         Supplier<SearchExecutionContext> searchExecutionContextSupplier,
         IdFieldMapper idFieldMapper,
-        ScriptCompiler scriptCompiler,
-        Supplier<DocumentParsingObserver> documentParsingObserverSupplier
+        ScriptCompiler scriptCompiler
     ) {
         super(indexSettings);
         this.indexVersionCreated = indexSettings.getIndexVersionCreated();
@@ -183,12 +176,7 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
             indexSettings,
             idFieldMapper
         );
-        this.documentParsingObserverSupplier = documentParsingObserverSupplier;
-        this.documentParser = new DocumentParser(
-            parserConfiguration,
-            this.mappingParserContextSupplier.get(),
-            documentParsingObserverSupplier
-        );
+        this.documentParser = new DocumentParser(parserConfiguration, this.mappingParserContextSupplier.get());
         Map<String, MetadataFieldMapper.TypeParser> metadataMapperParsers = mapperRegistry.getMetadataMapperParsers(
             indexSettings.getIndexVersionCreated()
         );
@@ -348,15 +336,13 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
             Mapping newMapping = parseMapping(mapping.type(), mapping.source());
             final CompressedXContent currentSource = this.mapper.mappingSource();
             final CompressedXContent newSource = newMapping.toCompressedXContent();
-            if (Objects.equals(currentSource, newSource) == false
-                && mapper.isSyntheticSourceMalformed(currentSource, indexVersionCreated) == false) {
+            if (Objects.equals(currentSource, newSource) == false) {
                 throw new IllegalStateException(
                     "expected current mapping [" + currentSource + "] to be the same as new mapping [" + newSource + "]"
                 );
             }
         }
         return true;
-
     }
 
     public void merge(IndexMetadata indexMetadata, MergeReason reason) {
@@ -388,7 +374,7 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
     }
 
     private DocumentMapper newDocumentMapper(Mapping mapping, MergeReason reason, CompressedXContent mappingSource) {
-        DocumentMapper newMapper = new DocumentMapper(documentParser, mapping, mappingSource, indexVersionCreated);
+        DocumentMapper newMapper = new DocumentMapper(documentParser, mapping, mappingSource);
         newMapper.validate(indexSettings, reason != MergeReason.MAPPING_RECOVERY);
         return newMapper;
     }
@@ -564,7 +550,4 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         return documentMapper().mapping().getRoot().dynamicTemplates();
     }
 
-    public MapperRegistry getMapperRegistry() {
-        return mapperRegistry;
-    }
 }

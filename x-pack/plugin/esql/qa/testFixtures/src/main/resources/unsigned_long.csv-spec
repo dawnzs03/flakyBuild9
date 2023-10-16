@@ -102,19 +102,20 @@ from ul_logs | where bytes_in < bytes_out | eval b_in = bytes_in / to_ul(pow(10.
 ;
 
 groupBy
-from ul_logs | stats c = count(bytes_in) by bytes_in | sort c desc, bytes_in desc | limit 10;
+from ul_logs | stats c = count(bytes_in) by bytes_in | sort c desc | limit 10;
+ // TODO: top row "counts" all values in all documents that contains this value ?!?!
 
        c:l     |      bytes_in:ul
-5              |  154551962150890564
-4              |                   0
+5              |154551962150890564
+4              |0
 3              |16002960716282089759
 2              |18446744073709551614
-2              |  754822992931077409
-2              |  154551962150890561
-1              |18446744073709551615
-1              |18446744073709550591
-1              |18345360876889252152
-1              |18317075104972913640
+2              |154551962150890561
+2              |754822992931077409
+1              |18081123477485622121
+1              |8847365258155648277
+1              |7239423344688551324
+1              |9223372036854775807
 ;
 
 case
@@ -122,35 +123,4 @@ from ul_logs | where case(bytes_in == to_ul(154551962150890564), true, false);
 
        @timestamp:date  |    bytes_in:ul   |     bytes_out:ul  |      id:i     |    status:k
 2017-11-10T20:21:58.000Z|154551962150890564|9382204513185396493|63             |OK
-;
-
-autoBucket
-FROM ul_logs
-| WHERE @timestamp >= "2017-11-10T20:30:00Z" AND @timestamp < "2017-11-10T20:35:00Z"
-| EVAL bh = auto_bucket(bytes_in, 20, 5480608687137202404, 17764691215469285192)
-| SORT @timestamp
-| KEEP @timestamp, bytes_in, bh
-;
-
-@timestamp:date          | bytes_in:ul          | bh:double
-2017-11-10T20:32:57.000Z |  8420006392678593250 | 8.0E18
-2017-11-10T20:33:06.000Z |  5480608687137202404 | 5.0E18
-2017-11-10T20:34:43.000Z | 17764691215469285192 | 1.75E19
-;
-
-toDegrees
-FROM ul_logs | WHERE bytes_in == bytes_out | EVAL deg = TO_DEGREES(bytes_in) | KEEP bytes_in, deg
-;
-
-         bytes_in:ul | deg:double
-16002960716282089759 | 9.169021087566165E20
-;
-
-
-toRadians
-FROM ul_logs | WHERE bytes_in == bytes_out | EVAL rad = TO_RADIANS(bytes_in) | KEEP bytes_in, rad
-;
-
-         bytes_in:ul | rad:double
-16002960716282089759 | 2.79304354566432608E17
 ;

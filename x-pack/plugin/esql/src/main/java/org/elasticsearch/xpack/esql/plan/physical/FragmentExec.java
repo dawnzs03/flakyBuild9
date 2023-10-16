@@ -16,26 +16,19 @@ import org.elasticsearch.xpack.ql.tree.Source;
 import java.util.List;
 import java.util.Objects;
 
-public class FragmentExec extends LeafExec implements EstimatesRowSize {
+public class FragmentExec extends LeafExec {
 
     private final LogicalPlan fragment;
     private final QueryBuilder esFilter;
 
-    /**
-     * Estimate of the number of bytes that'll be loaded per position before
-     * the stream of pages is consumed.
-     */
-    private final Integer estimatedRowSize;
-
     public FragmentExec(LogicalPlan fragment) {
-        this(fragment.source(), fragment, null, null);
+        this(fragment.source(), fragment, null);
     }
 
-    public FragmentExec(Source source, LogicalPlan fragment, QueryBuilder esFilter, Integer estimatedRowSize) {
-        super(source);
+    public FragmentExec(Source source, LogicalPlan fragment, QueryBuilder esFilter) {
+        super(fragment.source());
         this.fragment = fragment;
         this.esFilter = esFilter;
-        this.estimatedRowSize = estimatedRowSize;
     }
 
     public LogicalPlan fragment() {
@@ -46,13 +39,9 @@ public class FragmentExec extends LeafExec implements EstimatesRowSize {
         return esFilter;
     }
 
-    public Integer estimatedRowSize() {
-        return estimatedRowSize;
-    }
-
     @Override
     protected NodeInfo<FragmentExec> info() {
-        return NodeInfo.create(this, FragmentExec::new, fragment, esFilter, estimatedRowSize);
+        return NodeInfo.create(this, FragmentExec::new, fragment, esFilter);
     }
 
     @Override
@@ -61,16 +50,8 @@ public class FragmentExec extends LeafExec implements EstimatesRowSize {
     }
 
     @Override
-    public PhysicalPlan estimateRowSize(State state) {
-        int estimatedRowSize = state.consumeAllFields(false);
-        return Objects.equals(estimatedRowSize, this.estimatedRowSize)
-            ? this
-            : new FragmentExec(source(), fragment, esFilter, estimatedRowSize);
-    }
-
-    @Override
     public int hashCode() {
-        return Objects.hash(fragment, esFilter, estimatedRowSize);
+        return Objects.hash(fragment, esFilter);
     }
 
     @Override
@@ -84,9 +65,7 @@ public class FragmentExec extends LeafExec implements EstimatesRowSize {
         }
 
         FragmentExec other = (FragmentExec) obj;
-        return Objects.equals(fragment, other.fragment)
-            && Objects.equals(esFilter, other.esFilter)
-            && Objects.equals(estimatedRowSize, other.estimatedRowSize);
+        return Objects.equals(fragment, other.fragment) && Objects.equals(esFilter, other.esFilter);
     }
 
     @Override
@@ -95,9 +74,7 @@ public class FragmentExec extends LeafExec implements EstimatesRowSize {
         sb.append(nodeName());
         sb.append("[filter=");
         sb.append(esFilter);
-        sb.append(", estimatedRowSize=");
-        sb.append(estimatedRowSize);
-        sb.append(", fragment=[<>\n");
+        sb.append(", fragment=[<>");
         sb.append(fragment.toString());
         sb.append("<>]]");
         return sb.toString();

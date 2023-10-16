@@ -17,7 +17,9 @@ import org.elasticsearch.synonyms.SynonymsManagementAPIService;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.TransportService;
 
-public class TransportDeleteSynonymRuleAction extends HandledTransportAction<DeleteSynonymRuleAction.Request, SynonymUpdateResponse> {
+public class TransportDeleteSynonymRuleAction extends HandledTransportAction<
+    DeleteSynonymRuleAction.Request,
+    DeleteSynonymRuleAction.Response> {
 
     private final SynonymsManagementAPIService synonymsManagementAPIService;
 
@@ -29,11 +31,15 @@ public class TransportDeleteSynonymRuleAction extends HandledTransportAction<Del
     }
 
     @Override
-    protected void doExecute(Task task, DeleteSynonymRuleAction.Request request, ActionListener<SynonymUpdateResponse> listener) {
+    protected void doExecute(
+        Task task,
+        DeleteSynonymRuleAction.Request request,
+        ActionListener<DeleteSynonymRuleAction.Response> listener
+    ) {
         synonymsManagementAPIService.deleteSynonymRule(
             request.synonymsSetId(),
             request.synonymRuleId(),
-            listener.map(SynonymUpdateResponse::new)
+            listener.map(dr -> new DeleteSynonymRuleAction.Response(dr.synonymsOperationResult(), dr.reloadAnalyzersResponse()))
         );
     }
 }

@@ -15,7 +15,6 @@ import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xpack.application.AbstractRestEnterpriseSearchActionTests;
 import org.elasticsearch.xpack.application.EnterpriseSearchBaseRestHandler;
-import org.elasticsearch.xpack.application.utils.LicenseUtils;
 
 import java.util.Map;
 
@@ -49,8 +48,7 @@ public class RestPutQueryRulesetActionTests extends AbstractRestEnterpriseSearch
                       ]
                     }
                     """), XContentType.JSON)
-                .build(),
-            LicenseUtils.Product.QUERY_RULES
+                .build()
         );
     }
 
@@ -59,8 +57,7 @@ public class RestPutQueryRulesetActionTests extends AbstractRestEnterpriseSearch
             new FakeRestRequest.Builder(NamedXContentRegistry.EMPTY).withMethod(RestRequest.Method.PUT)
                 .withParams(Map.of("invalid_param_name", "invalid_value"))
                 .withContent(new BytesArray("{}"), XContentType.JSON)
-                .build(),
-            LicenseUtils.Product.QUERY_RULES
+                .build()
         );
     }
 

@@ -10,6 +10,7 @@ package org.elasticsearch.gateway;
 
 import com.carrotsearch.randomizedtesting.generators.RandomPicks;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterInfo;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -528,7 +529,7 @@ public class ReplicaShardAllocatorTests extends ESAllocationTestCase {
     private RoutingAllocation onePrimaryOnNode1And1Replica(AllocationDeciders deciders, Settings settings, UnassignedInfo.Reason reason) {
         ShardRouting primaryShard = TestShardRouting.newShardRouting(shardId, node1.getId(), true, ShardRoutingState.STARTED);
         IndexMetadata.Builder indexMetadata = IndexMetadata.builder(shardId.getIndexName())
-            .settings(settings(IndexVersion.current()).put(settings))
+            .settings(settings(Version.CURRENT).put(settings))
             .numberOfShards(1)
             .numberOfReplicas(1)
             .putInSyncAllocationIds(0, Sets.newHashSet(primaryShard.allocationId().getId()));
@@ -588,7 +589,7 @@ public class ReplicaShardAllocatorTests extends ESAllocationTestCase {
         Metadata metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder(shardId.getIndexName())
-                    .settings(settings(IndexVersion.current()))
+                    .settings(settings(Version.CURRENT))
                     .numberOfShards(1)
                     .numberOfReplicas(1)
                     .putInSyncAllocationIds(0, Sets.newHashSet(primaryShard.allocationId().getId()))

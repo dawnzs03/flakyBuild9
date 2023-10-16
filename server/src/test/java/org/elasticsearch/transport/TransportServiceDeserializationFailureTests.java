@@ -29,7 +29,6 @@ import org.elasticsearch.threadpool.ThreadPool;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -89,11 +88,6 @@ public class TransportServiceDeserializationFailureTests extends ESTestCase {
                 TransportRequest.Empty.INSTANCE,
                 TransportRequestOptions.EMPTY,
                 new TransportResponseHandler<TransportResponse.Empty>() {
-                    @Override
-                    public Executor executor(ThreadPool threadPool) {
-                        return TransportResponseHandler.TRANSPORT_WORKER;
-                    }
-
                     @Override
                     public void handleResponse(TransportResponse.Empty response) {
                         fail("should not be called");
@@ -155,11 +149,6 @@ public class TransportServiceDeserializationFailureTests extends ESTestCase {
                 parentTask,
                 TransportRequestOptions.EMPTY,
                 new TransportResponseHandler<TransportResponse.Empty>() {
-                    @Override
-                    public Executor executor(ThreadPool threadPool) {
-                        return TransportResponseHandler.TRANSPORT_WORKER;
-                    }
-
                     @Override
                     public void handleResponse(TransportResponse.Empty response) {
                         fail("should not be called");

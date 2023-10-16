@@ -23,9 +23,9 @@ import java.io.IOException;
  * Using this query we will never early-terminate the collection phase because we can already
  * get the document count from the term statistics of each segment.
  */
-public final class NonCountingTermQuery extends TermQuery {
+class NonCountingTermQuery extends TermQuery {
 
-    public NonCountingTermQuery(Term term) {
+    NonCountingTermQuery(Term term) {
         super(term);
     }
 

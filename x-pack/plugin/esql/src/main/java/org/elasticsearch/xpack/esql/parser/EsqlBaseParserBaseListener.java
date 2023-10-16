@@ -113,18 +113,6 @@ public class EsqlBaseParserBaseListener implements EsqlBaseParserListener {
    *
    * <p>The default implementation does nothing.</p>
    */
-  @Override public void enterIsNull(EsqlBaseParser.IsNullContext ctx) { }
-  /**
-   * {@inheritDoc}
-   *
-   * <p>The default implementation does nothing.</p>
-   */
-  @Override public void exitIsNull(EsqlBaseParser.IsNullContext ctx) { }
-  /**
-   * {@inheritDoc}
-   *
-   * <p>The default implementation does nothing.</p>
-   */
   @Override public void enterRegexExpression(EsqlBaseParser.RegexExpressionContext ctx) { }
   /**
    * {@inheritDoc}

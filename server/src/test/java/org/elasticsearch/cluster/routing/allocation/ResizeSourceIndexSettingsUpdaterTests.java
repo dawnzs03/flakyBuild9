@@ -8,6 +8,7 @@
 
 package org.elasticsearch.cluster.routing.allocation;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -22,7 +23,6 @@ import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.allocation.decider.ThrottlingAllocationDecider;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.IndexVersion;
 
 import java.util.List;
 
@@ -49,7 +49,7 @@ public class ResizeSourceIndexSettingsUpdaterTests extends ESAllocationTestCase 
             .put(
                 IndexMetadata.builder(sourceIndex)
                     .settings(
-                        settings(IndexVersion.current()).put(
+                        settings(Version.CURRENT).put(
                             IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_SETTING.getKey() + "_name",
                             resizeNode.getName()
                         ).put("index.blocks.write", true)
@@ -105,7 +105,7 @@ public class ResizeSourceIndexSettingsUpdaterTests extends ESAllocationTestCase 
 
         final int targetNumShards = randomFrom(1, 2, 4, 8, 16);
         final int targetNumReplicas = randomInt(2);
-        final Settings.Builder targetSettings = indexSettings(IndexVersion.current(), targetNumShards, targetNumReplicas);
+        final Settings.Builder targetSettings = indexSettings(Version.CURRENT, targetNumShards, targetNumReplicas);
         targetSettings.put(IndexMetadata.INDEX_RESIZE_SOURCE_NAME.getKey(), sourceIndex);
         targetSettings.put(IndexMetadata.INDEX_RESIZE_SOURCE_UUID.getKey(), sourceMetadata.index(sourceIndex).getIndexUUID());
         final boolean isShrink = randomBoolean();

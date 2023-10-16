@@ -16,21 +16,16 @@ import org.elasticsearch.common.util.LongHash;
 $endif$
 import org.elasticsearch.compute.aggregation.GroupingAggregatorFunction;
 import org.elasticsearch.compute.aggregation.blockhash.BlockHash;
-$if(int)$
+$if(long)$
 import org.elasticsearch.compute.data.Block;
-import org.elasticsearch.compute.data.IntBlock;
-
-$elseif(long)$
-import org.elasticsearch.compute.data.Block;
-import org.elasticsearch.compute.data.IntBlock;
 import org.elasticsearch.compute.data.LongBlock;
 
 $else$
 import org.elasticsearch.compute.data.Block;
 import org.elasticsearch.compute.data.$Type$Block;
-import org.elasticsearch.compute.data.IntBlock;
-
+import org.elasticsearch.compute.data.LongBlock;
 $endif$
+
 import java.util.Arrays;
 
 /**
@@ -178,24 +173,20 @@ $endif$
     }
 
     /**
-     * Dedupe values and build a {@link IntBlock} suitable for passing
+     * Dedupe values and build a {@link LongBlock} suitable for passing
      * as the grouping block to a {@link GroupingAggregatorFunction}.
      */
 $if(BytesRef)$
-    public MultivalueDedupe.HashResult hash(BytesRefHash hash) {
+    public LongBlock hash(BytesRefHash hash) {
 $else$
-    public MultivalueDedupe.HashResult hash(LongHash hash) {
+    public LongBlock hash(LongHash hash) {
 $endif$
-        IntBlock.Builder builder = IntBlock.newBlockBuilder(block.getPositionCount());
-        boolean sawNull = false;
+        LongBlock.Builder builder = LongBlock.newBlockBuilder(block.getPositionCount());
         for (int p = 0; p < block.getPositionCount(); p++) {
             int count = block.getValueCount(p);
             int first = block.getFirstValueIndex(p);
             switch (count) {
-                case 0 -> {
-                    sawNull = true;
-                    builder.appendInt(0);
-                }
+                case 0 -> builder.appendNull();
                 case 1 -> {
 $if(BytesRef)$
                     BytesRef v = block.getBytesRef(first, work[0]);
@@ -215,7 +206,7 @@ $endif$
                 }
             }
         }
-        return new MultivalueDedupe.HashResult(builder.build(), sawNull);
+        return builder.build();
     }
 
     /**
@@ -394,9 +385,9 @@ $endif$
      * Writes an already deduplicated {@link #work} to a hash.
      */
 $if(BytesRef)$
-    private void hashUniquedWork(BytesRefHash hash, IntBlock.Builder builder) {
+    private void hashUniquedWork(BytesRefHash hash, LongBlock.Builder builder) {
 $else$
-    private void hashUniquedWork(LongHash hash, IntBlock.Builder builder) {
+    private void hashUniquedWork(LongHash hash, LongBlock.Builder builder) {
 $endif$
         if (w == 1) {
             hash(builder, hash, work[0]);
@@ -413,9 +404,9 @@ $endif$
      * Writes a sorted {@link #work} to a hash, skipping duplicates.
      */
 $if(BytesRef)$
-    private void hashSortedWork(BytesRefHash hash, IntBlock.Builder builder) {
+    private void hashSortedWork(BytesRefHash hash, LongBlock.Builder builder) {
 $else$
-    private void hashSortedWork(LongHash hash, IntBlock.Builder builder) {
+    private void hashSortedWork(LongHash hash, LongBlock.Builder builder) {
 $endif$
         if (w == 1) {
             hash(builder, hash, work[0]);
@@ -490,14 +481,14 @@ $if(BytesRef)$
 $endif$
 
 $if(BytesRef)$
-    private void hash(IntBlock.Builder builder, BytesRefHash hash, BytesRef v) {
+    private void hash(LongBlock.Builder builder, BytesRefHash hash, BytesRef v) {
 $else$
-    private void hash(IntBlock.Builder builder, LongHash hash, $type$ v) {
+    private void hash(LongBlock.Builder builder, LongHash hash, $type$ v) {
 $endif$
 $if(double)$
-        builder.appendInt(Math.toIntExact(BlockHash.hashOrdToGroupNullReserved(hash.add(Double.doubleToLongBits(v)))));
+        builder.appendLong(BlockHash.hashOrdToGroup(hash.add(Double.doubleToLongBits(v))));
 $else$
-        builder.appendInt(Math.toIntExact(BlockHash.hashOrdToGroupNullReserved(hash.add(v))));
+        builder.appendLong(BlockHash.hashOrdToGroup(hash.add(v)));
 $endif$
     }
 }

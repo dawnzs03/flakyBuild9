@@ -166,9 +166,4 @@ public class ObjectPath {
         }
         return builder;
     }
-
-    @Override
-    public String toString() {
-        return "ObjectPath[" + object + "]";
-    }
 }

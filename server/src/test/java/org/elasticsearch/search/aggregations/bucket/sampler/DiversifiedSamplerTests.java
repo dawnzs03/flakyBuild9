@@ -16,6 +16,7 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.index.RandomIndexWriter;
@@ -90,22 +91,23 @@ public class DiversifiedSamplerTests extends AggregatorTestCase {
         writeBooks(indexWriter);
         indexWriter.close();
         DirectoryReader indexReader = DirectoryReader.open(directory);
+        IndexSearcher indexSearcher = newIndexSearcher(indexReader);
         Consumer<InternalSampler> verify = result -> {
             Terms terms = result.getAggregations().get("terms");
             assertEquals(2, terms.getBuckets().size());
             assertEquals("0805080481", terms.getBuckets().get(0).getKeyAsString());
             assertEquals("0812550706", terms.getBuckets().get(1).getKeyAsString());
         };
-        testCase(indexReader, genreFieldType, "map", verify);
-        testCase(indexReader, genreFieldType, "global_ordinals", verify);
-        testCase(indexReader, genreFieldType, "bytes_hash", verify);
+        testCase(indexSearcher, genreFieldType, "map", verify);
+        testCase(indexSearcher, genreFieldType, "global_ordinals", verify);
+        testCase(indexSearcher, genreFieldType, "bytes_hash", verify);
 
         genreFieldType = new NumberFieldMapper.NumberFieldType("genre_id", NumberFieldMapper.NumberType.LONG);
-        testCase(indexReader, genreFieldType, null, verify);
+        testCase(indexSearcher, genreFieldType, null, verify);
 
         // wrong field:
         genreFieldType = new KeywordFieldMapper.KeywordFieldType("wrong_field");
-        testCase(indexReader, genreFieldType, null, result -> {
+        testCase(indexSearcher, genreFieldType, null, result -> {
             Terms terms = result.getAggregations().get("terms");
             assertEquals(1, terms.getBuckets().size());
             assertEquals("0805080481", terms.getBuckets().get(0).getKeyAsString());
@@ -121,6 +123,7 @@ public class DiversifiedSamplerTests extends AggregatorTestCase {
         writeBooks(indexWriter);
         indexWriter.close();
         DirectoryReader indexReader = DirectoryReader.open(directory);
+        IndexSearcher indexSearcher = newIndexSearcher(indexReader);
 
         MappedFieldType genreFieldType = new KeywordFieldMapper.KeywordFieldType("genre");
         Consumer<InternalSampler> verify = result -> {
@@ -130,27 +133,31 @@ public class DiversifiedSamplerTests extends AggregatorTestCase {
 
         try {
             // huge shard_size
-            testCase(indexReader, genreFieldType, "map", verify, Integer.MAX_VALUE, 1);
-            testCase(indexReader, genreFieldType, "global_ordinals", verify, Integer.MAX_VALUE, 1);
-            testCase(indexReader, genreFieldType, "bytes_hash", verify, Integer.MAX_VALUE, 1);
+            testCase(indexSearcher, genreFieldType, "map", verify, Integer.MAX_VALUE, 1);
+            testCase(indexSearcher, genreFieldType, "global_ordinals", verify, Integer.MAX_VALUE, 1);
+            testCase(indexSearcher, genreFieldType, "bytes_hash", verify, Integer.MAX_VALUE, 1);
 
             // huge maxDocsPerValue
-            testCase(indexReader, genreFieldType, "map", verify, 100, Integer.MAX_VALUE);
-            testCase(indexReader, genreFieldType, "global_ordinals", verify, 100, Integer.MAX_VALUE);
-            testCase(indexReader, genreFieldType, "bytes_hash", verify, 100, Integer.MAX_VALUE);
+            testCase(indexSearcher, genreFieldType, "map", verify, 100, Integer.MAX_VALUE);
+            testCase(indexSearcher, genreFieldType, "global_ordinals", verify, 100, Integer.MAX_VALUE);
+            testCase(indexSearcher, genreFieldType, "bytes_hash", verify, 100, Integer.MAX_VALUE);
         } finally {
             indexReader.close();
             directory.close();
         }
     }
 
-    private void testCase(IndexReader indexReader, MappedFieldType genreFieldType, String executionHint, Consumer<InternalSampler> verify)
-        throws IOException {
-        testCase(indexReader, genreFieldType, executionHint, verify, 100, 1);
+    private void testCase(
+        IndexSearcher indexSearcher,
+        MappedFieldType genreFieldType,
+        String executionHint,
+        Consumer<InternalSampler> verify
+    ) throws IOException {
+        testCase(indexSearcher, genreFieldType, executionHint, verify, 100, 1);
     }
 
     private void testCase(
-        IndexReader indexReader,
+        IndexSearcher indexSearcher,
         MappedFieldType genreFieldType,
         String executionHint,
         Consumer<InternalSampler> verify,
@@ -176,7 +183,7 @@ public class DiversifiedSamplerTests extends AggregatorTestCase {
             .shardSize(shardSize)
             .subAggregation(new TermsAggregationBuilder("terms").field("id"));
 
-        InternalSampler result = searchAndReduce(indexReader, new AggTestConfig(builder, genreFieldType, idFieldType).withQuery(query));
+        InternalSampler result = searchAndReduce(indexSearcher, new AggTestConfig(builder, genreFieldType, idFieldType).withQuery(query));
         verify.accept(result);
     }
 
@@ -185,6 +192,7 @@ public class DiversifiedSamplerTests extends AggregatorTestCase {
         RandomIndexWriter indexWriter = new RandomIndexWriter(random(), directory);
         indexWriter.close();
         IndexReader indexReader = DirectoryReader.open(directory);
+        IndexSearcher indexSearcher = new IndexSearcher(indexReader);
 
         MappedFieldType idFieldType = new KeywordFieldMapper.KeywordFieldType("id");
 
@@ -193,7 +201,7 @@ public class DiversifiedSamplerTests extends AggregatorTestCase {
         DiversifiedAggregationBuilder builder = new DiversifiedAggregationBuilder("_name").field(genreFieldType.name())
             .subAggregation(new TermsAggregationBuilder("terms").field("id"));
 
-        InternalSampler result = searchAndReduce(indexReader, new AggTestConfig(builder, genreFieldType, idFieldType));
+        InternalSampler result = searchAndReduce(indexSearcher, new AggTestConfig(builder, genreFieldType, idFieldType));
         Terms terms = result.getAggregations().get("terms");
         assertEquals(0, terms.getBuckets().size());
         indexReader.close();

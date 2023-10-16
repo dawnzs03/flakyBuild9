@@ -12,12 +12,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Add;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Div;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Mod;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Mul;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Neg;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic.Sub;
 import org.elasticsearch.xpack.esql.expression.predicate.operator.comparison.In;
 import org.elasticsearch.xpack.esql.type.EsqlDataTypes;
 import org.elasticsearch.xpack.ql.QlIllegalArgumentException;
@@ -33,8 +27,12 @@ import org.elasticsearch.xpack.ql.expression.function.UnresolvedFunction;
 import org.elasticsearch.xpack.ql.expression.predicate.logical.And;
 import org.elasticsearch.xpack.ql.expression.predicate.logical.Not;
 import org.elasticsearch.xpack.ql.expression.predicate.logical.Or;
-import org.elasticsearch.xpack.ql.expression.predicate.nulls.IsNotNull;
-import org.elasticsearch.xpack.ql.expression.predicate.nulls.IsNull;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Add;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Div;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Mod;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Mul;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Neg;
+import org.elasticsearch.xpack.ql.expression.predicate.operator.arithmetic.Sub;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.Equals;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.GreaterThan;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.comparison.GreaterThanOrEqual;
@@ -67,10 +65,7 @@ import static org.elasticsearch.xpack.esql.type.EsqlDataTypes.TIME_DURATION;
 import static org.elasticsearch.xpack.ql.parser.ParserUtils.source;
 import static org.elasticsearch.xpack.ql.parser.ParserUtils.typedParsing;
 import static org.elasticsearch.xpack.ql.parser.ParserUtils.visitList;
-import static org.elasticsearch.xpack.ql.type.DataTypeConverter.safeToInt;
-import static org.elasticsearch.xpack.ql.type.DataTypeConverter.safeToLong;
 import static org.elasticsearch.xpack.ql.util.NumericUtils.asLongUnsigned;
-import static org.elasticsearch.xpack.ql.util.NumericUtils.unsignedLongAsNumber;
 import static org.elasticsearch.xpack.ql.util.StringUtils.WILDCARD;
 
 abstract class ExpressionBuilder extends IdentifierBuilder {
@@ -215,32 +210,21 @@ abstract class ExpressionBuilder extends IdentifierBuilder {
     public Object visitQualifiedIntegerLiteral(EsqlBaseParser.QualifiedIntegerLiteralContext ctx) {
         Source source = source(ctx);
         Literal intLit = typedParsing(this, ctx.integerValue(), Literal.class);
-        Number value = (Number) intLit.value();
-        if (intLit.dataType() == DataTypes.UNSIGNED_LONG) {
-            value = unsignedLongAsNumber(value.longValue());
-        }
+        Integer value = (Integer) intLit.value();
         String qualifier = ctx.UNQUOTED_IDENTIFIER().getText().toLowerCase(Locale.ROOT);
 
-        try {
-            Object quantity = switch (qualifier) {
-                case "millisecond", "milliseconds" -> Duration.ofMillis(safeToLong(value));
-                case "second", "seconds" -> Duration.ofSeconds(safeToLong(value));
-                case "minute", "minutes" -> Duration.ofMinutes(safeToLong(value));
-                case "hour", "hours" -> Duration.ofHours(safeToLong(value));
+        return switch (qualifier) {
+            case "millisecond", "milliseconds" -> new Literal(source, Duration.ofMillis(value), TIME_DURATION);
+            case "second", "seconds" -> new Literal(source, Duration.ofSeconds(value), TIME_DURATION);
+            case "minute", "minutes" -> new Literal(source, Duration.ofMinutes(value), TIME_DURATION);
+            case "hour", "hours" -> new Literal(source, Duration.ofHours(value), TIME_DURATION);
 
-                case "day", "days" -> Period.ofDays(safeToInt(safeToLong(value)));
-                case "week", "weeks" -> Period.ofWeeks(safeToInt(safeToLong(value)));
-                case "month", "months" -> Period.ofMonths(safeToInt(safeToLong(value)));
-                case "year", "years" -> Period.ofYears(safeToInt(safeToLong(value)));
-
-                default -> throw new ParsingException(source, "Unexpected numeric qualifier '{}'", qualifier);
-            };
-            return new Literal(source, quantity, quantity instanceof Duration ? TIME_DURATION : DATE_PERIOD);
-        } catch (QlIllegalArgumentException | ArithmeticException e) {
-            // the range varies by unit: Duration#ofMinutes(), #ofHours() will Math#multiplyExact() to reduce the unit to seconds;
-            // and same for Period#ofWeeks()
-            throw new ParsingException(source, "Number [{}] outside of [{}] range", ctx.integerValue().getText(), qualifier);
-        }
+            case "day", "days" -> new Literal(source, Period.ofDays(value), DATE_PERIOD);
+            case "week", "weeks" -> new Literal(source, Period.ofDays(value * 7), DATE_PERIOD);
+            case "month", "months" -> new Literal(source, Period.ofMonths(value), DATE_PERIOD);
+            case "year", "years" -> new Literal(source, Period.ofYears(value), DATE_PERIOD);
+            default -> throw new ParsingException(source, "Unexpected numeric qualifier '{}'", qualifier);
+        };
     }
 
     @Override
@@ -334,17 +318,8 @@ abstract class ExpressionBuilder extends IdentifierBuilder {
     public Expression visitLogicalIn(EsqlBaseParser.LogicalInContext ctx) {
         List<Expression> expressions = ctx.valueExpression().stream().map(this::expression).toList();
         Source source = source(ctx);
-        Expression e = expressions.size() == 2
-            ? new Equals(source, expressions.get(0), expressions.get(1))
-            : new In(source, expressions.get(0), expressions.subList(1, expressions.size()));
-        return ctx.NOT() == null ? e : new Not(source, e);
-    }
-
-    @Override
-    public Object visitIsNull(EsqlBaseParser.IsNullContext ctx) {
-        Expression exp = expression(ctx.valueExpression());
-        Source source = source(ctx.valueExpression(), ctx);
-        return ctx.NOT() != null ? new IsNotNull(source, exp) : new IsNull(source, exp);
+        Expression in = new In(source, expressions.get(0), expressions.subList(1, expressions.size()));
+        return ctx.NOT() == null ? in : new Not(source, in);
     }
 
     @Override

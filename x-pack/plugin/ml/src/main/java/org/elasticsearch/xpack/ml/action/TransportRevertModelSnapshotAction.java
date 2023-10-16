@@ -169,8 +169,7 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
                 client,
                 state,
                 request.masterNodeTimeout(),
-                configMappingUpdateListener,
-                MlConfigIndex.CONFIG_INDEX_MAPPINGS_VERSION
+                configMappingUpdateListener
             ),
             listener::onFailure
         );

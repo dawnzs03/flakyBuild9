@@ -13,10 +13,9 @@ import org.elasticsearch.compute.data.Block;
 import org.elasticsearch.compute.data.Page;
 import org.elasticsearch.compute.data.Vector;
 import org.elasticsearch.compute.operator.EvalOperator;
-import org.elasticsearch.xpack.esql.EsqlUnsupportedOperationException;
-import org.elasticsearch.xpack.esql.evaluator.mapper.EvaluatorMapper;
 import org.elasticsearch.xpack.esql.expression.function.Warnings;
 import org.elasticsearch.xpack.esql.expression.function.scalar.UnaryScalarFunction;
+import org.elasticsearch.xpack.esql.planner.Mappable;
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.type.DataType;
@@ -31,7 +30,7 @@ import static org.elasticsearch.xpack.ql.expression.TypeResolutions.isType;
 /**
  * Base class for functions that converts a field into a function-specific type.
  */
-public abstract class AbstractConvertFunction extends UnaryScalarFunction implements EvaluatorMapper {
+public abstract class AbstractConvertFunction extends UnaryScalarFunction implements Mappable {
 
     protected AbstractConvertFunction(Source source, Expression field) {
         super(source, field);
@@ -44,7 +43,7 @@ public abstract class AbstractConvertFunction extends UnaryScalarFunction implem
         DataType sourceType = field().dataType();
         var evaluator = evaluators().get(sourceType);
         if (evaluator == null) {
-            throw EsqlUnsupportedOperationException.unsupportedDataType(sourceType);
+            throw new AssertionError("unsupported type [" + sourceType + "]");
         }
         return () -> evaluator.apply(fieldEval.get(), source());
     }
@@ -67,7 +66,7 @@ public abstract class AbstractConvertFunction extends UnaryScalarFunction implem
 
     @Override
     public final Object fold() {
-        return EvaluatorMapper.super.fold();
+        return Mappable.super.fold();
     }
 
     @Override

@@ -9,11 +9,11 @@
 package org.elasticsearch.action.admin.indices.validate.query;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.hamcrest.Matchers.equalTo;
 
 public class TransportValidateQueryActionTests extends ESSingleNodeTestCase {
 
@@ -24,16 +24,24 @@ public class TransportValidateQueryActionTests extends ESSingleNodeTestCase {
      * them garbled together, or trying to write one after the channel had closed, etc.
      */
     public void testListenerOnlyInvokedOnceWhenIndexDoesNotExist() {
-        expectThrows(
-            IndexNotFoundException.class,
-            () -> PlainActionFuture.<ValidateQueryResponse, RuntimeException>get(
-                future -> client().admin()
-                    .indices()
-                    .validateQuery(new ValidateQueryRequest("non-existent-index"), ActionListener.assertOnce(future)),
-                10,
-                TimeUnit.SECONDS
-            )
-        );
+        final AtomicBoolean invoked = new AtomicBoolean();
+        final ActionListener<ValidateQueryResponse> listener = new ActionListener<>() {
+
+            @Override
+            public void onResponse(final ValidateQueryResponse validateQueryResponse) {
+                fail("onResponse should not be invoked in this failure case");
+            }
+
+            @Override
+            public void onFailure(final Exception e) {
+                if (invoked.compareAndSet(false, true) == false) {
+                    fail("onFailure invoked more than once");
+                }
+            }
+
+        };
+        client().admin().indices().validateQuery(new ValidateQueryRequest("non-existent-index"), listener);
+        assertThat(invoked.get(), equalTo(true)); // ensure that onFailure was invoked
     }
 
 }

@@ -50,7 +50,6 @@ public final class RestGetApiKeyAction extends ApiKeyBaseRestHandler {
         final String realmName = request.param("realm_name");
         final boolean myApiKeysOnly = request.paramAsBoolean("owner", false);
         final boolean withLimitedBy = request.paramAsBoolean("with_limited_by", false);
-        final boolean activeOnly = request.paramAsBoolean("active_only", false);
         final GetApiKeyRequest getApiKeyRequest = GetApiKeyRequest.builder()
             .realmName(realmName)
             .userName(userName)
@@ -58,7 +57,6 @@ public final class RestGetApiKeyAction extends ApiKeyBaseRestHandler {
             .apiKeyName(apiKeyName)
             .ownedByAuthenticatedUser(myApiKeysOnly)
             .withLimitedBy(withLimitedBy)
-            .activeOnly(activeOnly)
             .build();
         return channel -> client.execute(GetApiKeyAction.INSTANCE, getApiKeyRequest, new RestBuilderListener<>(channel) {
             @Override

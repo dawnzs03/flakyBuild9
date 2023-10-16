@@ -102,12 +102,12 @@ public class CountDistinctBooleanAggregator {
      * This means that false values for a groupId are stored at bits[2*groupId] and
      * true values for a groupId are stored at bits[2*groupId + 1]
      */
-    static class GroupingState extends AbstractArrayState implements GroupingAggregatorState {
+    static class GroupingState implements GroupingAggregatorState {
 
         final BitArray bits;
+        int largestGroupId; // total number of groups; <= bytes.length
 
         GroupingState(BigArrays bigArrays) {
-            super(bigArrays);
             boolean success = false;
             try {
                 this.bits = new BitArray(2, bigArrays); // Start with two bits for a single groupId
@@ -120,13 +120,23 @@ public class CountDistinctBooleanAggregator {
         }
 
         void collect(int groupId, boolean v) {
+            ensureCapacity(groupId);
             bits.set(groupId * 2 + (v ? 1 : 0));
-            trackGroupId(groupId);
         }
 
         void combineStates(int currentGroupId, GroupingState state) {
+            ensureCapacity(currentGroupId);
             bits.or(state.bits);
-            trackGroupId(currentGroupId);
+        }
+
+        void putNull(int groupId) {
+            ensureCapacity(groupId);
+        }
+
+        void ensureCapacity(int groupId) {
+            if (groupId > largestGroupId) {
+                largestGroupId = groupId;
+            }
         }
 
         /** Extracts an intermediate view of the contents of this state.  */
@@ -146,7 +156,7 @@ public class CountDistinctBooleanAggregator {
 
         @Override
         public void close() {
-            Releasables.close(bits, super::close);
+            Releasables.close(bits);
         }
     }
 }

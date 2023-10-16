@@ -22,10 +22,10 @@ import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.logging.LogManager;
 import org.elasticsearch.logging.Logger;
+import org.elasticsearch.search.internal.SearchContext;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.test.junit.annotations.TestLogging;
 import org.elasticsearch.threadpool.FixedExecutorBuilder;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -41,28 +41,29 @@ import org.elasticsearch.xpack.esql.analysis.Verifier;
 import org.elasticsearch.xpack.esql.enrich.EnrichLookupService;
 import org.elasticsearch.xpack.esql.enrich.EnrichPolicyResolution;
 import org.elasticsearch.xpack.esql.expression.function.EsqlFunctionRegistry;
-import org.elasticsearch.xpack.esql.optimizer.LocalLogicalOptimizerContext;
 import org.elasticsearch.xpack.esql.optimizer.LocalLogicalPlanOptimizer;
 import org.elasticsearch.xpack.esql.optimizer.LocalPhysicalOptimizerContext;
+import org.elasticsearch.xpack.esql.optimizer.LocalPhysicalPlanOptimizer;
 import org.elasticsearch.xpack.esql.optimizer.LogicalPlanOptimizer;
 import org.elasticsearch.xpack.esql.optimizer.PhysicalOptimizerContext;
 import org.elasticsearch.xpack.esql.optimizer.PhysicalPlanOptimizer;
 import org.elasticsearch.xpack.esql.optimizer.TestLocalPhysicalPlanOptimizer;
 import org.elasticsearch.xpack.esql.optimizer.TestPhysicalPlanOptimizer;
 import org.elasticsearch.xpack.esql.parser.EsqlParser;
-import org.elasticsearch.xpack.esql.plan.physical.EstimatesRowSize;
+import org.elasticsearch.xpack.esql.plan.physical.ExchangeExec;
+import org.elasticsearch.xpack.esql.plan.physical.ExchangeSinkExec;
+import org.elasticsearch.xpack.esql.plan.physical.ExchangeSourceExec;
+import org.elasticsearch.xpack.esql.plan.physical.FragmentExec;
 import org.elasticsearch.xpack.esql.plan.physical.LocalSourceExec;
 import org.elasticsearch.xpack.esql.plan.physical.OutputExec;
 import org.elasticsearch.xpack.esql.plan.physical.PhysicalPlan;
 import org.elasticsearch.xpack.esql.planner.LocalExecutionPlanner;
 import org.elasticsearch.xpack.esql.planner.LocalExecutionPlanner.LocalExecutionPlan;
 import org.elasticsearch.xpack.esql.planner.Mapper;
-import org.elasticsearch.xpack.esql.planner.PlannerUtils;
 import org.elasticsearch.xpack.esql.planner.TestPhysicalOperationProviders;
 import org.elasticsearch.xpack.esql.plugin.EsqlPlugin;
 import org.elasticsearch.xpack.esql.plugin.QueryPragmas;
 import org.elasticsearch.xpack.esql.session.EsqlConfiguration;
-import org.elasticsearch.xpack.esql.stats.DisabledSearchStats;
 import org.elasticsearch.xpack.esql.stats.Metrics;
 import org.elasticsearch.xpack.esql.type.EsqlDataTypes;
 import org.elasticsearch.xpack.ql.CsvSpecReader;
@@ -73,6 +74,9 @@ import org.elasticsearch.xpack.ql.expression.function.FunctionRegistry;
 import org.elasticsearch.xpack.ql.index.EsIndex;
 import org.elasticsearch.xpack.ql.index.IndexResolution;
 import org.elasticsearch.xpack.ql.plan.logical.LogicalPlan;
+import org.elasticsearch.xpack.ql.util.DateUtils;
+import org.elasticsearch.xpack.ql.util.Holder;
+import org.elasticsearch.xpack.ql.util.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mockito;
@@ -84,7 +88,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -132,7 +135,7 @@ import static org.hamcrest.Matchers.notNullValue;
  *
  * To log the results logResults() should return "true".
  */
-@TestLogging(value = "org.elasticsearch.xpack.esql:TRACE,org.elasticsearch.compute:TRACE", reason = "debug")
+// @TestLogging(value = "org.elasticsearch.xpack.esql:TRACE,org.elasticsearch.compute:TRACE", reason = "debug")
 public class CsvTests extends ESTestCase {
 
     private static final Logger LOGGER = LogManager.getLogger(CsvTests.class);
@@ -145,7 +148,6 @@ public class CsvTests extends ESTestCase {
 
     private final EsqlConfiguration configuration = new EsqlConfiguration(
         ZoneOffset.UTC,
-        Locale.US,
         null,
         null,
         new QueryPragmas(Settings.builder().put("page_size", randomPageSize()).build()),
@@ -288,7 +290,7 @@ public class CsvTests extends ESTestCase {
         var analyzed = analyzer.analyze(parsed);
         var logicalOptimized = logicalPlanOptimizer.optimize(analyzed);
         var physicalPlan = mapper.map(logicalOptimized);
-        var optimizedPlan = EstimatesRowSize.estimateRowSize(0, physicalPlanOptimizer.optimize(physicalPlan));
+        var optimizedPlan = physicalPlanOptimizer.optimize(physicalPlan);
         opportunisticallyAssertPlanSerialization(physicalPlan, optimizedPlan); // comment out to disable serialization
         return optimizedPlan;
     }
@@ -335,18 +337,15 @@ public class CsvTests extends ESTestCase {
         //
         // Keep in sync with ComputeService#execute
         //
+        var localTestOptimizer = new TestLocalPhysicalPlanOptimizer(new LocalPhysicalOptimizerContext(configuration));
+
         PhysicalPlan physicalPlan = physicalPlan(parsed, testDataset);
-        Tuple<PhysicalPlan, PhysicalPlan> coordinatorAndDataNodePlan = PlannerUtils.breakPlanBetweenCoordinatorAndDataNode(
+        Tuple<PhysicalPlan, PhysicalPlan> coordinatorAndDataNodePlan = CSVbreakPlanBetweenCoordinatorAndDataNode(
             physicalPlan,
-            configuration
+            localTestOptimizer
         );
         PhysicalPlan coordinatorPlan = coordinatorAndDataNodePlan.v1();
         PhysicalPlan dataNodePlan = coordinatorAndDataNodePlan.v2();
-
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Coordinator plan\n" + coordinatorPlan);
-            LOGGER.trace("DataNode plan\n" + dataNodePlan);
-        }
 
         List<String> columnNames = Expressions.names(coordinatorPlan.output());
         List<String> dataTypes = new ArrayList<>(columnNames.size());
@@ -365,12 +364,7 @@ public class CsvTests extends ESTestCase {
             LocalExecutionPlan coordinatorNodeExecutionPlan = executionPlanner.plan(new OutputExec(coordinatorPlan, collectedPages::add));
             drivers.addAll(coordinatorNodeExecutionPlan.createDrivers(sessionId));
             if (dataNodePlan != null) {
-                var logicalTestOptimizer = new LocalLogicalPlanOptimizer(
-                    new LocalLogicalOptimizerContext(configuration, new DisabledSearchStats())
-                );
-                var physicalTestOptimizer = new TestLocalPhysicalPlanOptimizer(new LocalPhysicalOptimizerContext(configuration));
-
-                var csvDataNodePhysicalPlan = PlannerUtils.localPlan(dataNodePlan, logicalTestOptimizer, physicalTestOptimizer);
+                var csvDataNodePhysicalPlan = CSVlocalPlan(List.of(), configuration, dataNodePlan, localTestOptimizer);
                 exchangeSource.addRemoteSink(exchangeSink::fetchPageAsync, randomIntBetween(1, 3));
                 LocalExecutionPlan dataNodeExecutionPlan = executionPlanner.plan(csvDataNodePhysicalPlan);
                 drivers.addAll(dataNodeExecutionPlan.createDrivers(sessionId));
@@ -382,6 +376,49 @@ public class CsvTests extends ESTestCase {
         }
         return new ActualResults(columnNames, columnTypes, dataTypes, collectedPages, responseHeaders);
     }
+
+    //
+    // Clone of PlannerUtils
+    //
+
+    private static Tuple<PhysicalPlan, PhysicalPlan> CSVbreakPlanBetweenCoordinatorAndDataNode(
+        PhysicalPlan plan,
+        LocalPhysicalPlanOptimizer optimizer
+    ) {
+        var dataNodePlan = new Holder<PhysicalPlan>();
+
+        // split the given plan when encountering the exchange
+        PhysicalPlan coordinatorPlan = plan.transformUp(ExchangeExec.class, e -> {
+            // remember the datanode subplan and wire it to a sink
+            var subplan = e.child();
+            dataNodePlan.set(new ExchangeSinkExec(e.source(), subplan));
+
+            // ugly hack to get the layout
+            var dummyConfig = new EsqlConfiguration(DateUtils.UTC, StringUtils.EMPTY, StringUtils.EMPTY, QueryPragmas.EMPTY, 1000);
+            var planContainingTheLayout = CSVlocalPlan(List.of(), dummyConfig, subplan, optimizer);
+            // replace the subnode with an exchange source
+            return new ExchangeSourceExec(e.source(), e.output(), planContainingTheLayout);
+        });
+        return new Tuple<>(coordinatorPlan, dataNodePlan.get());
+    }
+
+    private static PhysicalPlan CSVlocalPlan(
+        List<SearchContext> searchContexts,
+        EsqlConfiguration configuration,
+        PhysicalPlan plan,
+        LocalPhysicalPlanOptimizer optimizer
+    ) {
+        final Mapper mapper = new Mapper(true);
+
+        var localPhysicalPlan = plan.transformUp(FragmentExec.class, f -> {
+            var optimizedFragment = new LocalLogicalPlanOptimizer().localOptimize(f.fragment());
+            var physicalFragment = mapper.map(optimizedFragment);
+            return physicalFragment;
+        });
+        return optimizer.localOptimize(localPhysicalPlan);
+    }
+
+    //
 
     private Throwable reworkException(Throwable th) {
         StackTraceElement[] stackTrace = th.getStackTrace();

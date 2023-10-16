@@ -89,8 +89,7 @@ public class RolloverConfiguration implements Writeable, ToXContentObject {
      * Evaluates the automatic conditions and converts the whole configuration to XContent.
      * For the automatic conditions is also adds the suffix [automatic]
      */
-    public XContentBuilder evaluateAndConvertToXContent(XContentBuilder builder, Params params, @Nullable TimeValue retention)
-        throws IOException {
+    public XContentBuilder evaluateAndConvertToXContent(XContentBuilder builder, Params params, TimeValue retention) throws IOException {
         builder.startObject();
         concreteConditions.toXContentFragment(builder, params);
         for (String automaticCondition : automaticConditions) {

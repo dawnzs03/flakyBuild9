@@ -1,8 +1,5 @@
 [[esql-log10]]
 === `LOG10`
-[.text-center]
-image::esql/functions/signature/log10.svg[Embedded,opts=inline]
-
 Returns the log base 10.  The input can be any numeric value, the return value
 is always a double.
 
@@ -16,7 +13,3 @@ include::{esql-specs}/math.csv-spec[tag=log10]
 |===
 include::{esql-specs}/math.csv-spec[tag=log10-result]
 |===
-
-Supported types:
-
-include::types/log10.asciidoc[]

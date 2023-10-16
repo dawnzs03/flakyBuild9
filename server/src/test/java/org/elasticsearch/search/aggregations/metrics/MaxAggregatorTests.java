@@ -26,6 +26,7 @@ import org.apache.lucene.index.NoMergePolicy;
 import org.apache.lucene.index.PointValues;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.FieldExistsQuery;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
@@ -434,8 +435,9 @@ public class MaxAggregatorTests extends AggregatorTestCase {
         indexWriter.close();
 
         DirectoryReader indexReader = DirectoryReader.open(directory);
+        IndexSearcher indexSearcher = newIndexSearcher(indexReader);
 
-        Global global = searchAndReduce(indexReader, new AggTestConfig(aggregationBuilder, fieldType));
+        Global global = searchAndReduce(indexSearcher, new AggTestConfig(aggregationBuilder, fieldType));
         assertNotNull(global);
         assertEquals("global", global.getName());
         assertEquals(10L, global.getDocCount());
@@ -645,8 +647,9 @@ public class MaxAggregatorTests extends AggregatorTestCase {
         indexWriter.close();
 
         DirectoryReader indexReader = DirectoryReader.open(directory);
+        IndexSearcher indexSearcher = newIndexSearcher(indexReader);
 
-        Global global = searchAndReduce(indexReader, new AggTestConfig(aggregationBuilder, fieldType));
+        Global global = searchAndReduce(indexSearcher, new AggTestConfig(aggregationBuilder, fieldType));
         assertNotNull(global);
         assertEquals("global", global.getName());
         assertEquals(0L, global.getDocCount());
@@ -681,8 +684,9 @@ public class MaxAggregatorTests extends AggregatorTestCase {
         indexWriter.close();
 
         DirectoryReader indexReader = DirectoryReader.open(directory);
+        IndexSearcher indexSearcher = newIndexSearcher(indexReader);
 
-        Terms terms = searchAndReduce(indexReader, new AggTestConfig(aggregationBuilder, fieldType));
+        Terms terms = searchAndReduce(indexSearcher, new AggTestConfig(aggregationBuilder, fieldType));
         assertNotNull(terms);
         List<? extends Terms.Bucket> buckets = terms.getBuckets();
         assertNotNull(buckets);
@@ -722,17 +726,18 @@ public class MaxAggregatorTests extends AggregatorTestCase {
         indexWriter.close();
 
         DirectoryReader indexReader = DirectoryReader.open(directory);
+        IndexSearcher indexSearcher = newIndexSearcher(indexReader);
 
         MaxAggregationBuilder maxAggregationBuilder = new MaxAggregationBuilder("max").field("values");
         ValueCountAggregationBuilder countAggregationBuilder = new ValueCountAggregationBuilder("count").field("values");
 
-        try (AggregationContext context = createAggregationContext(indexReader, new MatchAllDocsQuery(), fieldType)) {
+        try (AggregationContext context = createAggregationContext(indexSearcher, new MatchAllDocsQuery(), fieldType)) {
             MaxAggregator maxAggregator = createAggregator(maxAggregationBuilder, context);
             ValueCountAggregator countAggregator = createAggregator(countAggregationBuilder, context);
 
             BucketCollector bucketCollector = MultiBucketCollector.wrap(true, List.of(maxAggregator, countAggregator));
             bucketCollector.preCollection();
-            context.searcher().search(new MatchAllDocsQuery(), bucketCollector.asCollector());
+            indexSearcher.search(new MatchAllDocsQuery(), bucketCollector.asCollector());
             bucketCollector.postCollection();
 
             Max max = (Max) maxAggregator.buildAggregation(0L);
@@ -767,10 +772,11 @@ public class MaxAggregatorTests extends AggregatorTestCase {
         indexWriter.close();
 
         DirectoryReader indexReader = DirectoryReader.open(directory);
+        IndexSearcher indexSearcher = newIndexSearcher(indexReader);
 
         try (
             AggregationContext context = createAggregationContext(
-                indexReader,
+                indexSearcher,
                 new MatchAllDocsQuery(),
                 multiValuesfieldType,
                 singleValueFieldType
@@ -790,7 +796,7 @@ public class MaxAggregatorTests extends AggregatorTestCase {
 
                 BucketCollector bucketCollector = MultiBucketCollector.wrap(true, List.of(maxAggregator, countAggregator, termsAggregator));
                 bucketCollector.preCollection();
-                context.searcher().search(new MatchAllDocsQuery(), bucketCollector.asCollector());
+                indexSearcher.search(new MatchAllDocsQuery(), bucketCollector.asCollector());
                 bucketCollector.postCollection();
 
                 Max max = (Max) maxAggregator.buildTopLevel();
@@ -834,11 +840,12 @@ public class MaxAggregatorTests extends AggregatorTestCase {
         indexWriter.close();
 
         DirectoryReader indexReader = DirectoryReader.open(directory);
+        IndexSearcher indexSearcher = newIndexSearcher(indexReader);
 
         MappedFieldType fieldType = new NumberFieldMapper.NumberFieldType("value", NumberFieldMapper.NumberType.INTEGER);
         MaxAggregationBuilder aggregationBuilder = new MaxAggregationBuilder("max").field("value");
 
-        Max max = searchAndReduce(indexReader, new AggTestConfig(aggregationBuilder, fieldType));
+        Max max = searchAndReduce(indexSearcher, new AggTestConfig(aggregationBuilder, fieldType));
 
         assertEquals(10.0, max.value(), 0);
         assertEquals("max", max.getName());
@@ -863,12 +870,13 @@ public class MaxAggregatorTests extends AggregatorTestCase {
         indexWriter.close();
 
         DirectoryReader indexReader = DirectoryReader.open(directory);
+        IndexSearcher indexSearcher = newIndexSearcher(indexReader);
 
         MappedFieldType fieldType = new NumberFieldMapper.NumberFieldType("value", NumberFieldMapper.NumberType.INTEGER);
         MaxAggregationBuilder aggregationBuilder = new MaxAggregationBuilder("max").field("value")
             .script(new Script(ScriptType.INLINE, MockScriptEngine.NAME, VALUE_SCRIPT, Collections.emptyMap()));
 
-        Max max = searchAndReduce(indexReader, new AggTestConfig(aggregationBuilder, fieldType));
+        Max max = searchAndReduce(indexSearcher, new AggTestConfig(aggregationBuilder, fieldType));
 
         assertEquals(10.0, max.value(), 0);
         assertEquals("max", max.getName());
@@ -876,7 +884,7 @@ public class MaxAggregatorTests extends AggregatorTestCase {
 
         aggregationBuilder = new MaxAggregationBuilder("max").field("value")
             .script(new Script(ScriptType.INLINE, MockScriptEngine.NAME, RANDOM_SCRIPT, Collections.emptyMap()));
-        max = searchAndReduce(indexReader, new AggTestConfig(aggregationBuilder, fieldType).withShouldBeCached(false));
+        max = searchAndReduce(indexSearcher, new AggTestConfig(aggregationBuilder, fieldType).withShouldBeCached(false));
 
         assertTrue(max.value() >= 0.0);
         assertTrue(max.value() <= 1.0);

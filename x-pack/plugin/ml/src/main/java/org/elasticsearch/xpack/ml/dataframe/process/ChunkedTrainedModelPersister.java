@@ -10,6 +10,7 @@ package org.elasticsearch.xpack.ml.dataframe.process;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.RamUsageEstimator;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
@@ -17,7 +18,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.license.License;
 import org.elasticsearch.xcontent.json.JsonXContent;
-import org.elasticsearch.xpack.core.ml.MlConfigVersion;
 import org.elasticsearch.xpack.core.ml.dataframe.DataFrameAnalyticsConfig;
 import org.elasticsearch.xpack.core.ml.dataframe.analyses.Classification;
 import org.elasticsearch.xpack.core.ml.dataframe.analyses.DataFrameAnalysis;
@@ -295,7 +295,7 @@ public class ChunkedTrainedModelPersister {
             .setModelId(modelId)
             .setModelType(trainedModelType)
             .setCreatedBy(InternalUsers.XPACK_USER.principal())
-            .setVersion(MlConfigVersion.CURRENT)
+            .setVersion(Version.CURRENT)
             .setCreateTime(createTime)
             // NOTE: GET _cat/ml/trained_models relies on the creating analytics ID being in the tags
             .setTags(Collections.singletonList(analytics.getId()))

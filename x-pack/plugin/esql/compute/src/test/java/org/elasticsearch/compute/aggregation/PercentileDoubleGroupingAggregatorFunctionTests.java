@@ -49,7 +49,7 @@ public class PercentileDoubleGroupingAggregatorFunctionTests extends GroupingAgg
     }
 
     @Override
-    protected void assertSimpleGroup(List<Page> input, Block result, int position, Long group) {
+    protected void assertSimpleGroup(List<Page> input, Block result, int position, long group) {
         TDigestState td = TDigestState.create(QuantileStates.DEFAULT_COMPRESSION);
         input.stream().flatMapToDouble(p -> allDoubles(p, group)).forEach(td::add);
         if (td.size() > 0) {

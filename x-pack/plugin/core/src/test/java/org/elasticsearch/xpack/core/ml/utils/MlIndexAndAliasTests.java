@@ -39,7 +39,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -159,7 +158,7 @@ public class MlIndexAndAliasTests extends ESTestCase {
 
         IndexTemplateConfig notificationsTemplate = new IndexTemplateConfig(
             NotificationsIndex.NOTIFICATIONS_INDEX,
-            "/ml/notifications_index_template.json",
+            "/org/elasticsearch/xpack/core/ml/notifications_index_template.json",
             Version.CURRENT.id,
             "xpack.ml.version",
             Map.of(
@@ -198,7 +197,7 @@ public class MlIndexAndAliasTests extends ESTestCase {
 
         IndexTemplateConfig notificationsTemplate = new IndexTemplateConfig(
             NotificationsIndex.NOTIFICATIONS_INDEX,
-            "/ml/notifications_index_template.json",
+            "/org/elasticsearch/xpack/core/ml/notifications_index_template.json",
             Version.CURRENT.id,
             "xpack.ml.version",
             Map.of(
@@ -225,7 +224,7 @@ public class MlIndexAndAliasTests extends ESTestCase {
 
         IndexTemplateConfig notificationsTemplate = new IndexTemplateConfig(
             NotificationsIndex.NOTIFICATIONS_INDEX,
-            "/ml/notifications_index_template.json",
+            "/org/elasticsearch/xpack/core/ml/notifications_index_template.json",
             Version.CURRENT.id,
             "xpack.ml.version",
             Map.of(
@@ -432,7 +431,7 @@ public class MlIndexAndAliasTests extends ESTestCase {
     }
 
     private static IndexMetadata createIndexMetadata(String indexName, boolean withAlias) {
-        IndexMetadata.Builder builder = IndexMetadata.builder(indexName).settings(indexSettings(IndexVersion.current(), 1, 0));
+        IndexMetadata.Builder builder = IndexMetadata.builder(indexName).settings(indexSettings(Version.CURRENT, 1, 0));
         if (withAlias) {
             builder.putAlias(AliasMetadata.builder(TEST_INDEX_ALIAS).build());
         }

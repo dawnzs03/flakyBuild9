@@ -105,7 +105,7 @@ public class CrossClusterAccessHeadersTests extends ESTestCase {
     }
 
     // TODO centralize common usage of this across all tests
-    public static String randomEncodedApiKeyHeader() {
+    static String randomEncodedApiKeyHeader() {
         return encodedApiKeyWithPrefix(UUIDs.randomBase64UUID(), UUIDs.randomBase64UUID());
     }
 

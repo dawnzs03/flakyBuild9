@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.elasticsearch.xpack.application.analytics.AnalyticsConstants.EVENT_DATA_STREAM_INDEX_PATTERN;
 import static org.elasticsearch.xpack.application.analytics.AnalyticsConstants.EVENT_DATA_STREAM_INDEX_PREFIX;
@@ -45,9 +46,9 @@ public class AnalyticsTemplateRegistry extends IndexTemplateRegistry {
     // ILM Policies configuration
     static final String EVENT_DATA_STREAM_ILM_POLICY_NAME = EVENT_DATA_STREAM_INDEX_PREFIX + "default_policy";
 
-    static final List<LifecyclePolicyConfig> LIFECYCLE_POLICIES_CONFIG = List.of(
+    static final List<LifecyclePolicy> LIFECYCLE_POLICIES = Stream.of(
         new LifecyclePolicyConfig(EVENT_DATA_STREAM_ILM_POLICY_NAME, ROOT_RESOURCE_PATH + EVENT_DATA_STREAM_ILM_POLICY_NAME + ".json")
-    );
+    ).map(config -> config.load(LifecyclePolicyConfig.DEFAULT_X_CONTENT_REGISTRY)).toList();
 
     // Index template components configuration
     static final String EVENT_DATA_STREAM_SETTINGS_COMPONENT_NAME = EVENT_DATA_STREAM_INDEX_PREFIX + "settings";
@@ -126,8 +127,8 @@ public class AnalyticsTemplateRegistry extends IndexTemplateRegistry {
     }
 
     @Override
-    protected List<LifecyclePolicyConfig> getLifecycleConfigs() {
-        return LIFECYCLE_POLICIES_CONFIG;
+    protected List<LifecyclePolicy> getPolicyConfigs() {
+        return LIFECYCLE_POLICIES;
     }
 
     @Override
@@ -138,12 +139,6 @@ public class AnalyticsTemplateRegistry extends IndexTemplateRegistry {
     @Override
     protected Map<String, ComposableIndexTemplate> getComposableTemplateConfigs() {
         return COMPOSABLE_INDEX_TEMPLATES;
-    }
-
-    // overriden to be visible in tests
-    @Override
-    protected List<LifecyclePolicy> getLifecyclePolicies() {
-        return super.getLifecyclePolicies();
     }
 
     @Override

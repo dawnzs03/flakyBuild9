@@ -16,6 +16,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.json.JsonXContent;
+import org.elasticsearch.xpack.core.ilm.LifecyclePolicy;
 import org.elasticsearch.xpack.core.template.IndexTemplateConfig;
 import org.elasticsearch.xpack.core.template.IndexTemplateRegistry;
 import org.elasticsearch.xpack.core.template.LifecyclePolicyConfig;
@@ -59,13 +60,13 @@ public class DeprecationIndexingTemplateRegistry extends IndexTemplateRegistry {
         for (IndexTemplateConfig config : List.of(
             new IndexTemplateConfig(
                 DEPRECATION_INDEXING_MAPPINGS_NAME,
-                "/deprecation/deprecation-indexing-mappings.json",
+                "/org/elasticsearch/xpack/deprecation/deprecation-indexing-mappings.json",
                 INDEX_TEMPLATE_VERSION,
                 DEPRECATION_INDEXING_TEMPLATE_VERSION_VARIABLE
             ),
             new IndexTemplateConfig(
                 DEPRECATION_INDEXING_SETTINGS_NAME,
-                "/deprecation/deprecation-indexing-settings.json",
+                "/org/elasticsearch/xpack/deprecation/deprecation-indexing-settings.json",
                 INDEX_TEMPLATE_VERSION,
                 DEPRECATION_INDEXING_TEMPLATE_VERSION_VARIABLE
             )
@@ -90,7 +91,7 @@ public class DeprecationIndexingTemplateRegistry extends IndexTemplateRegistry {
     private static final Map<String, ComposableIndexTemplate> COMPOSABLE_INDEX_TEMPLATE_CONFIGS = parseComposableTemplates(
         new IndexTemplateConfig(
             DEPRECATION_INDEXING_TEMPLATE_NAME,
-            "/deprecation/deprecation-indexing-template.json",
+            "/org/elasticsearch/xpack/deprecation/deprecation-indexing-template.json",
             INDEX_TEMPLATE_VERSION,
             DEPRECATION_INDEXING_TEMPLATE_VERSION_VARIABLE
         )
@@ -101,14 +102,16 @@ public class DeprecationIndexingTemplateRegistry extends IndexTemplateRegistry {
         return COMPOSABLE_INDEX_TEMPLATE_CONFIGS;
     }
 
-    private static final LifecyclePolicyConfig LIFECYCLE_POLICY_CONFIG = new LifecyclePolicyConfig(
-        DEPRECATION_INDEXING_POLICY_NAME,
-        "/deprecation/deprecation-indexing-ilm-policy.json"
+    private static final List<LifecyclePolicy> LIFECYCLE_POLICIES = List.of(
+        new LifecyclePolicyConfig(
+            DEPRECATION_INDEXING_POLICY_NAME,
+            "/org/elasticsearch/xpack/deprecation/deprecation-indexing-ilm-policy.json"
+        ).load(LifecyclePolicyConfig.DEFAULT_X_CONTENT_REGISTRY)
     );
 
     @Override
-    protected List<LifecyclePolicyConfig> getLifecycleConfigs() {
-        return List.of(LIFECYCLE_POLICY_CONFIG);
+    protected List<LifecyclePolicy> getPolicyConfigs() {
+        return LIFECYCLE_POLICIES;
     }
 
     @Override

@@ -8,6 +8,7 @@
 
 package org.elasticsearch.indices.recovery.plan;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.ClusterState;
@@ -187,9 +188,9 @@ public class ShardSnapshotsServiceIT extends ESIntegTestCase {
             assertThat(nonEnabledRepos.contains(shardSnapshotInfo.getRepository()), is(equalTo(false)));
 
             assertThat(shardSnapshotData.getMetadataSnapshot().size(), is(greaterThan(0)));
-            IndexVersion commitVersion = shardSnapshotData.getCommitVersion();
+            Version commitVersion = shardSnapshotData.getCommitVersion();
             assertThat(commitVersion, is(notNullValue()));
-            assertThat(commitVersion, is(equalTo(IndexVersion.current())));
+            assertThat(commitVersion, is(equalTo(Version.CURRENT)));
             final org.apache.lucene.util.Version commitLuceneVersion = shardSnapshotData.getCommitLuceneVersion();
             assertThat(commitLuceneVersion, is(notNullValue()));
             assertThat(commitLuceneVersion, is(equalTo(IndexVersion.current().luceneVersion())));

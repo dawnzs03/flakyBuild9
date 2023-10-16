@@ -44,19 +44,15 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
 
     public static final String NAME = "terms_set";
 
-    public static final TransportVersion MINIMUM_SHOULD_MATCH_ADDED_VERSION = TransportVersion.V_8_500_047;
-
     static final ParseField TERMS_FIELD = new ParseField("terms");
     static final ParseField MINIMUM_SHOULD_MATCH_FIELD = new ParseField("minimum_should_match_field");
     static final ParseField MINIMUM_SHOULD_MATCH_SCRIPT = new ParseField("minimum_should_match_script");
-    static final ParseField MINIMUM_SHOULD_MATCH = new ParseField("minimum_should_match");
 
     private final String fieldName;
     private final List<?> values;
 
     private String minimumShouldMatchField;
     private Script minimumShouldMatchScript;
-    private String minimumShouldMatch;
 
     public TermsSetQueryBuilder(String fieldName, List<?> values) {
         this(fieldName, values, true);
@@ -78,9 +74,6 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
         this.values = (List<?>) in.readGenericValue();
         this.minimumShouldMatchField = in.readOptionalString();
         this.minimumShouldMatchScript = in.readOptionalWriteable(Script::new);
-        if (in.getTransportVersion().onOrAfter(MINIMUM_SHOULD_MATCH_ADDED_VERSION)) {
-            this.minimumShouldMatch = in.readOptionalString();
-        }
     }
 
     @Override
@@ -89,9 +82,6 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
         out.writeGenericValue(values);
         out.writeOptionalString(minimumShouldMatchField);
         out.writeOptionalWriteable(minimumShouldMatchScript);
-        if (out.getTransportVersion().onOrAfter(MINIMUM_SHOULD_MATCH_ADDED_VERSION)) {
-            out.writeOptionalString(minimumShouldMatch);
-        }
     }
 
     // package protected for testing purpose
@@ -108,10 +98,8 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
     }
 
     public TermsSetQueryBuilder setMinimumShouldMatchField(String minimumShouldMatchField) {
-        if (minimumShouldMatchScript != null || minimumShouldMatch != null) {
-            throw new IllegalArgumentException(
-                "A script or value has already been specified. Cannot specify both a field and a script or value"
-            );
+        if (minimumShouldMatchScript != null) {
+            throw new IllegalArgumentException("A script has already been specified. Cannot specify both a field and script");
         }
         this.minimumShouldMatchField = minimumShouldMatchField;
         return this;
@@ -122,26 +110,10 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
     }
 
     public TermsSetQueryBuilder setMinimumShouldMatchScript(Script minimumShouldMatchScript) {
-        if (minimumShouldMatchField != null || minimumShouldMatch != null) {
-            throw new IllegalArgumentException(
-                "A field or value has already been specified. Cannot specify both a script and a field or value"
-            );
+        if (minimumShouldMatchField != null) {
+            throw new IllegalArgumentException("A field has already been specified. Cannot specify both a field and script");
         }
         this.minimumShouldMatchScript = minimumShouldMatchScript;
-        return this;
-    }
-
-    public String getMinimumShouldMatch() {
-        return minimumShouldMatch;
-    }
-
-    public TermsSetQueryBuilder setMinimumShouldMatch(String minimumShouldMatch) {
-        if (minimumShouldMatchField != null || minimumShouldMatchScript != null) {
-            throw new IllegalArgumentException(
-                "A field or script has already been specified. Cannot specify both a value and a script or field"
-            );
-        }
-        this.minimumShouldMatch = minimumShouldMatch;
         return this;
     }
 
@@ -150,13 +122,12 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
         return Objects.equals(fieldName, other.fieldName)
             && Objects.equals(values, other.values)
             && Objects.equals(minimumShouldMatchField, other.minimumShouldMatchField)
-            && Objects.equals(minimumShouldMatchScript, other.minimumShouldMatchScript)
-            && Objects.equals(minimumShouldMatch, other.minimumShouldMatch);
+            && Objects.equals(minimumShouldMatchScript, other.minimumShouldMatchScript);
     }
 
     @Override
     protected int doHashCode() {
-        return Objects.hash(fieldName, values, minimumShouldMatchField, minimumShouldMatchScript, minimumShouldMatch);
+        return Objects.hash(fieldName, values, minimumShouldMatchField, minimumShouldMatchScript);
     }
 
     @Override
@@ -174,9 +145,6 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
         }
         if (minimumShouldMatchScript != null) {
             builder.field(MINIMUM_SHOULD_MATCH_SCRIPT.getPreferredName(), minimumShouldMatchScript);
-        }
-        if (minimumShouldMatch != null) {
-            builder.field(MINIMUM_SHOULD_MATCH.getPreferredName(), minimumShouldMatch);
         }
         printBoostAndQueryName(builder);
         builder.endObject();
@@ -198,7 +166,6 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
 
         List<Object> values = new ArrayList<>();
         String minimumShouldMatchField = null;
-        String minimumShouldMatch = null;
         Script minimumShouldMatchScript = null;
         String queryName = null;
         float boost = AbstractQueryBuilder.DEFAULT_BOOST;
@@ -227,8 +194,6 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
             } else if (token.isValue()) {
                 if (MINIMUM_SHOULD_MATCH_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                     minimumShouldMatchField = parser.text();
-                } else if (MINIMUM_SHOULD_MATCH.match(currentFieldName, parser.getDeprecationHandler())) {
-                    minimumShouldMatch = parser.text();
                 } else if (AbstractQueryBuilder.BOOST_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                     boost = parser.floatValue();
                 } else if (AbstractQueryBuilder.NAME_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
@@ -255,9 +220,6 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
         TermsSetQueryBuilder queryBuilder = new TermsSetQueryBuilder(fieldName, values, false).queryName(queryName).boost(boost);
         if (minimumShouldMatchField != null) {
             queryBuilder.setMinimumShouldMatchField(minimumShouldMatchField);
-        }
-        if (minimumShouldMatch != null) {
-            queryBuilder.setMinimumShouldMatch(minimumShouldMatch);
         }
         if (minimumShouldMatchScript != null) {
             queryBuilder.setMinimumShouldMatchScript(minimumShouldMatchScript);
@@ -298,9 +260,7 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
 
     private LongValuesSource createValuesSource(SearchExecutionContext context) {
         LongValuesSource longValuesSource;
-        if (minimumShouldMatch != null) {
-            longValuesSource = LongValuesSource.constant(Queries.calculateMinShouldMatch(values.size(), minimumShouldMatch));
-        } else if (minimumShouldMatchField != null) {
+        if (minimumShouldMatchField != null) {
             MappedFieldType msmFieldType = context.getFieldType(minimumShouldMatchField);
             if (msmFieldType == null) {
                 throw new QueryShardException(context, "failed to find minimum_should_match field [" + minimumShouldMatchField + "]");

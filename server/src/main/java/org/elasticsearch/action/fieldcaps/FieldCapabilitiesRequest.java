@@ -264,7 +264,14 @@ public final class FieldCapabilitiesRequest extends ActionRequest implements Ind
     public String getDescription() {
         final StringBuilder stringBuilder = new StringBuilder("indices[");
         Strings.collectionToDelimitedStringWithLimit(Arrays.asList(indices), ",", "", "", 1024, stringBuilder);
-        return FieldCapabilitiesNodeRequest.completeDescription(stringBuilder, fields, filters, types);
+        stringBuilder.append("], fields[");
+        Strings.collectionToDelimitedStringWithLimit(Arrays.asList(fields), ",", "", "", 1024, stringBuilder);
+        stringBuilder.append("], filters[");
+        stringBuilder.append(Strings.collectionToDelimitedString(Arrays.asList(filters), ","));
+        stringBuilder.append("], types[");
+        stringBuilder.append(Strings.collectionToDelimitedString(Arrays.asList(types), ","));
+        stringBuilder.append("]");
+        return stringBuilder.toString();
     }
 
     @Override

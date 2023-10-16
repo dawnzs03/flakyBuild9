@@ -39,7 +39,7 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
  * REST handler that tests whether a user has the specified
  * {@link RoleDescriptor.IndicesPrivileges privileges}
  */
-@ServerlessScope(Scope.PUBLIC)
+@ServerlessScope(Scope.INTERNAL)
 public class RestHasPrivilegesAction extends SecurityBaseRestHandler {
 
     private final SecurityContext securityContext;

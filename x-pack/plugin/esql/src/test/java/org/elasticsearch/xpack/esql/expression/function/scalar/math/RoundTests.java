@@ -7,40 +7,21 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.math;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.elasticsearch.xpack.esql.expression.function.scalar.AbstractScalarFunctionTestCase;
 import org.elasticsearch.xpack.ql.expression.Expression;
+import org.elasticsearch.xpack.ql.expression.Literal;
 import org.elasticsearch.xpack.ql.expression.predicate.operator.math.Maths;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.type.DataType;
 import org.elasticsearch.xpack.ql.type.DataTypes;
+import org.hamcrest.Matcher;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.elasticsearch.compute.data.BlockUtils.toJavaObject;
 import static org.hamcrest.Matchers.equalTo;
 
 public class RoundTests extends AbstractScalarFunctionTestCase {
-    public RoundTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
-    }
-
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        return parameterSuppliersFromTypedData(List.of(new TestCaseSupplier("round(<double>, <int>)", () -> {
-            double number = 1 / randomDouble();
-            int precision = between(-30, 30);
-            return new TestCase(
-                List.of(new TypedData(number, DataTypes.DOUBLE, "number"), new TypedData(precision, DataTypes.INTEGER, "precision")),
-                "RoundDoubleEvaluator[val=Attribute[channel=0], decimals=CastIntToLongEvaluator[v=Attribute[channel=1]]]",
-                DataTypes.DOUBLE,
-                equalTo(Maths.round(number, precision))
-            );
-        })));
-    }
 
     public void testExamples() {
         assertEquals(123, process(123));
@@ -105,8 +86,28 @@ public class RoundTests extends AbstractScalarFunctionTestCase {
     }
 
     @Override
+    protected List<Object> simpleData() {
+        return List.of(1 / randomDouble(), between(-30, 30));
+    }
+
+    @Override
+    protected Expression expressionForSimpleData() {
+        return new Round(Source.EMPTY, field("arg", DataTypes.DOUBLE), field("precision", DataTypes.INTEGER));
+    }
+
+    @Override
     protected DataType expectedType(List<DataType> argTypes) {
         return argTypes.get(0);
+    }
+
+    @Override
+    protected Matcher<Object> resultMatcher(List<Object> data, DataType dataType) {
+        return equalTo(Maths.round((Number) data.get(0), ((Number) data.get(1)).longValue()));
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "RoundDoubleEvaluator[val=Attribute[channel=0], decimals=CastIntToLongEvaluator[v=Attribute[channel=1]]]";
     }
 
     public void testNoDecimalsToString() {
@@ -117,12 +118,21 @@ public class RoundTests extends AbstractScalarFunctionTestCase {
     }
 
     @Override
+    protected Expression constantFoldable(List<Object> data) {
+        return new Round(
+            Source.EMPTY,
+            new Literal(Source.EMPTY, data.get(0), DataTypes.DOUBLE),
+            new Literal(Source.EMPTY, data.get(1), DataTypes.INTEGER)
+        );
+    }
+
+    @Override
     protected List<ArgumentSpec> argSpec() {
         return List.of(required(numerics()), optional(integers()));
     }
 
     @Override
-    protected Expression build(Source source, List<Expression> args) {
+    protected Expression build(Source source, List<Literal> args) {
         return new Round(source, args.get(0), args.size() < 2 ? null : args.get(1));
     }
 }

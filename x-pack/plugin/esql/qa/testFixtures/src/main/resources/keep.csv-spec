@@ -43,12 +43,11 @@ averageByField
 from employees | stats avg(avg_worked_seconds) by languages;
 
 avg(avg_worked_seconds):double | languages:integer
-          3.181719481E8        | null 
-          3.0318626831578946E8 | 2
-          3.133013149047619E8  | 5
-          2.863684210555556E8  | 4
-          2.94833632E8         | 1
-          2.978159518235294E8  | 3
+3.0318626831578946E8 | 2
+3.133013149047619E8 | 5
+2.863684210555556E8 | 4
+2.94833632E8 | 1
+2.978159518235294E8 | 3
 ;
 
 whereWithAverageBySubField
@@ -61,26 +60,24 @@ avg(avg_worked_seconds):double | languages.long:long
 statsBySubField
 from employees | stats avg=avg(avg_worked_seconds),min=min(avg_worked_seconds),max=max(avg_worked_seconds) by languages.long;
 
-          avg:double | min:long  | max:long  | languages.long:long
-3.181719481E8        | 226435054 | 374037782 | null
+avg:double | min:long | max:long | languages.long:long
 3.0318626831578946E8 | 212460105 | 377713748 | 2
-3.133013149047619E8  | 203838153 | 390266432 | 5
-2.863684210555556E8  | 200296405 | 393084805 | 4
-2.94833632E8         | 208374744 | 387408356 | 1
-2.978159518235294E8  | 203989706 | 394597613 | 3
+3.133013149047619E8 | 203838153 | 390266432 | 5
+2.863684210555556E8 | 200296405 | 393084805 | 4
+2.94833632E8 | 208374744 | 387408356 | 1
+2.978159518235294E8 | 203989706 | 394597613 | 3
 ;
 
 statsBySubFieldSortedByKey
 // https://github.com/elastic/elasticsearch-internal/issues/414
 from employees | stats avg=avg(avg_worked_seconds),min=min(avg_worked_seconds),max=max(avg_worked_seconds) by languages.long | sort languages.long;
 
-          avg:double | min:long   | max:long | languages.long:long
-2.94833632E8         | 208374744 | 387408356 | 1
+avg:double | min:long | max:long | languages.long:long
+2.94833632E8 | 208374744 | 387408356 | 1
 3.0318626831578946E8 | 212460105 | 377713748 | 2
-2.978159518235294E8  | 203989706 | 394597613 | 3
-2.863684210555556E8  | 200296405 | 393084805 | 4
-3.133013149047619E8  | 203838153 | 390266432 | 5
-3.181719481E8        | 226435054 | 374037782 | null
+2.978159518235294E8 | 203989706 | 394597613 | 3
+2.863684210555556E8 | 200296405 | 393084805 | 4
+3.133013149047619E8 | 203838153 | 390266432 | 5
 ;
 
 avgOfIntegerWithSortByGroupingKey
@@ -203,8 +200,7 @@ emp_no:integer | languages:integer | gender:keyword | first_name:keyword | abc:i
 projectFromWithStatsAfterLimit
 from employees | keep gender, avg_worked_seconds, first_name, last_name | limit 10 | stats m = max(avg_worked_seconds) by gender;
 
-   m:long | gender:keyword
-315236372 | null
+m:long | gender:keyword
 311267831 | M
 393084805 | F
 ;
@@ -234,8 +230,8 @@ emp_no:integer | languages:integer | first_name:keyword | last_name:keyword
 sortWithLimitOne
 from employees | sort languages | limit 1;
 
-avg_worked_seconds:long | birth_date:date | emp_no:integer | first_name:keyword | gender:keyword | height:double | height.float:double | height.half_float:double | height.scaled_float:double | hire_date:date | is_rehired:boolean | job_positions:keyword | languages:integer | languages.byte:integer | languages.long:long | languages.short:integer | last_name:keyword | salary:integer | salary_change:double | salary_change.int:integer |salary_change.keyword:keyword |salary_change.long:long | still_hired:boolean
-244294991         |1955-01-21T00:00:00.000Z|10005          |Kyoichi        |M              |2.05           |2.049999952316284|2.05078125       |2.05               |1989-09-12T00:00:00.000Z|[false, false, false, true]|null           |1              |1              |1              |1              |Maliniak       |63528          |[-2.14, 13.07] |[-2, 13]         |[-2.14, 13.07] |[-2, 13]          |true                      
+avg_worked_seconds:long | birth_date:date | emp_no:integer | first_name:keyword | gender:keyword | height:double | height.float:double | height.half_float:double | height.scaled_float:double | hire_date:date | is_rehired:boolean | job_positions:keyword | languages:integer | languages.byte:integer | languages.long:long | languages.short:integer | last_name:keyword | salary:integer | salary_change:double | salary_change.int:integer |salary_change.long:long | still_hired:boolean
+244294991         |1955-01-21T00:00:00.000Z|10005          |Kyoichi        |M              |2.05           |2.049999952316284|2.05078125       |2.05               |1989-09-12T00:00:00.000Z|[false, false, false, true]|null           |1              |1              |1              |1              |Maliniak       |63528          |[-2.14, 13.07] |[-2, 13]         |[-2, 13]          |true                      
 ;
 
 sortWithLimitFifteenAndProject
@@ -263,8 +259,8 @@ height:double | languages.long:long | still_hired:boolean
 simpleEvalWithSortAndLimitOne
 from employees | eval x = languages + 7 | sort x | limit 1;
 
-avg_worked_seconds:long | birth_date:date | emp_no:integer | first_name:keyword | gender:keyword | height:double | height.float:double | height.half_float:double | height.scaled_float:double | hire_date:date | is_rehired:boolean | job_positions:keyword | languages:integer | languages.byte:integer | languages.long:long | languages.short:integer | last_name:keyword | salary:integer | salary_change:double | salary_change.int:integer | salary_change.keyword:keyword |salary_change.long:long | still_hired:boolean | x:integer
-244294991         |1955-01-21T00:00:00.000Z|10005          |Kyoichi        |M              |2.05           |2.049999952316284|2.05078125       |2.05               |1989-09-12T00:00:00.000Z|[false, false, false, true]|null           |1              |1              |1              |1              |Maliniak       |63528          |[-2.14, 13.07] |[-2, 13]         |[-2.14, 13.07]         |[-2, 13]         |true           |8                            
+avg_worked_seconds:long | birth_date:date | emp_no:integer | first_name:keyword | gender:keyword | height:double | height.float:double | height.half_float:double | height.scaled_float:double | hire_date:date | is_rehired:boolean | job_positions:keyword | languages:integer | languages.byte:integer | languages.long:long | languages.short:integer | last_name:keyword | salary:integer | salary_change:double | salary_change.int:integer |salary_change.long:long | still_hired:boolean | x:integer
+244294991         |1955-01-21T00:00:00.000Z|10005          |Kyoichi        |M              |2.05           |2.049999952316284|2.05078125       |2.05               |1989-09-12T00:00:00.000Z|[false, false, false, true]|null           |1              |1              |1              |1              |Maliniak       |63528          |[-2.14, 13.07] |[-2, 13]         |[-2, 13]|true           |8                            
 ;
 
 evalOfAverageValue
@@ -314,10 +310,10 @@ whereWithEvalGeneratedValue
 // the "height" fields have the values as 1.7, 1.7000000476837158, 1.7001953125, 1.7
 from employees | eval x = salary / 2 | where x > 37000;
 
-avg_worked_seconds:long | birth_date:date | emp_no:integer | first_name:keyword | gender:keyword | height:double | height.float:double | height.half_float:double | height.scaled_float:double | hire_date:date | is_rehired:boolean | job_positions:keyword | languages:integer | languages.byte:integer | languages.long:long | languages.short:integer | last_name:keyword | salary:integer | salary_change:double | salary_change.int:integer |salary_change.keyword:keyword |salary_change.long:long | still_hired:boolean | x:integer
-393084805         |1957-05-23T00:00:00.000Z|10007          |Tzvetan        |F              |1.7            |1.7000000476837158|1.7001953125     |1.7                |1989-02-10T00:00:00.000Z|[false, false, true, true]|null                                                                        |4              |4              |4              |4              |Zielinski      |74572          |[-7.06, 0.57, 1.99] |[-7, 0, 1]       |[-7.06, 0.57, 1.99] |[-7, 0, 1]        |true           |37286          
-257694181         |1956-12-13T00:00:00.000Z|10029          |Otmar          |M              |1.99           |1.9900000095367432|1.990234375      |1.99               |1985-11-20T00:00:00.000Z|true                      |[Data Scientist, Principal Support Engineer, Senior Python Developer]       |null           |null           |null           |null           |Herbst         |74999          |[-8.19, -1.9, -0.32]|[-8, -1, 0]      |[-0.32, -1.90, -8.19]|[-8, -1, 0]       |false          |37499          
-371418933         |null                    |10045          |Moss           |M              |1.7            |1.7000000476837158|1.7001953125     |1.7                |1989-09-02T00:00:00.000Z|[false, true]             |[Accountant, Junior Developer, Principal Support Engineer, Purchase Manager]|3              |3              |3              |3              |Shanbhogue     |74970          |null                |null             |null                |null              |false          |37485                    
+avg_worked_seconds:long | birth_date:date | emp_no:integer | first_name:keyword | gender:keyword | height:double | height.float:double | height.half_float:double | height.scaled_float:double | hire_date:date | is_rehired:boolean | job_positions:keyword | languages:integer | languages.byte:integer | languages.long:long | languages.short:integer | last_name:keyword | salary:integer | salary_change:double | salary_change.int:integer |salary_change.long:long | still_hired:boolean | x:integer
+393084805         |1957-05-23T00:00:00.000Z|10007          |Tzvetan        |F              |1.7            |1.7000000476837158|1.7001953125     |1.7                |1989-02-10T00:00:00.000Z|[false, false, true, true]|null                                                                        |4              |4              |4              |4              |Zielinski      |74572          |[-7.06, 0.57, 1.99] |[-7, 0, 1]       |[-7, 0, 1]        |true           |37286          
+257694181         |1956-12-13T00:00:00.000Z|10029          |Otmar          |M              |1.99           |1.9900000095367432|1.990234375      |1.99               |1985-11-20T00:00:00.000Z|true                      |[Data Scientist, Principal Support Engineer, Senior Python Developer]       |null           |null           |null           |null           |Herbst         |74999          |[-8.19, -1.9, -0.32]|[-8, -1, 0]      |[-8, -1, 0]       |false          |37499          
+371418933         |null                    |10045          |Moss           |M              |1.7            |1.7000000476837158|1.7001953125     |1.7                |1989-09-02T00:00:00.000Z|[false, true]             |[Accountant, Junior Developer, Principal Support Engineer, Purchase Manager]|3              |3              |3              |3              |Shanbhogue     |74970          |null                |null             |null              |false          |37485                    
 ;
 
 whereWithStatsValue
@@ -425,10 +421,9 @@ avg(nullsum):double | count(nullsum):long
 ;
 
 fromStatsLimit
-from employees | stats ac = avg(salary) by languages | limit 2;
+from employees | stats ac = avg(salary) by languages | limit 1;
 
-ac:double         | languages:integer
-52519.6           | null
+ac:double | languages:integer
 48178.84210526316 | 2
 ;
 
@@ -519,14 +514,4 @@ emp_no:integer |   salary_change:double   |salary_change.int:integer|salary_chan
 10008          |[-2.92, 0.75, 3.54, 12.68]|[-2, 0, 3, 12]           |[-2, 0, 3, 12]    
 10009          |null                      |null                     |null              
 10010          |[-6.77, 4.69, 5.05, 12.15]|[-6, 4, 5, 12]           |[-6, 4, 5, 12]               
-;
-
-
-projectAllButConstant
-from employees | eval c = 1 | keep c | limit 2
-;
-
-c:i
-1
-1
 ;

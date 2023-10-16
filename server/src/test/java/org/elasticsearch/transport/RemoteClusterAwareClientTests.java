@@ -18,13 +18,10 @@ import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.VersionInformation;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.transport.MockTransportService;
-import org.elasticsearch.threadpool.ScalingExecutorBuilder;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -39,12 +36,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 public class RemoteClusterAwareClientTests extends ESTestCase {
 
-    private static final String TEST_THREAD_POOL_NAME = "test_thread_pool";
-
-    private final ThreadPool threadPool = new TestThreadPool(
-        getClass().getName(),
-        new ScalingExecutorBuilder(TEST_THREAD_POOL_NAME, 1, 1, TimeValue.timeValueSeconds(60), true)
-    );
+    private final ThreadPool threadPool = new TestThreadPool(getClass().getName());
 
     @Override
     public void tearDown() throws Exception {
@@ -91,7 +83,6 @@ public class RemoteClusterAwareClientTests extends ESTestCase {
                         threadPool,
                         service,
                         "cluster1",
-                        threadPool.executor(TEST_THREAD_POOL_NAME),
                         randomBoolean()
                     )
                 ) {
@@ -104,18 +95,7 @@ public class RemoteClusterAwareClientTests extends ESTestCase {
                         randomBoolean(),
                         null
                     );
-                    final SearchShardsResponse searchShardsResponse = PlainActionFuture.get(
-                        future -> client.execute(
-                            SearchShardsAction.INSTANCE,
-                            searchShardsRequest,
-                            ActionListener.runBefore(
-                                future,
-                                () -> assertTrue(Thread.currentThread().getName().contains('[' + TEST_THREAD_POOL_NAME + ']'))
-                            )
-                        ),
-                        10,
-                        TimeUnit.SECONDS
-                    );
+                    var searchShardsResponse = client.execute(SearchShardsAction.INSTANCE, searchShardsRequest).actionGet();
                     assertThat(searchShardsResponse.getNodes(), equalTo(knownNodes));
                 }
             }
@@ -151,7 +131,6 @@ public class RemoteClusterAwareClientTests extends ESTestCase {
                         threadPool,
                         service,
                         "cluster1",
-                        EsExecutors.DIRECT_EXECUTOR_SERVICE,
                         randomBoolean()
                     )
                 ) {

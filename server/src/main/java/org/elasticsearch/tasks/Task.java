@@ -138,7 +138,6 @@ public class Task {
         return new TaskInfo(
             new TaskId(localNodeId, getId()),
             getType(),
-            localNodeId,
             getAction(),
             description,
             status,

@@ -1213,12 +1213,12 @@ public class ElasticsearchNode implements TestClusterConfiguration {
         try {
             processHandle.onExit().get(ES_DESTROY_TIMEOUT, ES_DESTROY_TIMEOUT_UNIT);
         } catch (InterruptedException e) {
-            LOGGER.info("[{}] Interrupted while waiting for ES process", name, e);
+            LOGGER.info("Interrupted while waiting for ES process", e);
             Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
-            LOGGER.info("[{}] Failure while waiting for process to exist", name, e);
+            LOGGER.info("Failure while waiting for process to exist", e);
         } catch (TimeoutException e) {
-            LOGGER.info("[{}] Timed out waiting for process to exit", name, e);
+            LOGGER.info("Timed out waiting for process to exit", e);
         }
     }
 

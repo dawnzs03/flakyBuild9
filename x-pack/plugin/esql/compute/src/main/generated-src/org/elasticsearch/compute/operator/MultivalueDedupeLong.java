@@ -12,7 +12,6 @@ import org.elasticsearch.common.util.LongHash;
 import org.elasticsearch.compute.aggregation.GroupingAggregatorFunction;
 import org.elasticsearch.compute.aggregation.blockhash.BlockHash;
 import org.elasticsearch.compute.data.Block;
-import org.elasticsearch.compute.data.IntBlock;
 import org.elasticsearch.compute.data.LongBlock;
 
 import java.util.Arrays;
@@ -138,20 +137,16 @@ public class MultivalueDedupeLong {
     }
 
     /**
-     * Dedupe values and build a {@link IntBlock} suitable for passing
+     * Dedupe values and build a {@link LongBlock} suitable for passing
      * as the grouping block to a {@link GroupingAggregatorFunction}.
      */
-    public MultivalueDedupe.HashResult hash(LongHash hash) {
-        IntBlock.Builder builder = IntBlock.newBlockBuilder(block.getPositionCount());
-        boolean sawNull = false;
+    public LongBlock hash(LongHash hash) {
+        LongBlock.Builder builder = LongBlock.newBlockBuilder(block.getPositionCount());
         for (int p = 0; p < block.getPositionCount(); p++) {
             int count = block.getValueCount(p);
             int first = block.getFirstValueIndex(p);
             switch (count) {
-                case 0 -> {
-                    sawNull = true;
-                    builder.appendInt(0);
-                }
+                case 0 -> builder.appendNull();
                 case 1 -> {
                     long v = block.getLong(first);
                     hash(builder, hash, v);
@@ -167,7 +162,7 @@ public class MultivalueDedupeLong {
                 }
             }
         }
-        return new MultivalueDedupe.HashResult(builder.build(), sawNull);
+        return builder.build();
     }
 
     /**
@@ -302,7 +297,7 @@ public class MultivalueDedupeLong {
     /**
      * Writes an already deduplicated {@link #work} to a hash.
      */
-    private void hashUniquedWork(LongHash hash, IntBlock.Builder builder) {
+    private void hashUniquedWork(LongHash hash, LongBlock.Builder builder) {
         if (w == 1) {
             hash(builder, hash, work[0]);
             return;
@@ -317,7 +312,7 @@ public class MultivalueDedupeLong {
     /**
      * Writes a sorted {@link #work} to a hash, skipping duplicates.
      */
-    private void hashSortedWork(LongHash hash, IntBlock.Builder builder) {
+    private void hashSortedWork(LongHash hash, LongBlock.Builder builder) {
         if (w == 1) {
             hash(builder, hash, work[0]);
             return;
@@ -362,7 +357,7 @@ public class MultivalueDedupeLong {
         work = ArrayUtil.grow(work, size);
     }
 
-    private void hash(IntBlock.Builder builder, LongHash hash, long v) {
-        builder.appendInt(Math.toIntExact(BlockHash.hashOrdToGroupNullReserved(hash.add(v))));
+    private void hash(LongBlock.Builder builder, LongHash hash, long v) {
+        builder.appendLong(BlockHash.hashOrdToGroup(hash.add(v)));
     }
 }

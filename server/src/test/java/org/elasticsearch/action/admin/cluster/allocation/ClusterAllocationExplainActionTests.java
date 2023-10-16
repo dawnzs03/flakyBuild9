@@ -35,7 +35,6 @@ import org.elasticsearch.xcontent.XContentFactory;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.action.admin.cluster.allocation.TransportClusterAllocationExplainAction.findShardToExplain;
 import static org.hamcrest.Matchers.allOf;
@@ -110,7 +109,6 @@ public class ClusterAllocationExplainActionTests extends ESTestCase {
             cae.getCurrentNode().getId(),
             cae.getCurrentNode().getName(),
             cae.getCurrentNode().getAddress(),
-            cae.getCurrentNode().getRoles().stream().map(r -> '"' + r.roleName() + '"').collect(Collectors.joining(", ", "[", "]")),
             explanation };
         assertEquals(XContentHelper.stripWhitespace(Strings.format("""
             {
@@ -122,8 +120,7 @@ public class ClusterAllocationExplainActionTests extends ESTestCase {
               "current_node": {
                 "id": "%s",
                 "name": "%s",
-                "transport_address": "%s",
-                "roles": %s
+                "transport_address": "%s"
               },
               "explanation": "%s"
             }""", args)), Strings.toString(builder));

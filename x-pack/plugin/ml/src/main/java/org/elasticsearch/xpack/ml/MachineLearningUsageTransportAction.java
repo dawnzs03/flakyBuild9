@@ -73,7 +73,6 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
     private final Client client;
     private final XPackLicenseState licenseState;
     private final JobManagerHolder jobManagerHolder;
-    private final MachineLearningExtension machineLearningExtension;
     private final boolean enabled;
 
     @Inject
@@ -86,8 +85,7 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
         Environment environment,
         Client client,
         XPackLicenseState licenseState,
-        JobManagerHolder jobManagerHolder,
-        MachineLearningExtensionHolder machineLearningExtensionHolder
+        JobManagerHolder jobManagerHolder
     ) {
         super(
             XPackUsageFeatureAction.MACHINE_LEARNING.name(),
@@ -100,11 +98,6 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
         this.client = new OriginSettingClient(client, ML_ORIGIN);
         this.licenseState = licenseState;
         this.jobManagerHolder = jobManagerHolder;
-        if (machineLearningExtensionHolder.isEmpty()) {
-            this.machineLearningExtension = new DefaultMachineLearningExtension();
-        } else {
-            this.machineLearningExtension = machineLearningExtensionHolder.getMachineLearningExtension();
-        }
         this.enabled = XPackSettings.MACHINE_LEARNING_ENABLED.get(environment.settings());
     }
 
@@ -194,18 +187,10 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
         dataframeAnalyticsStatsRequest.setPageParams(new PageParams(0, 10_000));
         ActionListener<GetDatafeedsStatsAction.Response> datafeedStatsListener = ActionListener.wrap(response -> {
             addDatafeedsUsage(response, datafeedsUsage);
-            if (machineLearningExtension.isDataFrameAnalyticsEnabled()) {
-                client.execute(GetDataFrameAnalyticsStatsAction.INSTANCE, dataframeAnalyticsStatsRequest, dataframeAnalyticsStatsListener);
-            } else {
-                addInferenceUsage(inferenceUsageListener);
-            }
+            client.execute(GetDataFrameAnalyticsStatsAction.INSTANCE, dataframeAnalyticsStatsRequest, dataframeAnalyticsStatsListener);
         }, e -> {
             logger.warn("Failed to get datafeed stats to include in ML usage", e);
-            if (machineLearningExtension.isDataFrameAnalyticsEnabled()) {
-                client.execute(GetDataFrameAnalyticsStatsAction.INSTANCE, dataframeAnalyticsStatsRequest, dataframeAnalyticsStatsListener);
-            } else {
-                addInferenceUsage(inferenceUsageListener);
-            }
+            client.execute(GetDataFrameAnalyticsStatsAction.INSTANCE, dataframeAnalyticsStatsRequest, dataframeAnalyticsStatsListener);
         });
 
         // Step 1. Extract usage from jobs stats and then request stats for all datafeeds
@@ -225,14 +210,8 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
         );
 
         // Step 0. Kick off the chain of callbacks by requesting jobs stats
-        if (machineLearningExtension.isAnomalyDetectionEnabled()) {
-            GetJobsStatsAction.Request jobStatsRequest = new GetJobsStatsAction.Request(Metadata.ALL);
-            client.execute(GetJobsStatsAction.INSTANCE, jobStatsRequest, jobStatsListener);
-        } else if (machineLearningExtension.isDataFrameAnalyticsEnabled()) {
-            client.execute(GetDataFrameAnalyticsStatsAction.INSTANCE, dataframeAnalyticsStatsRequest, dataframeAnalyticsStatsListener);
-        } else {
-            addInferenceUsage(inferenceUsageListener);
-        }
+        GetJobsStatsAction.Request jobStatsRequest = new GetJobsStatsAction.Request(Metadata.ALL);
+        client.execute(GetJobsStatsAction.INSTANCE, jobStatsRequest, jobStatsListener);
     }
 
     private void addJobsUsage(GetJobsStatsAction.Response response, List<Job> jobs, Map<String, Object> jobsUsage) {
@@ -382,27 +361,23 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
     }
 
     private void addInferenceUsage(ActionListener<Map<String, Object>> listener) {
-        if (machineLearningExtension.isDataFrameAnalyticsEnabled() || machineLearningExtension.isNlpEnabled()) {
-            GetTrainedModelsAction.Request getModelsRequest = new GetTrainedModelsAction.Request(
-                "*",
-                Collections.emptyList(),
-                Collections.emptySet()
-            );
-            getModelsRequest.setPageParams(new PageParams(0, 10_000));
-            client.execute(GetTrainedModelsAction.INSTANCE, getModelsRequest, ActionListener.wrap(getModelsResponse -> {
-                GetTrainedModelsStatsAction.Request getStatsRequest = new GetTrainedModelsStatsAction.Request("*");
-                getStatsRequest.setPageParams(new PageParams(0, 10_000));
-                client.execute(GetTrainedModelsStatsAction.INSTANCE, getStatsRequest, ActionListener.wrap(getStatsResponse -> {
-                    Map<String, Object> inferenceUsage = new LinkedHashMap<>();
-                    addInferenceIngestUsage(getStatsResponse, inferenceUsage);
-                    addTrainedModelStats(getModelsResponse, getStatsResponse, inferenceUsage);
-                    addDeploymentStats(getStatsResponse, inferenceUsage);
-                    listener.onResponse(inferenceUsage);
-                }, listener::onFailure));
+        GetTrainedModelsAction.Request getModelsRequest = new GetTrainedModelsAction.Request(
+            "*",
+            Collections.emptyList(),
+            Collections.emptySet()
+        );
+        getModelsRequest.setPageParams(new PageParams(0, 10_000));
+        client.execute(GetTrainedModelsAction.INSTANCE, getModelsRequest, ActionListener.wrap(getModelsResponse -> {
+            GetTrainedModelsStatsAction.Request getStatsRequest = new GetTrainedModelsStatsAction.Request("*");
+            getStatsRequest.setPageParams(new PageParams(0, 10_000));
+            client.execute(GetTrainedModelsStatsAction.INSTANCE, getStatsRequest, ActionListener.wrap(getStatsResponse -> {
+                Map<String, Object> inferenceUsage = new LinkedHashMap<>();
+                addInferenceIngestUsage(getStatsResponse, inferenceUsage);
+                addTrainedModelStats(getModelsResponse, getStatsResponse, inferenceUsage);
+                addDeploymentStats(getStatsResponse, inferenceUsage);
+                listener.onResponse(inferenceUsage);
             }, listener::onFailure));
-        } else {
-            listener.onResponse(Map.of());
-        }
+        }, listener::onFailure));
     }
 
     private void addDeploymentStats(GetTrainedModelsStatsAction.Response statsResponse, Map<String, Object> inferenceUsage) {

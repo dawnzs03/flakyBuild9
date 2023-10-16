@@ -21,6 +21,7 @@ import org.elasticsearch.protocol.xpack.XPackUsageRequest;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.RemoteClusterPortSettings;
+import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureAction;
@@ -201,21 +202,25 @@ public class SecurityUsageTransportAction extends XPackUsageFeatureTransportActi
     }
 
     private void remoteClusterServerUsage(ActionListener<Map<String, Object>> listener) {
-        apiKeyService.crossClusterApiKeyUsageStats(
-            ActionListener.wrap(
-                usage -> listener.onResponse(
-                    Map.of(
-                        "available",
-                        ADVANCED_REMOTE_CLUSTER_SECURITY_FEATURE.checkWithoutTracking(licenseState),
-                        "enabled",
-                        RemoteClusterPortSettings.REMOTE_CLUSTER_SERVER_ENABLED.get(settings),
-                        "api_keys",
-                        usage
-                    )
-                ),
-                listener::onFailure
-            )
-        );
+        if (TcpTransport.isUntrustedRemoteClusterEnabled()) {
+            apiKeyService.crossClusterApiKeyUsageStats(
+                ActionListener.wrap(
+                    usage -> listener.onResponse(
+                        Map.of(
+                            "available",
+                            ADVANCED_REMOTE_CLUSTER_SECURITY_FEATURE.checkWithoutTracking(licenseState),
+                            "enabled",
+                            RemoteClusterPortSettings.REMOTE_CLUSTER_SERVER_ENABLED.get(settings),
+                            "api_keys",
+                            usage
+                        )
+                    ),
+                    listener::onFailure
+                )
+            );
+        } else {
+            listener.onResponse(Map.of());
+        }
     }
 
     static Map<String, Object> sslUsage(Settings settings) {
@@ -225,10 +230,12 @@ public class SecurityUsageTransportAction extends XPackUsageFeatureTransportActi
             Map<String, Object> map = Maps.newMapWithExpectedSize(2);
             map.put("http", singletonMap("enabled", HTTP_SSL_ENABLED.get(settings)));
             map.put("transport", singletonMap("enabled", TRANSPORT_SSL_ENABLED.get(settings)));
-            if (RemoteClusterPortSettings.REMOTE_CLUSTER_SERVER_ENABLED.get(settings)) {
-                map.put("remote_cluster_server", singletonMap("enabled", REMOTE_CLUSTER_SERVER_SSL_ENABLED.get(settings)));
+            if (TcpTransport.isUntrustedRemoteClusterEnabled()) {
+                if (RemoteClusterPortSettings.REMOTE_CLUSTER_SERVER_ENABLED.get(settings)) {
+                    map.put("remote_cluster_server", singletonMap("enabled", REMOTE_CLUSTER_SERVER_SSL_ENABLED.get(settings)));
+                }
+                map.put("remote_cluster_client", singletonMap("enabled", REMOTE_CLUSTER_CLIENT_SSL_ENABLED.get(settings)));
             }
-            map.put("remote_cluster_client", singletonMap("enabled", REMOTE_CLUSTER_CLIENT_SSL_ENABLED.get(settings)));
             return map;
         } else {
             return Collections.emptyMap();

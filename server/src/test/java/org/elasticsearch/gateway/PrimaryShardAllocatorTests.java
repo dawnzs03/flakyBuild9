@@ -9,6 +9,7 @@
 package org.elasticsearch.gateway;
 
 import org.apache.lucene.index.CorruptIndexException;
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ESAllocationTestCase;
@@ -461,7 +462,7 @@ public class PrimaryShardAllocatorTests extends ESAllocationTestCase {
         Metadata metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder(shardId.getIndexName())
-                    .settings(settings(IndexVersion.current()))
+                    .settings(settings(Version.CURRENT))
                     .numberOfShards(1)
                     .numberOfReplicas(0)
                     .putInSyncAllocationIds(0, Sets.newHashSet(allocIds))
@@ -501,7 +502,7 @@ public class PrimaryShardAllocatorTests extends ESAllocationTestCase {
         Metadata metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder(shardId.getIndexName())
-                    .settings(settings(IndexVersion.current()))
+                    .settings(settings(Version.CURRENT))
                     .numberOfShards(1)
                     .numberOfReplicas(0)
                     .putInSyncAllocationIds(shardId.id(), Sets.newHashSet(activeAllocationIds))

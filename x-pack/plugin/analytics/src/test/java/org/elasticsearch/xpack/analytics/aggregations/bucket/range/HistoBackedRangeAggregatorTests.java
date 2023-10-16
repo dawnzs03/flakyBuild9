@@ -8,8 +8,8 @@
 package org.elasticsearch.xpack.analytics.aggregations.bucket.range;
 
 import org.apache.lucene.document.DoubleDocValuesField;
-import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.elasticsearch.index.mapper.CustomTermFreqField;
@@ -49,10 +49,8 @@ public class HistoBackedRangeAggregatorTests extends AggregatorTestCase {
         long absError = 0L;
         long docCount = 0L;
         for (int k = 0; k < 10; k++) {
-            try (Directory dir = newDirectory()) {
-                try (RandomIndexWriter w = new RandomIndexWriter(random(), dir)) {
-                    docCount += generateDocs(w);
-                }
+            try (Directory dir = newDirectory(); RandomIndexWriter w = new RandomIndexWriter(random(), dir)) {
+                docCount += generateDocs(w);
                 double[] steps = IntStream.range(2, 99).filter(i -> i % 2 == 0).mapToDouble(Double::valueOf).toArray();
 
                 PercentilesAggregationBuilder rawPercentiles = new PercentilesAggregationBuilder("my_agg").field(RAW_FIELD_NAME)
@@ -63,16 +61,17 @@ public class HistoBackedRangeAggregatorTests extends AggregatorTestCase {
                     .percentilesConfig(new PercentilesConfig.Hdr())
                     .percentiles(steps);
 
-                try (DirectoryReader reader = DirectoryReader.open(dir)) {
+                try (IndexReader reader = w.getReader()) {
+                    IndexSearcher searcher = new IndexSearcher(reader);
                     RangeAggregationBuilder aggBuilder = new RangeAggregationBuilder("my_agg").field(HISTO_FIELD_NAME);
 
                     RangeAggregationBuilder rawFieldAgg = new RangeAggregationBuilder("my_agg").field(RAW_FIELD_NAME);
                     Percentiles rawPercentileResults = searchAndReduce(
-                        reader,
+                        searcher,
                         new AggTestConfig(rawPercentiles, defaultFieldType(RAW_FIELD_NAME))
                     );
                     Percentiles aggregatedPercentileResults = searchAndReduce(
-                        reader,
+                        searcher,
                         new AggTestConfig(aggregatedPercentiles, defaultFieldType(HISTO_FIELD_NAME))
                     );
                     aggBuilder.addUnboundedTo(aggregatedPercentileResults.percentile(steps[0]));
@@ -89,11 +88,11 @@ public class HistoBackedRangeAggregatorTests extends AggregatorTestCase {
                     rawFieldAgg.addUnboundedFrom(rawPercentileResults.percentile(steps[steps.length - 1]));
 
                     InternalRange<? extends InternalRange.Bucket, ? extends InternalRange> range = searchAndReduce(
-                        reader,
+                        searcher,
                         new AggTestConfig(aggBuilder, defaultFieldType(HISTO_FIELD_NAME))
                     );
                     InternalRange<? extends InternalRange.Bucket, ? extends InternalRange> rawRange = searchAndReduce(
-                        reader,
+                        searcher,
                         new AggTestConfig(rawFieldAgg, defaultFieldType(RAW_FIELD_NAME))
                     );
                     for (int j = 0; j < rawRange.getBuckets().size(); j++) {
@@ -164,11 +163,11 @@ public class HistoBackedRangeAggregatorTests extends AggregatorTestCase {
         long absError = 0L;
         long docCount = 0L;
         for (int k = 0; k < 10; k++) {
-            try (Directory dir = newDirectory()) {
-                try (RandomIndexWriter w = new RandomIndexWriter(random(), dir)) {
-                    docCount += generateDocs(w);
-                }
-                try (DirectoryReader reader = DirectoryReader.open(dir)) {
+            try (Directory dir = newDirectory(); RandomIndexWriter w = new RandomIndexWriter(random(), dir)) {
+                docCount += generateDocs(w);
+
+                try (IndexReader reader = w.getReader()) {
+                    IndexSearcher searcher = new IndexSearcher(reader);
                     RangeAggregationBuilder aggBuilder = new RangeAggregationBuilder("my_agg").field(HISTO_FIELD_NAME);
                     RangeAggregationBuilder rawFieldAgg = new RangeAggregationBuilder("my_agg").field(RAW_FIELD_NAME);
                     ranges.forEach(r -> {
@@ -177,11 +176,11 @@ public class HistoBackedRangeAggregatorTests extends AggregatorTestCase {
                     });
 
                     InternalRange<? extends InternalRange.Bucket, ? extends InternalRange> range = searchAndReduce(
-                        reader,
+                        searcher,
                         new AggTestConfig(aggBuilder, defaultFieldType(HISTO_FIELD_NAME))
                     );
                     InternalRange<? extends InternalRange.Bucket, ? extends InternalRange> rawRange = searchAndReduce(
-                        reader,
+                        searcher,
                         new AggTestConfig(rawFieldAgg, defaultFieldType(RAW_FIELD_NAME))
                     );
                     for (int j = 0; j < rawRange.getBuckets().size(); j++) {
@@ -224,8 +223,9 @@ public class HistoBackedRangeAggregatorTests extends AggregatorTestCase {
                 .addRange(10, 20)
                 .addUnboundedFrom(20);
             try (IndexReader reader = w.getReader()) {
+                IndexSearcher searcher = new IndexSearcher(reader);
                 InternalRange<? extends InternalRange.Bucket, ? extends InternalRange> range = searchAndReduce(
-                    reader,
+                    searcher,
                     new AggTestConfig(aggBuilder, defaultFieldType(HISTO_FIELD_NAME))
                 );
                 assertTrue(AggregationInspectionHelper.hasValue(range));
@@ -283,8 +283,9 @@ public class HistoBackedRangeAggregatorTests extends AggregatorTestCase {
                 .addRange(10, 20)
                 .addUnboundedFrom(20);
             try (IndexReader reader = w.getReader()) {
+                IndexSearcher searcher = new IndexSearcher(reader);
                 InternalRange<? extends InternalRange.Bucket, ? extends InternalRange> range = searchAndReduce(
-                    reader,
+                    searcher,
                     new AggTestConfig(aggBuilder, defaultFieldType(HISTO_FIELD_NAME))
                 );
                 assertTrue(AggregationInspectionHelper.hasValue(range));
@@ -315,8 +316,9 @@ public class HistoBackedRangeAggregatorTests extends AggregatorTestCase {
                 .addRange(-1.0, 3.0)
                 .subAggregation(new TopHitsAggregationBuilder("top_hits"));
             try (IndexReader reader = w.getReader()) {
+                IndexSearcher searcher = new IndexSearcher(reader);
                 IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> {
-                    searchAndReduce(reader, new AggTestConfig(aggBuilder, defaultFieldType(HISTO_FIELD_NAME)));
+                    searchAndReduce(searcher, new AggTestConfig(aggBuilder, defaultFieldType(HISTO_FIELD_NAME)));
                 });
                 assertEquals("Range aggregation on histogram fields does not support sub-aggregations", e.getMessage());
             }

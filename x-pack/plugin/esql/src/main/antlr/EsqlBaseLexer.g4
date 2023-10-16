@@ -93,7 +93,6 @@ FIRST : 'first';
 LAST : 'last';
 LP : '(';
 IN: 'in';
-IS: 'is';
 LIKE: 'like';
 NOT : 'not';
 NULL : 'null';
@@ -160,7 +159,6 @@ SRC_OPENING_BRACKET : '[' -> type(OPENING_BRACKET), pushMode(SOURCE_IDENTIFIERS)
 SRC_CLOSING_BRACKET : ']' -> popMode, popMode, type(CLOSING_BRACKET);
 SRC_COMMA : ',' -> type(COMMA);
 SRC_ASSIGN : '=' -> type(ASSIGN);
-AS : 'as';
 METADATA: 'metadata';
 ON : 'on';
 WITH : 'with';

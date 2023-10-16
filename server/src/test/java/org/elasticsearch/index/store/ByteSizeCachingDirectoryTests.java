@@ -46,7 +46,6 @@ public class ByteSizeCachingDirectoryTests extends ESTestCase {
             ByteSizeCachingDirectory cachingDir = new ByteSizeCachingDirectory(countingDir, new TimeValue(0));
             assertEquals(11, cachingDir.estimateSizeInBytes());
             assertEquals(11, cachingDir.estimateSizeInBytes());
-            assertEquals(11, cachingDir.estimateDataSetSizeInBytes());
             assertEquals(1, countingDir.numFileLengthCalls);
 
             try (IndexOutput out = cachingDir.createOutput("foo", IOContext.DEFAULT)) {
@@ -64,7 +63,6 @@ public class ByteSizeCachingDirectoryTests extends ESTestCase {
             assertEquals(7, countingDir.numFileLengthCalls);
             assertEquals(16, cachingDir.estimateSizeInBytes());
             assertEquals(7, countingDir.numFileLengthCalls);
-            assertEquals(16, cachingDir.estimateDataSetSizeInBytes());
 
             try (IndexOutput out = cachingDir.createTempOutput("bar", "baz", IOContext.DEFAULT)) {
                 out.writeBytes(new byte[4], 4);
@@ -81,7 +79,6 @@ public class ByteSizeCachingDirectoryTests extends ESTestCase {
             assertEquals(16, countingDir.numFileLengthCalls);
             assertEquals(20, cachingDir.estimateSizeInBytes());
             assertEquals(16, countingDir.numFileLengthCalls);
-            assertEquals(20, cachingDir.estimateDataSetSizeInBytes());
 
             cachingDir.deleteFile("foo");
 
@@ -90,7 +87,6 @@ public class ByteSizeCachingDirectoryTests extends ESTestCase {
             assertEquals(18, countingDir.numFileLengthCalls);
             assertEquals(15, cachingDir.estimateSizeInBytes());
             assertEquals(18, countingDir.numFileLengthCalls);
-            assertEquals(15, cachingDir.estimateDataSetSizeInBytes());
 
             // Close more than once
             IndexOutput out = cachingDir.createOutput("foo", IOContext.DEFAULT);
@@ -110,7 +106,6 @@ public class ByteSizeCachingDirectoryTests extends ESTestCase {
             }
             out.close();
             assertEquals(20, cachingDir.estimateSizeInBytes());
-            assertEquals(20, cachingDir.estimateDataSetSizeInBytes());
             assertEquals(27, countingDir.numFileLengthCalls);
         }
     }

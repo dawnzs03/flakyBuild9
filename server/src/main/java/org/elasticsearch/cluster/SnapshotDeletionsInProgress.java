@@ -70,10 +70,6 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
         return true;
     }
 
-    public static SnapshotDeletionsInProgress get(ClusterState state) {
-        return state.custom(TYPE, EMPTY);
-    }
-
     /**
      * Returns a new instance of {@link SnapshotDeletionsInProgress} which adds
      * the given {@link Entry} to the invoking instance.
@@ -169,7 +165,7 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
     public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params ignored) {
         return Iterators.concat(
             Iterators.single((builder, params) -> builder.startArray(TYPE)),
-            Iterators.map(entries.iterator(), entry -> (builder, params) -> {
+            entries.stream().<ToXContent>map(entry -> (builder, params) -> {
                 builder.startObject();
                 {
                     builder.field("repository", entry.repository());
@@ -184,7 +180,7 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
                 }
                 builder.endObject();
                 return builder;
-            }),
+            }).iterator(),
             Iterators.single((builder, params) -> builder.endArray())
         );
     }

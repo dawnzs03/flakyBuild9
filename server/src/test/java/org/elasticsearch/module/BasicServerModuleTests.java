@@ -38,17 +38,9 @@ public class BasicServerModuleTests extends ESTestCase {
     public void testQualifiedExports() {
         var md = getServerDescriptor();
 
-        // The package containing the RestServerActionPlugin (RestInterceptor) type, org.elasticsearch.plugins.interceptor,
-        // should only be exported to security or serverless (rest controller)
-        assertThat(
-            md.exports(),
-            hasItem(
-                exportsOf(
-                    "org.elasticsearch.plugins.interceptor",
-                    Set.of("org.elasticsearch.security", "org.elasticsearch.serverless.rest")
-                )
-            )
-        );
+        // The package containing the RestInterceptor type, org.elasticsearch.plugins.interceptor,
+        // should only be exported to security.
+        assertThat(md.exports(), hasItem(exportsOf("org.elasticsearch.plugins.interceptor", Set.of("org.elasticsearch.security"))));
 
         // additional qualified export constraint go here
     }

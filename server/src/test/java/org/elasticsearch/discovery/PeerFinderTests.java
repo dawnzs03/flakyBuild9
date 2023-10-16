@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -250,7 +249,6 @@ public class PeerFinderTests extends ESTestCase {
     @After
     public void deactivateAndRunRemainingTasks() {
         peerFinder.deactivate(localNode);
-        peerFinder.closePeers();
         deterministicTaskQueue.runAllRunnableTasks();
         assertThat(connectedNodes, empty());
     }
@@ -359,7 +357,7 @@ public class PeerFinderTests extends ESTestCase {
         assertFoundPeers(otherNode);
     }
 
-    public void testDeactivationRetainsPastKnowledgeUntilClosed() {
+    public void testDeactivationClearsPastKnowledge() {
         final DiscoveryNode otherNode = newDiscoveryNode("node-from-hosts-list");
         providedAddresses.add(otherNode.getAddress());
         transportAddressConnector.addReachableNode(otherNode);
@@ -370,40 +368,12 @@ public class PeerFinderTests extends ESTestCase {
         assertFoundPeers(otherNode);
 
         peerFinder.deactivate(localNode);
-        assertFoundPeers();
-        assertEquals(Set.of(otherNode), connectedNodes);
-
-        peerFinder.activate(DiscoveryNodes.EMPTY_NODES);
-        assertFoundPeers(otherNode);
-
-        peerFinder.deactivate(localNode);
-        assertFoundPeers();
-        assertEquals(Set.of(otherNode), connectedNodes);
-        peerFinder.closePeers();
         assertThat(connectedNodes, empty());
 
         providedAddresses.clear();
         peerFinder.activate(lastAcceptedNodes);
         runAllRunnableTasks();
         assertFoundPeers();
-    }
-
-    public void testDeactivationDuringConnectionAttemptReleasesPeer() {
-        final DiscoveryNode otherNode = newDiscoveryNode("node-from-hosts-list");
-        providedAddresses.add(otherNode.getAddress());
-        transportAddressConnector.addReachableNode(otherNode);
-
-        deterministicTaskQueue.setExecutionDelayVariabilityMillis(10000);
-        peerFinder.activate(lastAcceptedNodes);
-        deterministicTaskQueue.scheduleAt(deterministicTaskQueue.getCurrentTimeMillis() + 1, () -> peerFinder.deactivate(localNode));
-        do {
-            deterministicTaskQueue.advanceTime();
-            deterministicTaskQueue.runAllRunnableTasks(); // mainly verifying that this doesn't trip an assertion
-        } while (deterministicTaskQueue.hasDeferredTasks());
-        assertFoundPeers();
-
-        peerFinder.closePeers();
-        assertThat(connectedNodes, empty());
     }
 
     public void testAddsReachableNodesFromClusterState() {
@@ -539,11 +509,6 @@ public class PeerFinderTests extends ESTestCase {
                 @Override
                 public PeersResponse read(StreamInput in) throws IOException {
                     return new PeersResponse(in);
-                }
-
-                @Override
-                public Executor executor(ThreadPool threadPool) {
-                    return TransportResponseHandler.TRANSPORT_WORKER;
                 }
 
                 @Override

@@ -87,39 +87,39 @@ public class VerifierTests extends ESTestCase {
 
     public void testDoubleRenamingField() {
         assertEquals(
-            "1:44: Column [emp_no] renamed to [r1] and is no longer available [emp_no as r3]",
-            error("from test | rename emp_no as r1, r1 as r2, emp_no as r3 | keep r3")
+            "1:47: Column [emp_no] renamed to [r1] and is no longer available [r3 = emp_no]",
+            error("from test | rename r1 = emp_no, r2 = r1, r3 = emp_no | keep r3")
         );
     }
 
     public void testDuplicateRenaming() {
         assertEquals(
-            "1:34: Column [emp_no] renamed to [r1] and is no longer available [emp_no as r1]",
-            error("from test | rename emp_no as r1, emp_no as r1 | keep r1")
+            "1:38: Column [emp_no] renamed to [r1] and is no longer available [r1 = emp_no]",
+            error("from test | rename r1 = emp_no, r1 = emp_no | keep r1")
         );
     }
 
     public void testDoubleRenamingReference() {
         assertEquals(
-            "1:61: Column [r1] renamed to [r2] and is no longer available [r1 as r3]",
-            error("from test | rename emp_no as r1, r1 as r2, first_name as x, r1 as r3 | keep r3")
+            "1:63: Column [r1] renamed to [r2] and is no longer available [r3 = r1]",
+            error("from test | rename r1 = emp_no, r2 = r1, x = first_name, r3 = r1 | keep r3")
         );
     }
 
     public void testDropAfterRenaming() {
-        assertEquals("1:40: Unknown column [emp_no]", error("from test | rename emp_no as r1 | drop emp_no"));
+        assertEquals("1:39: Unknown column [emp_no]", error("from test | rename r1 = emp_no | drop emp_no"));
     }
 
     public void testNonStringFieldsInDissect() {
         assertEquals(
-            "1:21: Dissect only supports KEYWORD or TEXT values, found expression [emp_no] type [INTEGER]",
+            "1:21: Dissect only supports KEYWORD values, found expression [emp_no] type [INTEGER]",
             error("from test | dissect emp_no \"%{foo}\"")
         );
     }
 
     public void testNonStringFieldsInGrok() {
         assertEquals(
-            "1:18: Grok only supports KEYWORD or TEXT values, found expression [emp_no] type [INTEGER]",
+            "1:18: Grok only supports KEYWORD values, found expression [emp_no] type [INTEGER]",
             error("from test | grok emp_no \"%{WORD:foo}\"")
         );
     }
@@ -128,17 +128,6 @@ public class VerifierTests extends ESTestCase {
         assertEquals(
             "1:19: 2nd argument of [emp_no in (1, \"two\")] must be [integer], found value [\"two\"] type [keyword]",
             error("from test | where emp_no in (1, \"two\")")
-        );
-    }
-
-    public void testMixedNumericalNonConvertibleTypesInIn() {
-        assertEquals(
-            "1:19: 2nd argument of [3 in (1, to_ul(3))] must be [integer], found value [to_ul(3)] type [unsigned_long]",
-            error("from test | where 3 in (1, to_ul(3))")
-        );
-        assertEquals(
-            "1:19: 1st argument of [to_ul(3) in (1, 3)] must be [unsigned_long], found value [1] type [integer]",
-            error("from test | where to_ul(3) in (1, 3)")
         );
     }
 
@@ -218,13 +207,6 @@ public class VerifierTests extends ESTestCase {
         }
     }
 
-    public void testUnsignedLongNegation() {
-        assertEquals(
-            "1:29: negation unsupported for arguments of type [unsigned_long] in expression [-x]",
-            error("row x = to_ul(1) | eval y = -x")
-        );
-    }
-
     public void testSumOnDate() {
         assertEquals(
             "1:19: argument of [sum(hire_date)] must be [numeric], found value [hire_date] type [datetime]",
@@ -242,12 +224,6 @@ public class VerifierTests extends ESTestCase {
             "1:19: first argument of [emp_no == ?] is [numeric] so second argument must also be [numeric] but was [null]",
             error("from test | where emp_no == ?", new Object[] { null })
         );
-    }
-
-    public void testPeriodAndDurationInRowAssignment() {
-        for (var unit : List.of("millisecond", "second", "minute", "hour", "day", "week", "month", "year")) {
-            assertEquals("1:5: cannot use [1 " + unit + "] directly in a row assignment", error("row a = 1 " + unit));
-        }
     }
 
     private String error(String query) {

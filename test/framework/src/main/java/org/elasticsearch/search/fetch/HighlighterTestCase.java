@@ -14,6 +14,7 @@ import org.apache.lucene.index.FilterLeafReader;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.StoredFields;
+import org.apache.lucene.search.IndexSearcher;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.MapperServiceTestCase;
@@ -22,12 +23,12 @@ import org.elasticsearch.index.query.ParsedQuery;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.fetch.subphase.highlight.DefaultHighlighter;
 import org.elasticsearch.search.fetch.subphase.highlight.FastVectorHighlighter;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightPhase;
 import org.elasticsearch.search.fetch.subphase.highlight.Highlighter;
 import org.elasticsearch.search.fetch.subphase.highlight.PlainHighlighter;
+import org.elasticsearch.search.fetch.subphase.highlight.UnifiedHighlighter;
 import org.elasticsearch.search.lookup.Source;
 
 import java.io.IOException;
@@ -46,7 +47,7 @@ public class HighlighterTestCase extends MapperServiceTestCase {
     protected Map<String, Highlighter> getHighlighters() {
         return Map.of(
             "unified",
-            new DefaultHighlighter(),
+            new UnifiedHighlighter(),
             "fvh",
             new FastVectorHighlighter(getIndexSettings()),
             "plain",
@@ -66,7 +67,7 @@ public class HighlighterTestCase extends MapperServiceTestCase {
         withLuceneIndex(mapperService, iw -> iw.addDocument(doc.rootDoc()), ir -> {
             SearchExecutionContext context = createSearchExecutionContext(
                 mapperService,
-                newSearcher(new NoStoredFieldsFilterDirectoryReader(ir))
+                new IndexSearcher(new NoStoredFieldsFilterDirectoryReader(ir))
             );
             HighlightPhase highlightPhase = new HighlightPhase(getHighlighters());
             FetchSubPhaseProcessor processor = highlightPhase.getProcessor(fetchContext(context, search));

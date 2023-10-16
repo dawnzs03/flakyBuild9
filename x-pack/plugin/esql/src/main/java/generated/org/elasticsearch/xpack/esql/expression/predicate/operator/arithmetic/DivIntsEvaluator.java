@@ -4,7 +4,6 @@
 // 2.0.
 package org.elasticsearch.xpack.esql.expression.predicate.operator.arithmetic;
 
-import java.lang.ArithmeticException;
 import java.lang.Override;
 import java.lang.String;
 import org.elasticsearch.compute.data.Block;
@@ -12,23 +11,18 @@ import org.elasticsearch.compute.data.IntBlock;
 import org.elasticsearch.compute.data.IntVector;
 import org.elasticsearch.compute.data.Page;
 import org.elasticsearch.compute.operator.EvalOperator;
-import org.elasticsearch.xpack.esql.expression.function.Warnings;
-import org.elasticsearch.xpack.ql.tree.Source;
 
 /**
  * {@link EvalOperator.ExpressionEvaluator} implementation for {@link Div}.
  * This class is generated. Do not edit it.
  */
 public final class DivIntsEvaluator implements EvalOperator.ExpressionEvaluator {
-  private final Warnings warnings;
-
   private final EvalOperator.ExpressionEvaluator lhs;
 
   private final EvalOperator.ExpressionEvaluator rhs;
 
-  public DivIntsEvaluator(Source source, EvalOperator.ExpressionEvaluator lhs,
+  public DivIntsEvaluator(EvalOperator.ExpressionEvaluator lhs,
       EvalOperator.ExpressionEvaluator rhs) {
-    this.warnings = new Warnings(source);
     this.lhs = lhs;
     this.rhs = rhs;
   }
@@ -53,7 +47,7 @@ public final class DivIntsEvaluator implements EvalOperator.ExpressionEvaluator 
     if (rhsVector == null) {
       return eval(page.getPositionCount(), lhsBlock, rhsBlock);
     }
-    return eval(page.getPositionCount(), lhsVector, rhsVector);
+    return eval(page.getPositionCount(), lhsVector, rhsVector).asBlock();
   }
 
   public IntBlock eval(int positionCount, IntBlock lhsBlock, IntBlock rhsBlock) {
@@ -67,25 +61,15 @@ public final class DivIntsEvaluator implements EvalOperator.ExpressionEvaluator 
         result.appendNull();
         continue position;
       }
-      try {
-        result.appendInt(Div.processInts(lhsBlock.getInt(lhsBlock.getFirstValueIndex(p)), rhsBlock.getInt(rhsBlock.getFirstValueIndex(p))));
-      } catch (ArithmeticException e) {
-        warnings.registerException(e);
-        result.appendNull();
-      }
+      result.appendInt(Div.processInts(lhsBlock.getInt(lhsBlock.getFirstValueIndex(p)), rhsBlock.getInt(rhsBlock.getFirstValueIndex(p))));
     }
     return result.build();
   }
 
-  public IntBlock eval(int positionCount, IntVector lhsVector, IntVector rhsVector) {
-    IntBlock.Builder result = IntBlock.newBlockBuilder(positionCount);
+  public IntVector eval(int positionCount, IntVector lhsVector, IntVector rhsVector) {
+    IntVector.Builder result = IntVector.newVectorBuilder(positionCount);
     position: for (int p = 0; p < positionCount; p++) {
-      try {
-        result.appendInt(Div.processInts(lhsVector.getInt(p), rhsVector.getInt(p)));
-      } catch (ArithmeticException e) {
-        warnings.registerException(e);
-        result.appendNull();
-      }
+      result.appendInt(Div.processInts(lhsVector.getInt(p), rhsVector.getInt(p)));
     }
     return result.build();
   }

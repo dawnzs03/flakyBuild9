@@ -70,8 +70,8 @@ public class JwtAuthenticator implements Releasable {
         final JWTClaimsSet jwtClaimsSet = jwtAuthenticationToken.getJWTClaimsSet();
         final JWSHeader jwsHeader = signedJWT.getHeader();
 
-        if (logger.isTraceEnabled()) {
-            logger.trace(
+        if (logger.isDebugEnabled()) {
+            logger.debug(
                 "Realm [{}] successfully parsed JWT token [{}] with header [{}] and claimSet [{}]",
                 realmConfig.name(),
                 tokenPrincipal,

@@ -12,8 +12,6 @@ import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotR
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.Scope;
-import org.elasticsearch.rest.ServerlessScope;
 import org.elasticsearch.rest.action.RestToXContentListener;
 
 import java.io.IOException;
@@ -24,7 +22,6 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 /**
  * Restores a snapshot
  */
-@ServerlessScope(Scope.INTERNAL)
 public class RestRestoreSnapshotAction extends BaseRestHandler {
 
     @Override

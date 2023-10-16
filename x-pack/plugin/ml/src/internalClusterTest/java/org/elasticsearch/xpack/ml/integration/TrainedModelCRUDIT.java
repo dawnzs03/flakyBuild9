@@ -90,8 +90,7 @@ public class TrainedModelCRUDIT extends MlSingleNodeTestCase {
                 new BytesArray(Base64.getDecoder().decode(BASE_64_ENCODED_MODEL)),
                 0,
                 RAW_MODEL_SIZE,
-                1,
-                false
+                1
             )
         ).actionGet();
 

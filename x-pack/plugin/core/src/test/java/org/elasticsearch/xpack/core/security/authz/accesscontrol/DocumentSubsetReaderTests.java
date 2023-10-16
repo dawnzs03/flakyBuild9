@@ -91,7 +91,7 @@ public class DocumentSubsetReaderTests extends ESTestCase {
         iw.close();
         openDirectoryReader();
 
-        IndexSearcher indexSearcher = newSearcher(
+        IndexSearcher indexSearcher = new IndexSearcher(
             DocumentSubsetReader.wrap(directoryReader, bitsetCache, new TermQuery(new Term("field", "value1")))
         );
         assertThat(indexSearcher.getIndexReader().numDocs(), equalTo(1));
@@ -99,19 +99,25 @@ public class DocumentSubsetReaderTests extends ESTestCase {
         assertThat(result.totalHits.value, equalTo(1L));
         assertThat(result.scoreDocs[0].doc, equalTo(0));
 
-        indexSearcher = newSearcher(DocumentSubsetReader.wrap(directoryReader, bitsetCache, new TermQuery(new Term("field", "value2"))));
+        indexSearcher = new IndexSearcher(
+            DocumentSubsetReader.wrap(directoryReader, bitsetCache, new TermQuery(new Term("field", "value2")))
+        );
         assertThat(indexSearcher.getIndexReader().numDocs(), equalTo(1));
         result = indexSearcher.search(new MatchAllDocsQuery(), 1);
         assertThat(result.totalHits.value, equalTo(1L));
         assertThat(result.scoreDocs[0].doc, equalTo(1));
 
         // this doc has been marked as deleted:
-        indexSearcher = newSearcher(DocumentSubsetReader.wrap(directoryReader, bitsetCache, new TermQuery(new Term("field", "value3"))));
+        indexSearcher = new IndexSearcher(
+            DocumentSubsetReader.wrap(directoryReader, bitsetCache, new TermQuery(new Term("field", "value3")))
+        );
         assertThat(indexSearcher.getIndexReader().numDocs(), equalTo(0));
         result = indexSearcher.search(new MatchAllDocsQuery(), 1);
         assertThat(result.totalHits.value, equalTo(0L));
 
-        indexSearcher = newSearcher(DocumentSubsetReader.wrap(directoryReader, bitsetCache, new TermQuery(new Term("field", "value4"))));
+        indexSearcher = new IndexSearcher(
+            DocumentSubsetReader.wrap(directoryReader, bitsetCache, new TermQuery(new Term("field", "value4")))
+        );
         assertThat(indexSearcher.getIndexReader().numDocs(), equalTo(1));
         result = indexSearcher.search(new MatchAllDocsQuery(), 1);
         assertThat(result.totalHits.value, equalTo(1L));

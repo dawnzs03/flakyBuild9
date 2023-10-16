@@ -11,13 +11,10 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.xpack.core.template.TemplateUtils;
 
-import java.util.Map;
-
 public final class MlMetaIndex {
 
     private static final String INDEX_NAME = ".ml-meta";
     private static final String MAPPINGS_VERSION_VARIABLE = "xpack.ml.version";
-    private static final int META_INDEX_MAPPINGS_VERSION = 1;
 
     /**
      * Where to store the ml info in Elasticsearch - must match what's
@@ -31,10 +28,9 @@ public final class MlMetaIndex {
 
     public static String mapping() {
         return TemplateUtils.loadTemplate(
-            "/ml/meta_index_mappings.json",
+            "/org/elasticsearch/xpack/core/ml/meta_index_mappings.json",
             Version.CURRENT.toString(),
-            MAPPINGS_VERSION_VARIABLE,
-            Map.of("xpack.ml.managed.index.version", Integer.toString(META_INDEX_MAPPINGS_VERSION))
+            MAPPINGS_VERSION_VARIABLE
         );
     }
 

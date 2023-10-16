@@ -10,21 +10,30 @@ package org.elasticsearch.transport;
 
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
+import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.common.util.PageCacheRecycler;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-public class DeflateTransportDecompressor extends TransportDecompressor {
+public class DeflateTransportDecompressor implements TransportDecompressor {
 
     private final Inflater inflater;
+    private final Recycler<BytesRef> recycler;
+    private final ArrayDeque<Recycler.V<BytesRef>> pages;
+    private int pageOffset = 0;
+    private int pageLength = 0;
+    private boolean hasSkippedHeader = false;
 
     public DeflateTransportDecompressor(Recycler<BytesRef> recycler) {
-        super(recycler);
+        this.recycler = recycler;
         inflater = new Inflater(true);
+        pages = new ArrayDeque<>(4);
     }
 
     @Override
@@ -44,7 +53,14 @@ public class DeflateTransportDecompressor extends TransportDecompressor {
             bytesConsumed += ref.length;
             boolean continueInflating = true;
             while (continueInflating) {
-                final boolean isNewPage = maybeAddNewPage();
+                final boolean isNewPage = pageOffset == pageLength;
+                if (isNewPage) {
+                    Recycler.V<BytesRef> newPage = recycler.obtain();
+                    pageOffset = 0;
+                    pageLength = newPage.v().length;
+                    assert newPage.v().length > 0;
+                    pages.add(newPage);
+                }
                 final Recycler.V<BytesRef> page = pages.getLast();
 
                 BytesRef output = page.v();
@@ -81,6 +97,28 @@ public class DeflateTransportDecompressor extends TransportDecompressor {
     }
 
     @Override
+    public ReleasableBytesReference pollDecompressedPage(boolean isEOS) {
+        if (pages.isEmpty()) {
+            return null;
+        } else if (pages.size() == 1) {
+            if (isEOS) {
+                assert isEOS();
+                Recycler.V<BytesRef> page = pages.pollFirst();
+                BytesArray delegate = new BytesArray(page.v().bytes, page.v().offset, pageOffset);
+                ReleasableBytesReference reference = new ReleasableBytesReference(delegate, page);
+                pageLength = 0;
+                pageOffset = 0;
+                return reference;
+            } else {
+                return null;
+            }
+        } else {
+            Recycler.V<BytesRef> page = pages.pollFirst();
+            return new ReleasableBytesReference(new BytesArray(page.v()), page);
+        }
+    }
+
+    @Override
     public Compression.Scheme getScheme() {
         return Compression.Scheme.DEFLATE;
     }
@@ -88,6 +126,8 @@ public class DeflateTransportDecompressor extends TransportDecompressor {
     @Override
     public void close() {
         inflater.end();
-        super.close();
+        for (Recycler.V<BytesRef> page : pages) {
+            page.close();
+        }
     }
 }

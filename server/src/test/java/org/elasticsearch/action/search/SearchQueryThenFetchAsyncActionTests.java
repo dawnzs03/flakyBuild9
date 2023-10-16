@@ -57,7 +57,6 @@ import static java.util.Collections.singletonList;
 import static org.elasticsearch.test.VersionUtils.allVersions;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 
 public class SearchQueryThenFetchAsyncActionTests extends ESTestCase {
@@ -237,11 +236,7 @@ public class SearchQueryThenFetchAsyncActionTests extends ESTestCase {
 
     public void testMinimumVersionSameAsNewVersion() throws Exception {
         Version newVersion = Version.CURRENT;
-        Version oldVersion = VersionUtils.randomVersionBetween(
-            random(),
-            Version.CURRENT.minimumCompatibilityVersion(),
-            VersionUtils.getPreviousVersion(newVersion)
-        );
+        Version oldVersion = VersionUtils.randomPreviousCompatibleVersion(random(), newVersion);
         testMixedVersionsShardsSearch(newVersion, oldVersion, newVersion);
     }
 
@@ -342,10 +337,10 @@ public class SearchQueryThenFetchAsyncActionTests extends ESTestCase {
         );
 
         newSearchAsyncAction.start();
-        assertThat(responses, hasSize(1));
-        assertThat(responses.get(0), instanceOf(SearchPhaseExecutionException.class));
+        assertEquals(1, responses.size());
+        assertTrue(responses.get(0) instanceof SearchPhaseExecutionException);
         SearchPhaseExecutionException e = (SearchPhaseExecutionException) responses.get(0);
-        assertThat(e.getCause(), instanceOf(VersionMismatchException.class));
+        assertTrue(e.getCause() instanceof VersionMismatchException);
         assertThat(
             e.getCause().getMessage(),
             equalTo("One of the shards is incompatible with the required minimum version [" + minVersion + "]")
@@ -354,11 +349,7 @@ public class SearchQueryThenFetchAsyncActionTests extends ESTestCase {
 
     public void testMinimumVersionSameAsOldVersion() throws Exception {
         Version newVersion = Version.CURRENT;
-        Version oldVersion = VersionUtils.randomVersionBetween(
-            random(),
-            Version.CURRENT.minimumCompatibilityVersion(),
-            VersionUtils.getPreviousVersion(newVersion)
-        );
+        Version oldVersion = VersionUtils.randomPreviousCompatibleVersion(random(), newVersion);
         Version minVersion = oldVersion;
 
         final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(
@@ -500,11 +491,7 @@ public class SearchQueryThenFetchAsyncActionTests extends ESTestCase {
 
     public void testMinimumVersionShardDuringPhaseExecution() throws Exception {
         Version newVersion = Version.CURRENT;
-        Version oldVersion = VersionUtils.randomVersionBetween(
-            random(),
-            Version.CURRENT.minimumCompatibilityVersion(),
-            VersionUtils.getPreviousVersion(newVersion)
-        );
+        Version oldVersion = VersionUtils.randomPreviousCompatibleVersion(random(), newVersion);
         Version minVersion = newVersion;
 
         final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(

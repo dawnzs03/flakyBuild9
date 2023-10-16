@@ -9,14 +9,14 @@
 package org.elasticsearch.analysis.common;
 
 import org.apache.lucene.analysis.Tokenizer;
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
-import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.TokenizerFactory;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.IndexSettingsModule;
-import org.elasticsearch.test.index.IndexVersionUtils;
+import org.elasticsearch.test.VersionUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -30,10 +30,7 @@ public class CommonAnalysisPluginTests extends ESTestCase {
     public void testNGramFilterInCustomAnalyzerDeprecationError() throws IOException {
         final Settings settings = Settings.builder()
             .put(Environment.PATH_HOME_SETTING.getKey(), createTempDir())
-            .put(
-                IndexMetadata.SETTING_VERSION_CREATED,
-                IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_8_0_0, IndexVersion.current())
-            )
+            .put(IndexMetadata.SETTING_VERSION_CREATED, VersionUtils.randomVersionBetween(random(), Version.V_8_0_0, Version.CURRENT))
             .put("index.analysis.analyzer.custom_analyzer.type", "custom")
             .put("index.analysis.analyzer.custom_analyzer.tokenizer", "standard")
             .putList("index.analysis.analyzer.custom_analyzer.filter", "my_ngram")
@@ -54,10 +51,7 @@ public class CommonAnalysisPluginTests extends ESTestCase {
 
         final Settings settingsPre7 = Settings.builder()
             .put(Environment.PATH_HOME_SETTING.getKey(), createTempDir())
-            .put(
-                IndexMetadata.SETTING_VERSION_CREATED,
-                IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_7_0_0, IndexVersion.V_7_6_0)
-            )
+            .put(IndexMetadata.SETTING_VERSION_CREATED, VersionUtils.randomVersionBetween(random(), Version.V_7_0_0, Version.V_7_6_0))
             .put("index.analysis.analyzer.custom_analyzer.type", "custom")
             .put("index.analysis.analyzer.custom_analyzer.tokenizer", "standard")
             .putList("index.analysis.analyzer.custom_analyzer.filter", "my_ngram")
@@ -79,10 +73,7 @@ public class CommonAnalysisPluginTests extends ESTestCase {
     public void testEdgeNGramFilterInCustomAnalyzerDeprecationError() throws IOException {
         final Settings settings = Settings.builder()
             .put(Environment.PATH_HOME_SETTING.getKey(), createTempDir())
-            .put(
-                IndexMetadata.SETTING_VERSION_CREATED,
-                IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_8_0_0, IndexVersion.current())
-            )
+            .put(IndexMetadata.SETTING_VERSION_CREATED, VersionUtils.randomVersionBetween(random(), Version.V_8_0_0, Version.CURRENT))
             .put("index.analysis.analyzer.custom_analyzer.type", "custom")
             .put("index.analysis.analyzer.custom_analyzer.tokenizer", "standard")
             .putList("index.analysis.analyzer.custom_analyzer.filter", "my_ngram")
@@ -103,10 +94,7 @@ public class CommonAnalysisPluginTests extends ESTestCase {
 
         final Settings settingsPre7 = Settings.builder()
             .put(Environment.PATH_HOME_SETTING.getKey(), createTempDir())
-            .put(
-                IndexMetadata.SETTING_VERSION_CREATED,
-                IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_7_0_0, IndexVersion.V_7_6_0)
-            )
+            .put(IndexMetadata.SETTING_VERSION_CREATED, VersionUtils.randomVersionBetween(random(), Version.V_7_0_0, Version.V_7_6_0))
             .put("index.analysis.analyzer.custom_analyzer.type", "custom")
             .put("index.analysis.analyzer.custom_analyzer.tokenizer", "standard")
             .putList("index.analysis.analyzer.custom_analyzer.filter", "my_ngram")
@@ -131,32 +119,32 @@ public class CommonAnalysisPluginTests extends ESTestCase {
         doTestPrebuiltTokenizerDeprecation(
             "nGram",
             "ngram",
-            IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_7_0_0, IndexVersion.V_7_5_2),
+            VersionUtils.randomVersionBetween(random(), Version.V_7_0_0, Version.V_7_5_2),
             false
         );
         doTestPrebuiltTokenizerDeprecation(
             "edgeNGram",
             "edge_ngram",
-            IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_7_0_0, IndexVersion.V_7_5_2),
+            VersionUtils.randomVersionBetween(random(), Version.V_7_0_0, Version.V_7_5_2),
             false
         );
         doTestPrebuiltTokenizerDeprecation(
             "nGram",
             "ngram",
-            IndexVersionUtils.randomVersionBetween(
+            VersionUtils.randomVersionBetween(
                 random(),
-                IndexVersion.V_7_6_0,
-                IndexVersion.max(IndexVersion.V_7_6_0, IndexVersionUtils.getPreviousVersion(IndexVersion.V_8_0_0))
+                Version.V_7_6_0,
+                Version.max(Version.V_7_6_0, VersionUtils.getPreviousVersion(Version.V_8_0_0))
             ),
             true
         );
         doTestPrebuiltTokenizerDeprecation(
             "edgeNGram",
             "edge_ngram",
-            IndexVersionUtils.randomVersionBetween(
+            VersionUtils.randomVersionBetween(
                 random(),
-                IndexVersion.V_7_6_0,
-                IndexVersion.max(IndexVersion.V_7_6_0, IndexVersionUtils.getPreviousVersion(IndexVersion.V_8_0_0))
+                Version.V_7_6_0,
+                Version.max(Version.V_7_6_0, VersionUtils.getPreviousVersion(Version.V_8_0_0))
             ),
             true
         );
@@ -165,7 +153,7 @@ public class CommonAnalysisPluginTests extends ESTestCase {
             () -> doTestPrebuiltTokenizerDeprecation(
                 "nGram",
                 "ngram",
-                IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_8_0_0, IndexVersion.current()),
+                VersionUtils.randomVersionBetween(random(), Version.V_8_0_0, Version.CURRENT),
                 true
             )
         );
@@ -174,7 +162,7 @@ public class CommonAnalysisPluginTests extends ESTestCase {
             () -> doTestPrebuiltTokenizerDeprecation(
                 "edgeNGram",
                 "edge_ngram",
-                IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_8_0_0, IndexVersion.current()),
+                VersionUtils.randomVersionBetween(random(), Version.V_8_0_0, Version.CURRENT),
                 true
             )
         );
@@ -183,32 +171,32 @@ public class CommonAnalysisPluginTests extends ESTestCase {
         doTestCustomTokenizerDeprecation(
             "nGram",
             "ngram",
-            IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_7_0_0, IndexVersion.V_7_5_2),
+            VersionUtils.randomVersionBetween(random(), Version.V_7_0_0, Version.V_7_5_2),
             false
         );
         doTestCustomTokenizerDeprecation(
             "edgeNGram",
             "edge_ngram",
-            IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_7_0_0, IndexVersion.V_7_5_2),
+            VersionUtils.randomVersionBetween(random(), Version.V_7_0_0, Version.V_7_5_2),
             false
         );
         doTestCustomTokenizerDeprecation(
             "nGram",
             "ngram",
-            IndexVersionUtils.randomVersionBetween(
+            VersionUtils.randomVersionBetween(
                 random(),
-                IndexVersion.V_7_6_0,
-                IndexVersion.max(IndexVersion.V_7_6_0, IndexVersionUtils.getPreviousVersion(IndexVersion.V_8_0_0))
+                Version.V_7_6_0,
+                Version.max(Version.V_7_6_0, VersionUtils.getPreviousVersion(Version.V_8_0_0))
             ),
             true
         );
         doTestCustomTokenizerDeprecation(
             "edgeNGram",
             "edge_ngram",
-            IndexVersionUtils.randomVersionBetween(
+            VersionUtils.randomVersionBetween(
                 random(),
-                IndexVersion.V_7_6_0,
-                IndexVersion.max(IndexVersion.V_7_6_0, IndexVersionUtils.getPreviousVersion(IndexVersion.V_8_0_0))
+                Version.V_7_6_0,
+                Version.max(Version.V_7_6_0, VersionUtils.getPreviousVersion(Version.V_8_0_0))
             ),
             true
         );
@@ -217,7 +205,7 @@ public class CommonAnalysisPluginTests extends ESTestCase {
             () -> doTestCustomTokenizerDeprecation(
                 "nGram",
                 "ngram",
-                IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_8_0_0, IndexVersion.current()),
+                VersionUtils.randomVersionBetween(random(), Version.V_8_0_0, Version.CURRENT),
                 true
             )
         );
@@ -226,13 +214,13 @@ public class CommonAnalysisPluginTests extends ESTestCase {
             () -> doTestCustomTokenizerDeprecation(
                 "edgeNGram",
                 "edge_ngram",
-                IndexVersionUtils.randomVersionBetween(random(), IndexVersion.V_8_0_0, IndexVersion.current()),
+                VersionUtils.randomVersionBetween(random(), Version.V_8_0_0, Version.CURRENT),
                 true
             )
         );
     }
 
-    public void doTestPrebuiltTokenizerDeprecation(String deprecatedName, String replacement, IndexVersion version, boolean expectWarning)
+    public void doTestPrebuiltTokenizerDeprecation(String deprecatedName, String replacement, Version version, boolean expectWarning)
         throws IOException {
         final Settings settings = Settings.builder()
             .put(Environment.PATH_HOME_SETTING.getKey(), createTempDir())
@@ -262,7 +250,7 @@ public class CommonAnalysisPluginTests extends ESTestCase {
         }
     }
 
-    public void doTestCustomTokenizerDeprecation(String deprecatedName, String replacement, IndexVersion version, boolean expectWarning)
+    public void doTestCustomTokenizerDeprecation(String deprecatedName, String replacement, Version version, boolean expectWarning)
         throws IOException {
         final Settings settings = Settings.builder()
             .put(Environment.PATH_HOME_SETTING.getKey(), createTempDir())

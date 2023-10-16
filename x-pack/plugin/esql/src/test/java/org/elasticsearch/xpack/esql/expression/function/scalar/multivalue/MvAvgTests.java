@@ -7,56 +7,22 @@
 
 package org.elasticsearch.xpack.esql.expression.function.scalar.multivalue;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.elasticsearch.search.aggregations.metrics.CompensatedSum;
+import org.elasticsearch.xpack.esql.planner.LocalExecutionPlanner;
 import org.elasticsearch.xpack.ql.expression.Expression;
 import org.elasticsearch.xpack.ql.tree.Source;
 import org.elasticsearch.xpack.ql.type.DataType;
 import org.elasticsearch.xpack.ql.type.DataTypes;
-import org.elasticsearch.xpack.ql.util.NumericUtils;
 import org.hamcrest.Matcher;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
-import java.util.stream.DoubleStream;
 
+import static org.elasticsearch.xpack.ql.util.NumericUtils.asLongUnsigned;
+import static org.elasticsearch.xpack.ql.util.NumericUtils.unsignedLongToDouble;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 
 public class MvAvgTests extends AbstractMultivalueFunctionTestCase {
-    public MvAvgTests(@Name("TestCase") Supplier<TestCase> testCaseSupplier) {
-        this.testCase = testCaseSupplier.get();
-    }
-
-    @ParametersFactory
-    public static Iterable<Object[]> parameters() {
-        BiFunction<Integer, DoubleStream, Matcher<Object>> avg = (size, values) -> {
-            CompensatedSum sum = new CompensatedSum();
-            values.forEach(sum::add);
-            return equalTo(sum.value() / size);
-        };
-        List<TestCaseSupplier> cases = new ArrayList<>();
-        doubles(cases, "mv_avg", "MvAvg", DataTypes.DOUBLE, avg);
-        ints(cases, "mv_avg", "MvAvg", DataTypes.DOUBLE, (size, data) -> avg.apply(size, data.mapToDouble(v -> (double) v)));
-        longs(cases, "mv_avg", "MvAvg", DataTypes.DOUBLE, (size, data) -> avg.apply(size, data.mapToDouble(v -> (double) v)));
-        unsignedLongs(
-            cases,
-            "mv_avg",
-            "MvAvg",
-            DataTypes.DOUBLE,
-            /*
-             * Converting strait from BigInteger to double will round differently.
-             * So we have to go back to encoded `long` and then convert to double
-             * using the production conversion. That'll round in the same way.
-             */
-            (size, data) -> avg.apply(size, data.mapToDouble(v -> NumericUtils.unsignedLongToDouble(NumericUtils.asLongUnsigned(v))))
-        );
-        return parameterSuppliersFromTypedData(cases);
-    }
-
     @Override
     protected Expression build(Source source, Expression field) {
         return new MvAvg(source, field);
@@ -70,5 +36,39 @@ public class MvAvgTests extends AbstractMultivalueFunctionTestCase {
     @Override
     protected DataType expectedType(List<DataType> argTypes) {
         return DataTypes.DOUBLE;  // Averages are always a double
+    }
+
+    @Override
+    protected Matcher<Object> resultMatcherForInput(List<?> input, DataType dataType) {
+        return switch (LocalExecutionPlanner.toElementType(dataType)) {
+            case DOUBLE -> {
+                CompensatedSum sum = new CompensatedSum();
+                for (Object i : input) {
+                    sum.add((Double) i);
+                }
+                yield equalTo(sum.value() / input.size());
+            }
+            case INT -> equalTo(((double) input.stream().mapToInt(o -> (Integer) o).sum()) / input.size());
+            case LONG -> {
+                double sum;
+                if (dataType == DataTypes.UNSIGNED_LONG) {
+                    long accum = asLongUnsigned(0);
+                    for (var l : input) {
+                        accum = asLongUnsigned(accum + (long) l);
+                    }
+                    sum = unsignedLongToDouble(accum);
+                } else {
+                    sum = input.stream().mapToLong(o -> (Long) o).sum();
+                }
+                yield equalTo(sum / input.size());
+            }
+            case NULL -> nullValue();
+            default -> throw new UnsupportedOperationException("unsupported type " + input);
+        };
+    }
+
+    @Override
+    protected String expectedEvaluatorSimpleToString() {
+        return "MvAvg[field=Attribute[channel=0]]";
     }
 }

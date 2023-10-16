@@ -244,13 +244,8 @@ public final class SourceConfirmedTextQuery extends Query {
                     termStats.add(new TermStatistics(term.bytes(), 1, 1L));
                 }
             }
-            if (termStats.size() > 0) {
-                simScorer = searcher.getSimilarity().scorer(boost, collectionStatistics, termStats.toArray(TermStatistics[]::new));
-                approximationWeight = searcher.createWeight(approximate(in), ScoreMode.COMPLETE_NO_SCORES, 1f);
-            } else {
-                simScorer = null;
-                approximationWeight = null;
-            }
+            simScorer = searcher.getSimilarity().scorer(boost, collectionStatistics, termStats.toArray(TermStatistics[]::new));
+            approximationWeight = searcher.createWeight(approximate(in), ScoreMode.COMPLETE_NO_SCORES, 1f);
         }
         return new Weight(this) {
 
