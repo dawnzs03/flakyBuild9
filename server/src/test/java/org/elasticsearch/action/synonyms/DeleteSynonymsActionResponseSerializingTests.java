@@ -20,26 +20,26 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-public class DeleteSynonymRuleActionResponseSerializingTests extends AbstractWireSerializingTestCase<DeleteSynonymRuleAction.Response> {
+public class DeleteSynonymsActionResponseSerializingTests extends AbstractWireSerializingTestCase<DeleteSynonymsAction.Response> {
 
     @Override
-    protected Writeable.Reader<DeleteSynonymRuleAction.Response> instanceReader() {
-        return DeleteSynonymRuleAction.Response::new;
+    protected Writeable.Reader<DeleteSynonymsAction.Response> instanceReader() {
+        return DeleteSynonymsAction.Response::new;
     }
 
     @Override
-    protected DeleteSynonymRuleAction.Response createTestInstance() {
+    protected DeleteSynonymsAction.Response createTestInstance() {
         Map<String, ReloadAnalyzersResponse.ReloadDetails> reloadedIndicesDetails = ReloadAnalyzersResponseTests
             .createRandomReloadDetails();
         AcknowledgedResponse acknowledgedResponse = AcknowledgedResponse.of(randomBoolean());
-        return new DeleteSynonymRuleAction.Response(
+        return new DeleteSynonymsAction.Response(
             acknowledgedResponse,
             new ReloadAnalyzersResponse(10, 10, 0, null, reloadedIndicesDetails)
         );
     }
 
     @Override
-    protected DeleteSynonymRuleAction.Response mutateInstance(DeleteSynonymRuleAction.Response instance) throws IOException {
+    protected DeleteSynonymsAction.Response mutateInstance(DeleteSynonymsAction.Response instance) throws IOException {
         return randomValueOtherThan(instance, this::createTestInstance);
     }
 

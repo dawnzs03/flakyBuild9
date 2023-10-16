@@ -55,14 +55,6 @@ public class ReloadSynonymAnalyzerIT extends ESIntegTestCase {
     }
 
     public void testSynonymsUpdateable() throws FileNotFoundException, IOException, InterruptedException {
-        testSynonymsUpdate(false);
-    }
-
-    public void testSynonymsWithPreview() throws FileNotFoundException, IOException, InterruptedException {
-        testSynonymsUpdate(true);
-    }
-
-    private void testSynonymsUpdate(boolean preview) throws FileNotFoundException, IOException, InterruptedException {
         Path config = internalCluster().getInstance(Environment.class).configFile();
         String synonymsFileName = "synonyms.txt";
         Path synonymsFile = config.resolve(synonymsFileName);
@@ -105,7 +97,7 @@ public class ReloadSynonymAnalyzerIT extends ESIntegTestCase {
             }
             ReloadAnalyzersResponse reloadResponse = client().execute(
                 ReloadAnalyzerAction.INSTANCE,
-                new ReloadAnalyzersRequest(null, preview, "test")
+                new ReloadAnalyzersRequest(null, "test")
             ).actionGet();
             assertNoFailures(reloadResponse);
             assertEquals(cluster().numDataNodes(), reloadResponse.getSuccessfulShards());
@@ -117,21 +109,17 @@ public class ReloadSynonymAnalyzerIT extends ESIntegTestCase {
             );
 
             analyzeResponse = indicesAdmin().prepareAnalyze("test", "foo").setAnalyzer("my_synonym_analyzer").get();
-            int expectedTokens = preview ? 2 : 3;
-            assertEquals(expectedTokens, analyzeResponse.getTokens().size());
+            assertEquals(3, analyzeResponse.getTokens().size());
             Set<String> tokens = new HashSet<>();
             analyzeResponse.getTokens().stream().map(AnalyzeToken::getTerm).forEach(t -> tokens.add(t));
             assertTrue(tokens.contains("foo"));
             assertTrue(tokens.contains("baz"));
-            if (preview == false) {
-                assertTrue(tokens.contains(testTerm));
-            }
+            assertTrue(tokens.contains(testTerm));
 
             response = client().prepareSearch("test").setQuery(QueryBuilders.matchQuery("field", "baz")).get();
             assertHitCount(response, 1L);
-            long expectedHitCount = preview ? 0L : 1L;
             response = client().prepareSearch("test").setQuery(QueryBuilders.matchQuery("field", testTerm)).get();
-            assertHitCount(response, expectedHitCount);
+            assertHitCount(response, 1L);
         }
     }
 }
