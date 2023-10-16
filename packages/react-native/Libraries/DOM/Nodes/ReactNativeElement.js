@@ -25,7 +25,7 @@ import TextInputState from '../../Components/TextInput/TextInputState';
 import {getFabricUIManager} from '../../ReactNative/FabricUIManager';
 import {create as createAttributePayload} from '../../ReactNative/ReactFabricPublicInstance/ReactNativeAttributePayload';
 import warnForStyleProps from '../../ReactNative/ReactFabricPublicInstance/warnForStyleProps';
-import ReadOnlyElement, {getBoundingClientRect} from './ReadOnlyElement';
+import ReadOnlyElement from './ReadOnlyElement';
 import ReadOnlyNode from './ReadOnlyNode';
 import {
   getPublicInstanceFromInternalInstanceHandle,
@@ -58,9 +58,7 @@ export default class ReactNativeElement
   }
 
   get offsetHeight(): number {
-    return Math.round(
-      getBoundingClientRect(this, {includeTransform: false}).height,
-    );
+    return Math.round(this.getBoundingClientRect().height);
   }
 
   get offsetLeft(): number {
@@ -112,9 +110,7 @@ export default class ReactNativeElement
   }
 
   get offsetWidth(): number {
-    return Math.round(
-      getBoundingClientRect(this, {includeTransform: false}).width,
-    );
+    return Math.round(this.getBoundingClientRect().width);
   }
 
   /**

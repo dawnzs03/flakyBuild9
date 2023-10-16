@@ -12,8 +12,8 @@
 namespace facebook::react {
 
 TextMeasurement ParagraphLayoutManager::measure(
-    const AttributedString& attributedString,
-    const ParagraphAttributes& paragraphAttributes,
+    AttributedString const &attributedString,
+    ParagraphAttributes const &paragraphAttributes,
     LayoutConstraints layoutConstraints) const {
   if (CoreFeatures::cacheLastTextMeasurement) {
     bool shouldMeasure = shoudMeasureString(
@@ -39,8 +39,8 @@ TextMeasurement ParagraphLayoutManager::measure(
 }
 
 bool ParagraphLayoutManager::shoudMeasureString(
-    const AttributedString& attributedString,
-    const ParagraphAttributes& paragraphAttributes,
+    AttributedString const &attributedString,
+    ParagraphAttributes const &paragraphAttributes,
     LayoutConstraints layoutConstraints) const {
   size_t newParagraphInputHash =
       folly::hash::hash_combine(0, attributedString, paragraphAttributes);
@@ -74,19 +74,19 @@ bool ParagraphLayoutManager::shoudMeasureString(
 }
 
 LinesMeasurements ParagraphLayoutManager::measureLines(
-    const AttributedString& attributedString,
-    const ParagraphAttributes& paragraphAttributes,
+    AttributedString const &attributedString,
+    ParagraphAttributes const &paragraphAttributes,
     Size size) const {
   return textLayoutManager_->measureLines(
       attributedString, paragraphAttributes, size);
 }
 
 void ParagraphLayoutManager::setTextLayoutManager(
-    std::shared_ptr<const TextLayoutManager> textLayoutManager) const {
+    std::shared_ptr<TextLayoutManager const> textLayoutManager) const {
   textLayoutManager_ = std::move(textLayoutManager);
 }
 
-std::shared_ptr<const TextLayoutManager>
+std::shared_ptr<TextLayoutManager const>
 ParagraphLayoutManager::getTextLayoutManager() const {
   return textLayoutManager_;
 }

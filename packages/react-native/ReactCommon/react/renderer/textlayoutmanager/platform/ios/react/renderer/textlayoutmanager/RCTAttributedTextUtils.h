@@ -23,16 +23,16 @@ NSString *const RCTTextAttributesAccessibilityRoleAttributeName = @"Accessibilit
  * Creates `NSTextAttributes` from given `facebook::react::TextAttributes`
  */
 NSDictionary<NSAttributedStringKey, id> *RCTNSTextAttributesFromTextAttributes(
-    const facebook::react::TextAttributes &textAttributes);
+    facebook::react::TextAttributes const &textAttributes);
 
 /*
  * Conversions amond `NSAttributedString`, `AttributedString` and `AttributedStringBox`.
  */
 NSAttributedString *RCTNSAttributedStringFromAttributedString(
-    const facebook::react::AttributedString &attributedString);
+    facebook::react::AttributedString const &attributedString);
 
 NSAttributedString *RCTNSAttributedStringFromAttributedStringBox(
-    const facebook::react::AttributedStringBox &attributedStringBox);
+    facebook::react::AttributedStringBox const &attributedStringBox);
 
 facebook::react::AttributedStringBox RCTAttributedStringBoxFromNSAttributedString(
     NSAttributedString *nsAttributedString);

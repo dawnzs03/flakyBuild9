@@ -59,7 +59,7 @@ function requireModule<T: TurboModule>(name: string): ?T {
     }
   }
 
-  if (shouldReportDebugInfo() && !moduleLoadHistory.NotFound.includes(name)) {
+  if (shouldReportDebugInfo()) {
     moduleLoadHistory.NotFound.push(name);
   }
   return null;

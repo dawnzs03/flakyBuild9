@@ -16,7 +16,7 @@
 namespace facebook::react {
 
 #ifdef ANDROID
-inline folly::dynamic toDynamic(const ParagraphState& paragraphState) {
+inline folly::dynamic toDynamic(ParagraphState const &paragraphState) {
   folly::dynamic newState = folly::dynamic::object();
   newState["attributedString"] = toDynamic(paragraphState.attributedString);
   newState["paragraphAttributes"] =
@@ -25,7 +25,7 @@ inline folly::dynamic toDynamic(const ParagraphState& paragraphState) {
   return newState;
 }
 
-inline MapBuffer toMapBuffer(const ParagraphState& paragraphState) {
+inline MapBuffer toMapBuffer(ParagraphState const &paragraphState) {
   auto builder = MapBufferBuilder();
   auto attStringMapBuffer = toMapBuffer(paragraphState.attributedString);
   builder.putMapBuffer(TX_STATE_KEY_ATTRIBUTED_STRING, attStringMapBuffer);

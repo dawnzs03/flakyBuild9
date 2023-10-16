@@ -9,7 +9,7 @@
 
 namespace facebook::react {
 
-bool isColorMeaningful(const SharedColor& color) noexcept {
+bool isColorMeaningful(SharedColor const &color) noexcept {
   if (!color) {
     return false;
   }

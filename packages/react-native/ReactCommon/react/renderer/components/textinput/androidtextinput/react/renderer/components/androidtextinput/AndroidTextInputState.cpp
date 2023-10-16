@@ -38,8 +38,8 @@ AndroidTextInputState::AndroidTextInputState(
       defaultThemePaddingBottom(defaultThemePaddingBottom) {}
 
 AndroidTextInputState::AndroidTextInputState(
-    const AndroidTextInputState& previousState,
-    const folly::dynamic& data)
+    AndroidTextInputState const &previousState,
+    folly::dynamic const &data)
     : mostRecentEventCount(data.getDefault(
                                    "mostRecentEventCount",
                                    previousState.mostRecentEventCount)

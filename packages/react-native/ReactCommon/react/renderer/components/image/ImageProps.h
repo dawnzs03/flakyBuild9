@@ -17,15 +17,15 @@ class ImageProps final : public ViewProps {
  public:
   ImageProps() = default;
   ImageProps(
-      const PropsParserContext& context,
-      const ImageProps& sourceProps,
-      const RawProps& rawProps);
+      const PropsParserContext &context,
+      const ImageProps &sourceProps,
+      const RawProps &rawProps);
 
   void setProp(
-      const PropsParserContext& context,
+      const PropsParserContext &context,
       RawPropsPropNameHash hash,
-      const char* propName,
-      const RawValue& value);
+      const char *propName,
+      RawValue const &value);
 
 #pragma mark - Props
 

@@ -12,6 +12,7 @@
 #include <react/renderer/core/propsConversions.h>
 #include <react/renderer/debug/debugStringConvertibleUtils.h>
 #include <react/utils/CoreFeatures.h>
+#include <yoga/YGNode.h>
 #include <yoga/Yoga.h>
 
 #include "conversions.h"
@@ -19,9 +20,9 @@
 namespace facebook::react {
 
 YogaStylableProps::YogaStylableProps(
-    const PropsParserContext& context,
-    const YogaStylableProps& sourceProps,
-    const RawProps& rawProps,
+    const PropsParserContext &context,
+    YogaStylableProps const &sourceProps,
+    RawProps const &rawProps,
     bool shouldSetRawProps)
     : Props(context, sourceProps, rawProps, shouldSetRawProps),
       yogaStyle(
@@ -35,8 +36,8 @@ YogaStylableProps::YogaStylableProps(
 
 template <typename T>
 static inline T const getFieldValue(
-    const PropsParserContext& context,
-    const RawValue& value,
+    const PropsParserContext &context,
+    RawValue const &value,
     T const defaultValue) {
   if (value.hasValue()) {
     T res;
@@ -99,11 +100,11 @@ static inline T const getFieldValue(
   REBUILD_YG_FIELD_SWITCH_CASE_INDEXED(position, YGEdgeEnd, "end");
 
 void YogaStylableProps::setProp(
-    const PropsParserContext& context,
+    const PropsParserContext &context,
     RawPropsPropNameHash hash,
-    const char* propName,
-    const RawValue& value) {
-  static const auto ygDefaults = yoga::Style{};
+    const char *propName,
+    RawValue const &value) {
+  static const auto ygDefaults = YGStyle{};
   static const auto defaults = YogaStylableProps{};
 
   Props::setProp(context, hash, propName, value);
@@ -160,7 +161,7 @@ void YogaStylableProps::setProp(
 
 #if RN_DEBUG_STRING_CONVERTIBLE
 SharedDebugStringConvertibleList YogaStylableProps::getDebugProps() const {
-  const auto defaultYogaStyle = yoga::Style{};
+  auto const defaultYogaStyle = YGStyle{};
   return {
       debugStringConvertibleItem(
           "direction", yogaStyle.direction(), defaultYogaStyle.direction()),
@@ -237,9 +238,9 @@ SharedDebugStringConvertibleList YogaStylableProps::getDebugProps() const {
 #endif
 
 void YogaStylableProps::convertRawPropAliases(
-    const PropsParserContext& context,
-    const YogaStylableProps& sourceProps,
-    const RawProps& rawProps) {
+    const PropsParserContext &context,
+    YogaStylableProps const &sourceProps,
+    RawProps const &rawProps) {
   inset = convertRawProp(
       context,
       rawProps,

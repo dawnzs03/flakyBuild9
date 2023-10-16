@@ -11,5 +11,5 @@
 
 namespace facebook::react {
 using ViewProps = HostPlatformViewProps;
-using SharedViewProps = std::shared_ptr<const ViewProps>;
+using SharedViewProps = std::shared_ptr<ViewProps const>;
 } // namespace facebook::react

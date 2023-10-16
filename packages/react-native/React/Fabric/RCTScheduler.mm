@@ -45,7 +45,7 @@ class SchedulerDelegateProxy : public SchedulerDelegate {
     [scheduler.delegate schedulerDidDispatchCommand:shadowView commandName:commandName args:args];
   }
 
-  void schedulerDidSetIsJSResponder(const ShadowView &shadowView, bool isJSResponder, bool blockNativeResponder)
+  void schedulerDidSetIsJSResponder(ShadowView const &shadowView, bool isJSResponder, bool blockNativeResponder)
       override
   {
     RCTScheduler *scheduler = (__bridge RCTScheduler *)scheduler_;
@@ -54,7 +54,7 @@ class SchedulerDelegateProxy : public SchedulerDelegate {
                                        forShadowView:shadowView];
   }
 
-  void schedulerDidSendAccessibilityEvent(const ShadowView &shadowView, const std::string &eventType) override
+  void schedulerDidSendAccessibilityEvent(const ShadowView &shadowView, std::string const &eventType) override
   {
     RCTScheduler *scheduler = (__bridge RCTScheduler *)scheduler_;
     [scheduler.delegate schedulerDidSendAccessibilityEvent:shadowView eventType:eventType];
@@ -84,7 +84,7 @@ class LayoutAnimationDelegateProxy : public LayoutAnimationStatusDelegate, publi
     [scheduler onAllAnimationsComplete];
   }
 
-  void activityDidChange(const RunLoopObserver::Delegate *delegate, RunLoopObserver::Activity activity)
+  void activityDidChange(RunLoopObserver::Delegate const *delegate, RunLoopObserver::Activity activity)
       const noexcept override
   {
     RCTScheduler *scheduler = (__bridge RCTScheduler *)scheduler_;
@@ -146,22 +146,22 @@ class LayoutAnimationDelegateProxy : public LayoutAnimationStatusDelegate, publi
   _scheduler->setDelegate(nullptr);
 }
 
-- (void)registerSurface:(const facebook::react::SurfaceHandler &)surfaceHandler
+- (void)registerSurface:(facebook::react::SurfaceHandler const &)surfaceHandler
 {
   _scheduler->registerSurface(surfaceHandler);
 }
 
-- (void)unregisterSurface:(const facebook::react::SurfaceHandler &)surfaceHandler
+- (void)unregisterSurface:(facebook::react::SurfaceHandler const &)surfaceHandler
 {
   _scheduler->unregisterSurface(surfaceHandler);
 }
 
-- (const ComponentDescriptor *)findComponentDescriptorByHandle_DO_NOT_USE_THIS_IS_BROKEN:(ComponentHandle)handle
+- (ComponentDescriptor const *)findComponentDescriptorByHandle_DO_NOT_USE_THIS_IS_BROKEN:(ComponentHandle)handle
 {
   return _scheduler->findComponentDescriptorByHandle_DO_NOT_USE_THIS_IS_BROKEN(handle);
 }
 
-- (void)setupAnimationDriver:(const facebook::react::SurfaceHandler &)surfaceHandler
+- (void)setupAnimationDriver:(facebook::react::SurfaceHandler const &)surfaceHandler
 {
   surfaceHandler.getMountingCoordinator()->setMountingOverrideDelegate(_animationDriver);
 }
@@ -180,17 +180,17 @@ class LayoutAnimationDelegateProxy : public LayoutAnimationStatusDelegate, publi
   }
 }
 
-- (void)addEventListener:(const std::shared_ptr<EventListener> &)listener
+- (void)addEventListener:(std::shared_ptr<EventListener> const &)listener
 {
   return _scheduler->addEventListener(listener);
 }
 
-- (void)removeEventListener:(const std::shared_ptr<EventListener> &)listener
+- (void)removeEventListener:(std::shared_ptr<EventListener> const &)listener
 {
   return _scheduler->removeEventListener(listener);
 }
 
-- (const std::shared_ptr<facebook::react::UIManager>)uiManager
+- (std::shared_ptr<facebook::react::UIManager> const)uiManager
 {
   return _scheduler->getUIManager();
 }

@@ -18,7 +18,7 @@ class LegacyViewManagerInteropComponentDescriptor final
   using ConcreteComponentDescriptor::ConcreteComponentDescriptor;
 
   LegacyViewManagerInteropComponentDescriptor(
-      const ComponentDescriptorParameters& parameters);
+      ComponentDescriptorParameters const &parameters);
   /*
    * Returns `name` and `handle` based on a `flavor`, not on static data from
    * `LegacyViewManagerInteropShadowNode`.
@@ -27,10 +27,10 @@ class LegacyViewManagerInteropComponentDescriptor final
   ComponentName getComponentName() const override;
 
  protected:
-  void adopt(const ShadowNode::Unshared& shadowNode) const override;
+  void adopt(ShadowNode::Unshared const &shadowNode) const override;
 
  private:
-  const std::shared_ptr<void> _coordinator;
+  std::shared_ptr<void> const _coordinator;
 };
 
 } // namespace facebook::react

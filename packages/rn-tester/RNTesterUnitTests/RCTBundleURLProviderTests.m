@@ -8,7 +8,6 @@
 #import <XCTest/XCTest.h>
 
 #import <React/RCTBundleURLProvider.h>
-#import <React/RCTConstants.h>
 #import <React/RCTUtils.h>
 
 #import "OCMock/OCMock.h"
@@ -27,9 +26,8 @@ static NSURL *localhostBundleURL(void)
       URLWithString:
           [NSString
               stringWithFormat:
-                  @"http://localhost:8081/%@.bundle?platform=%@&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&app=com.apple.dt.xctest.tool",
-                  testFile,
-                  RCTPlatformName]];
+                  @"http://localhost:8081/%@.bundle?platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&app=com.apple.dt.xctest.tool",
+                  testFile]];
 }
 
 static NSURL *ipBundleURL(void)
@@ -38,9 +36,8 @@ static NSURL *ipBundleURL(void)
       URLWithString:
           [NSString
               stringWithFormat:
-                  @"http://192.168.1.1:8081/%@.bundle?platform=%@&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&app=com.apple.dt.xctest.tool",
-                  testFile,
-                  RCTPlatformName]];
+                  @"http://192.168.1.1:8081/%@.bundle?platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&app=com.apple.dt.xctest.tool",
+                  testFile]];
 }
 
 @implementation NSBundle (RCTBundleURLProviderTests)

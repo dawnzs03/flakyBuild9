@@ -24,8 +24,8 @@ namespace facebook::react {
  */
 using ComponentRegistryFactory =
     std::function<SharedComponentDescriptorRegistry(
-        const EventDispatcher::Weak& eventDispatcher,
-        const ContextContainer::Shared& contextContainer)>;
+        EventDispatcher::Weak const &eventDispatcher,
+        ContextContainer::Shared const &contextContainer)>;
 
 ComponentRegistryFactory getDefaultComponentRegistryFactory();
 

@@ -201,7 +201,7 @@ static BackgroundExecutor RCTGetBackgroundExecutor()
   return YES;
 }
 
-- (void)setupAnimationDriverWithSurfaceHandler:(const facebook::react::SurfaceHandler &)surfaceHandler
+- (void)setupAnimationDriverWithSurfaceHandler:(facebook::react::SurfaceHandler const &)surfaceHandler
 {
   [[self scheduler] setupAnimationDriver:surfaceHandler];
 }
@@ -254,7 +254,7 @@ static BackgroundExecutor RCTGetBackgroundExecutor()
 
 - (RCTScheduler *)_createScheduler
 {
-  auto reactNativeConfig = _contextContainer->at<std::shared_ptr<const ReactNativeConfig>>("ReactNativeConfig");
+  auto reactNativeConfig = _contextContainer->at<std::shared_ptr<ReactNativeConfig const>>("ReactNativeConfig");
 
   if (reactNativeConfig && reactNativeConfig->getBool("rn_convergence:dispatch_pointer_events")) {
     RCTSetDispatchW3CPointerEvents(YES);
@@ -290,7 +290,7 @@ static BackgroundExecutor RCTGetBackgroundExecutor()
 
   auto componentRegistryFactory =
       [factory = wrapManagedObject(_mountingManager.componentViewRegistry.componentViewFactory)](
-          const EventDispatcher::Weak &eventDispatcher, const ContextContainer::Shared &contextContainer) {
+          EventDispatcher::Weak const &eventDispatcher, ContextContainer::Shared const &contextContainer) {
         return [(RCTComponentViewFactory *)unwrapManagedObject(factory)
             createComponentDescriptorRegistryWithParameters:{eventDispatcher, contextContainer}];
       };
@@ -313,7 +313,7 @@ static BackgroundExecutor RCTGetBackgroundExecutor()
   toolbox.bridgelessBindingsExecutor = _bridgelessBindingsExecutor;
 
   toolbox.mainRunLoopObserverFactory = [](RunLoopObserver::Activity activities,
-                                          const RunLoopObserver::WeakOwner &owner) {
+                                          RunLoopObserver::WeakOwner const &owner) {
     return std::make_unique<MainRunLoopObserver>(activities, owner);
   };
 
@@ -322,14 +322,14 @@ static BackgroundExecutor RCTGetBackgroundExecutor()
   }
 
   toolbox.synchronousEventBeatFactory =
-      [runtimeExecutor, runtimeScheduler = runtimeScheduler](const EventBeat::SharedOwnerBox &ownerBox) {
+      [runtimeExecutor, runtimeScheduler = runtimeScheduler](EventBeat::SharedOwnerBox const &ownerBox) {
         auto runLoopObserver =
             std::make_unique<MainRunLoopObserver const>(RunLoopObserver::Activity::BeforeWaiting, ownerBox->owner);
         return std::make_unique<SynchronousEventBeat>(std::move(runLoopObserver), runtimeExecutor, runtimeScheduler);
       };
 
   toolbox.asynchronousEventBeatFactory =
-      [runtimeExecutor](const EventBeat::SharedOwnerBox &ownerBox) -> std::unique_ptr<EventBeat> {
+      [runtimeExecutor](EventBeat::SharedOwnerBox const &ownerBox) -> std::unique_ptr<EventBeat> {
     auto runLoopObserver =
         std::make_unique<MainRunLoopObserver const>(RunLoopObserver::Activity::BeforeWaiting, ownerBox->owner);
     return std::make_unique<AsynchronousEventBeat>(std::move(runLoopObserver), runtimeExecutor);
@@ -373,9 +373,9 @@ static BackgroundExecutor RCTGetBackgroundExecutor()
   [_mountingManager scheduleTransaction:mountingCoordinator];
 }
 
-- (void)schedulerDidDispatchCommand:(const ShadowView &)shadowView
-                        commandName:(const std::string &)commandName
-                               args:(const folly::dynamic &)args
+- (void)schedulerDidDispatchCommand:(ShadowView const &)shadowView
+                        commandName:(std::string const &)commandName
+                               args:(folly::dynamic const &)args
 {
   ReactTag tag = shadowView.tag;
   NSString *commandStr = [[NSString alloc] initWithUTF8String:commandName.c_str()];
@@ -395,7 +395,7 @@ static BackgroundExecutor RCTGetBackgroundExecutor()
 
 - (void)schedulerDidSetIsJSResponder:(BOOL)isJSResponder
                 blockNativeResponder:(BOOL)blockNativeResponder
-                       forShadowView:(const facebook::react::ShadowView &)shadowView;
+                       forShadowView:(facebook::react::ShadowView const &)shadowView;
 {
   [_mountingManager setIsJSResponder:isJSResponder blockNativeResponder:blockNativeResponder forShadowView:shadowView];
 }

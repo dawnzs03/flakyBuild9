@@ -13,16 +13,14 @@
 #include <react/debug/react_native_assert.h>
 #include <react/renderer/components/text/RawTextShadowNode.h>
 #include <react/renderer/core/EventHandler.h>
-#include <react/renderer/core/LayoutMetrics.h>
 #include <react/renderer/core/ShadowNode.h>
 #include <react/renderer/core/TraitCast.h>
-#include <react/renderer/graphics/Rect.h>
 #include <react/utils/CoreFeatures.h>
 
 namespace facebook::react {
 
 using BackgroundExecutor =
-    std::function<void(std::function<void()>&& callback)>;
+    std::function<void(std::function<void()> &&callback)>;
 
 struct EventHandlerWrapper : public EventHandler {
   EventHandlerWrapper(jsi::Function eventHandler)
@@ -56,8 +54,8 @@ struct ShadowNodeListWrapper : public jsi::HostObject, public jsi::NativeState {
 };
 
 inline static ShadowNode::Shared shadowNodeFromValue(
-    jsi::Runtime& runtime,
-    const jsi::Value& value) {
+    jsi::Runtime &runtime,
+    const jsi::Value &value) {
   if (value.isNull()) {
     return nullptr;
   }
@@ -72,7 +70,7 @@ inline static ShadowNode::Shared shadowNodeFromValue(
 }
 
 inline static jsi::Value valueFromShadowNode(
-    jsi::Runtime& runtime,
+    jsi::Runtime &runtime,
     ShadowNode::Shared shadowNode) {
   if (CoreFeatures::useNativeState) {
     jsi::Object obj(runtime);
@@ -87,8 +85,8 @@ inline static jsi::Value valueFromShadowNode(
 }
 
 inline static ShadowNode::UnsharedListOfShared shadowNodeListFromValue(
-    jsi::Runtime& runtime,
-    const jsi::Value& value) {
+    jsi::Runtime &runtime,
+    const jsi::Value &value) {
   if (CoreFeatures::useNativeState) {
     return value.getObject(runtime)
         .getNativeState<ShadowNodeListWrapper>(runtime)
@@ -101,7 +99,7 @@ inline static ShadowNode::UnsharedListOfShared shadowNodeListFromValue(
 }
 
 inline static jsi::Value valueFromShadowNodeList(
-    jsi::Runtime& runtime,
+    jsi::Runtime &runtime,
     ShadowNode::UnsharedListOfShared shadowNodeList) {
   auto wrapper =
       std::make_shared<ShadowNodeListWrapper>(std::move(shadowNodeList));
@@ -117,9 +115,9 @@ inline static jsi::Value valueFromShadowNodeList(
 }
 
 inline static ShadowNode::UnsharedListOfShared shadowNodeListFromWeakList(
-    const ShadowNode::UnsharedListOfWeak& weakShadowNodeList) {
+    ShadowNode::UnsharedListOfWeak const &weakShadowNodeList) {
   auto result = std::make_shared<ShadowNode::ListOfShared>();
-  for (const auto& weakShadowNode : *weakShadowNodeList) {
+  for (auto const &weakShadowNode : *weakShadowNodeList) {
     auto sharedShadowNode = weakShadowNode.lock();
     if (!sharedShadowNode) {
       return nullptr;
@@ -130,24 +128,24 @@ inline static ShadowNode::UnsharedListOfShared shadowNodeListFromWeakList(
 }
 
 inline static ShadowNode::UnsharedListOfWeak weakShadowNodeListFromValue(
-    jsi::Runtime& runtime,
-    const jsi::Value& value) {
+    jsi::Runtime &runtime,
+    jsi::Value const &value) {
   auto shadowNodeList = shadowNodeListFromValue(runtime, value);
   auto weakShadowNodeList = std::make_shared<ShadowNode::ListOfWeak>();
-  for (const auto& shadowNode : *shadowNodeList) {
+  for (auto const &shadowNode : *shadowNodeList) {
     weakShadowNodeList->push_back(shadowNode);
   }
   return weakShadowNodeList;
 }
 
-inline static Tag tagFromValue(const jsi::Value& value) {
+inline static Tag tagFromValue(jsi::Value const &value) {
   return (Tag)value.getNumber();
 }
 
 inline static InstanceHandle::Shared instanceHandleFromValue(
-    jsi::Runtime& runtime,
-    const jsi::Value& instanceHandleValue,
-    const jsi::Value& tagValue) {
+    jsi::Runtime &runtime,
+    jsi::Value const &instanceHandleValue,
+    jsi::Value const &tagValue) {
   react_native_assert(!instanceHandleValue.isNull());
   if (instanceHandleValue.isNull()) {
     return nullptr;
@@ -157,12 +155,12 @@ inline static InstanceHandle::Shared instanceHandleFromValue(
 }
 
 inline static SurfaceId surfaceIdFromValue(
-    jsi::Runtime& runtime,
-    const jsi::Value& value) {
+    jsi::Runtime &runtime,
+    jsi::Value const &value) {
   return (SurfaceId)value.getNumber();
 }
 
-inline static int displayModeToInt(const DisplayMode value) {
+inline static int displayModeToInt(DisplayMode const value) {
   // the result of this method should be in sync with
   // Libraries/ReactNative/DisplayMode.js
   switch (value) {
@@ -176,26 +174,26 @@ inline static int displayModeToInt(const DisplayMode value) {
 }
 
 inline static std::string stringFromValue(
-    jsi::Runtime& runtime,
-    const jsi::Value& value) {
+    jsi::Runtime &runtime,
+    jsi::Value const &value) {
   return value.getString(runtime).utf8(runtime);
 }
 
 inline static folly::dynamic commandArgsFromValue(
-    jsi::Runtime& runtime,
-    const jsi::Value& value) {
+    jsi::Runtime &runtime,
+    jsi::Value const &value) {
   return jsi::dynamicFromValue(runtime, value);
 }
 
 inline static jsi::Value getArrayOfInstanceHandlesFromShadowNodes(
-    const ShadowNode::ListOfShared& nodes,
-    jsi::Runtime& runtime) {
+    ShadowNode::ListOfShared const &nodes,
+    jsi::Runtime &runtime) {
   // JSI doesn't support adding elements to an array after creation,
   // so we need to accumulate the values in a vector and then create
   // the array when we know the size.
   std::vector<jsi::Value> nonNullInstanceHandles;
   nonNullInstanceHandles.reserve(nodes.size());
-  for (const auto& shadowNode : nodes) {
+  for (auto const &shadowNode : nodes) {
     auto instanceHandle = (*shadowNode).getInstanceHandle(runtime);
     if (!instanceHandle.isNull()) {
       nonNullInstanceHandles.push_back(std::move(instanceHandle));
@@ -210,50 +208,15 @@ inline static jsi::Value getArrayOfInstanceHandlesFromShadowNodes(
 }
 
 inline static void getTextContentInShadowNode(
-    const ShadowNode& shadowNode,
-    std::string& result) {
-  auto rawTextShadowNode = traitCast<const RawTextShadowNode*>(&shadowNode);
+    ShadowNode const &shadowNode,
+    std::string &result) {
+  auto rawTextShadowNode = traitCast<RawTextShadowNode const *>(&shadowNode);
   if (rawTextShadowNode != nullptr) {
     result.append(rawTextShadowNode->getConcreteProps().text);
   }
 
-  for (const auto& childNode : shadowNode.getChildren()) {
+  for (auto const &childNode : shadowNode.getChildren()) {
     getTextContentInShadowNode(*childNode.get(), result);
   }
-}
-
-inline static Rect getScrollableContentBounds(
-    Rect contentBounds,
-    LayoutMetrics layoutMetrics) {
-  auto paddingFrame = layoutMetrics.getPaddingFrame();
-
-  auto paddingBottom =
-      layoutMetrics.contentInsets.bottom - layoutMetrics.borderWidth.bottom;
-  auto paddingLeft =
-      layoutMetrics.contentInsets.left - layoutMetrics.borderWidth.left;
-  auto paddingRight =
-      layoutMetrics.contentInsets.right - layoutMetrics.borderWidth.right;
-
-  auto minY = paddingFrame.getMinY();
-  auto maxY =
-      std::max(paddingFrame.getMaxY(), contentBounds.getMaxY() + paddingBottom);
-
-  auto minX = layoutMetrics.layoutDirection == LayoutDirection::RightToLeft
-      ? std::min(paddingFrame.getMinX(), contentBounds.getMinX() - paddingLeft)
-      : paddingFrame.getMinX();
-  auto maxX = layoutMetrics.layoutDirection == LayoutDirection::RightToLeft
-      ? paddingFrame.getMaxX()
-      : std::max(
-            paddingFrame.getMaxX(), contentBounds.getMaxX() + paddingRight);
-
-  return Rect{Point{minX, minY}, Size{maxX - minX, maxY - minY}};
-}
-
-inline static Size getScrollSize(
-    LayoutMetrics layoutMetrics,
-    Rect contentBounds) {
-  auto scrollableContentBounds =
-      getScrollableContentBounds(contentBounds, layoutMetrics);
-  return scrollableContentBounds.size;
 }
 } // namespace facebook::react

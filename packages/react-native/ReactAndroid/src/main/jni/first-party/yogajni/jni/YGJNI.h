@@ -22,12 +22,12 @@ namespace {
 const int HAS_NEW_LAYOUT = 16;
 
 union YGNodeContext {
-  int32_t edgesSet = 0;
+  uintptr_t edgesSet = 0;
   void* asVoidPtr;
 };
 
 class YGNodeEdges {
-  int32_t edges_;
+  uintptr_t edges_;
 
 public:
   enum Edge {

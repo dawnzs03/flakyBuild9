@@ -175,7 +175,7 @@ UIReturnKeyType RCTUIReturnKeyTypeFromReturnKeyType(ReturnKeyType returnKeyType)
   }
 }
 
-UITextContentType RCTUITextContentTypeFromString(const std::string &contentType)
+UITextContentType RCTUITextContentTypeFromString(std::string const &contentType)
 {
   static dispatch_once_t onceToken;
   static NSDictionary<NSString *, NSString *> *contentTypeMap;
@@ -240,7 +240,7 @@ UITextContentType RCTUITextContentTypeFromString(const std::string &contentType)
   return contentTypeMap[RCTNSStringFromString(contentType)] ?: @"";
 }
 
-UITextInputPasswordRules *RCTUITextInputPasswordRulesFromString(const std::string &passwordRules)
+UITextInputPasswordRules *RCTUITextInputPasswordRulesFromString(std::string const &passwordRules)
 {
   return [UITextInputPasswordRules passwordRulesWithDescriptor:RCTNSStringFromStringNilIfEmpty(passwordRules)];
 }

@@ -17,25 +17,19 @@ import {
 } from '@react-native-community/cli-tools';
 import chalk from 'chalk';
 import execa from 'execa';
-import fetch from 'node-fetch';
 import readline from 'readline';
 import {KeyPressHandler} from '../../utils/KeyPressHandler';
 
 const CTRL_C = '\u0003';
 const CTRL_Z = '\u0026';
 
-export default function attachKeyHandlers({
-  cliConfig,
-  devServerUrl,
-  messageSocket,
-}: {
+export default function attachKeyHandlers(
   cliConfig: Config,
-  devServerUrl: string,
   messageSocket: $ReadOnly<{
     broadcast: (type: string, params?: Record<string, mixed> | null) => void,
     ...
   }>,
-}) {
+) {
   if (process.stdin.isTTY !== true) {
     logger.debug('Interactive mode is not supported in this environment');
     return;
@@ -83,9 +77,6 @@ export default function attachKeyHandlers({
           execaOptions,
         ).stdout?.pipe(process.stdout);
         break;
-      case 'j':
-        await fetch(devServerUrl + '/open-debugger', {method: 'POST'});
-        break;
       case CTRL_Z:
         process.emit('SIGTSTP', 'SIGTSTP');
         break;
@@ -100,13 +91,11 @@ export default function attachKeyHandlers({
   keyPressHandler.startInterceptingKeyStrokes();
 
   logger.log(
-    '\n' +
-      [
-        `${chalk.bold('i')} - run on iOS`,
-        `${chalk.bold('a')} - run on Android`,
-        `${chalk.bold('d')} - open Dev Menu`,
-        `${chalk.bold('j')} - open debugger`,
-        `${chalk.bold('r')} - reload app`,
-      ].join('\n'),
+    [
+      `${chalk.bold('r')} - reload app`,
+      `${chalk.bold('d')} - open Dev Menu`,
+      `${chalk.bold('r')} - run on iOS`,
+      `${chalk.bold('a')} - run on Android`,
+    ].join('\n'),
   );
 }

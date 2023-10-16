@@ -19,14 +19,15 @@ namespace facebook::react {
 class SafeAreaViewComponentDescriptor final
     : public ConcreteComponentDescriptor<SafeAreaViewShadowNode> {
   using ConcreteComponentDescriptor::ConcreteComponentDescriptor;
-  void adopt(const ShadowNode::Unshared& shadowNode) const override {
+  void adopt(ShadowNode::Unshared const &shadowNode) const override {
     react_native_assert(
         std::dynamic_pointer_cast<SafeAreaViewShadowNode>(shadowNode));
-    auto& layoutableShadowNode =
-        static_cast<YogaLayoutableShadowNode&>(*shadowNode);
-    auto& stateData = static_cast<const SafeAreaViewShadowNode::ConcreteState&>(
-                          *shadowNode->getState())
-                          .getData();
+    auto &layoutableShadowNode =
+        static_cast<YogaLayoutableShadowNode &>(*shadowNode);
+    auto &stateData =
+        static_cast<const SafeAreaViewShadowNode::ConcreteState &>(
+            *shadowNode->getState())
+            .getData();
     layoutableShadowNode.setPadding(stateData.padding);
 
     ConcreteComponentDescriptor::adopt(shadowNode);

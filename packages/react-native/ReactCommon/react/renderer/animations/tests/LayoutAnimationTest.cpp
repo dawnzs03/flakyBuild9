@@ -49,7 +49,7 @@ static void testShadowNodeTreeLifeCycleLayoutAnimations(
   auto entropy = seed == 0 ? Entropy() : Entropy(seed);
 
   auto eventDispatcher = EventDispatcher::Shared{};
-  auto contextContainer = std::make_shared<const ContextContainer>();
+  auto contextContainer = std::make_shared<ContextContainer const>();
   auto componentDescriptorParameters =
       ComponentDescriptorParameters{eventDispatcher, contextContainer, nullptr};
   auto viewComponentDescriptor =
@@ -61,7 +61,7 @@ static void testShadowNodeTreeLifeCycleLayoutAnimations(
 
   // Create a RuntimeExecutor
   RuntimeExecutor runtimeExecutor =
-      [](const std::function<void(jsi::Runtime&)>& /*unused*/) {};
+      [](std::function<void(jsi::Runtime &)> const & /*unused*/) {};
 
   // Create component descriptor registry for animation driver
   auto providerRegistry =
@@ -97,7 +97,7 @@ static void testShadowNodeTreeLifeCycleLayoutAnimations(
 
     // Creating an initial root shadow node.
     auto emptyRootNode = std::const_pointer_cast<RootShadowNode>(
-        std::static_pointer_cast<const RootShadowNode>(
+        std::static_pointer_cast<RootShadowNode const>(
             rootComponentDescriptor.createShadowNode(
                 ShadowNodeFragment{RootShadowNode::defaultSharedProps()},
                 family)));
@@ -114,7 +114,7 @@ static void testShadowNodeTreeLifeCycleLayoutAnimations(
         generateShadowNodeTree(entropy, viewComponentDescriptor, treeSize);
 
     // Injecting a tree into the root node.
-    auto currentRootNode = std::static_pointer_cast<const RootShadowNode>(
+    auto currentRootNode = std::static_pointer_cast<RootShadowNode const>(
         emptyRootNode->ShadowNode::clone(ShadowNodeFragment{
             ShadowNodeFragment::propsPlaceholder(),
             std::make_shared<ShadowNode::ListOfShared>(
@@ -138,7 +138,7 @@ static void testShadowNodeTreeLifeCycleLayoutAnimations(
               &messWithLayoutableOnlyFlag,
           });
 
-      std::vector<const LayoutableShadowNode*> affectedLayoutableNodes{};
+      std::vector<LayoutableShadowNode const *> affectedLayoutableNodes{};
       affectedLayoutableNodes.reserve(1024);
 
       // Laying out the tree.

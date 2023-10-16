@@ -43,11 +43,11 @@ RCT_EXTERN id<RCTTurboModule> RCTAppSetupDefaultModuleFromClass(Class moduleClas
 std::unique_ptr<facebook::react::JSExecutorFactory> RCTAppSetupDefaultJsExecutorFactory(
     RCTBridge *bridge,
     RCTTurboModuleManager *turboModuleManager,
-    const std::shared_ptr<facebook::react::RuntimeScheduler> &runtimeScheduler);
+    std::shared_ptr<facebook::react::RuntimeScheduler> const &runtimeScheduler);
 #else
 std::unique_ptr<facebook::react::JSExecutorFactory> RCTAppSetupJsExecutorFactoryForOldArch(
     RCTBridge *bridge,
-    const std::shared_ptr<facebook::react::RuntimeScheduler> &runtimeScheduler);
+    std::shared_ptr<facebook::react::RuntimeScheduler> const &runtimeScheduler);
 #endif
 
 #endif // __cplusplus

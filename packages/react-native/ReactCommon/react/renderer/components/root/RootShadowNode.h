@@ -31,7 +31,7 @@ class RootShadowNode final
  public:
   using ConcreteViewShadowNode::ConcreteViewShadowNode;
 
-  using Shared = std::shared_ptr<const RootShadowNode>;
+  using Shared = std::shared_ptr<RootShadowNode const>;
   using Unshared = std::shared_ptr<RootShadowNode>;
 
   static ShadowNodeTraits BaseTraits() {
@@ -45,15 +45,15 @@ class RootShadowNode final
    * Returns `false` if the three is already laid out.
    */
   bool layoutIfNeeded(
-      std::vector<const LayoutableShadowNode*>* affectedNodes = {});
+      std::vector<LayoutableShadowNode const *> *affectedNodes = {});
 
   /*
    * Clones the node with given `layoutConstraints` and `layoutContext`.
    */
   RootShadowNode::Unshared clone(
-      const PropsParserContext& propsParserContext,
-      const LayoutConstraints& layoutConstraints,
-      const LayoutContext& layoutContext) const;
+      PropsParserContext const &propsParserContext,
+      LayoutConstraints const &layoutConstraints,
+      LayoutContext const &layoutContext) const;
 
   Transform getTransform() const override;
 };

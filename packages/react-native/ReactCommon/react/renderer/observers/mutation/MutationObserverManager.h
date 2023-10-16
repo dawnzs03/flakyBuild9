@@ -23,27 +23,27 @@ class MutationObserverManager final : public UIManagerCommitHook {
       MutationObserverId mutationObserverId,
       ShadowNode::Shared shadowNode,
       bool observeSubtree,
-      const UIManager& uiManager);
+      UIManager const &uiManager);
 
   void unobserve(
       MutationObserverId mutationObserverId,
-      const ShadowNode& shadowNode);
+      ShadowNode const &shadowNode);
 
   void connect(
-      UIManager& uiManager,
-      std::function<void(std::vector<const MutationRecord>&)> onMutations);
+      UIManager &uiManager,
+      std::function<void(std::vector<const MutationRecord> &)> onMutations);
 
-  void disconnect(UIManager& uiManager);
+  void disconnect(UIManager &uiManager);
 
 #pragma mark - UIManagerCommitHook
 
-  void commitHookWasRegistered(const UIManager& uiManager) noexcept override;
-  void commitHookWasUnregistered(const UIManager& uiManager) noexcept override;
+  void commitHookWasRegistered(UIManager const &uiManager) noexcept override;
+  void commitHookWasUnregistered(UIManager const &uiManager) noexcept override;
 
   RootShadowNode::Unshared shadowTreeWillCommit(
-      const ShadowTree& shadowTree,
-      const RootShadowNode::Shared& oldRootShadowNode,
-      const RootShadowNode::Unshared& newRootShadowNode) noexcept override;
+      ShadowTree const &shadowTree,
+      RootShadowNode::Shared const &oldRootShadowNode,
+      RootShadowNode::Unshared const &newRootShadowNode) noexcept override;
 
  private:
   std::unordered_map<
@@ -51,13 +51,13 @@ class MutationObserverManager final : public UIManagerCommitHook {
       std::unordered_map<MutationObserverId, MutationObserver>>
       observersBySurfaceId_;
 
-  std::function<void(std::vector<const MutationRecord>&)> onMutations_;
+  std::function<void(std::vector<const MutationRecord> &)> onMutations_;
   bool commitHookRegistered_{};
 
   void runMutationObservations(
-      const ShadowTree& shadowTree,
-      const RootShadowNode& oldRootShadowNode,
-      const RootShadowNode& newRootShadowNode);
+      ShadowTree const &shadowTree,
+      RootShadowNode const &oldRootShadowNode,
+      RootShadowNode const &newRootShadowNode);
 };
 
 } // namespace facebook::react

@@ -24,23 +24,23 @@ namespace facebook::react {
 class ParagraphLayoutManager {
  public:
   TextMeasurement measure(
-      const AttributedString& attributedString,
-      const ParagraphAttributes& paragraphAttributes,
+      AttributedString const &attributedString,
+      ParagraphAttributes const &paragraphAttributes,
       LayoutConstraints layoutConstraints) const;
 
   LinesMeasurements measureLines(
-      const AttributedString& attributedString,
-      const ParagraphAttributes& paragraphAttributes,
+      AttributedString const &attributedString,
+      ParagraphAttributes const &paragraphAttributes,
       Size size) const;
 
   void setTextLayoutManager(
-      std::shared_ptr<const TextLayoutManager> textLayoutManager) const;
+      std::shared_ptr<TextLayoutManager const> textLayoutManager) const;
 
   /*
    * Returns an opaque pointer to platform-specific `TextLayoutManager`.
    * Is used on a native views layer to delegate text rendering to the manager.
    */
-  std::shared_ptr<const TextLayoutManager> getTextLayoutManager() const;
+  std::shared_ptr<TextLayoutManager const> getTextLayoutManager() const;
 
   /*
    * Returns opaque shared_ptr holding `NSTextStorage`.
@@ -51,7 +51,7 @@ class ParagraphLayoutManager {
   std::shared_ptr<void> getHostTextStorage() const;
 
  private:
-  std::shared_ptr<const TextLayoutManager> mutable textLayoutManager_{};
+  std::shared_ptr<TextLayoutManager const> mutable textLayoutManager_{};
 
   /*
    * Stores opaque pointer to `NSTextStorage` on iOS. nullptr on Android.
@@ -85,8 +85,8 @@ class ParagraphLayoutManager {
    * needed.
    */
   bool shoudMeasureString(
-      const AttributedString& attributedString,
-      const ParagraphAttributes& paragraphAttributes,
+      AttributedString const &attributedString,
+      ParagraphAttributes const &paragraphAttributes,
       LayoutConstraints layoutConstraints) const;
 };
 } // namespace facebook::react

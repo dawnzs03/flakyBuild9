@@ -31,10 +31,10 @@
 #import <ReactCommon/RCTHost+Internal.h>
 #import <ReactCommon/RCTHost.h>
 #import <ReactCommon/RCTTurboModuleManager.h>
+#import <react/bridgeless/JSEngineInstance.h>
 #import <react/config/ReactNativeConfig.h>
 #import <react/renderer/runtimescheduler/RuntimeScheduler.h>
 #import <react/renderer/runtimescheduler/RuntimeSchedulerCallInvoker.h>
-#import <react/runtime/JSEngineInstance.h>
 
 static NSString *const kRNConcurrentRoot = @"concurrentRoot";
 
@@ -93,7 +93,8 @@ static NSString *const kRNConcurrentRoot = @"concurrentRoot";
 
     RCTSurfaceHostingProxyRootView *surfaceHostingProxyRootView = [[RCTSurfaceHostingProxyRootView alloc]
         initWithSurface:surface
-        sizeMeasureMode:RCTSurfaceSizeMeasureModeWidthExact | RCTSurfaceSizeMeasureModeHeightExact];
+        sizeMeasureMode:RCTSurfaceSizeMeasureModeWidthExact | RCTSurfaceSizeMeasureModeHeightExact
+         moduleRegistry:[_reactHost getModuleRegistry]];
 
     rootView = (RCTRootView *)surfaceHostingProxyRootView;
 #endif
@@ -116,7 +117,6 @@ static NSString *const kRNConcurrentRoot = @"concurrentRoot";
   UIViewController *rootViewController = [self createRootViewController];
   [self setRootView:rootView toRootViewController:rootViewController];
   self.window.rootViewController = rootViewController;
-  self.window.windowScene.delegate = self;
   [self.window makeKeyAndVisible];
 
   return YES;
@@ -175,15 +175,6 @@ static NSString *const kRNConcurrentRoot = @"concurrentRoot";
 - (BOOL)runtimeSchedulerEnabled
 {
   return YES;
-}
-
-#pragma mark - UISceneDelegate
-- (void)windowScene:(UIWindowScene *)windowScene
-    didUpdateCoordinateSpace:(id<UICoordinateSpace>)previousCoordinateSpace
-        interfaceOrientation:(UIInterfaceOrientation)previousInterfaceOrientation
-             traitCollection:(UITraitCollection *)previousTraitCollection API_AVAILABLE(ios(13.0))
-{
-  [[NSNotificationCenter defaultCenter] postNotificationName:RCTRootViewFrameDidChangeNotification object:self];
 }
 
 #pragma mark - RCTCxxBridgeDelegate
