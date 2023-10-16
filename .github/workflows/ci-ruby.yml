@@ -47,8 +47,6 @@ jobs:
             os: windows
           - ruby-version: 3.2.0
             os: ubuntu
-          - ruby-version: 3.2.0
-            os: macos
           - ruby-version: jruby-9.4.0.0
             os: ubuntu
           - ruby-version: truffleruby-22.3.0
@@ -71,20 +69,12 @@ jobs:
           - chrome
           - edge
           - firefox
-          - safari
         os:
           - ubuntu
           - windows
-          - macos
         exclude:
           - browser: edge
             os: ubuntu
-          - browser: edge
-            os: macos
-          - browser: safari
-            os: ubuntu
-          - browser: safari
-            os: windows
     with:
       name: Local Tests (${{ matrix.browser }}, ${{ matrix.os }})
       browser: ${{ matrix.browser }}
@@ -108,20 +98,12 @@ jobs:
           - chrome
           - edge
           - firefox
-          - safari
         os:
           - ubuntu
           - windows
-          - macos
         exclude:
           - browser: edge
             os: ubuntu
-          - browser: edge
-            os: macos
-          - browser: safari
-            os: ubuntu
-          - browser: safari
-            os: windows
     with:
       name: Remote Tests (${{ matrix.browser }}, ${{ matrix.os }})
       browser: ${{ matrix.browser }}

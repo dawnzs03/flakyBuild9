@@ -142,6 +142,10 @@ class NettyServerTest {
   }
 
   private void outputHeaders(HttpResponse res) {
-    res.forEachHeader((name, value) -> System.out.printf("%s -> %s\n", name, value));
+    res.getHeaderNames()
+        .forEach(
+            name ->
+                res.getHeaders(name)
+                    .forEach(value -> System.out.printf("%s -> %s\n", name, value)));
   }
 }

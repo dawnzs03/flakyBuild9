@@ -69,9 +69,6 @@ namespace OpenQA.Selenium.Interactions
             get { return this.interactions.Count; }
         }
 
-        /// <summary>
-        /// Gets the input device for this Action sequence.
-        /// </summary>
         public InputDevice inputDevice
         {
             get { return this.inputDevice; }

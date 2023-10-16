@@ -96,16 +96,18 @@ public class ResponseConverter extends ChannelOutboundHandlerAdapter {
   }
 
   private void copyHeaders(HttpResponse seResponse, DefaultHttpResponse first) {
-    seResponse.forEachHeader(
-        (name, value) -> {
-          if (CONTENT_LENGTH.contentEqualsIgnoreCase(name)
-              || TRANSFER_ENCODING.contentEqualsIgnoreCase(name)) {
-            return;
-          } else if (value == null) {
-            return;
-          }
-          first.headers().add(name, value);
-        });
+    for (String name : seResponse.getHeaderNames()) {
+      if (CONTENT_LENGTH.contentEqualsIgnoreCase(name)
+          || TRANSFER_ENCODING.contentEqualsIgnoreCase(name)) {
+        continue;
+      }
+      for (String value : seResponse.getHeaders(name)) {
+        if (value == null) {
+          continue;
+        }
+        first.headers().add(name, value);
+      }
+    }
 
     if (allowCors) {
       first.headers().add("Access-Control-Allow-Origin", "*");

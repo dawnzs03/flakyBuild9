@@ -32,7 +32,7 @@ namespace OpenQA.Selenium.DevTools.V85
         private PageAdapter page;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="V85JavaScript"/> class.
+        /// Initializes a new instance of the <see cref="V86JavaScript"/> class.
         /// </summary>
         /// <param name="runtime">The DevTools Protocol adapter for the Runtime domain.</param>
         /// <param name="page">The DevTools Protocol adapter for the Page domain.</param>
@@ -51,7 +51,7 @@ namespace OpenQA.Selenium.DevTools.V85
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task EnableRuntime()
         {
-            await runtime.Enable().ConfigureAwait(false);
+            await runtime.Enable();
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace OpenQA.Selenium.DevTools.V85
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task DisableRuntime()
         {
-            await runtime.Disable().ConfigureAwait(false);
+            await runtime.Disable();
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace OpenQA.Selenium.DevTools.V85
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task EnablePage()
         {
-            await page.Enable().ConfigureAwait(false);
+            await page.Enable();
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace OpenQA.Selenium.DevTools.V85
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task DisablePage()
         {
-            await page.Disable().ConfigureAwait(false);
+            await page.Disable();
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace OpenQA.Selenium.DevTools.V85
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task AddBinding(string name)
         {
-            await runtime.AddBinding(new AddBindingCommandSettings() { Name = name }).ConfigureAwait(false);
+            await runtime.AddBinding(new AddBindingCommandSettings() { Name = name });
         }
 
         /// <summary>
@@ -98,7 +98,7 @@ namespace OpenQA.Selenium.DevTools.V85
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task RemoveBinding(string name)
         {
-            await runtime.RemoveBinding(new RemoveBindingCommandSettings() { Name = name }).ConfigureAwait(false);
+            await runtime.RemoveBinding(new RemoveBindingCommandSettings() { Name = name });
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace OpenQA.Selenium.DevTools.V85
         /// <returns>A task that represents the asynchronous operation. The task result contains the internal ID of the script.</returns>
         public override async Task<string> AddScriptToEvaluateOnNewDocument(string script)
         {
-            var result = await page.AddScriptToEvaluateOnNewDocument(new AddScriptToEvaluateOnNewDocumentCommandSettings() { Source = script }).ConfigureAwait(false);
+            var result = await page.AddScriptToEvaluateOnNewDocument(new AddScriptToEvaluateOnNewDocumentCommandSettings() { Source = script });
             return result.Identifier;
         }
 
@@ -119,7 +119,7 @@ namespace OpenQA.Selenium.DevTools.V85
         /// <returns>A task that represents the asynchronous operation.</returns>
         public override async Task RemoveScriptToEvaluateOnNewDocument(string scriptId)
         {
-            await page.RemoveScriptToEvaluateOnNewDocument(new RemoveScriptToEvaluateOnNewDocumentCommandSettings() { Identifier = scriptId }).ConfigureAwait(false);
+            await page.RemoveScriptToEvaluateOnNewDocument(new RemoveScriptToEvaluateOnNewDocumentCommandSettings() { Identifier = scriptId });
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace OpenQA.Selenium.DevTools.V85
         /// </remarks>
         internal override async Task Evaluate(string script)
         {
-            await runtime.Evaluate(new EvaluateCommandSettings { Expression = script }).ConfigureAwait(false);
+            await runtime.Evaluate(new EvaluateCommandSettings { Expression = script });
         }
 
         private void OnRuntimeBindingCalled(object sender, Runtime.BindingCalledEventArgs e)

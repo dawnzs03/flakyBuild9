@@ -13,10 +13,11 @@ namespace OpenQA.Selenium.DevToolsGenerator.ProtocolDefinition
             set;
         }
 
+        [JsonProperty(PropertyName = "description")]
         public string Description
         {
-            get => InitialDescription != null ? InitialDescription.Replace("<", "&lt;").Replace(">", "&gt;") : null;
-            set => InitialDescription = value;
+            get;
+            set;
         }
 
         [JsonProperty(PropertyName = "experimental")]
@@ -37,13 +38,6 @@ namespace OpenQA.Selenium.DevToolsGenerator.ProtocolDefinition
         public override string ToString()
         {
             return Name;
-        }
-
-        [JsonProperty(PropertyName = "description")]
-        protected string InitialDescription
-        {
-            get;
-            set;
         }
     }
 }

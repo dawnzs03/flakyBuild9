@@ -29,7 +29,7 @@ import org.openqa.selenium.support.FindBys;
 import org.openqa.selenium.support.PageFactoryFinder;
 
 public class Annotations extends AbstractAnnotations {
-  private final Field field;
+  private Field field;
 
   /**
    * @param field expected to be an element in a Page Object

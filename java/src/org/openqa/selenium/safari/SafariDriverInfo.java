@@ -24,7 +24,6 @@ import com.google.auto.service.AutoService;
 import java.util.Optional;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.ImmutableCapabilities;
-import org.openqa.selenium.Platform;
 import org.openqa.selenium.SessionNotCreatedException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -66,12 +65,8 @@ public class SafariDriverInfo implements WebDriverInfo {
   @Override
   public boolean isAvailable() {
     try {
-      if (Platform.getCurrent().is(Platform.MAC)) {
-        DriverFinder.getPath(
-            SafariDriverService.createDefaultService(), getCanonicalCapabilities());
-        return true;
-      }
-      return false;
+      DriverFinder.getPath(SafariDriverService.createDefaultService(), getCanonicalCapabilities());
+      return true;
     } catch (IllegalStateException | WebDriverException e) {
       return false;
     }
@@ -80,12 +75,9 @@ public class SafariDriverInfo implements WebDriverInfo {
   @Override
   public boolean isPresent() {
     try {
-      if (Platform.getCurrent().is(Platform.MAC)) {
-        DriverFinder.getPath(
-            SafariDriverService.createDefaultService(), getCanonicalCapabilities(), true);
-        return true;
-      }
-      return false;
+      DriverFinder.getPath(
+          SafariDriverService.createDefaultService(), getCanonicalCapabilities(), true);
+      return true;
     } catch (IllegalStateException | WebDriverException e) {
       return false;
     }

@@ -72,19 +72,19 @@ class JdkHttpMessages {
 
     switch (method) {
       case DELETE:
-        builder.DELETE();
+        builder = builder.DELETE();
         break;
 
       case GET:
-        builder.GET();
+        builder = builder.GET();
         break;
 
       case POST:
-        builder.POST(notChunkingBodyPublisher(req));
+        builder = builder.POST(notChunkingBodyPublisher(req));
         break;
 
       case PUT:
-        builder.PUT(notChunkingBodyPublisher(req));
+        builder = builder.PUT(notChunkingBodyPublisher(req));
         break;
 
       default:
@@ -92,17 +92,18 @@ class JdkHttpMessages {
             String.format("Unsupported request method %s: %s", req.getMethod(), req));
     }
 
-    req.forEachHeader(
-        (name, value) -> {
-          // This prevents the IllegalArgumentException that states 'restricted header name: ...'
-          if (IGNORE_HEADERS.contains(name.toLowerCase())) {
-            return;
-          }
-          builder.header(name, value);
-        });
+    for (String name : req.getHeaderNames()) {
+      // This prevents the IllegalArgumentException that states 'restricted header name: ...'
+      if (IGNORE_HEADERS.contains(name.toLowerCase())) {
+        continue;
+      }
+      for (String value : req.getHeaders(name)) {
+        builder = builder.header(name, value);
+      }
+    }
 
     if (req.getHeader("User-Agent") == null) {
-      builder.header("User-Agent", AddSeleniumUserAgent.USER_AGENT);
+      builder = builder.header("User-Agent", AddSeleniumUserAgent.USER_AGENT);
     }
 
     builder.timeout(config.readTimeout());

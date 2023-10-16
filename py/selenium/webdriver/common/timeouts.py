@@ -18,7 +18,12 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import TypedDict
+    import sys
+
+    if sys.version_info >= (3, 8):
+        from typing import TypedDict
+    else:
+        from typing_extensions import TypedDict
 
     class JSONTimeouts(TypedDict, total=False):
         implicit: int
@@ -34,7 +39,9 @@ else:
 class _TimeoutsDescriptor:
     """Get or set the value of the attributes listed below.
 
-    _implicit_wait _page_load _script
+    _implicit_wait
+    _page_load
+    _script
 
     This does not set the value on the remote end.
     """

@@ -46,10 +46,7 @@ import java.util.stream.Stream;
 import org.openqa.selenium.internal.Require;
 import org.openqa.selenium.logging.LogLevelMapping;
 
-/**
- * The <b>JsonOutput</b> class defines the operations used to serialize Java objects into JSON
- * strings.
- */
+/** */
 public class JsonOutput implements Closeable {
   private static final Logger LOG = Logger.getLogger(JsonOutput.class.getName());
   static final int MAX_DEPTH = 100;
@@ -126,9 +123,9 @@ public class JsonOutput implements Closeable {
         };
 
     this.stack = new ArrayDeque<>();
-    this.stack.addFirst(new Root());
+    this.stack.addFirst(new Empty());
 
-    // Order matters, since we want to handle null values first to avoid exceptions, and then the
+    // Order matters, since we want to handle null values first to avoid exceptions, and then then
     // common kinds of inputs next.
     Map<Predicate<Class<?>>, DepthAwareConsumer> builder = new LinkedHashMap<>();
     builder.put(Objects::isNull, (obj, maxDepth, depthRemaining) -> append("null"));
@@ -264,12 +261,8 @@ public class JsonOutput implements Closeable {
   }
 
   /**
-   * Specify whether the serialized JSON object should br formatted with line breaks and indention
-   * ("pretty printed").
-   *
-   * @param enablePrettyPrinting {@code false} for compact format; {@code true} for "pretty
-   *     printing" (default: {@code true})
-   * @return this {@link JsonOutput} object
+   * @param enablePrettyPrinting
+   * @return
    */
   public JsonOutput setPrettyPrint(boolean enablePrettyPrinting) {
     this.lineSeparator = enablePrettyPrinting ? "\n" : "";
@@ -278,11 +271,8 @@ public class JsonOutput implements Closeable {
   }
 
   /**
-   * Specify whether the serialized JSON object should include a "class" property whose value is the
-   * fully-qualified class name of the Java object being serialized.
-   *
-   * @param writeClassName Whether to include the "class" property (default: {@code true})
-   * @return this {@link JsonOutput} object
+   * @param writeClassName
+   * @return
    */
   public JsonOutput writeClassName(boolean writeClassName) {
     this.writeClassName = writeClassName;
@@ -290,9 +280,7 @@ public class JsonOutput implements Closeable {
   }
 
   /**
-   * Begin a new JSON object.
-   *
-   * @return this {@link JsonOutput} object
+   * @return
    */
   public JsonOutput beginObject() {
     stack.getFirst().write("{" + lineSeparator);
@@ -302,12 +290,8 @@ public class JsonOutput implements Closeable {
   }
 
   /**
-   * Set the name of a new JSON object property.
-   *
-   * @param name JSON object property name
-   * @return this {@link JsonOutput} object
-   * @throws JsonException if top item on serialization object stack isn't a {@link JsonObject}
-   * @throws java.util.NoSuchElementException if serialization object stack is empty
+   * @param name
+   * @return
    */
   public JsonOutput name(String name) {
     if (!(stack.getFirst() instanceof JsonObject)) {
@@ -318,11 +302,7 @@ public class JsonOutput implements Closeable {
   }
 
   /**
-   * End the current JSON object.
-   *
-   * @return this {@link JsonOutput} object
-   * @throws JsonException if top item on serialization object stack isn't a {@link JsonObject}
-   * @throws java.util.NoSuchElementException if serialization object stack is empty
+   * @return
    */
   public JsonOutput endObject() {
     Node topOfStack = stack.getFirst();
@@ -341,9 +321,7 @@ public class JsonOutput implements Closeable {
   }
 
   /**
-   * Begin a new JSON array.
-   *
-   * @return this {@link JsonOutput} object
+   * @return
    */
   public JsonOutput beginArray() {
     append("[" + lineSeparator);
@@ -353,11 +331,7 @@ public class JsonOutput implements Closeable {
   }
 
   /**
-   * End the current JSON array.
-   *
-   * @return this {@link JsonOutput} object
-   * @throws JsonException if top item on serialization object stack isn't a {@link JsonCollection}
-   * @throws java.util.NoSuchElementException if serialization object stack is empty
+   * @return
    */
   public JsonOutput endArray() {
     Node topOfStack = stack.getFirst();
@@ -376,30 +350,28 @@ public class JsonOutput implements Closeable {
   }
 
   /**
-   * Serialize the specified Java object as a JSON value.<br>
-   * <b>NOTE</b>: This method limits traversal of nested objects to the default {@link #MAX_DEPTH
-   * maximum depth}.
-   *
-   * @param value Java object to serialize
-   * @return this {@link JsonOutput} object
-   * @throws JsonException if allowed depth has been reached
+   * @param value
+   * @return
    */
   public JsonOutput write(Object value) {
     return write(value, MAX_DEPTH);
   }
 
   /**
-   * Serialize the specified Java object as a JSON value.
-   *
-   * @param value Java object to serialize
-   * @param maxDepth maximum depth of nested object traversal
-   * @return this {@link JsonOutput} object
-   * @throws JsonException if allowed depth has been reached
+   * @param value
+   * @param maxDepth
+   * @return
    */
   public JsonOutput write(Object value, int maxDepth) {
     return write0(value, maxDepth, maxDepth);
   }
 
+  /**
+   * @param input
+   * @param maxDepth
+   * @param depthRemaining
+   * @return
+   */
   private JsonOutput write0(Object input, int maxDepth, int depthRemaining) {
     converters.entrySet().stream()
         .filter(entry -> entry.getKey().test(input == null ? null : input.getClass()))
@@ -415,7 +387,6 @@ public class JsonOutput implements Closeable {
    * {@inheritDoc}
    *
    * @throws JsonException if JSON stream isn't empty or an I/O exception is encountered
-   * @throws java.util.NoSuchElementException if serialization object stack is empty
    */
   @Override
   public void close() {
@@ -427,21 +398,23 @@ public class JsonOutput implements Closeable {
       }
     }
 
-    if (!(stack.getFirst() instanceof Root)) {
+    if (!(stack.getFirst() instanceof Empty)) {
       throw new JsonException("Attempting to close incomplete json stream");
     }
   }
 
+  /**
+   * @param text
+   * @return
+   */
   private JsonOutput append(String text) {
     stack.getFirst().write(text);
     return this;
   }
 
   /**
-   * Return a quoted JSON string representing the specified Java object.
-   *
-   * @param obj Java object to be represented
-   * @return quoted JSON string
+   * @param obj
+   * @return
    */
   private String asString(Object obj) {
     StringBuilder toReturn = new StringBuilder("\"");
@@ -464,13 +437,9 @@ public class JsonOutput implements Closeable {
   }
 
   /**
-   * Get a reference to a method of the specified name with no argument in the indicated class or
-   * one of its ancestors.
-   *
-   * @param clazz target Java class
-   * @param methodName method name
-   * @return {@link Method} object with 'accessible' flag set
-   * @throws JsonException if a security violation is encountered
+   * @param clazz
+   * @param methodName
+   * @return
    */
   private Method getMethod(Class<?> clazz, String methodName) {
     if (Object.class.equals(clazz)) {
@@ -490,20 +459,11 @@ public class JsonOutput implements Closeable {
   }
 
   /**
-   * Convert the specified Java object using the indicated zero-argument method of this object.
-   *
-   * @param methodName method name
-   * @param toConvert Java object to be converted
-   * @param maxDepth maximum depth of nested object traversal
-   * @param depthRemaining allowed traversal depth remaining
-   * @return this {@link JsonOutput} object
-   * @throws JsonException
-   *     <ul>
-   *       <li>if the specified method isn't found
-   *       <li>if a security violation is encountered
-   *       <li>if a reflective operation fails
-   *       <li>if maximum traversal depth is exceeded
-   *     </ul>
+   * @param methodName
+   * @param toConvert
+   * @param maxDepth
+   * @param depthRemaining
+   * @return
    */
   private JsonOutput convertUsingMethod(
       String methodName, Object toConvert, int maxDepth, int depthRemaining) {
@@ -522,13 +482,9 @@ public class JsonOutput implements Closeable {
   }
 
   /**
-   * Convert the specified Java object via accessors that conform to the {@code JavaBean}
-   * specification.
-   *
-   * @param toConvert Java object to be converted
-   * @param maxDepth maximum depth of nested object traversal
-   * @param depthRemaining allowed traversal depth remaining
-   * @throws JsonException if allowed depth has been reached
+   * @param toConvert
+   * @param maxDepth
+   * @param depthRemaining
    */
   private void mapObject(Object toConvert, int maxDepth, int depthRemaining) {
     if (toConvert instanceof Class) {
@@ -560,17 +516,12 @@ public class JsonOutput implements Closeable {
     endObject();
   }
 
-  /** Defines to common behavior of JSON containers (objects and arrays). */
-  private abstract class Node {
+  /** */
+  private class Node {
     protected boolean isEmpty = true;
 
     /**
-     * Write the specified text to the appender of this JSON output object.<br>
-     * <b>NOTE</b>: If prior text has been written to this container, the new text is prefixed with
-     * a comma and the defined line separator (either {@literal <newline>} or empty string) to
-     * delimit a new object property or array item.
-     *
-     * @param text text to be appended to the output
+     * @param text
      */
     public void write(String text) {
       if (isEmpty) {
@@ -584,15 +535,9 @@ public class JsonOutput implements Closeable {
     }
   }
 
-  /** Represents the root of the JSON output. */
-  private class Root extends Node {
+  /** */
+  private class Empty extends Node {
 
-    /**
-     * Write the specified text to the appender of this JSON output object.
-     *
-     * @param text text to be appended to the output
-     * @throws JsonException if this {@link JsonOutput} has already been used.
-     */
     @Override
     public void write(String text) {
       if (!isEmpty) {
@@ -603,19 +548,15 @@ public class JsonOutput implements Closeable {
     }
   }
 
-  /** Represents a JSON array. */
+  /** */
   private class JsonCollection extends Node {}
 
-  /** Represents a JSON object. */
+  /** */
   private class JsonObject extends Node {
     private boolean isNameNext = true;
 
     /**
-     * Writes the name of a JSON property followed by a colon to the appender of this JSON output
-     * object.
-     *
-     * @param name JSON object property name
-     * @throws JsonException if not expecting a new JSON property
+     * @param name
      */
     public void name(String name) {
       if (!isNameNext) {
@@ -626,12 +567,6 @@ public class JsonOutput implements Closeable {
       appender.accept(": ");
     }
 
-    /**
-     * Write the value of a JSON property to the appender of this JSON output object.
-     *
-     * @param text JSON object property value
-     * @throws JsonException if not expecting a JSON property value
-     */
     @Override
     public void write(String text) {
       if (isNameNext) {
@@ -643,19 +578,14 @@ public class JsonOutput implements Closeable {
     }
   }
 
-  /**
-   * Defines the common interface for the Java object traversal serializers of {@link JsonOutput}.
-   */
+  /** */
   @FunctionalInterface
   private interface DepthAwareConsumer {
 
     /**
-     * Consume the specified Java object, emitting its JSON representation to the appender of this
-     * {@link JsonOutput}.
-     *
-     * @param object Java object to be serialized
-     * @param maxDepth maximum depth of nested object traversal
-     * @param depthRemaining allowed traversal depth remaining
+     * @param object
+     * @param maxDepth
+     * @param depthRemaining
      */
     void consume(Object object, int maxDepth, int depthRemaining);
   }

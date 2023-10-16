@@ -39,7 +39,6 @@ namespace OpenQA.Selenium.DevTools
             {
                 session.Dispose();
                 EnvironmentManager.Instance.CloseCurrentDriver();
-                session = null;
                 driver = null;
             }
         }

@@ -221,12 +221,7 @@ class Driver extends chromium.Driver {
   static createSession(opt_config, opt_serviceExecutor) {
     let caps = opt_config || new Options()
     return /** @type {!Driver} */ (
-      super.createSession(
-        caps,
-        opt_serviceExecutor,
-        'goog',
-        CHROME_CAPABILITY_KEY
-      )
+      super.createSession(caps, opt_serviceExecutor, 'goog', CHROME_CAPABILITY_KEY)
     )
   }
 

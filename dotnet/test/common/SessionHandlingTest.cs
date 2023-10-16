@@ -46,7 +46,7 @@ namespace OpenQA.Selenium
                 string url = string.Empty;
                 testDriver.Url = simpleTestPage;
                 testDriver.Close();
-                Assert.That(() => testDriver.Url == formsPage, Throws.InstanceOf<WebDriverException>().Or.InstanceOf<InvalidOperationException>());
+                Assert.That(() => url = testDriver.Url, Throws.InstanceOf<WebDriverException>().Or.InstanceOf<InvalidOperationException>(), "Should not be able to access Url property after close of only open window");
             }
             finally
             {
@@ -65,7 +65,7 @@ namespace OpenQA.Selenium
                 string url = string.Empty;
                 testDriver.Url = simpleTestPage;
                 testDriver.Quit();
-                Assert.That(() => testDriver.Url == formsPage, Throws.InstanceOf<WebDriverException>().Or.InstanceOf<InvalidOperationException>());
+                Assert.That(() => url = testDriver.Url, Throws.InstanceOf<WebDriverException>().Or.InstanceOf<InvalidOperationException>(), "Should not be able to access Url property after close of only open window");
             }
             finally
             {

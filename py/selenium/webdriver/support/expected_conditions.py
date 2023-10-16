@@ -36,6 +36,7 @@ from selenium.webdriver.remote.webdriver import WebElement
 
 # All driver types
 AnyDriver = Union[Chrome, Firefox, Safari, Ie, Edge]
+
 """
  * Canned "Expected Conditions" which are generally useful within webdriver
  * tests.

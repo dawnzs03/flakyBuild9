@@ -67,8 +67,6 @@ namespace OpenQA.Selenium
 
         [Test]
         [IgnoreBrowser(Browser.IE, "Color comparisons fail on IE")]
-        [IgnoreBrowser(Browser.Chrome, "Color comparisons fail on Chrome")]
-        [IgnoreBrowser(Browser.Edge, "Color comparisons fail on Edge")]
         public void ShouldCaptureScreenshotOfCurrentViewport()
         {
 #if NET6_0
@@ -97,8 +95,6 @@ namespace OpenQA.Selenium
         }
 
         [Test]
-        [IgnoreBrowser(Browser.Chrome, "Color comparisons fail on Chrome")]
-        [IgnoreBrowser(Browser.Edge, "Color comparisons fail on Edge")]
         public void ShouldTakeScreenshotsOfAnElement()
         {
 #if NET6_0
@@ -126,8 +122,6 @@ namespace OpenQA.Selenium
 
         [Test]
         [IgnoreBrowser(Browser.IE, "Color comparisons fail on IE")]
-        [IgnoreBrowser(Browser.Chrome, "Color comparisons fail on Chrome")]
-        [IgnoreBrowser(Browser.Edge, "Color comparisons fail on Edge")]
         public void ShouldCaptureScreenshotAtFramePage()
         {
 #if NET6_0
@@ -171,8 +165,6 @@ namespace OpenQA.Selenium
 
         [Test]
         [IgnoreBrowser(Browser.IE, "Color comparisons fail on IE")]
-        [IgnoreBrowser(Browser.Chrome, "Color comparisons fail on Chrome")]
-        [IgnoreBrowser(Browser.Edge, "Color comparisons fail on Edge")]
         public void ShouldCaptureScreenshotAtIFramePage()
         {
 #if NET6_0
@@ -214,8 +206,6 @@ namespace OpenQA.Selenium
         [Test]
         [IgnoreBrowser(Browser.IE, "Color comparisons fail on IE")]
         [IgnoreBrowser(Browser.Firefox, "Color comparisons fail on Firefox")]
-        [IgnoreBrowser(Browser.Chrome, "Color comparisons fail on Chrome")]
-        [IgnoreBrowser(Browser.Edge, "Color comparisons fail on Edge")]
         public void ShouldCaptureScreenshotAtFramePageAfterSwitching()
         {
 #if NET6_0
@@ -255,8 +245,6 @@ namespace OpenQA.Selenium
         [Test]
         [IgnoreBrowser(Browser.IE, "Color comparisons fail on IE")]
         [IgnoreBrowser(Browser.Firefox, "Color comparisons fail on Firefox")]
-        [IgnoreBrowser(Browser.Chrome, "Color comparisons fail on Chrome")]
-        [IgnoreBrowser(Browser.Edge, "Color comparisons fail on Edge")]
         public void ShouldCaptureScreenshotAtIFramePageAfterSwitching()
         {
 #if NET6_0

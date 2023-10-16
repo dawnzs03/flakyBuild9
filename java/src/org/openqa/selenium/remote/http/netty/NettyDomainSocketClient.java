@@ -136,7 +136,9 @@ class NettyDomainSocketClient extends RemoteCall implements HttpClient {
             HttpMethod.valueOf(req.getMethod().toString()),
             uri.toString(),
             Unpooled.wrappedBuffer(bytes));
-    req.forEachHeader(fullRequest.headers()::add);
+    req.getHeaderNames()
+        .forEach(
+            name -> req.getHeaders(name).forEach(value -> fullRequest.headers().add(name, value)));
     if (req.getHeader("User-Agent") == null) {
       fullRequest.headers().set("User-Agent", AddSeleniumUserAgent.USER_AGENT);
     }

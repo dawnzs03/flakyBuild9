@@ -68,7 +68,7 @@ namespace OpenQA.Selenium.DevTools
             await domains.Network.Enable(new CurrentCdpVersion.Network.EnableCommandSettings());
             await domains.Network.SetBlockedURLs(new CurrentCdpVersion.Network.SetBlockedURLsCommandSettings()
             {
-                Urls = new string[] { "*://*/*.gif" }
+                Urls = new string[] { "*://*/*.css" }
             });
 
             var additionalHeaders = new CurrentCdpVersion.Network.Headers();
@@ -81,7 +81,7 @@ namespace OpenQA.Selenium.DevTools
             ManualResetEventSlim loadingFailedSync = new ManualResetEventSlim(false);
             EventHandler<CurrentCdpVersion.Network.LoadingFailedEventArgs> loadingFailedHandler = (sender, e) =>
             {
-                if (e.Type == CurrentCdpVersion.Network.ResourceType.Image)
+                if (e.Type == CurrentCdpVersion.Network.ResourceType.Stylesheet)
                 {
                     Assert.That(e.BlockedReason == CurrentCdpVersion.Network.BlockedReason.Inspector);
                 }
@@ -93,12 +93,9 @@ namespace OpenQA.Selenium.DevTools
             ManualResetEventSlim requestSentSync = new ManualResetEventSlim(false);
             EventHandler<CurrentCdpVersion.Network.RequestWillBeSentEventArgs> requestWillBeSentHandler = (sender, e) =>
             {
-                if (e.Type != CurrentCdpVersion.Network.ResourceType.Image)
-                {
-                    Assert.That(e.Request.Headers.ContainsKey("headerName"));
-                    Assert.That(e.Request.Headers["headerName"] == "headerValue");
-                    requestSentSync.Set();
-                }
+                Assert.That(e.Request.Headers.ContainsKey("headerName"));
+                Assert.That(e.Request.Headers["headerName"] == "headerValue");
+                requestSentSync.Set();
             };
             domains.Network.RequestWillBeSent += requestWillBeSentHandler;
 
@@ -110,10 +107,10 @@ namespace OpenQA.Selenium.DevTools
             };
             domains.Network.DataReceived += dataReceivedHandler;
 
-            driver.Url = linkedImage;
-            Assert.That(loadingFailedSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
-            Assert.That(requestSentSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
-            Assert.That(dataSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
+            driver.Url = EnvironmentManager.Instance.UrlBuilder.WhereIs("js/skins/lightgray/content.min.css");
+            loadingFailedSync.Wait(TimeSpan.FromSeconds(5));
+            requestSentSync.Wait(TimeSpan.FromSeconds(5));
+            dataSync.Wait(TimeSpan.FromSeconds(5));
         }
 
         [Test]
@@ -154,7 +151,7 @@ namespace OpenQA.Selenium.DevTools
                 Assert.That(e.Message.Contains("net::ERR_INTERNET_DISCONNECTED"));
             }
 
-            Assert.That(loadingFailedSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
+            loadingFailedSync.Wait(TimeSpan.FromSeconds(5));
         }
 
         [Test]
@@ -191,8 +188,8 @@ namespace OpenQA.Selenium.DevTools
 
             driver.Url = simpleTestPage;
             driver.Url = simpleTestPage;
-            Assert.That(loadingFinishedSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
-            Assert.That(servedFromCacheSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
+            loadingFinishedSync.Wait(TimeSpan.FromSeconds(5));
+            servedFromCacheSync.Wait(TimeSpan.FromSeconds(5));
 
             var responseBody = await domains.Network.GetResponseBody(new CurrentCdpVersion.Network.GetResponseBodyCommandSettings()
             {
@@ -227,7 +224,7 @@ namespace OpenQA.Selenium.DevTools
             domains.Network.ResponseReceived += responseReceivedHandler;
 
             driver.Url = simpleTestPage;
-            Assert.That(responseSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
+            responseSync.Wait(TimeSpan.FromSeconds(5));
 
             var searchResponse = await domains.Network.SearchInResponseBody(new CurrentCdpVersion.Network.SearchInResponseBodyCommandSettings()
             {
@@ -259,7 +256,7 @@ namespace OpenQA.Selenium.DevTools
             domains.Network.ResponseReceived += responseReceivedHandler;
 
             driver.Url = simpleTestPage;
-            Assert.That(responseSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
+            responseSync.Wait(TimeSpan.FromSeconds(5));
 
             await domains.Network.SetCacheDisabled(new CurrentCdpVersion.Network.SetCacheDisabledCommandSettings()
             {
@@ -295,7 +292,7 @@ namespace OpenQA.Selenium.DevTools
 
             string origin = EnvironmentManager.Instance.UrlBuilder.WhereIsSecure("simpleTest.html");
             driver.Url = origin;
-            Assert.That(requestSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
+            requestSync.Wait(TimeSpan.FromSeconds(5));
 
             var result = await domains.Network.GetCertificate(new CurrentCdpVersion.Network.GetCertificateCommandSettings()
             {
@@ -322,7 +319,7 @@ namespace OpenQA.Selenium.DevTools
             domains.Network.ResponseReceived += responseReceivedHandler;
 
             driver.Url = simpleTestPage;
-            Assert.That(responseSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
+            responseSync.Wait(TimeSpan.FromSeconds(5));
             await domains.Network.Disable();
         }
 
@@ -393,8 +390,7 @@ namespace OpenQA.Selenium.DevTools
 
             driver.Url = EnvironmentManager.Instance.UrlBuilder.WhereIs("postForm.html");
             driver.FindElement(By.XPath("//form/input")).Click();
-            bool requestEventFired = requestSync.Wait(TimeSpan.FromSeconds(5));
-            Assert.That(requestEventFired, Is.True);
+            requestSync.Wait(TimeSpan.FromSeconds(5));
 
             var response = await domains.Network.GetRequestPostData(new CurrentCdpVersion.Network.GetRequestPostDataCommandSettings()
             {
@@ -419,6 +415,27 @@ namespace OpenQA.Selenium.DevTools
         }
 
         [Test]
+        [IgnoreBrowser(Selenium.Browser.IE, "IE does not support Chrome DevTools Protocol")]
+        [IgnoreBrowser(Selenium.Browser.Firefox, "Firefox does not support Chrome DevTools Protocol")]
+        [IgnoreBrowser(Selenium.Browser.Safari, "Safari does not support Chrome DevTools Protocol")]
+        public async Task VerifyEventSourceMessage()
+        {
+            var domains = session.GetVersionSpecificDomains<CurrentCdpVersion.DevToolsSessionDomains>();
+            await domains.Network.Enable(new CurrentCdpVersion.Network.EnableCommandSettings());
+
+            ManualResetEventSlim requestSync = new ManualResetEventSlim(false);
+            EventHandler<CurrentCdpVersion.Network.EventSourceMessageReceivedEventArgs> eventSourceMessageReceivedHandler = (sender, e) =>
+            {
+                Assert.That(e, Is.Not.Null);
+                requestSync.Set();
+            };
+            domains.Network.EventSourceMessageReceived += eventSourceMessageReceivedHandler;
+
+            driver.Url = simpleTestPage;
+            requestSync.Wait(TimeSpan.FromSeconds(5));
+        }
+
+        [Test]
         [Ignore("Unable to open secure url")]
         [IgnoreBrowser(Selenium.Browser.IE, "IE does not support Chrome DevTools Protocol")]
         [IgnoreBrowser(Selenium.Browser.Firefox, "Firefox does not support Chrome DevTools Protocol")]
@@ -437,7 +454,28 @@ namespace OpenQA.Selenium.DevTools
             domains.Network.SignedExchangeReceived += signedExchangeReceivedHandler;
 
             driver.Url = EnvironmentManager.Instance.UrlBuilder.WhereIsSecure("simpleTest.html");
-            Assert.That(requestSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
+            requestSync.Wait(TimeSpan.FromSeconds(5));
+        }
+
+        [Test]
+        [IgnoreBrowser(Selenium.Browser.IE, "IE does not support Chrome DevTools Protocol")]
+        [IgnoreBrowser(Selenium.Browser.Firefox, "Firefox does not support Chrome DevTools Protocol")]
+        [IgnoreBrowser(Selenium.Browser.Safari, "Safari does not support Chrome DevTools Protocol")]
+        public async Task VerifyResourceChangedPriority()
+        {
+            var domains = session.GetVersionSpecificDomains<CurrentCdpVersion.DevToolsSessionDomains>();
+            await domains.Network.Enable(new CurrentCdpVersion.Network.EnableCommandSettings());
+
+            ManualResetEventSlim requestSync = new ManualResetEventSlim(false);
+            EventHandler<CurrentCdpVersion.Network.ResourceChangedPriorityEventArgs> resourceChangedPriorityHandler = (sender, e) =>
+            {
+                Assert.That(e, Is.Not.Null);
+                requestSync.Set();
+            };
+            domains.Network.ResourceChangedPriority += resourceChangedPriorityHandler;
+
+            driver.Url = EnvironmentManager.Instance.UrlBuilder.WhereIs("simpleTest.html");
+            requestSync.Wait(TimeSpan.FromSeconds(5));
         }
 
         [Test]
@@ -463,6 +501,7 @@ namespace OpenQA.Selenium.DevTools
             var pattern = new CurrentCdpVersion.Network.RequestPattern()
             {
                 UrlPattern = "*.css",
+                ResourceType = CurrentCdpVersion.Network.ResourceType.Stylesheet,
                 InterceptionStage = CurrentCdpVersion.Network.InterceptionStage.HeadersReceived
             };
 
@@ -472,7 +511,7 @@ namespace OpenQA.Selenium.DevTools
             });
 
             driver.Url = EnvironmentManager.Instance.UrlBuilder.WhereIs("js/skins/lightgray/content.min.css");
-            Assert.That(requestSync.Wait(TimeSpan.FromSeconds(5)), Is.True);
+            requestSync.Wait(TimeSpan.FromSeconds(5));
         }
     }
 }

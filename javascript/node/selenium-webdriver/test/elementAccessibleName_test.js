@@ -19,8 +19,7 @@
 
 const assert = require('assert')
 const test = require('../lib/test')
-const { By, Browser } = require('../index')
-const { ignore } = require('../lib/test')
+const { By } = require('../index')
 
 test.suite(
   function (env) {
@@ -46,19 +45,16 @@ test.suite(
         assert.strictEqual(await imgLabel.getAccessibleName(), 'Test Image')
       })
 
-      ignore(env.browsers(Browser.CHROME)).it(
-        'Should return computed label for label',
-        async function () {
-          await driver.get(`data:text/html,<!DOCTYPE html>
+      it('Should return computed label for label', async function () {
+        await driver.get(`data:text/html,<!DOCTYPE html>
           <input type="checkbox" id="label_test">
             <label for="label_test">Test Label</label>`)
-          let computedLabel = driver.findElement(By.css('input'))
-          assert.strictEqual(
-            await computedLabel.getAccessibleName(),
-            'Test Label'
-          )
-        }
-      )
+        let computedLabel = driver.findElement(By.css('input'))
+        assert.strictEqual(
+          await computedLabel.getAccessibleName(),
+          'Test Label'
+        )
+      })
 
       it('Should return computed label for aria-label', async function () {
         await driver.get(`data:text/html,<!DOCTYPE html>

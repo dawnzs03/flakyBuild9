@@ -52,8 +52,10 @@ module Selenium
         end
 
         describe 'PrintsPage' do
-          before(:all) { @headless = ENV.delete('HEADLESS') }
-          before { reset_driver!(args: ['--headless']) }
+          before(:all) do
+            @headless = ENV.delete('HEADLESS')
+            reset_driver!(args: ['--headless'])
+          end
 
           after(:all) do
             quit_driver

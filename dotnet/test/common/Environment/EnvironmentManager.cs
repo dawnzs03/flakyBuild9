@@ -17,7 +17,6 @@ namespace OpenQA.Selenium.Environment
         private DriverFactory driverFactory;
         private RemoteSeleniumServer remoteServer;
         private string remoteCapabilities;
-        private bool logging;
 
         private EnvironmentManager()
         {
@@ -53,7 +52,6 @@ namespace OpenQA.Selenium.Environment
             driverType = driverAssembly.GetType(driverConfig.DriverTypeName);
             browser = driverConfig.BrowserValue;
             remoteCapabilities = driverConfig.RemoteCapabilities;
-            logging = driverConfig.Logging;
 
             urlBuilder = new UrlBuilder(websiteConfig);
 
@@ -192,11 +190,6 @@ namespace OpenQA.Selenium.Environment
             get { return remoteCapabilities; }
         }
 
-        public bool Logging
-        {
-            get { return logging; }
-        }
-
         public UrlBuilder UrlBuilder
         {
             get
@@ -211,18 +204,20 @@ namespace OpenQA.Selenium.Environment
             {
                 return driver;
             }
-
-            return CreateFreshDriver();
+            else
+            {
+                return CreateFreshDriver();
+            }
         }
 
         public IWebDriver CreateDriverInstance()
         {
-            return driverFactory.CreateDriver(driverType, Logging);
+            return driverFactory.CreateDriver(driverType);
         }
 
         public IWebDriver CreateDriverInstance(DriverOptions options)
         {
-            return driverFactory.CreateDriverWithOptions(driverType, options, Logging);
+            return driverFactory.CreateDriverWithOptions(driverType, options);
         }
 
         public IWebDriver CreateFreshDriver()
@@ -236,15 +231,9 @@ namespace OpenQA.Selenium.Environment
         {
             if (driver != null)
             {
-                try
-                {
-                    driver.Quit();
-                }
-                finally
-                {
-                    driver = null;
-                }
+                driver.Quit();
             }
+            driver = null;
         }
 
         protected void OnDriverStarting(object sender, DriverStartingEventArgs e)

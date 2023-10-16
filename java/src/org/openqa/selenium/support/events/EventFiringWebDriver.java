@@ -678,7 +678,6 @@ public class EventFiringWebDriver
       return setScriptTimeout(Duration.ofMillis(unit.toMillis(time)));
     }
 
-    @Deprecated
     @Override
     public Timeouts setScriptTimeout(Duration duration) {
       timeouts.setScriptTimeout(duration);
