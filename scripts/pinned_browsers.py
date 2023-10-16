@@ -210,19 +210,19 @@ def geckodriver():
         """ % (url, sha)
     return content
 
-def firefox(version_key, workspace_name):
+def firefox():
     r = http.request('GET', 'https://product-details.mozilla.org/1.0/firefox_versions.json')
-    v = json.loads(r.data)[version_key]
+    v = json.loads(r.data)['LATEST_FIREFOX_VERSION']
 
     content = ""
 
     linux = "https://ftp.mozilla.org/pub/firefox/releases/%s/linux-x86_64/en-US/firefox-%s.tar.bz2" % (v, v)
     sha = calculate_hash(linux)
-    content = content + f"""
+    content = content + """
     http_archive(
-        name = "linux_{workspace_name}firefox",
-        url = "{linux}",
-        sha256 = "{sha}",
+        name = "linux_firefox",
+        url = "%s",
+        sha256 = "%s",
         build_file_content = \"\"\"
 filegroup(
     name = "files",
@@ -236,19 +236,19 @@ exports_files(
 \"\"\",
     )
 
-"""
+""" % (linux, sha)
 
     mac = "https://ftp.mozilla.org/pub/firefox/releases/%s/mac/en-US/Firefox%%20%s.dmg" % (v, v)
     sha = calculate_hash(mac)
-    content = content + f"""
+    content = content + """
     dmg_archive(
-        name = "mac_{workspace_name}firefox",
-        url = "{mac}",
-        sha256 = "{sha}",
+        name = "mac_firefox",
+        url = "%s",
+        sha256 = "%s",
         build_file_content = "exports_files([\\"Firefox.app\\"])",
     )
 
-"""
+""" % (mac, sha)
 
     return content
 
@@ -264,9 +264,7 @@ load("//common/private:pkg_archive.bzl", "pkg_archive")
 def pin_browsers():
     local_drivers()
 """
-    content = content + firefox("LATEST_FIREFOX_VERSION", "")
-    content = content + firefox("LATEST_FIREFOX_RELEASED_DEVEL_VERSION", "beta_")
-    content = content + firefox("FIREFOX_DEVEDITION", "dev_")
+    content = content + firefox()
     content = content + geckodriver()
     content = content + edge()
     content = content + edgedriver()

@@ -17,14 +17,20 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# TODO: Deprecated; Delete after 4.0 release
 module Selenium
   module WebDriver
-    module Chrome
-      class Service < WebDriver::Service
-        DEFAULT_PORT = 9515
-        EXECUTABLE = 'chromedriver'
-        SHUTDOWN_SUPPORTED = true
-      end # Service
-    end # Chrome
+    module DriverExtensions
+      module HasLocation
+        def location
+          raise Error::UnsupportedOperationError, 'The W3C standard does not currently support getting location'
+        end
+
+        def location=(*)
+          raise Error::UnsupportedOperationError, 'The W3C standard does not currently support setting location'
+        end
+        alias set_location location
+      end # HasLocation
+    end # DriverExtensions
   end # WebDriver
 end # Selenium
