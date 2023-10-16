@@ -150,8 +150,4 @@ void EventEmitter::setEnabled(bool enabled) const {
   }
 }
 
-const SharedEventTarget &EventEmitter::getEventTarget() const {
-  return eventTarget_;
-}
-
 } // namespace facebook::react

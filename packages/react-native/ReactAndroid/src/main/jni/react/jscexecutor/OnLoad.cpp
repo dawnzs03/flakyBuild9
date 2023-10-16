@@ -29,6 +29,7 @@ class JSCExecutorFactory : public JSExecutorFactory {
           static_cast<void (*)(const std::string &, unsigned int)>(
               &reactAndroidLoggingHook);
       react::bindNativeLogger(runtime, androidLogger);
+      react::bindNativePerformanceNow(runtime);
     };
     return std::make_unique<JSIExecutor>(
         jsc::makeJSCRuntime(),

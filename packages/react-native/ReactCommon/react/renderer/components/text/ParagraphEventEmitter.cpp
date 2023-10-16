@@ -38,7 +38,7 @@ static jsi::Value linesMeasurementsPayload(
 void ParagraphEventEmitter::onTextLayout(
     LinesMeasurements const &linesMeasurements) const {
   {
-    std::scoped_lock guard(linesMeasurementsMutex_);
+    std::lock_guard<std::mutex> guard(linesMeasurementsMutex_);
     if (linesMeasurementsMetrics_ == linesMeasurements) {
       return;
     }

@@ -16,7 +16,6 @@
 #include <react/renderer/mounting/ShadowTreeRevision.h>
 #include <react/renderer/mounting/ShadowViewMutation.h>
 #include <react/renderer/telemetry/TransactionTelemetry.h>
-#include <react/utils/CoreFeatures.h>
 
 #include "ShadowTreeDelegate.h"
 
@@ -250,8 +249,6 @@ ShadowTree::ShadowTree(
   currentRevision_ = ShadowTreeRevision{
       rootShadowNode, INITIAL_REVISION, TransactionTelemetry{}};
 
-  lastRevisionNumberWithNewState_ = currentRevision_.number;
-
   mountingCoordinator_ =
       std::make_shared<MountingCoordinator const>(currentRevision_);
 }
@@ -325,14 +322,12 @@ CommitStatus ShadowTree::tryCommit(
   CommitMode commitMode;
   auto oldRevision = ShadowTreeRevision{};
   auto newRevision = ShadowTreeRevision{};
-  ShadowTreeRevision::Number lastRevisionNumberWithNewState;
 
   {
     // Reading `currentRevision_` in shared manner.
     std::shared_lock lock(commitMutex_);
     commitMode = commitMode_;
     oldRevision = currentRevision_;
-    lastRevisionNumberWithNewState = lastRevisionNumberWithNewState_;
   }
 
   auto const &oldRootShadowNode = oldRevision.rootShadowNode;
@@ -382,24 +377,14 @@ CommitStatus ShadowTree::tryCommit(
       return CommitStatus::Cancelled;
     }
 
-    if (CoreFeatures::enableGranularShadowTreeStateReconciliation) {
-      auto lastRevisionNumberWithNewStateChanged =
-          lastRevisionNumberWithNewState != lastRevisionNumberWithNewState_;
-      // Commit should only fail if we propagated the wrong state.
-      if (commitOptions.enableStateReconciliation &&
-          lastRevisionNumberWithNewStateChanged) {
-        return CommitStatus::Failed;
-      }
-    } else {
-      if (currentRevision_.number != oldRevision.number) {
-        return CommitStatus::Failed;
-      }
+    if (currentRevision_.number != oldRevision.number) {
+      return CommitStatus::Failed;
     }
 
-    auto newRevisionNumber = currentRevision_.number + 1;
+    auto newRevisionNumber = oldRevision.number + 1;
 
     {
-      std::scoped_lock dispatchLock(EventEmitter::DispatchMutex());
+      std::lock_guard<std::mutex> dispatchLock(EventEmitter::DispatchMutex());
 
       updateMountedFlag(
           currentRevision_.rootShadowNode->getChildren(),
@@ -413,9 +398,6 @@ CommitStatus ShadowTree::tryCommit(
         std::move(newRootShadowNode), newRevisionNumber, telemetry};
 
     currentRevision_ = newRevision;
-    if (!commitOptions.enableStateReconciliation) {
-      lastRevisionNumberWithNewState_ = newRevisionNumber;
-    }
   }
 
   emitLayoutEvents(affectedLayoutableNodes);

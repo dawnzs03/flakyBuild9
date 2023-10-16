@@ -67,22 +67,10 @@ Scheduler::Scheduler(
               runtime, eventTarget, type, priority, payload);
         },
         runtime);
-
-    // We only want to run this per-event if we are not batching by default
-    if (!CoreFeatures::enableDefaultAsyncBatchedPriority) {
-      if (runtimeScheduler != nullptr) {
-        runtimeScheduler->callExpiredTasks(runtime);
-      }
+    if (runtimeScheduler != nullptr) {
+      runtimeScheduler->callExpiredTasks(runtime);
     }
   };
-
-  auto eventPipeConclusion =
-      [runtimeScheduler = runtimeScheduler.get()](jsi::Runtime &runtime) {
-        if (CoreFeatures::enableDefaultAsyncBatchedPriority &&
-            runtimeScheduler != nullptr) {
-          runtimeScheduler->callExpiredTasks(runtime);
-        }
-      };
 
   auto statePipe = [uiManager](StateUpdate const &stateUpdate) {
     uiManager->updateState(stateUpdate);
@@ -91,7 +79,7 @@ Scheduler::Scheduler(
   // Creating an `EventDispatcher` instance inside the already allocated
   // container (inside the optional).
   eventDispatcher_->emplace(
-      EventQueueProcessor(eventPipe, eventPipeConclusion, statePipe),
+      EventQueueProcessor(eventPipe, statePipe),
       schedulerToolbox.synchronousEventBeatFactory,
       schedulerToolbox.asynchronousEventBeatFactory,
       eventOwnerBox);
@@ -145,10 +133,6 @@ Scheduler::Scheduler(
 
   CoreFeatures::cacheLastTextMeasurement =
       reactNativeConfig_->getBool("react_fabric:enable_text_measure_cache");
-
-  CoreFeatures::enableGranularShadowTreeStateReconciliation =
-      reactNativeConfig_->getBool(
-          "react_fabric:enable_granular_shadow_tree_state_reconciliation");
 
   if (animationDelegate != nullptr) {
     animationDelegate->setComponentDescriptorRegistry(

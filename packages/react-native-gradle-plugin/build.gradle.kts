@@ -11,7 +11,7 @@ import org.gradle.configurationcache.extensions.serviceOf
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  alias(libs.plugins.kotlin.jvm)
+  kotlin("jvm") version "1.8.0"
   id("java-gradle-plugin")
 }
 

@@ -88,7 +88,7 @@ void JMessageQueueThread::runOnQueueSync(std::function<void()> &&runnable) {
     bool runnableComplete = false;
 
     runOnQueue([&]() mutable {
-      std::scoped_lock lock(signalMutex);
+      std::lock_guard<std::mutex> lock(signalMutex);
 
       runnable();
       runnableComplete = true;

@@ -36,6 +36,7 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.CookieJar;
 import okhttp3.Headers;
+import okhttp3.Interceptor;
 import okhttp3.JavaNetCookieJar;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -173,7 +174,7 @@ public final class NetworkingModule extends NativeNetworkingAndroidSpec {
    *     https://github.com/facebook/react-native/pull/37798#pullrequestreview-1518338914
    */
   @Deprecated
-  public interface CustomClientBuilder
+  public static interface CustomClientBuilder
       extends com.facebook.react.modules.network.CustomClientBuilder {}
 
   private static void applyCustomBuilder(OkHttpClient.Builder builder) {
@@ -310,32 +311,36 @@ public final class NetworkingModule extends NativeNetworkingAndroidSpec {
     // response and counts bytes received.
     if (useIncrementalUpdates) {
       clientBuilder.addNetworkInterceptor(
-          chain -> {
-            Response originalResponse = chain.proceed(chain.request());
-            ProgressResponseBody responseBody =
-                new ProgressResponseBody(
-                    originalResponse.body(),
-                    new ProgressListener() {
-                      long last = System.nanoTime();
+          new Interceptor() {
+            @Override
+            public Response intercept(Interceptor.Chain chain) throws IOException {
+              Response originalResponse = chain.proceed(chain.request());
+              ProgressResponseBody responseBody =
+                  new ProgressResponseBody(
+                      originalResponse.body(),
+                      new ProgressListener() {
+                        long last = System.nanoTime();
 
-                      @Override
-                      public void onProgress(long bytesWritten, long contentLength, boolean done) {
-                        long now = System.nanoTime();
-                        if (!done && !shouldDispatch(now, last)) {
-                          return;
+                        @Override
+                        public void onProgress(
+                            long bytesWritten, long contentLength, boolean done) {
+                          long now = System.nanoTime();
+                          if (!done && !shouldDispatch(now, last)) {
+                            return;
+                          }
+                          if (responseType.equals("text")) {
+                            // For 'text' responses we continuously send response data with progress
+                            // info to
+                            // JS below, so no need to do anything here.
+                            return;
+                          }
+                          ResponseUtil.onDataReceivedProgress(
+                              reactApplicationContext, requestId, bytesWritten, contentLength);
+                          last = now;
                         }
-                        if (responseType.equals("text")) {
-                          // For 'text' responses we continuously send response data with progress
-                          // info to
-                          // JS below, so no need to do anything here.
-                          return;
-                        }
-                        ResponseUtil.onDataReceivedProgress(
-                            reactApplicationContext, requestId, bytesWritten, contentLength);
-                        last = now;
-                      }
-                    });
-            return originalResponse.newBuilder().body(responseBody).build();
+                      });
+              return originalResponse.newBuilder().body(responseBody).build();
+            }
           });
     }
 

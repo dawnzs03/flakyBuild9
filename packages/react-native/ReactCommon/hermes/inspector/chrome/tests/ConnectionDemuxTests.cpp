@@ -58,7 +58,7 @@ class TestRemoteConnection : public IRemoteConnection {
     }
 
     void setDisconnected() {
-      std::scoped_lock lock(mutex_);
+      std::lock_guard<std::mutex> lock(mutex_);
       connected_ = false;
       cv_.notify_one();
     }

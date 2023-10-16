@@ -17,7 +17,7 @@ SerialExecutor::SerialExecutor(const std::string &name)
 
 SerialExecutor::~SerialExecutor() {
   {
-    std::scoped_lock lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     finish_ = true;
     wakeup_.notify_one();
   }
@@ -26,7 +26,7 @@ SerialExecutor::~SerialExecutor() {
 }
 
 void SerialExecutor::add(folly::Func func) {
-  std::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   funcs_.push(std::move(func));
   wakeup_.notify_one();
 }

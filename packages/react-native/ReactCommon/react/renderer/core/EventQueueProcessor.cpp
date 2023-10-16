@@ -7,7 +7,6 @@
 
 #include <cxxreact/JSExecutor.h>
 #include <logger/react_native_log.h>
-#include <react/utils/CoreFeatures.h>
 #include "EventEmitter.h"
 #include "EventLogger.h"
 #include "EventQueue.h"
@@ -17,17 +16,14 @@ namespace facebook::react {
 
 EventQueueProcessor::EventQueueProcessor(
     EventPipe eventPipe,
-    EventPipeConclusion eventPipeConclusion,
     StatePipe statePipe)
-    : eventPipe_(std::move(eventPipe)),
-      eventPipeConclusion_(std::move(eventPipeConclusion)),
-      statePipe_(std::move(statePipe)) {}
+    : eventPipe_(std::move(eventPipe)), statePipe_(std::move(statePipe)) {}
 
 void EventQueueProcessor::flushEvents(
     jsi::Runtime &runtime,
     std::vector<RawEvent> &&events) const {
   {
-    std::scoped_lock lock(EventEmitter::DispatchMutex());
+    std::lock_guard<std::mutex> lock(EventEmitter::DispatchMutex());
 
     for (const auto &event : events) {
       if (event.eventTarget) {
@@ -71,11 +67,6 @@ void EventQueueProcessor::flushEvents(
         reactPriority,
         *event.eventPayload);
 
-    // We run the "Conclusion" per-event when unbatched
-    if (!CoreFeatures::enableDefaultAsyncBatchedPriority) {
-      eventPipeConclusion_(runtime);
-    }
-
     if (eventLogger != nullptr) {
       eventLogger->onEventEnd(event.loggingTag);
     }
@@ -83,10 +74,6 @@ void EventQueueProcessor::flushEvents(
     if (event.category == RawEvent::Category::ContinuousStart) {
       hasContinuousEventStarted_ = true;
     }
-  }
-  // We only run the "Conclusion" once per event group when batched.
-  if (CoreFeatures::enableDefaultAsyncBatchedPriority) {
-    eventPipeConclusion_(runtime);
   }
 
   // No need to lock `EventEmitter::DispatchMutex()` here.

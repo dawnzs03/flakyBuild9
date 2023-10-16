@@ -31,7 +31,7 @@ class DependencyUtilsTest {
     val localMaven = tempFolder.newFolder("m2")
     val localMavenURI = localMaven.toURI()
     val project = createProject()
-    project.extensions.extraProperties.set("react.internal.mavenLocalRepo", localMaven.absolutePath)
+    project.extensions.extraProperties.set("REACT_NATIVE_MAVEN_LOCAL_REPO", localMaven.absolutePath)
 
     configureRepositories(project, tempFolder.root)
 
@@ -115,7 +115,7 @@ class DependencyUtilsTest {
     val localMavenURI = localMaven.toURI()
     val mavenCentralURI = URI.create("https://repo.maven.apache.org/maven2/")
     val project = createProject()
-    project.extensions.extraProperties.set("react.internal.mavenLocalRepo", localMaven.absolutePath)
+    project.extensions.extraProperties.set("REACT_NATIVE_MAVEN_LOCAL_REPO", localMaven.absolutePath)
 
     configureRepositories(project, tempFolder.root)
 
@@ -358,7 +358,7 @@ class DependencyUtilsTest {
         tempFolder.newFile("gradle.properties").apply {
           writeText(
               """
-        react.internal.publishingGroup=io.github.test
+        GROUP=io.github.test
         ANOTHER_PROPERTY=true
       """
                   .trimIndent())

@@ -6,11 +6,11 @@
  */
 
 plugins {
-    id("maven-publish")
+    id("com.android.library")
     id("com.facebook.react")
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.download)
-    alias(libs.plugins.kotlin.android)
+    id("de.undercouch.download")
+    id("maven-publish")
+    id("org.jetbrains.kotlin.android")
 }
 
 import com.facebook.react.tasks.internal.*
@@ -60,15 +60,6 @@ def boostPath = dependenciesPath ?: System.getenv("REACT_NATIVE_BOOST_PATH")
 // reduce the size of the React Native published .AAR.
 def skipPrefabPublishing = System.getenv("REACT_NATIVE_SKIP_PREFAB") != null
 def prefabHeadersDir = project.file("$buildDir/prefab-headers")
-
-// Native versions which are defined inside the version catalog (libs.versions.toml)
-def BOOST_VERSION = libs.versions.boost.get()
-def DOUBLE_CONVERSION_VERSION = libs.versions.doubleconversion.get()
-def FMT_VERSION = libs.versions.fmt.get()
-def FOLLY_VERSION = libs.versions.folly.get()
-def GLOG_VERSION = libs.versions.glog.get()
-def LIBEVENT_VERSION = libs.versions.libevent.get()
-def GTEST_VERSION = libs.versions.gtest.get()
 
 final def preparePrefab = tasks.register("preparePrefab", PreparePrefabHeadersTask) {
     dependsOn(prepareBoost, prepareDoubleConversion, prepareFolly, prepareGlog)
@@ -396,7 +387,7 @@ task downloadNdkBuildDependencies {
 // This is not the case for users of React Native, as we ship a compiled version of the codegen.
 final def buildCodegenCLITask = tasks.register('buildCodegenCLI', BuildCodegenCLITask) {
     it.codegenDir.set(file("$rootDir/node_modules/@react-native/codegen"))
-    it.bashWindowsHome.set(project.findProperty("react.internal.windowsBashPath"))
+    it.bashWindowsHome.set(project.findProperty("REACT_WINDOWS_BASH"))
 }
 
 /**
@@ -450,11 +441,6 @@ def reactNativeArchitectures() {
     return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
 }
 
-def enableWarningsAsErrors() {
-    def value = project.getProperties().get("enableWarningsAsErrors")
-    return value != null ? value : false
-}
-
 task packageReactNdkLibsForBuck(type: Copy) {
     dependsOn("mergeDebugNativeLibs")
     // Shared libraries (.so) are copied from the merged_native_libs folder instead
@@ -477,8 +463,8 @@ repositories {
 }
 
 android {
-    compileSdk libs.versions.compileSdk.get().toInteger()
-    buildToolsVersion = libs.versions.buildTools.get()
+    compileSdk 33
+    buildToolsVersion = "33.0.1"
     namespace "com.facebook.react"
 
     // Used to override the NDK path/version on internal CI or by allowing
@@ -491,20 +477,18 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
         // Using '-Xjvm-default=all' to generate default java methods for interfaces
         freeCompilerArgs = ['-Xjvm-default=all']
-        // Using -PenableWarningsAsErrors=true prop to enable allWarningsAsErrors
-        kotlinOptions.allWarningsAsErrors = enableWarningsAsErrors()
     }
 
     defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInteger()
-        targetSdk = libs.versions.targetSdk.get().toInteger()
+        minSdk = 21
+        targetSdk = 33
         versionCode(1)
         versionName("1.0")
 
@@ -776,6 +760,9 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.assertj)
     testImplementation(libs.mockito)
+    testImplementation(libs.powermock.api.mockito2)
+    testImplementation(libs.powermock.classloading.xstream)
+    testImplementation(libs.powermock.module.junit4.rule)
     testImplementation(libs.robolectric)
     testImplementation(libs.thoughtworks)
 
@@ -792,7 +779,28 @@ react {
 }
 
 kotlin {
-    jvmToolchain(17)
+    // We intentionally don't build on JDK 17 as our tests are broken due to Mockito/PowerMock
+    // not running well on JDK 17.
+    jvmToolchain(11)
+}
+
+tasks.withType(Test).all {
+    // We add --add-opens flags to make sure we can run PowerMock tests on JDK >= 17
+    if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+        jvmArgs += [
+            "--illegal-access=permit",
+            "--add-opens=java.base/java.lang=ALL-UNNAMED",
+            "--add-opens=java.base/java.xml.internal=ALL-UNNAMED",
+            "--add-opens=java.base/java.util=ALL-UNNAMED",
+            "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+            "--add-opens=java.base/java.net=ALL-UNNAMED",
+            "--add-opens=java.base/java.security=ALL-UNNAMED",
+            "--add-opens=java.base/java.io=ALL-UNNAMED",
+            "--add-opens=java.base/java.nio=ALL-UNNAMED",
+            "--add-opens=java.base/java.nio.charset=ALL-UNNAMED",
+            "--add-opens=java.base/jdk.xml.internal=ALL-UNNAMED",
+        ]
+    }
 }
 
 apply plugin: "org.jetbrains.kotlin.android"

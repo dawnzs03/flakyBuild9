@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <cmath>
-
 #ifdef __APPLE__
 #include <functional>
 #endif
@@ -19,8 +17,6 @@ namespace ReactMarker {
 enum ReactMarkerId {
   APP_STARTUP_START,
   APP_STARTUP_STOP,
-  INIT_REACT_RUNTIME_START,
-  INIT_REACT_RUNTIME_STOP,
   NATIVE_REQUIRE_START,
   NATIVE_REQUIRE_STOP,
   RUN_JS_BUNDLE_START,
@@ -75,8 +71,6 @@ class RN_EXPORT StartupLogger {
 
   void logStartupEvent(const ReactMarkerId markerName, double markerTime);
   double getAppStartupStartTime();
-  double getInitReactRuntimeStartTime();
-  double getInitReactRuntimeEndTime();
   double getRunJSBundleStartTime();
   double getRunJSBundleEndTime();
   double getAppStartupEndTime();
@@ -86,12 +80,10 @@ class RN_EXPORT StartupLogger {
   StartupLogger(const StartupLogger &) = delete;
   StartupLogger &operator=(const StartupLogger &) = delete;
 
-  double appStartupStartTime = std::nan("");
-  double appStartupEndTime = std::nan("");
-  double initReactRuntimeStartTime = std::nan("");
-  double initReactRuntimeEndTime = std::nan("");
-  double runJSBundleStartTime = std::nan("");
-  double runJSBundleEndTime = std::nan("");
+  double appStartupStartTime;
+  double appStartupEndTime;
+  double runJSBundleStartTime;
+  double runJSBundleEndTime;
 };
 
 // When the marker got logged from the platform, it will notify here. This is

@@ -32,11 +32,10 @@ class EventQueueProcessorTest : public testing::Test {
       eventPriorities_.push_back(priority);
     };
 
-    auto dummyEventPipeConclusion = [](jsi::Runtime &runtime) {};
     auto dummyStatePipe = [](StateUpdate const &stateUpdate) {};
 
-    eventProcessor_ = std::make_unique<EventQueueProcessor>(
-        eventPipe, dummyEventPipeConclusion, dummyStatePipe);
+    eventProcessor_ =
+        std::make_unique<EventQueueProcessor>(eventPipe, dummyStatePipe);
   }
 
   std::unique_ptr<facebook::hermes::HermesRuntime> runtime_;

@@ -26,10 +26,7 @@ void EventTarget::retain(jsi::Runtime &runtime) const {
     return;
   }
 
-  if (retainCount_ == 0) {
-    strongInstanceHandle_ = instanceHandle_->getInstanceHandle(runtime);
-  }
-  retainCount_ += 1;
+  strongInstanceHandle_ = instanceHandle_->getInstanceHandle(runtime);
 
   // Having a `null` or `undefined` object here indicates that
   // `weakInstanceHandle_` was already deallocated. This should *not* happen by
@@ -47,12 +44,7 @@ void EventTarget::release(jsi::Runtime & /*runtime*/) const {
   // The method does not use `jsi::Runtime` reference.
   // It takes it only to ensure thread-safety (if the caller has the reference,
   // we are on a proper thread).
-
-  if (--retainCount_ == 0) {
-    strongInstanceHandle_ = jsi::Value::null();
-  }
-
-  react_native_assert(retainCount_ >= 0);
+  strongInstanceHandle_ = jsi::Value::null();
 }
 
 jsi::Value EventTarget::getInstanceHandle(jsi::Runtime &runtime) const {

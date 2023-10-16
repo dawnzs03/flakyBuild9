@@ -117,7 +117,7 @@ Inspector::Inspector(
       std::make_shared<jsi::StringBuffer>(src), "__tickleJsHackUrl");
 
   {
-    std::scoped_lock lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
 
     if (pauseOnFirstStatement) {
       awaitingDebuggerOnStart_ = true;
@@ -289,11 +289,10 @@ ScriptInfo Inspector::getScriptInfoFromTopCallFrame() {
 
 void Inspector::addCurrentScriptToLoadedScripts() {
   ScriptInfo info = getScriptInfoFromTopCallFrame();
-  auto fileId = info.fileId;
 
-  if (!loadedScripts_.count(fileId)) {
-    loadedScriptIdByName_[info.fileName] = fileId;
-    loadedScripts_[fileId] = LoadedScriptInfo{std::move(info), false};
+  if (!loadedScripts_.count(info.fileId)) {
+    loadedScriptIdByName_[info.fileName] = info.fileId;
+    loadedScripts_[info.fileId] = LoadedScriptInfo{std::move(info), false};
   }
 }
 
@@ -539,7 +538,7 @@ void Inspector::transition(std::unique_ptr<InspectorState> nextState) {
 
 void Inspector::disableOnExecutor(
     std::shared_ptr<folly::Promise<Unit>> promise) {
-  std::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
 
   debugger_.setIsDebuggerAttached(false);
 
@@ -548,7 +547,7 @@ void Inspector::disableOnExecutor(
 
 void Inspector::enableOnExecutor(
     std::shared_ptr<folly::Promise<Unit>> promise) {
-  std::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
 
   auto result = state_->enable();
 
@@ -576,7 +575,7 @@ void Inspector::executeIfEnabledOnExecutor(
     const std::string &description,
     folly::Function<void(const debugger::ProgramState &)> func,
     std::shared_ptr<folly::Promise<Unit>> promise) {
-  std::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
 
   if (!state_->isPaused() && !state_->isRunning()) {
     promise->setException(InvalidStateException(
@@ -602,7 +601,7 @@ void Inspector::setBreakpointOnExecutor(
     debugger::SourceLocation loc,
     std::optional<std::string> condition,
     std::shared_ptr<folly::Promise<debugger::BreakpointInfo>> promise) {
-  std::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
 
   bool pushed = state_->pushPendingFunc([this, loc, condition, promise] {
     debugger::BreakpointID id = debugger_.setBreakpoint(loc);
@@ -626,7 +625,7 @@ void Inspector::setBreakpointOnExecutor(
 void Inspector::removeBreakpointOnExecutor(
     debugger::BreakpointID breakpointId,
     std::shared_ptr<folly::Promise<folly::Unit>> promise) {
-  std::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
 
   bool pushed = state_->pushPendingFunc([this, breakpointId, promise] {
     debugger_.deleteBreakpoint(breakpointId);
@@ -641,7 +640,7 @@ void Inspector::removeBreakpointOnExecutor(
 void Inspector::logOnExecutor(
     ConsoleMessageInfo info,
     std::shared_ptr<folly::Promise<folly::Unit>> promise) {
-  std::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
 
   state_->pushPendingFunc([this, info = std::move(info)] {
     observer_.onMessageAdded(*this, info);
@@ -653,13 +652,13 @@ void Inspector::logOnExecutor(
 void Inspector::setPendingCommandOnExecutor(
     debugger::Command command,
     std::shared_ptr<folly::Promise<Unit>> promise) {
-  std::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
 
   state_->setPendingCommand(std::move(command), promise);
 }
 
 void Inspector::pauseOnExecutor(std::shared_ptr<folly::Promise<Unit>> promise) {
-  std::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
 
   bool canPause = state_->pause();
 
@@ -676,7 +675,7 @@ void Inspector::evaluateOnExecutor(
     std::shared_ptr<folly::Promise<debugger::EvalResult>> promise,
     folly::Function<void(const facebook::hermes::debugger::EvalResult &)>
         resultTransformer) {
-  std::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
 
   state_->pushPendingEval(
       frameIndex, src, promise, std::move(resultTransformer));
@@ -685,7 +684,7 @@ void Inspector::evaluateOnExecutor(
 void Inspector::setPauseOnExceptionsOnExecutor(
     const debugger::PauseOnThrowMode &mode,
     std::shared_ptr<folly::Promise<folly::Unit>> promise) {
-  std::scoped_lock local(mutex_);
+  std::lock_guard<std::mutex> local(mutex_);
 
   state_->pushPendingFunc([this, mode, promise] {
     debugger_.setPauseOnThrowMode(mode);

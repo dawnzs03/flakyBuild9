@@ -19,6 +19,7 @@ JSIExecutor::RuntimeInstaller RCTJSIExecutorRuntimeInstaller(JSIExecutor::Runtim
       _RCTLogJavaScriptInternal(static_cast<RCTLogLevel>(logLevel), [NSString stringWithUTF8String:message.c_str()]);
     };
     bindNativeLogger(runtime, iosLoggingBinder);
+    bindNativePerformanceNow(runtime);
 
     // Wrap over the original runtimeInstaller
     if (runtimeInstaller) {
