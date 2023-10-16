@@ -26,7 +26,6 @@ import type {
   PropTypeAnnotation,
   EventTypeAnnotation,
   ObjectTypeAnnotation,
-  EventTypeShape,
 } from '../CodegenSchema.js';
 
 import type {Parser} from './parser';
@@ -1126,37 +1125,6 @@ function handleEventHandler(
   }
 }
 
-function emitBuildEventSchema(
-  paperTopLevelNameDeprecated: $FlowFixMe,
-  name: $FlowFixMe,
-  optional: $FlowFixMe,
-  nonNullableBubblingType: 'direct' | 'bubble',
-  argument: ObjectTypeAnnotation<EventTypeAnnotation>,
-): ?EventTypeShape {
-  if (paperTopLevelNameDeprecated != null) {
-    return {
-      name,
-      optional,
-      bubblingType: nonNullableBubblingType,
-      paperTopLevelNameDeprecated,
-      typeAnnotation: {
-        type: 'EventTypeAnnotation',
-        argument: argument,
-      },
-    };
-  }
-
-  return {
-    name,
-    optional,
-    bubblingType: nonNullableBubblingType,
-    typeAnnotation: {
-      type: 'EventTypeAnnotation',
-      argument: argument,
-    },
-  };
-}
-
 module.exports = {
   wrapModuleSchema,
   unwrapNullable,
@@ -1186,5 +1154,4 @@ module.exports = {
   buildPropertiesForEvent,
   verifyPropNotAlreadyDefined,
   handleEventHandler,
-  emitBuildEventSchema,
 };

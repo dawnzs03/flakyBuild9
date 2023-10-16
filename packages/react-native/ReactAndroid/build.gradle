@@ -383,13 +383,6 @@ task downloadNdkBuildDependencies {
     dependsOn(downloadGtest)
 }
 
-// As ReactAndroid builds from source, the codegen needs to be built before it can be invoked.
-// This is not the case for users of React Native, as we ship a compiled version of the codegen.
-final def buildCodegenCLITask = tasks.register('buildCodegenCLI', BuildCodegenCLITask) {
-    it.codegenDir.set(file("$rootDir/node_modules/@react-native/codegen"))
-    it.bashWindowsHome.set(project.findProperty("REACT_WINDOWS_BASH"))
-}
-
 /**
  * Finds the path of the installed npm package with the given name using Node's
  * module resolution algorithm, which searches "node_modules" directories up to
@@ -579,20 +572,9 @@ android {
         }
     }
 
-    preBuild.dependsOn(
-            buildCodegenCLITask,
-            generateCodegenArtifactsFromSchema,
-            prepareBoost,
-            prepareDoubleConversion,
-            prepareFmt,
-            prepareFolly,
-            prepareGlog,
-            prepareGtest,
-            prepareJSC,
-            prepareLibevent,
-            preparePrefab
-    )
-    generateCodegenSchemaFromJavaScript.dependsOn(buildCodegenCLITask)
+    preBuild.dependsOn(prepareJSC, prepareBoost, prepareDoubleConversion, prepareFmt, prepareFolly, prepareGlog, prepareLibevent, prepareGtest)
+    preBuild.dependsOn("generateCodegenArtifactsFromSchema")
+    preBuild.dependsOn(preparePrefab)
 
     sourceSets.main {
         res.srcDirs = ["src/main/res/devsupport", "src/main/res/shell", "src/main/res/views/modal", "src/main/res/views/uimanager"]
@@ -732,43 +714,44 @@ android {
 }
 
 dependencies {
-    api(libs.androidx.appcompat)
-    api(libs.androidx.appcompat.resources)
-    api(libs.androidx.autofill)
-    api(libs.androidx.swiperefreshlayout)
-    api(libs.androidx.tracing)
+    api("androidx.appcompat:appcompat-resources:${ANDROIDX_APPCOMPAT_VERSION}")
+    api("androidx.appcompat:appcompat:${ANDROIDX_APPCOMPAT_VERSION}")
+    api("androidx.autofill:autofill:${ANDROIDX_AUTOFILL_VERSION}")
+    api("androidx.swiperefreshlayout:swiperefreshlayout:${SWIPEREFRESH_LAYOUT_VERSION}")
+    api("androidx.tracing:tracing:${ANDROIDX_TRACING_VERSION}")
 
-    api(libs.fbjni)
-    api(libs.fresco)
-    api(libs.fresco.middleware)
-    api(libs.fresco.imagepipeline.okhttp3)
-    api(libs.fresco.ui.common)
-    api(libs.infer.annotation)
-    api(libs.soloader)
-    api(libs.yoga.proguard.annotations)
+    api("com.facebook.fbjni:fbjni:${FBJNI_VERSION}")
+    api("com.facebook.fresco:fresco:${FRESCO_VERSION}")
+    api("com.facebook.fresco:middleware:${FRESCO_VERSION}")
+    api("com.facebook.fresco:imagepipeline-okhttp3:${FRESCO_VERSION}")
+    api("com.facebook.fresco:ui-common:${FRESCO_VERSION}")
+    api("com.facebook.infer.annotation:infer-annotation:${INFER_ANNOTATIONS_VERSION}")
+    api("com.facebook.soloader:soloader:${SO_LOADER_VERSION}")
+    api("com.facebook.yoga:proguard-annotations:${PROGUARD_ANNOTATIONS_VERSION}")
 
-    api(libs.jsr305)
-    api(libs.okhttp3.urlconnection)
-    api(libs.okhttp3)
-    api(libs.okio)
-    api(libs.javax.inject)
+    api("com.google.code.findbugs:jsr305:${JSR305_VERSION}")
+    api("com.squareup.okhttp3:okhttp-urlconnection:${OKHTTP_VERSION}")
+    api("com.squareup.okhttp3:okhttp:${OKHTTP_VERSION}")
+    api("com.squareup.okio:okio:${OKIO_VERSION}")
+    api("javax.inject:javax.inject:${JAVAX_INJECT_VERSION}")
 
     // It's up to the consumer to decide if hermes should be included or not.
     // Therefore hermes-engine is a compileOnly dependency.
     compileOnly(project(":packages:react-native:ReactAndroid:hermes-engine"))
 
-    testImplementation(libs.junit)
-    testImplementation(libs.assertj)
-    testImplementation(libs.mockito)
-    testImplementation(libs.powermock.api.mockito2)
-    testImplementation(libs.powermock.classloading.xstream)
-    testImplementation(libs.powermock.module.junit4.rule)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.thoughtworks)
+    testImplementation("junit:junit:${JUNIT_VERSION}")
+    testImplementation("org.assertj:assertj-core:${ASSERTJ_VERSION}")
+    testImplementation("org.mockito:mockito-core:${MOCKITO_CORE_VERSION}")
+    testImplementation("org.powermock:powermock-api-mockito2:${POWERMOCK_VERSION}")
+    testImplementation("org.powermock:powermock-classloading-xstream:${POWERMOCK_VERSION}")
+    testImplementation("org.powermock:powermock-module-junit4-rule:${POWERMOCK_VERSION}")
+    testImplementation("org.robolectric:robolectric:${ROBOLECTRIC_VERSION}")
+    testImplementation("com.thoughtworks.xstream:xstream:1.4.20")
 
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.rules)
-    androidTestImplementation(libs.mockito)
+    androidTestImplementation(fileTree(dir: "src/main/third-party/java/buck-android-support/", include: ["*.jar"]))
+    androidTestImplementation("androidx.test:runner:${ANDROIDX_TEST_VERSION}")
+    androidTestImplementation("androidx.test:rules:${ANDROIDX_TEST_VERSION}")
+    androidTestImplementation("org.mockito:mockito-core:${MOCKITO_CORE_VERSION}")
 }
 
 react {
