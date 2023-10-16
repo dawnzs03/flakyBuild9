@@ -29,7 +29,8 @@ export const KerberosSettingsRequired = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: KerberosSettingsRequiredProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
+  const { t: helpText } = useTranslation("user-federation-help");
 
   const { realm } = useRealm();
 
@@ -51,7 +52,7 @@ export const KerberosSettingsRequired = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("requiredSettings")}
-          description={t("kerberosRequiredSettingsDescription")}
+          description={helpText("kerberosRequiredSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}
@@ -62,7 +63,7 @@ export const KerberosSettingsRequired = ({
           label={t("uiDisplayName")}
           labelIcon={
             <HelpItem
-              helpText={t("uiDisplayNameHelp")}
+              helpText={t("user-federation-help:uiDisplayNameHelp")}
               fieldLabelId="user-federation:uiDisplayName"
             />
           }
@@ -110,7 +111,7 @@ export const KerberosSettingsRequired = ({
           label={t("kerberosRealm")}
           labelIcon={
             <HelpItem
-              helpText={t("kerberosRealmHelp")}
+              helpText={t("user-federation-help:kerberosRealmHelp")}
               fieldLabelId="user-federation:kc-kerberos-realm"
             />
           }
@@ -147,7 +148,7 @@ export const KerberosSettingsRequired = ({
           label={t("serverPrincipal")}
           labelIcon={
             <HelpItem
-              helpText={t("serverPrincipalHelp")}
+              helpText={t("user-federation-help:serverPrincipalHelp")}
               fieldLabelId="user-federation:serverPrincipal"
             />
           }
@@ -184,7 +185,7 @@ export const KerberosSettingsRequired = ({
           label={t("keyTab")}
           labelIcon={
             <HelpItem
-              helpText={t("keyTabHelp")}
+              helpText={t("user-federation-help:keyTabHelp")}
               fieldLabelId="user-federation:keyTab"
             />
           }
@@ -221,7 +222,7 @@ export const KerberosSettingsRequired = ({
           label={t("debug")}
           labelIcon={
             <HelpItem
-              helpText={t("debugHelp")}
+              helpText={t("user-federation-help:debugHelp")}
               fieldLabelId="user-federation:debug"
             />
           }
@@ -239,8 +240,8 @@ export const KerberosSettingsRequired = ({
                 data-testid="debug"
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("debug")}
               />
             )}
@@ -251,7 +252,9 @@ export const KerberosSettingsRequired = ({
           label={t("allowPasswordAuthentication")}
           labelIcon={
             <HelpItem
-              helpText={t("allowPasswordAuthenticationHelp")}
+              helpText={t(
+                "user-federation-help:allowPasswordAuthenticationHelp",
+              )}
               fieldLabelId="user-federation:allowPasswordAuthentication"
             />
           }
@@ -268,8 +271,8 @@ export const KerberosSettingsRequired = ({
                 data-testid="allow-password-authentication"
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("allowPasswordAuthentication")}
               />
             )}
@@ -281,7 +284,7 @@ export const KerberosSettingsRequired = ({
             label={t("editMode")}
             labelIcon={
               <HelpItem
-                helpText={t("editModeKerberosHelp")}
+                helpText={t("user-federation-help:editModeKerberosHelp")}
                 fieldLabelId="user-federation:editMode"
               />
             }
@@ -321,7 +324,7 @@ export const KerberosSettingsRequired = ({
           label={t("updateFirstLogin")}
           labelIcon={
             <HelpItem
-              helpText={t("updateFirstLoginHelp")}
+              helpText={t("user-federation-help:updateFirstLoginHelp")}
               fieldLabelId="user-federation:updateFirstLogin"
             />
           }
@@ -338,8 +341,8 @@ export const KerberosSettingsRequired = ({
                 data-testid="update-first-login"
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("updateFirstLogin")}
               />
             )}

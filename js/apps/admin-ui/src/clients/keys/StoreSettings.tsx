@@ -14,7 +14,7 @@ export const StoreSettings = ({
   hidePassword?: boolean;
   isSaml?: boolean;
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const {
     register,
     formState: { errors },
@@ -27,9 +27,12 @@ export const StoreSettings = ({
         fieldId="keyAlias"
         isRequired
         labelIcon={
-          <HelpItem helpText={t("keyAliasHelp")} fieldLabelId="keyAlias" />
+          <HelpItem
+            helpText={t("clients-help:keyAlias")}
+            fieldLabelId="clients:keyAlias"
+          />
         }
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
         validated={errors.keyAlias ? "error" : "default"}
       >
         <KeycloakTextInput
@@ -46,11 +49,11 @@ export const StoreSettings = ({
           isRequired
           labelIcon={
             <HelpItem
-              helpText={t("keyPasswordHelp")}
-              fieldLabelId="keyPassword"
+              helpText={t("clients-help:keyPassword")}
+              fieldLabelId="clients:keyPassword"
             />
           }
-          helperTextInvalid={t("required")}
+          helperTextInvalid={t("common:required")}
           validated={errors.keyPassword ? "error" : "default"}
         >
           <PasswordInput
@@ -67,8 +70,8 @@ export const StoreSettings = ({
           fieldId="realmCertificateAlias"
           labelIcon={
             <HelpItem
-              helpText={t("realmCertificateAliasHelp")}
-              fieldLabelId="realmCertificateAlias"
+              helpText={t("clients-help:realmCertificateAlias")}
+              fieldLabelId="clients:realmCertificateAlias"
             />
           }
         >
@@ -85,11 +88,11 @@ export const StoreSettings = ({
         isRequired
         labelIcon={
           <HelpItem
-            helpText={t("storePasswordHelp")}
-            fieldLabelId="storePassword"
+            helpText={t("clients-help:storePassword")}
+            fieldLabelId="clients:storePassword"
           />
         }
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
         validated={errors.storePassword ? "error" : "default"}
       >
         <PasswordInput

@@ -53,7 +53,7 @@ type ExpandableCredentialRepresentation = {
 };
 
 export const UserCredentials = ({ user }: UserCredentialsProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -124,7 +124,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteCredentialsConfirmTitle"),
     messageKey: t("deleteCredentialsConfirm"),
-    continueButtonLabel: t("delete"),
+    continueButtonLabel: t("common:delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -401,7 +401,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               <Tr className="kc-table-header">
                 <Th>
                   <HelpItem
-                    helpText={t("userCredentialsHelpText")}
+                    helpText={t("users:userCredentialsHelpText")}
                     fieldLabelId="users:userCredentialsHelpTextLabel"
                   />
                 </Th>

@@ -26,7 +26,7 @@ jobs:
     outputs:
       js-ci: ${{ steps.conditional.outputs.js }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -39,7 +39,7 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - name: Setup Java
         uses: actions/setup-java@v3
@@ -51,7 +51,7 @@ jobs:
 
       - name: Build Keycloak
         run: |
-          ./mvnw clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -DskipAccount2 -DskipWelcome2 -DskipCommon -Pdistribution
+          ./mvnw clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -DskipAccount2 -DskipCommon -Pdistribution
           mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
 
       - name: Upload Keycloak dist
@@ -68,7 +68,7 @@ jobs:
     env:
       WORKSPACE: "@keycloak/keycloak-admin-client"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - uses: ./.github/actions/pnpm-setup
         with:
@@ -88,7 +88,7 @@ jobs:
     env:
       WORKSPACE: keycloak-js
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - uses: ./.github/actions/pnpm-setup
         with:
@@ -105,7 +105,7 @@ jobs:
     env:
       WORKSPACE: keycloak-masthead
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - uses: ./.github/actions/pnpm-setup
         with:
@@ -125,7 +125,7 @@ jobs:
     env:
       WORKSPACE: ui-shared
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - uses: ./.github/actions/pnpm-setup
         with:
@@ -145,7 +145,7 @@ jobs:
     env:
       WORKSPACE: account-ui
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - uses: ./.github/actions/pnpm-setup
         with:
@@ -165,7 +165,7 @@ jobs:
     env:
       WORKSPACE: admin-ui
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - uses: ./.github/actions/pnpm-setup
         with:
@@ -193,7 +193,7 @@ jobs:
     env:
       WORKSPACE: account-ui
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - uses: ./.github/actions/pnpm-setup
         with:
@@ -213,7 +213,7 @@ jobs:
       - name: Start Keycloak server
         run: |
           tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
-          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=declarative-user-profile &> ~/server.log &
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev &> ~/server.log &
         env:
           KEYCLOAK_ADMIN: admin
           KEYCLOAK_ADMIN_PASSWORD: admin
@@ -260,7 +260,7 @@ jobs:
           # Only test with Firefox on scheduled runs
           - browser: ${{ github.event_name != 'workflow_dispatch' && 'firefox' || '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - name: Install Google Chrome
         if: matrix.browser == 'chrome'
@@ -332,7 +332,6 @@ jobs:
     name: Status Check - Keycloak JavaScript CI
     if: always()
     needs:
-      - conditional
       - admin-client
       - keycloak-js
       - keycloak-masthead
@@ -343,7 +342,7 @@ jobs:
       - admin-ui-e2e
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}

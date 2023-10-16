@@ -25,7 +25,8 @@ export const LdapSettingsAdvanced = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsAdvancedProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
+  const { t: helpText } = useTranslation("user-federation-help");
 
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -55,7 +56,7 @@ export const LdapSettingsAdvanced = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("advancedSettings")}
-          description={t("ldapAdvancedSettingsDescription")}
+          description={helpText("ldapAdvancedSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}
@@ -65,7 +66,7 @@ export const LdapSettingsAdvanced = ({
           label={t("enableLdapv3Password")}
           labelIcon={
             <HelpItem
-              helpText={t("enableLdapv3PasswordHelp")}
+              helpText={t("user-federation-help:enableLdapv3PasswordHelp")}
               fieldLabelId="user-federation:enableLdapv3Password"
             />
           }
@@ -83,8 +84,8 @@ export const LdapSettingsAdvanced = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("enableLdapv3Password")}
               />
             )}
@@ -95,7 +96,7 @@ export const LdapSettingsAdvanced = ({
           label={t("validatePasswordPolicy")}
           labelIcon={
             <HelpItem
-              helpText={t("validatePasswordPolicyHelp")}
+              helpText={t("user-federation-help:validatePasswordPolicyHelp")}
               fieldLabelId="user-federation:validatePasswordPolicy"
             />
           }
@@ -113,8 +114,8 @@ export const LdapSettingsAdvanced = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("validatePasswordPolicy")}
               />
             )}
@@ -125,7 +126,7 @@ export const LdapSettingsAdvanced = ({
           label={t("trustEmail")}
           labelIcon={
             <HelpItem
-              helpText={t("trustEmailHelp")}
+              helpText={t("user-federation-help:trustEmailHelp")}
               fieldLabelId="user-federation:trustEmail"
             />
           }
@@ -143,8 +144,8 @@ export const LdapSettingsAdvanced = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("trustEmail")}
               />
             )}

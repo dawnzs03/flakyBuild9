@@ -36,7 +36,7 @@ abstract class AbstractAdapterConfigurationAddHandler extends AbstractAddStepHan
     private final boolean elytronEnabled;
 
     AbstractAdapterConfigurationAddHandler(RuntimeCapability<Void> runtimeCapability, List<SimpleAttributeDefinition> attributes) {
-        super(attributes);
+        super(runtimeCapability, attributes);
         elytronEnabled = runtimeCapability != null;
     }
 

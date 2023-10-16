@@ -22,7 +22,7 @@ const clientAuthentications = [
 
 export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
   const providers = useServerInfo().providers!.clientSignature.providers;
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
 
   const { control } = useFormContext();
   const [openClientAuth, setOpenClientAuth] = useState(false);
@@ -39,7 +39,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         label={t("clientAuthentication")}
         labelIcon={
           <HelpItem
-            helpText={t("clientAuthenticationHelp")}
+            helpText={t("identity-providers-help:clientAuthentication")}
             fieldLabelId="identity-providers:clientAuthentication"
           />
         }
@@ -84,7 +84,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         label={t("clientAssertionSigningAlg")}
         labelIcon={
           <HelpItem
-            helpText={t("clientAssertionSigningAlgHelp")}
+            helpText={t("identity-providers-help:clientAssertionSigningAlg")}
             fieldLabelId="identity-providers:clientAssertionSigningAlg"
           />
         }

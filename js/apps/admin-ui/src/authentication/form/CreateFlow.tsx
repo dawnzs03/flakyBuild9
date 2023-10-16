@@ -20,7 +20,7 @@ import { FlowType } from "./FlowType";
 import { NameDescription } from "./NameDescription";
 
 export default function CreateFlow() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
   const navigate = useNavigate();
   const { realm } = useRealm();
   const { addAlert } = useAlerts();
@@ -31,8 +31,9 @@ export default function CreateFlow() {
     const flow = { ...formValues, builtIn: false, topLevel: true };
 
     try {
-      const { id } =
-        await adminClient.authenticationManagement.createFlow(flow);
+      const { id } = await adminClient.authenticationManagement.createFlow(
+        flow,
+      );
       addAlert(t("flowCreatedSuccess"), AlertVariant.success);
       navigate(
         toFlow({
@@ -53,7 +54,10 @@ export default function CreateFlow() {
 
   return (
     <>
-      <ViewHeader titleKey="createFlow" subKey="authenticationCreateFlowHelp" />
+      <ViewHeader
+        titleKey="authentication:createFlow"
+        subKey="authentication-help:createFlow"
+      />
       <PageSection variant="light">
         <FormProvider {...form}>
           <FormAccess
@@ -65,7 +69,7 @@ export default function CreateFlow() {
             <FlowType />
             <ActionGroup>
               <Button data-testid="create" type="submit">
-                {t("create")}
+                {t("common:create")}
               </Button>
               <Button
                 data-testid="cancel"
@@ -74,7 +78,7 @@ export default function CreateFlow() {
                   <Link {...props} to={toAuthentication({ realm })}></Link>
                 )}
               >
-                {t("cancel")}
+                {t("common:cancel")}
               </Button>
             </ActionGroup>
           </FormAccess>

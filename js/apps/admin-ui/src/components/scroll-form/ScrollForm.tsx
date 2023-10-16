@@ -35,7 +35,7 @@ export const ScrollForm = ({
   borders = false,
   ...rest
 }: ScrollFormProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
   const shownSections = useMemo(
     () => sections.filter(({ isHidden }) => !isHidden),
     [sections],

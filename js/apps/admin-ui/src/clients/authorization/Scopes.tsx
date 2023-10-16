@@ -49,7 +49,7 @@ type ExpandableRow = {
 };
 
 export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const navigate = useNavigate();
   const { realm } = useRealm();
 
@@ -184,7 +184,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
-                  <Th>{t("name")}</Th>
+                  <Th>{t("common:name")}</Th>
                   <Th>{t("displayName")}</Th>
                   <Th aria-hidden="true" />
                   <Th aria-hidden="true" />
@@ -241,7 +241,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                       actions={{
                         items: [
                           {
-                            title: t("delete"),
+                            title: t("common:delete"),
                             onClick: () => {
                               setSelectedScope(scope);
                               toggleDeleteDialog();
@@ -312,8 +312,8 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
       {noData && searching && (
         <ListEmptyState
           isSearchVariant
-          message={t("noSearchResults")}
-          instructions={t("noSearchResultsInstructions")}
+          message={t("common:noSearchResults")}
+          instructions={t("common:noSearchResultsInstructions")}
         />
       )}
     </PageSection>

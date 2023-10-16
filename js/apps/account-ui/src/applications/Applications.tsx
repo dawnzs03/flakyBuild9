@@ -81,7 +81,7 @@ const Applications = () => {
             <span style={{ visibility: "hidden", height: 55 }}>
               <DataListToggle
                 id="applications-list-header-invisible-toggle"
-                aria-controls="applications-list-content"
+                aria-controls="hidden"
               />
             </span>
             <DataListItemCells
@@ -122,7 +122,6 @@ const Applications = () => {
                 onClick={() => toggleOpen(application.clientId)}
                 isExpanded={application.open}
                 id={`toggle-${application.clientId}`}
-                aria-controls={`content-${application.clientId}`}
               />
               <DataListItemCells
                 className="pf-u-align-items-center"
@@ -155,11 +154,8 @@ const Applications = () => {
             </DataListItemRow>
 
             <DataListContent
-              id={`content-${application.clientId}`}
               className="pf-u-pl-4xl"
-              aria-label={t("applicationDetails", {
-                clientId: application.clientId,
-              })}
+              aria-label={t("applicationDetails")}
               isHidden={!application.open}
             >
               <DescriptionList>

@@ -41,7 +41,7 @@ type FormFields = Omit<
 >;
 
 export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("authentication");
   const {
     control,
     register,
@@ -78,7 +78,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
       setupForm(updatedRealm!);
       addAlert(t("updateCibaSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("updateCibaError", error);
+      addError("authentication:updateCibaError", error);
     }
   };
 
@@ -94,8 +94,10 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaBackchannelTokenDeliveryMode")}
           labelIcon={
             <HelpItem
-              helpText={t("cibaBackchannelTokenDeliveryModeHelp")}
-              fieldLabelId="cibaBackchannelTokenDeliveryMode"
+              helpText={t(
+                "authentication-help:cibaBackchannelTokenDeliveryMode",
+              )}
+              fieldLabelId="authentication:cibaBackchannelTokenDeliveryMode"
             />
           }
         >
@@ -135,8 +137,8 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaExpiresIn")}
           labelIcon={
             <HelpItem
-              helpText={t("cibaExpiresInHelp")}
-              fieldLabelId="cibaExpiresIn"
+              helpText={t("authentication-help:cibaExpiresIn")}
+              fieldLabelId="authentication:cibaExpiresIn"
             />
           }
           validated={errors.attributes?.cibaExpiresIn ? "error" : "default"}
@@ -154,23 +156,23 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
               {...register("attributes.cibaExpiresIn", {
                 min: {
                   value: CIBA_EXPIRES_IN_MIN,
-                  message: t("greaterThan", {
+                  message: t("common:greaterThan", {
                     value: CIBA_EXPIRES_IN_MIN,
                   }),
                 },
                 max: {
                   value: CIBA_EXPIRES_IN_MAX,
-                  message: t("lessThan", { value: CIBA_EXPIRES_IN_MAX }),
+                  message: t("common:lessThan", { value: CIBA_EXPIRES_IN_MAX }),
                 },
                 required: {
                   value: true,
-                  message: t("required"),
+                  message: t("common:required"),
                 },
               })}
               validated={errors.attributes?.cibaExpiresIn ? "error" : "default"}
             />
             <InputGroupText variant="plain">
-              {t("times:seconds")}
+              {t("common:times:seconds")}
             </InputGroupText>
           </InputGroup>
         </FormGroup>
@@ -179,8 +181,8 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaInterval")}
           labelIcon={
             <HelpItem
-              helpText={t("cibaIntervalHelp")}
-              fieldLabelId="cibaInterval"
+              helpText={t("authentication-help:cibaInterval")}
+              fieldLabelId="authentication:cibaInterval"
             />
           }
           validated={errors.attributes?.cibaInterval ? "error" : "default"}
@@ -196,23 +198,23 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
               {...register("attributes.cibaInterval", {
                 min: {
                   value: CIBA_INTERVAL_MIN,
-                  message: t("greaterThan", {
+                  message: t("common:greaterThan", {
                     value: CIBA_INTERVAL_MIN,
                   }),
                 },
                 max: {
                   value: CIBA_INTERVAL_MAX,
-                  message: t("lessThan", { value: CIBA_INTERVAL_MAX }),
+                  message: t("common:lessThan", { value: CIBA_INTERVAL_MAX }),
                 },
                 required: {
                   value: true,
-                  message: t("required"),
+                  message: t("common:required"),
                 },
               })}
               validated={errors.attributes?.cibaInterval ? "error" : "default"}
             />
             <InputGroupText variant="plain">
-              {t("times:seconds")}
+              {t("common:times:seconds")}
             </InputGroupText>
           </InputGroup>
         </FormGroup>
@@ -221,8 +223,8 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaAuthRequestedUserHint")}
           labelIcon={
             <HelpItem
-              helpText={t("cibaAuthRequestedUserHintHelp")}
-              fieldLabelId="cibaAuthRequestedUserHint"
+              helpText={t("authentication-help:cibaAuthRequestedUserHint")}
+              fieldLabelId="authentication:cibaAuthRequestedUserHint"
             />
           }
         >
@@ -247,14 +249,14 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
             type="submit"
             isDisabled={!isValid || !isDirty}
           >
-            {t("save")}
+            {t("common:save")}
           </Button>
           <Button
             data-testid="reload"
             variant={ButtonVariant.link}
             onClick={() => setupForm({ ...realm })}
           >
-            {t("reload")}
+            {t("common:reload")}
           </Button>
         </ActionGroup>
       </FormAccess>

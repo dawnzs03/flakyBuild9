@@ -25,7 +25,7 @@ export type RequiredIdValue = {
 };
 
 export const ClientScope = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const {
     control,
     getValues,
@@ -61,8 +61,8 @@ export const ClientScope = () => {
       label={t("clientScopes")}
       labelIcon={
         <HelpItem
-          helpText={t("clientsClientScopesHelp")}
-          fieldLabelId="clientScopes"
+          helpText={t("clients-help:clientScopes")}
+          fieldLabelId="clients:clientScopes"
         />
       }
       fieldId="clientScopes"
@@ -121,7 +121,7 @@ export const ClientScope = () => {
         <TableComposable variant="compact">
           <Thead>
             <Tr>
-              <Th>{t("clientScopeTitle")}</Th>
+              <Th>{t("clientScope")}</Th>
               <Th>{t("required")}</Th>
               <Th aria-hidden="true" />
             </Tr>

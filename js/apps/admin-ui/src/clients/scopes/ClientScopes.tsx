@@ -71,7 +71,7 @@ const TypeSelector = ({
   fineGrainedAccess,
   ...scope
 }: TypeSelectorProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { addAlert, addError } = useAlerts();
 
   const { hasAccess } = useAccess();
@@ -95,7 +95,7 @@ const TypeSelector = ({
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
           refresh();
         } catch (error) {
-          addError("clientScopeError", error);
+          addError("clients:clientScopeError", error);
         }
       }}
     />
@@ -108,7 +108,7 @@ export const ClientScopes = ({
   clientName,
   fineGrainedAccess,
 }: ClientScopesProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const localeSort = useLocaleSort();
@@ -191,12 +191,12 @@ export const ClientScopes = ({
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: t("deleteClientScope", {
+    titleKey: t("client-scopes:deleteClientScope", {
       count: selectedRows.length,
       name: selectedRows[0]?.name,
     }),
-    messageKey: "deleteConfirmClientScopes",
-    continueButtonLabel: "delete",
+    messageKey: "client-scopes:deleteConfirm",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -208,7 +208,7 @@ export const ClientScopes = ({
         addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clientScopeRemoveError", error);
+        addError("clients:clientScopeRemoveError", error);
       }
     },
   });
@@ -232,7 +232,7 @@ export const ClientScopes = ({
               addAlert(t("clientScopeSuccess"), AlertVariant.success);
               refresh();
             } catch (error) {
-              addError("clientScopeError", error);
+              addError("clients:clientScopeError", error);
             }
           }}
         />
@@ -243,7 +243,7 @@ export const ClientScopes = ({
         loader={loader}
         ariaLabelKey={`clients:clientScopeList-${key}`}
         searchPlaceholderKey={
-          searchType === "name" ? "searchByName" : undefined
+          searchType === "name" ? "clients:searchByName" : undefined
         }
         canSelectAll
         isPaginated
@@ -306,14 +306,14 @@ export const ClientScopes = ({
 
                             setKebabOpen(false);
                             setSelectedRows([]);
-                            addAlert(t("clientScopeRemoveSuccess"));
+                            addAlert(t("clients:clientScopeRemoveSuccess"));
                             refresh();
                           } catch (error) {
-                            addError("clientScopeRemoveError", error);
+                            addError("clients:clientScopeRemoveError", error);
                           }
                         }}
                       >
-                        {t("remove")}
+                        {t("common:remove")}
                       </DropdownItem>,
                     ]}
                   />
@@ -325,7 +325,7 @@ export const ClientScopes = ({
         columns={[
           {
             name: "name",
-            displayKey: "assignedClientScope",
+            displayKey: "clients:assignedClientScope",
             cellRenderer: (row) => {
               if (isDedicatedRow(row)) {
                 return (
@@ -339,7 +339,7 @@ export const ClientScopes = ({
           },
           {
             name: "type",
-            displayKey: "assignedType",
+            displayKey: "clients:assignedType",
             cellRenderer: (row) => (
               <TypeSelector clientId={clientId} refresh={refresh} {...row} />
             ),
@@ -350,7 +350,7 @@ export const ClientScopes = ({
           isManager
             ? [
                 {
-                  title: t("remove"),
+                  title: t("common:remove"),
                   onRowClick: async (row) => {
                     setSelectedRows([row]);
                     toggleDeleteDialog();
@@ -362,9 +362,9 @@ export const ClientScopes = ({
         }
         emptyState={
           <ListEmptyState
-            message={t("emptyClientScopes")}
-            instructions={t("emptyClientScopesInstructions")}
-            primaryActionText={t("emptyClientScopesPrimaryAction")}
+            message={t("clients:emptyClientScopes")}
+            instructions={t("clients:emptyClientScopesInstructions")}
+            primaryActionText={t("clients:emptyClientScopesPrimaryAction")}
             onPrimaryAction={() => setAddDialogOpen(true)}
           />
         }

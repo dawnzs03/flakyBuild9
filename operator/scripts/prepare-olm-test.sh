@@ -10,8 +10,6 @@ PREV_VERSION="$3"
 
 UUID=${4:-""}
 
-TARGET_NAMESPACES=${5-default}
-
 OPERATOR_IMAGE_NAME="keycloak-operator"
 OPERATOR_DOCKER_IMAGE="$DOCKER_REGISTRY/${UUID}$OPERATOR_IMAGE_NAME"
 
@@ -33,4 +31,4 @@ $SCRIPT_DIR/create-olm-test-catalog.sh $VERSION $DOCKER_REGISTRY/${UUID}keycloak
   docker push $DOCKER_REGISTRY/${UUID}keycloak-test-catalog:$VERSION)
 
 # Create testing resources
-$SCRIPT_DIR/create-olm-test-resources.sh $VERSION $DOCKER_REGISTRY ${UUID} $TARGET_NAMESPACES
+$SCRIPT_DIR/create-olm-test-resources.sh $VERSION $DOCKER_REGISTRY ${UUID}

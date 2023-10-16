@@ -36,7 +36,7 @@ export const clientScopeTypesSelectOptions = (
 ) =>
   scopeTypes.map((type) => (
     <SelectOption key={type} value={type}>
-      {t(`clientScopeType.${type}`)}
+      {t(`common:clientScope.${type}`)}
     </SelectOption>
   ));
 
@@ -46,7 +46,7 @@ export const clientScopeTypesDropdown = (
 ) =>
   clientScopeTypes.map((type) => (
     <DropdownItem key={type} onClick={() => onClick(type as ClientScopeType)}>
-      {t(`clientScopeType.${type}`)}
+      {t(`common:clientScope.${type}`)}
     </DropdownItem>
   ));
 

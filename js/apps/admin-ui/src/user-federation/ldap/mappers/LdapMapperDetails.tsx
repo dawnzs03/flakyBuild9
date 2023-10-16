@@ -44,7 +44,7 @@ export default function LdapMapperDetails() {
   const { id, mapperId } = useParams<UserFederationLdapMapperParams>();
   const navigate = useNavigate();
   const { realm } = useRealm();
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
   const { addAlert, addError } = useAlerts();
 
   const [isMapperDropdownOpen, setIsMapperDropdownOpen] = useState(false);
@@ -68,7 +68,8 @@ export default function LdapMapperDetails() {
     ({ components, fetchedMapper }) => {
       setMapping(fetchedMapper);
       setComponents(components);
-      if (mapperId !== "new" && !fetchedMapper) throw new Error(t("notFound"));
+      if (mapperId !== "new" && !fetchedMapper)
+        throw new Error(t("common:notFound"));
 
       if (fetchedMapper) setupForm(fetchedMapper);
     },
@@ -106,14 +107,16 @@ export default function LdapMapperDetails() {
       addAlert(
         t(
           mapperId === "new"
-            ? "mappingCreatedSuccess"
-            : "mappingUpdatedSuccess",
+            ? "common:mappingCreatedSuccess"
+            : "common:mappingUpdatedSuccess",
         ),
         AlertVariant.success,
       );
     } catch (error) {
       addError(
-        mapperId === "new" ? "mappingCreatedError" : "mappingUpdatedError",
+        mapperId === "new"
+          ? "common:mappingCreatedError"
+          : "common:mappingUpdatedError",
         error,
       );
     }
@@ -138,19 +141,19 @@ export default function LdapMapperDetails() {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "deleteMappingTitle",
-    messageKey: "deleteMappingConfirm",
-    continueButtonLabel: "delete",
+    titleKey: "common:deleteMappingTitle",
+    messageKey: "common:deleteMappingConfirm",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await adminClient.components.del({
           id: mapping!.id!,
         });
-        addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
+        addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
         navigate(toUserFederationLdap({ id, realm, tab: "mappers" }));
       } catch (error) {
-        addError("mappingDeletedError", error);
+        addError("common:mappingDeletedError", error);
       }
     },
   });
@@ -171,13 +174,13 @@ export default function LdapMapperDetails() {
       <DeleteConfirm />
       <ViewHeader
         key={key}
-        titleKey={mapping ? mapping.name! : t("createNewMapper")}
+        titleKey={mapping ? mapping.name! : t("common:createNewMapper")}
         dropdownItems={
           isNew
             ? undefined
             : [
                 <DropdownItem key="delete" onClick={toggleDeleteDialog}>
-                  {t("delete")}
+                  {t("common:delete")}
                 </DropdownItem>,
                 ...(mapper?.metadata.fedToKeycloakSyncSupported
                   ? [
@@ -185,7 +188,7 @@ export default function LdapMapperDetails() {
                         key="fedSync"
                         onClick={() => sync("fedToKeycloak")}
                       >
-                        {t(mapper.metadata.fedToKeycloakSyncMessage)}
+                        {t(mapper?.metadata.fedToKeycloakSyncMessage)}
                       </DropdownItem>,
                     ]
                   : []),
@@ -197,7 +200,7 @@ export default function LdapMapperDetails() {
                           sync("keycloakToFed");
                         }}
                       >
-                        {t(mapper.metadata.keycloakToFedSyncMessage)}
+                        {t(mapper?.metadata.keycloakToFedSyncMessage)}
                       </DropdownItem>,
                     ]
                   : []),
@@ -207,7 +210,7 @@ export default function LdapMapperDetails() {
       <PageSection variant="light" isFilled>
         <FormAccess role="manage-realm" isHorizontal>
           {!isNew && (
-            <FormGroup label={t("id")} fieldId="kc-ldap-mapper-id">
+            <FormGroup label={t("common:id")} fieldId="kc-ldap-mapper-id">
               <KeycloakTextInput
                 isDisabled
                 id="kc-ldap-mapper-id"
@@ -217,9 +220,12 @@ export default function LdapMapperDetails() {
             </FormGroup>
           )}
           <FormGroup
-            label={t("name")}
+            label={t("common:name")}
             labelIcon={
-              <HelpItem helpText={t("nameHelp")} fieldLabelId="name" />
+              <HelpItem
+                helpText={t("user-federation-help:nameHelp")}
+                fieldLabelId="name"
+              />
             }
             fieldId="kc-ldap-mapper-name"
             isRequired
@@ -253,11 +259,13 @@ export default function LdapMapperDetails() {
           </FormGroup>
           {!isNew ? (
             <FormGroup
-              label={t("mapperType")}
+              label={t("common:mapperType")}
               labelIcon={
                 <HelpItem
                   helpText={
-                    mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")
+                    mapper?.helpText
+                      ? mapper.helpText
+                      : t("user-federation-help:mapperTypeHelp")
                   }
                   fieldLabelId="mapperType"
                 />
@@ -275,11 +283,13 @@ export default function LdapMapperDetails() {
             </FormGroup>
           ) : (
             <FormGroup
-              label={t("mapperType")}
+              label={t("common:mapperType")}
               labelIcon={
                 <HelpItem
                   helpText={
-                    mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")
+                    mapper?.helpText
+                      ? mapper.helpText
+                      : t("user-federation-help:mapperTypeHelp")
                   }
                   fieldLabelId="mapperType"
                 />
@@ -330,7 +340,7 @@ export default function LdapMapperDetails() {
               type="submit"
               data-testid="ldap-mapper-save"
             >
-              {t("save")}
+              {t("common:save")}
             </Button>
             <Button
               variant="link"
@@ -345,7 +355,7 @@ export default function LdapMapperDetails() {
               }
               data-testid="ldap-mapper-cancel"
             >
-              {t("cancel")}
+              {t("common:cancel")}
             </Button>
           </ActionGroup>
         </Form>

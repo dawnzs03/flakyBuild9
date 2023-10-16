@@ -1,18 +1,15 @@
-import { type KeycloakTokenParsed } from "keycloak-js";
+import Keycloak from "keycloak-js";
 
 import { TranslateFunction } from "./translation/useTranslation";
 
-export function loggedInUserName(
-  token: KeycloakTokenParsed | undefined,
-  t: TranslateFunction,
-) {
-  if (!token) {
+export function loggedInUserName(keycloak: Keycloak, t: TranslateFunction) {
+  if (!keycloak.tokenParsed) {
     return t("unknownUser");
   }
 
-  const givenName = token.given_name;
-  const familyName = token.family_name;
-  const preferredUsername = token.preferred_username;
+  const givenName = keycloak.tokenParsed.given_name;
+  const familyName = keycloak.tokenParsed.family_name;
+  const preferredUsername = keycloak.tokenParsed.preferred_username;
 
   if (givenName && familyName) {
     return t("fullName", { givenName, familyName });

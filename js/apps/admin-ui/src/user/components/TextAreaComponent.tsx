@@ -15,7 +15,6 @@ export const TextAreaComponent = (attr: UserProfileAttribute) => {
         {...register(fieldName(attr))}
         cols={attr.annotations?.["inputTypeCols"] as number}
         rows={attr.annotations?.["inputTypeRows"] as number}
-        readOnly={attr.readOnly}
       />
     </UserProfileGroup>
   );

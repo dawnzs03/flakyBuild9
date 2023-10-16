@@ -51,7 +51,7 @@ public class LoggingDistTest {
     @Launch({ "start-dev", "--log-level=debug" })
     void testSetRootLevel(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("DEBUG [io.netty.util.internal"));
+        assertTrue(cliResult.getOutput().contains("DEBUG [io.quarkus.resteasy.runtime]"));
         cliResult.assertStartedDevMode();
     }
 
@@ -76,7 +76,7 @@ public class LoggingDistTest {
     @Launch({ "start-dev", "--log-level=off,org.keycloak:warn,debug" })
     void testSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("DEBUG [io.netty.util.internal"));
+        assertTrue(cliResult.getOutput().contains("DEBUG [io.quarkus.resteasy.runtime]"));
         assertFalse(cliResult.getOutput().contains("INFO  [org.keycloak"));
         cliResult.assertStartedDevMode();
     }
@@ -85,7 +85,7 @@ public class LoggingDistTest {
     @Launch({ "start-dev", "--log-level=\"off,org.keycloak:warn,debug\"" })
     void testWinSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("DEBUG [io.netty.util.internal"));
+        assertTrue(cliResult.getOutput().contains("DEBUG [io.quarkus.resteasy.runtime]"));
         assertFalse(cliResult.getOutput().contains("INFO  [org.keycloak"));
         cliResult.assertStartedDevMode();
     }

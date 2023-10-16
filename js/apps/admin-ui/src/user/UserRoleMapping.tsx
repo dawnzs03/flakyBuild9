@@ -12,7 +12,7 @@ type UserRoleMappingProps = {
 };
 
 export const UserRoleMapping = ({ id, name }: UserRoleMappingProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const { addAlert, addError } = useAlerts();
 
   const assignRoles = async (rows: Row[]) => {
@@ -36,9 +36,9 @@ export const UserRoleMapping = ({ id, name }: UserRoleMappingProps) => {
             }),
           ),
       );
-      addAlert(t("userRoleMappingUpdatedSuccess"), AlertVariant.success);
+      addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("roleMappingUpdatedError", error);
+      addError("clients:roleMappingUpdatedError", error);
     }
   };
 

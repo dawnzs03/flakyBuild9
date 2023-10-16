@@ -80,7 +80,7 @@ export const ResourcesPolicySelect = ({
   isRequired = false,
 }: ResourcesPolicySelectProps) => {
   const { realm } = useRealm();
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const navigate = useNavigate();
 
   const {
@@ -147,7 +147,7 @@ export const ResourcesPolicySelect = ({
   const [toggleUnsavedChangesDialog, UnsavedChangesConfirm] = useConfirmDialog({
     titleKey: t("unsavedChangesTitle"),
     messageKey: t("unsavedChangesConfirm"),
-    continueButtonLabel: t("continue"),
+    continueButtonLabel: t("common:continue"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: () => onUnsavedChangesConfirm?.(),
   });

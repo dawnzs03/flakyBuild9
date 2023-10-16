@@ -26,6 +26,7 @@ import jakarta.persistence.EntityManagerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -43,7 +44,7 @@ public class JpaMapUtils {
 
     public static String getSchemaForNativeQuery(EntityManager em) {
         String schema = (String) em.getEntityManagerFactory().getProperties().get(HIBERNATE_DEFAULT_SCHEMA);
-        return (schema == null) ? "" : "\"" + schema + "\".";
+        return (schema == null) ? "" : schema + ".";
     }
 
     /**

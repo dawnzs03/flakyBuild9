@@ -21,7 +21,7 @@ type MemberModalProps = {
 };
 
 export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("groups");
   const { addAlert, addError } = useAlerts();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
@@ -37,7 +37,7 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
       const users = await adminClient.users.find({ ...params });
       return differenceBy(users, members, "id").slice(0, max);
     } catch (error) {
-      addError("noUsersFoundError", error);
+      addError("groups:noUsersFoundError", error);
       return [];
     }
   };
@@ -66,11 +66,11 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
                 AlertVariant.success,
               );
             } catch (error) {
-              addError("usersAddedError", error);
+              addError("groups:usersAddedError", error);
             }
           }}
         >
-          {t("add")}
+          {t("common:add")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -78,14 +78,14 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
           variant="link"
           onClick={onClose}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >
       <KeycloakDataTable
         loader={loader}
         isPaginated
-        ariaLabelKey="titleUsers"
+        ariaLabelKey="users:title"
         searchPlaceholderKey="users:searchForUser"
         canSelectAll
         onSelect={(rows) => setSelectedRows([...rows])}

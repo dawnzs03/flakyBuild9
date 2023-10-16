@@ -29,7 +29,7 @@ export const Header = ({
   noDivider = false,
   dropdownItems = [],
 }: HeaderProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
   const { id } = useParams<Partial<CustomUserFederationRouteParams>>();
   const navigate = useNavigate();
 
@@ -41,7 +41,7 @@ export const Header = ({
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "user-federation:userFedDisableConfirmTitle",
     messageKey: "user-federation:userFedDisableConfirm",
-    continueButtonLabel: "disable",
+    continueButtonLabel: "common:disable",
     onConfirm: () => {
       setValue("config.enabled[0]", "false");
       save();
@@ -51,7 +51,7 @@ export const Header = ({
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "user-federation:userFedDeleteConfirmTitle",
     messageKey: "user-federation:userFedDeleteConfirm",
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {

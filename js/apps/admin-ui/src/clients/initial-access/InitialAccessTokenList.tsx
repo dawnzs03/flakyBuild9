@@ -18,7 +18,7 @@ import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
 import { toCreateInitialAccessToken } from "../routes/CreateInitialAccessToken";
 
 export const InitialAccessTokenList = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
 
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -37,9 +37,9 @@ export const InitialAccessTokenList = () => {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "tokenDeleteConfirmTitle",
+    titleKey: "clients:tokenDeleteConfirmTitle",
     messageKey: t("tokenDeleteConfirm", { id: token?.id }),
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -50,7 +50,7 @@ export const InitialAccessTokenList = () => {
         addAlert(t("tokenDeleteSuccess"), AlertVariant.success);
         setToken(undefined);
       } catch (error) {
-        addError("tokenDeleteError", error);
+        addError("clients:tokenDeleteError", error);
       }
     },
   });
@@ -60,8 +60,8 @@ export const InitialAccessTokenList = () => {
       <DeleteConfirm />
       <KeycloakDataTable
         key={token?.id}
-        ariaLabelKey="initialAccessToken"
-        searchPlaceholderKey="searchInitialAccessToken"
+        ariaLabelKey="clients:initialAccessToken"
+        searchPlaceholderKey="clients:searchInitialAccessToken"
         loader={loader}
         toolbarItem={
           <Button
@@ -69,12 +69,12 @@ export const InitialAccessTokenList = () => {
               <Link {...props} to={toCreateInitialAccessToken({ realm })} />
             )}
           >
-            {t("create")}
+            {t("common:create")}
           </Button>
         }
         actions={[
           {
-            title: t("delete"),
+            title: t("common:delete"),
             onRowClick: (token) => {
               setToken(token);
               toggleDeleteDialog();
@@ -84,17 +84,17 @@ export const InitialAccessTokenList = () => {
         columns={[
           {
             name: "id",
-            displayKey: "id",
+            displayKey: "common:id",
           },
           {
             name: "timestamp",
-            displayKey: "timestamp",
+            displayKey: "clients:timestamp",
             cellRenderer: (row) =>
               formatDate(new Date(row.timestamp! * 1000), FORMAT_DATE_AND_TIME),
           },
           {
             name: "expiration",
-            displayKey: "expires",
+            displayKey: "clients:expires",
             cellRenderer: (row) =>
               formatDate(
                 new Date(row.timestamp! * 1000 + row.expiration! * 1000),
@@ -103,11 +103,11 @@ export const InitialAccessTokenList = () => {
           },
           {
             name: "count",
-            displayKey: "count",
+            displayKey: "clients:count",
           },
           {
             name: "remainingCount",
-            displayKey: "remainingCount",
+            displayKey: "clients:remainingCount",
             transforms: [wrappable],
           },
         ]}
@@ -115,7 +115,7 @@ export const InitialAccessTokenList = () => {
           <ListEmptyState
             message={t("noTokens")}
             instructions={t("noTokensInstructions")}
-            primaryActionText={t("create")}
+            primaryActionText={t("common:create")}
             onPrimaryAction={() =>
               navigate(toCreateInitialAccessToken({ realm }))
             }

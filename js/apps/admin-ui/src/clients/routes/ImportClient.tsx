@@ -10,7 +10,7 @@ const ImportForm = lazy(() => import("../import/ImportForm"));
 export const ImportClientRoute: AppRouteObject = {
   path: "/:realm/clients/import-client",
   element: <ImportForm />,
-  breadcrumb: (t) => t("importClient"),
+  breadcrumb: (t) => t("clients:importClient"),
   handle: {
     access: "manage-clients",
   },

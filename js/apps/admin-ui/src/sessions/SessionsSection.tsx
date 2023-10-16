@@ -30,7 +30,7 @@ type SessionFilterProps = {
 };
 
 const SessionFilter = ({ filterType, onChange }: SessionFilterProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("sessions");
 
   const [open, toggle] = useToggle();
 
@@ -61,7 +61,7 @@ const SessionFilter = ({ filterType, onChange }: SessionFilterProps) => {
 };
 
 export default function SessionsSection() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("sessions");
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -93,7 +93,7 @@ export default function SessionsSection() {
   const [toggleLogoutDialog, LogoutConfirm] = useConfirmDialog({
     titleKey: "sessions:logoutAllSessions",
     messageKey: "sessions:logoutAllDescription",
-    continueButtonLabel: "confirm",
+    continueButtonLabel: "common:confirm",
     onConfirm: async () => {
       try {
         await adminClient.realms.logoutAll({ realm });
@@ -129,7 +129,7 @@ export default function SessionsSection() {
       <LogoutConfirm />
       <ViewHeader
         dropdownItems={dropdownItems}
-        titleKey="titleSessions"
+        titleKey="sessions:title"
         subKey="sessions:sessionExplain"
         helpUrl={helpUrls.sessionsUrl}
       />

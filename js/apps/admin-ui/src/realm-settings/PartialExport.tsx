@@ -31,7 +31,7 @@ export const PartialExportDialog = ({
   isOpen,
   onClose,
 }: PartialExportDialogProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
 
@@ -80,7 +80,7 @@ export const PartialExportDialog = ({
           isDisabled={isExporting}
           onClick={exportRealm}
         >
-          {t("export")}
+          {t("common:export")}
         </Button>,
         <Button
           key="cancel"
@@ -88,7 +88,7 @@ export const PartialExportDialog = ({
           variant={ButtonVariant.link}
           onClick={onClose}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >
@@ -109,8 +109,8 @@ export const PartialExportDialog = ({
             data-testid="include-groups-and-roles-check"
             isChecked={exportGroupsAndRoles}
             onChange={setExportGroupsAndRoles}
-            label={t("on")}
-            labelOff={t("off")}
+            label={t("common:on")}
+            labelOff={t("common:off")}
             aria-label={t("includeGroupsAndRoles")}
           />
         </FormGroup>
@@ -124,8 +124,8 @@ export const PartialExportDialog = ({
             data-testid="include-clients-check"
             onChange={setExportClients}
             isChecked={exportClients}
-            label={t("on")}
-            labelOff={t("off")}
+            label={t("common:on")}
+            labelOff={t("common:off")}
             aria-label={t("includeClients")}
           />
         </FormGroup>

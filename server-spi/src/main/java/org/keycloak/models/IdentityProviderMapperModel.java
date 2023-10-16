@@ -22,7 +22,6 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -94,16 +93,12 @@ public class IdentityProviderMapperModel implements Serializable {
         this.config = config;
     }
 
-    public Map<String, List<String>> getConfigMap(String configKey) {
+    public Map<String, String> getConfigMap(String configKey) {
         String configMap = config.get(configKey);
 
         try {
             List<StringPair> map = JsonSerialization.readValue(configMap, MAP_TYPE_REPRESENTATION);
-            return map.stream().collect(
-                    Collectors.collectingAndThen(
-                            Collectors.groupingBy(StringPair::getKey,
-                                    Collectors.mapping(StringPair::getValue, Collectors.toUnmodifiableList())),
-                            Collections::unmodifiableMap));
+            return map.stream().collect(Collectors.toMap(StringPair::getKey, StringPair::getValue));
         } catch (IOException e) {
             throw new RuntimeException("Could not deserialize json: " + configMap, e);
         }

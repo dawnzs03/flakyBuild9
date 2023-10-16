@@ -43,7 +43,7 @@ import { toGroups } from "./routes/Groups";
 import "./GroupsSection.css";
 
 export default function GroupsSection() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("groups");
   const [activeTab, setActiveTab] = useState(0);
 
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();
@@ -93,7 +93,7 @@ export default function GroupsSection() {
           if (group) {
             groups.push(group);
           } else {
-            throw new Error(t("notFound"));
+            throw new Error(t("common:notFound"));
           }
         }
         return groups;
@@ -143,9 +143,9 @@ export default function GroupsSection() {
             }
           >
             <DrawerContentBody>
-              <Tooltip content={open ? t("hide") : t("show")}>
+              <Tooltip content={open ? t("common:hide") : t("common:show")}>
                 <Button
-                  aria-label={open ? t("hide") : t("show")}
+                  aria-label={open ? t("common:hide") : t("common:show")}
                   variant="plain"
                   icon={open ? <AngleLeftIcon /> : <TreeIcon />}
                   onClick={toggle}
@@ -153,8 +153,8 @@ export default function GroupsSection() {
               </Tooltip>
               <GroupBreadCrumbs />
               <ViewHeader
-                titleKey={!id ? "groups" : currentGroup()?.name!}
-                subKey={!id ? "groupsDescription" : ""}
+                titleKey={!id ? "groups:groups" : currentGroup()?.name!}
+                subKey={!id ? "groups:groupsDescription" : ""}
                 helpUrl={!id ? helpUrls.groupsUrl : ""}
                 divider={!id}
                 dropdownItems={
@@ -214,7 +214,9 @@ export default function GroupsSection() {
                   <Tab
                     data-testid="attributes"
                     eventKey={2}
-                    title={<TabTitleText>{t("attributes")}</TabTitleText>}
+                    title={
+                      <TabTitleText>{t("common:attributes")}</TabTitleText>
+                    }
                   >
                     <GroupAttributes />
                   </Tab>
@@ -231,7 +233,9 @@ export default function GroupsSection() {
                     <Tab
                       eventKey={4}
                       data-testid="permissionsTab"
-                      title={<TabTitleText>{t("permissions")}</TabTitleText>}
+                      title={
+                        <TabTitleText>{t("common:permissions")}</TabTitleText>
+                      }
                     >
                       <PermissionsTab id={id} type="groups" />
                     </Tab>

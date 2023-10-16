@@ -46,7 +46,6 @@ import jakarta.transaction.NotSupportedException;
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
-import liquibase.GlobalConfiguration;
 
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.internal.SessionImpl;
@@ -402,7 +401,7 @@ public class JpaMapStorageProviderFactory implements
             }
         }
 
-        String schema = getSchema();
+        String schema = config.get("schema");
         if (schema != null) {
             properties.put(HIBERNATE_DEFAULT_SCHEMA, schema);
         }
@@ -429,15 +428,6 @@ public class JpaMapStorageProviderFactory implements
         logger.trace("EntityManagerFactory created");
 
         return emf;
-    }
-
-    private String getSchema() {
-        String schema = config.get("schema");
-        if (schema != null && schema.contains("-") && ! Boolean.parseBoolean(System.getProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey()))) {
-            System.setProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey(), "true");
-            logger.warnf("The passed schema '%s' contains a dash. Setting liquibase config option PRESERVE_SCHEMA_CASE to true. See https://github.com/keycloak/keycloak/issues/20870 for more information.", schema);
-        }
-        return schema;
     }
 
     protected EntityManagerFactory getEntityManagerFactory() {
@@ -474,7 +464,7 @@ public class JpaMapStorageProviderFactory implements
                             if (logger.isDebugEnabled()) printOperationalInfo(connection);
 
                             MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
-                            MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, getSchema());
+                            MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
                             databaseShortName = updater.getDatabaseShortName();
 
                             if (!status.equals(VALID)) {
@@ -554,10 +544,10 @@ public class JpaMapStorageProviderFactory implements
     private void update(Class<?> modelType, Connection connection, KeycloakSession session) {
         if (modelType == MapLockEntity.class) {
             // as the MapLockEntity is used by the MapGlobalLockProvider itself, don't create a global lock for creating that schema
-            session.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, getSchema());
+            session.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
         } else {
             session.getProvider(GlobalLockProvider.class).withLock(modelType.getName(), lockedSession -> {
-                lockedSession.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, getSchema());
+                lockedSession.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
                 return null;
             });
         }

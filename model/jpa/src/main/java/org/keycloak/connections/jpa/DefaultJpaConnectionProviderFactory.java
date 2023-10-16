@@ -59,7 +59,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import liquibase.GlobalConfiguration;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -435,12 +434,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
     @Override
     public String getSchema() {
-        String schema = config.get("schema");
-        if (schema != null && schema.contains("-") && ! Boolean.parseBoolean(System.getProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey()))) {
-            System.setProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey(), "true");
-            logger.warnf("The passed schema '%s' contains a dash. Setting liquibase config option PRESERVE_SCHEMA_CASE to true. See https://github.com/keycloak/keycloak/issues/20870 for more information.", schema);
-        }
-        return schema;
+        return config.get("schema");
     }
 
     @Override

@@ -18,7 +18,8 @@ export const LdapSettingsSynchronization = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsSynchronizationProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("user-federation");
+  const { t: helpText } = useTranslation("user-federation-help");
 
   const watchPeriodicSync = form.watch("config.periodicFullSync", false);
   const watchChangedSync = form.watch("config.periodicChangedUsersSync", false);
@@ -28,7 +29,7 @@ export const LdapSettingsSynchronization = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("synchronizationSettings")}
-          description={t("ldapSynchronizationSettingsDescription")}
+          description={helpText("ldapSynchronizationSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}
@@ -38,7 +39,7 @@ export const LdapSettingsSynchronization = ({
           label={t("importUsers")}
           labelIcon={
             <HelpItem
-              helpText={t("importUsersHelp")}
+              helpText={t("user-federation-help:importUsersHelp")}
               fieldLabelId="user-federation:importUsers"
             />
           }
@@ -53,8 +54,8 @@ export const LdapSettingsSynchronization = ({
                 id="kc-import-users"
                 data-testid="import-users"
                 name="importEnabled"
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 isDisabled={false}
@@ -68,7 +69,7 @@ export const LdapSettingsSynchronization = ({
           label={t("syncRegistrations")}
           labelIcon={
             <HelpItem
-              helpText={t("syncRegistrations")}
+              helpText={t("user-federation-help:syncRegistrations")}
               fieldLabelId="user-federation:syncRegistrations"
             />
           }
@@ -82,8 +83,8 @@ export const LdapSettingsSynchronization = ({
               <Switch
                 id="syncRegistrations"
                 data-testid="syncRegistrations"
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 aria-label={t("syncRegistrations")}
@@ -95,7 +96,7 @@ export const LdapSettingsSynchronization = ({
           label={t("batchSize")}
           labelIcon={
             <HelpItem
-              helpText={t("batchSizeHelp")}
+              helpText={t("user-federation-help:batchSizeHelp")}
               fieldLabelId="user-federation:batchSize"
             />
           }
@@ -113,7 +114,7 @@ export const LdapSettingsSynchronization = ({
           label={t("periodicFullSync")}
           labelIcon={
             <HelpItem
-              helpText={t("periodicFullSyncHelp")}
+              helpText={t("user-federation-help:periodicFullSyncHelp")}
               fieldLabelId="user-federation:periodicFullSync"
             />
           }
@@ -131,8 +132,8 @@ export const LdapSettingsSynchronization = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange(value)}
                 isChecked={field.value === true}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("periodicFullSync")}
               />
             )}
@@ -144,7 +145,7 @@ export const LdapSettingsSynchronization = ({
             label={t("fullSyncPeriod")}
             labelIcon={
               <HelpItem
-                helpText={t("fullSyncPeriodHelp")}
+                helpText={t("user-federation-help:fullSyncPeriodHelp")}
                 fieldLabelId="user-federation:fullSyncPeriod"
               />
             }
@@ -164,7 +165,7 @@ export const LdapSettingsSynchronization = ({
           label={t("periodicChangedUsersSync")}
           labelIcon={
             <HelpItem
-              helpText={t("periodicChangedUsersSyncHelp")}
+              helpText={t("user-federation-help:periodicChangedUsersSyncHelp")}
               fieldLabelId="user-federation:periodicChangedUsersSync"
             />
           }
@@ -182,8 +183,8 @@ export const LdapSettingsSynchronization = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange(value)}
                 isChecked={field.value === true}
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 aria-label={t("periodicChangedUsersSync")}
               />
             )}
@@ -194,7 +195,7 @@ export const LdapSettingsSynchronization = ({
             label={t("changedUsersSyncPeriod")}
             labelIcon={
               <HelpItem
-                helpText={t("changedUsersSyncHelp")}
+                helpText={t("user-federation-help:changedUsersSyncHelp")}
                 fieldLabelId="user-federation:changedUsersSyncPeriod"
               />
             }

@@ -35,7 +35,7 @@ export const RoleForm = ({
   role,
   editMode,
 }: RoleFormProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("roles");
 
   const roleName = useWatch({
     control,
@@ -59,7 +59,7 @@ export const RoleForm = ({
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
-            helperTextInvalid={t("required")}
+            helperTextInvalid={t("common:required")}
             isRequired={!editMode}
           >
             <KeycloakTextInput
@@ -69,14 +69,14 @@ export const RoleForm = ({
                 required: !editMode,
                 validate: (value) => {
                   if (!value?.trim()) {
-                    return t("required").toString();
+                    return t("common:required").toString();
                   }
                 },
               })}
             />
           </FormGroup>
           <FormGroup
-            label={t("description")}
+            label={t("common:description")}
             fieldId="kc-description"
             validated={
               errors.description
@@ -96,21 +96,21 @@ export const RoleForm = ({
               {...register("description", {
                 maxLength: {
                   value: 255,
-                  message: t("maxLength", { length: 255 }),
+                  message: t("common:maxLength", { length: 255 }),
                 },
               })}
             />
           </FormGroup>
           <ActionGroup>
             <Button data-testid="save" type="submit" variant="primary">
-              {t("save")}
+              {t("common:save")}
             </Button>
             <Button
               data-testid="cancel"
               variant="link"
               component={(props) => <Link {...props} to={cancelLink} />}
             >
-              {t("cancel")}
+              {t("common:cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

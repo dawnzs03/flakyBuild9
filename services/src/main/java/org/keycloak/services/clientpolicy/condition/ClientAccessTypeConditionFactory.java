@@ -61,8 +61,7 @@ public class ClientAccessTypeConditionFactory extends AbstractClientPolicyCondit
 
     @Override
     public String getHelpText() {
-        return "It uses the client's access type (confidential, public, bearer-only) to determine whether the policy is applied. Condition is checked during most of OpenID Connect requests (Authorization request, token requests, introspection endpoint request etc). "
-                + "Confidential client has enabled client authentication when public client has disabled client authentication. Bearer-only is deprecated client type.";
+        return "It uses the client's access type (confidential, public, bearer-only) to determine whether the policy is applied. Condition is checked during most of OpenID Connect requests (Authorization request, token requests, introspection endpoint request etc).";
     }
 
     @Override

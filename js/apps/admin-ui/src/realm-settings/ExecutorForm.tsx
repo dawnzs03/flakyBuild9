@@ -39,7 +39,7 @@ const defaultValues: ExecutorForm = {
 };
 
 export default function ExecutorForm() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const navigate = useNavigate();
   const { realm, profileName } = useParams<ClientProfileParams>();
   const { executorName } = useParams<ExecutorParams>();
@@ -239,7 +239,7 @@ export default function ExecutorForm() {
                 onClick={() => handleSubmit(save)()}
                 data-testid="addExecutor-saveBtn"
               >
-                {editMode ? t("save") : t("add")}
+                {editMode ? t("common:save") : t("common:add")}
               </Button>
               <Button
                 variant="link"
@@ -251,7 +251,7 @@ export default function ExecutorForm() {
                 )}
                 data-testid="addExecutor-cancelBtn"
               >
-                {t("cancel")}
+                {t("common:cancel")}
               </Button>
             </ActionGroup>
           )}

@@ -24,7 +24,7 @@ type DiscoveryIdentityProvider = IdentityProviderRepresentation & {
 };
 
 export default function AddSamlConnect() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const navigate = useNavigate();
   const id = "saml";
 
@@ -46,7 +46,7 @@ export default function AddSamlConnect() {
         ...provider,
         providerId: id,
       });
-      addAlert(t("createIdentityProviderSuccess"), AlertVariant.success);
+      addAlert(t("createSuccess"), AlertVariant.success);
       navigate(
         toIdentityProvider({
           realm,
@@ -56,7 +56,7 @@ export default function AddSamlConnect() {
         }),
       );
     } catch (error: any) {
-      addError("createIdentityProviderError", error);
+      addError("identity-providers:createError", error);
     }
   };
 
@@ -70,7 +70,7 @@ export default function AddSamlConnect() {
             isHorizontal
             onSubmit={handleSubmit(onSubmit)}
           >
-            <SamlGeneralSettings />
+            <SamlGeneralSettings id={id} />
             <SamlConnectSettings />
             <ActionGroup>
               <Button
@@ -79,7 +79,7 @@ export default function AddSamlConnect() {
                 type="submit"
                 data-testid="createProvider"
               >
-                {t("add")}
+                {t("common:add")}
               </Button>
               <Button
                 variant="link"
@@ -88,7 +88,7 @@ export default function AddSamlConnect() {
                   <Link {...props} to={toIdentityProviders({ realm })} />
                 )}
               >
-                {t("cancel")}
+                {t("common:cancel")}
               </Button>
             </ActionGroup>
           </FormAccess>

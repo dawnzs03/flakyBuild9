@@ -82,7 +82,7 @@ const CreateAttributeFormContent = ({
 }: {
   save: (profileConfig: UserProfileConfig) => void;
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const form = useFormContext();
   const { realm, attributeName } = useParams<AttributeParams>();
   const editMode = attributeName ? true : false;
@@ -104,14 +104,14 @@ const CreateAttributeFormContent = ({
             type="submit"
             data-testid="attribute-create"
           >
-            {editMode ? t("save") : t("create")}
+            {editMode ? t("common:save") : t("common:create")}
           </Button>
           <Link
             to={toUserProfile({ realm, tab: "attributes" })}
             data-testid="attribute-cancel"
             className="kc-attributeCancel"
           >
-            {t("cancel")}
+            {t("common:cancel")}
           </Link>
         </FixedButtonsGroup>
       </Form>
@@ -122,7 +122,7 @@ const CreateAttributeFormContent = ({
 export default function NewAttributeSettings() {
   const { realm, attributeName } = useParams<AttributeParams>();
   const form = useForm<UserProfileAttributeType>();
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const [config, setConfig] = useState<UserProfileConfig | null>(null);
@@ -158,7 +158,7 @@ export default function NewAttributeSettings() {
         "validations",
         Object.entries(validations || {}).map(([key, value]) => ({
           key,
-          value: value as Record<string, unknown>,
+          value,
         })),
       );
       form.setValue("isRequired", required !== undefined);

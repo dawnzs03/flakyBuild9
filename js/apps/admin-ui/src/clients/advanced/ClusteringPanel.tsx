@@ -35,7 +35,7 @@ export const ClusteringPanel = ({
   save,
   client: { id, registeredNodes, access },
 }: AdvancedProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
 
@@ -52,11 +52,11 @@ export const ClusteringPanel = ({
   };
 
   const [toggleDeleteNodeConfirm, DeleteNodeConfirm] = useConfirmDialog({
-    titleKey: "deleteNode",
+    titleKey: "clients:deleteNode",
     messageKey: t("deleteNodeBody", {
       node: selectedNode,
     }),
-    continueButtonLabel: "delete",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -75,7 +75,7 @@ export const ClusteringPanel = ({
         refresh();
         addAlert(t("deleteNodeSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("deleteNodeFail", error);
+        addError("clients:deleteNodeFail", error);
       }
     },
   });
@@ -92,8 +92,8 @@ export const ClusteringPanel = ({
           fieldId="kc-node-reregistration-timeout"
           labelIcon={
             <HelpItem
-              helpText={t("nodeReRegistrationTimeoutHelp")}
-              fieldLabelId="nodeReRegistrationTimeout"
+              helpText={t("clients-help:nodeReRegistrationTimeout")}
+              fieldLabelId="clients:nodeReRegistrationTimeout"
             />
           }
         >
@@ -103,7 +103,7 @@ export const ClusteringPanel = ({
             </SplitItem>
             <SplitItem>
               <Button variant={ButtonVariant.secondary} onClick={() => save()}>
-                {t("save")}
+                {t("common:save")}
               </Button>
             </SplitItem>
           </Split>
@@ -160,7 +160,7 @@ export const ClusteringPanel = ({
             }
             actions={[
               {
-                title: t("delete"),
+                title: t("common:delete"),
                 onRowClick: (node) => {
                   setSelectedNode(node.host);
                   toggleDeleteNodeConfirm();
@@ -170,11 +170,11 @@ export const ClusteringPanel = ({
             columns={[
               {
                 name: "host",
-                displayKey: "nodeHost",
+                displayKey: "clients:nodeHost",
               },
               {
                 name: "registration",
-                displayKey: "lastRegistration",
+                displayKey: "clients:lastRegistration",
                 cellFormatters: [
                   (value) =>
                     value

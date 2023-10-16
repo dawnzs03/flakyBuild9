@@ -32,7 +32,7 @@ export const AddMapperForm = ({
   id,
   updateMapperType,
 }: AddMapperFormProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
 
   const {
     control,
@@ -48,16 +48,19 @@ export const AddMapperForm = ({
   return (
     <>
       <FormGroup
-        label={t("name")}
+        label={t("common:name")}
         labelIcon={
-          <HelpItem helpText={t("addIdpMapperName")} fieldLabelId="name" />
+          <HelpItem
+            helpText={t("identity-providers-help:addIdpMapperName")}
+            fieldLabelId="name"
+          />
         }
         fieldId="kc-name"
         isRequired
         validated={
           errors.name ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           id="kc-name"
@@ -73,7 +76,7 @@ export const AddMapperForm = ({
         isRequired
         labelIcon={
           <HelpItem
-            helpText={t("syncModeOverrideHelp")}
+            helpText={t("identity-providers-help:syncModeOverride")}
             fieldLabelId="identity-providers:syncModeOverride"
           />
         }

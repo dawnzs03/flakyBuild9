@@ -12,7 +12,6 @@ import org.hamcrest.CoreMatchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.StreamUtil;
@@ -94,7 +93,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
             assertEquals(400, response.getStatusLine().getStatusCode());
 
             OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
-            assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+            assertEquals("unknown_error", error.getError());
             assertNull(error.getErrorDescription());
         }
     }
@@ -114,7 +113,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
             assertEquals(400, response.getStatusLine().getStatusCode());
 
             OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
-            assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+            assertEquals("unknown_error", error.getError());
             assertNull(error.getErrorDescription());
         }
     }

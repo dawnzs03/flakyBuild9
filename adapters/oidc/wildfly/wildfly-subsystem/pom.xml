@@ -64,14 +64,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>${ee.maven.groupId}</groupId>
+            <groupId>org.wildfly</groupId>
             <artifactId>wildfly-web-common</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.common</groupId>
-            <artifactId>wildfly-common</artifactId>
-            <version>${wildfly.common.wildfly.aligned.version}</version>
         </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>

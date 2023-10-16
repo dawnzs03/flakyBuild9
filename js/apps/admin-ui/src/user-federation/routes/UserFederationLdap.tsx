@@ -18,7 +18,7 @@ const UserFederationLdapSettings = lazy(
 export const UserFederationLdapRoute: AppRouteObject = {
   path: "/:realm/user-federation/ldap/:id",
   element: <UserFederationLdapSettings />,
-  breadcrumb: (t) => t("settings"),
+  breadcrumb: (t) => t("common:settings"),
   handle: {
     access: "view-realm",
   },

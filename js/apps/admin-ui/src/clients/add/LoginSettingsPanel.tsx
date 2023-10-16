@@ -17,7 +17,7 @@ import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
 export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { register, control, watch } = useFormContext<FormFields>();
 
   const [loginThemeOpen, setLoginThemeOpen] = useState(false);
@@ -34,7 +34,10 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
       <FormGroup
         label={t("loginTheme")}
         labelIcon={
-          <HelpItem helpText={t("loginThemeHelp")} fieldLabelId="loginTheme" />
+          <HelpItem
+            helpText={t("clients-help:loginTheme")}
+            fieldLabelId="clients:loginTheme"
+          />
         }
         fieldId="loginTheme"
       >
@@ -50,14 +53,14 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
                 field.onChange(value.toString());
                 setLoginThemeOpen(false);
               }}
-              selections={field.value || t("choose")}
+              selections={field.value || t("common:choose")}
               variant={SelectVariant.single}
               aria-label={t("loginTheme")}
               isOpen={loginThemeOpen}
             >
               {[
                 <SelectOption key="empty" value="">
-                  {t("choose")}
+                  {t("common:choose")}
                 </SelectOption>,
                 ...loginThemes.map((theme) => (
                   <SelectOption
@@ -75,8 +78,8 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         label={t("consentRequired")}
         labelIcon={
           <HelpItem
-            helpText={t("consentRequiredHelp")}
-            fieldLabelId="consentRequired"
+            helpText={t("clients-help:consentRequired")}
+            fieldLabelId="clients:consentRequired"
           />
         }
         fieldId="kc-consent"
@@ -89,8 +92,8 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
           render={({ field }) => (
             <Switch
               id="kc-consent-switch"
-              label={t("on")}
-              labelOff={t("off")}
+              label={t("common:on")}
+              labelOff={t("common:off")}
               isChecked={field.value}
               onChange={field.onChange}
               aria-label={t("consentRequired")}
@@ -102,8 +105,8 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         label={t("displayOnClient")}
         labelIcon={
           <HelpItem
-            helpText={t("displayOnClientHelp")}
-            fieldLabelId="displayOnClient"
+            helpText={t("clients-help:displayOnClient")}
+            fieldLabelId="clients:displayOnClient"
           />
         }
         fieldId="kc-display-on-client"
@@ -118,8 +121,8 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
           render={({ field }) => (
             <Switch
               id="kc-display-on-client-switch"
-              label={t("on")}
-              labelOff={t("off")}
+              label={t("common:on")}
+              labelOff={t("common:off")}
               isChecked={field.value === "true"}
               onChange={(value) => field.onChange("" + value)}
               isDisabled={!consentRequired}
@@ -132,8 +135,8 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         label={t("consentScreenText")}
         labelIcon={
           <HelpItem
-            helpText={t("consentScreenTextHelp")}
-            fieldLabelId="consentScreenText"
+            helpText={t("clients-help:consentScreenText")}
+            fieldLabelId="clients:consentScreenText"
           />
         }
         fieldId="kc-consent-screen-text"

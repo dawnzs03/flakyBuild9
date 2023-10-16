@@ -15,7 +15,7 @@ export const DecisionStrategySelect = ({
   helpLabel,
   isLimited = false,
 }: DecisionStrategySelectProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { control } = useFormContext();
 
   return (
@@ -23,8 +23,8 @@ export const DecisionStrategySelect = ({
       label={t("decisionStrategy")}
       labelIcon={
         <HelpItem
-          helpText={t(`${helpLabel || "decisionStrategyHelp"}`)}
-          fieldLabelId="decisionStrategy"
+          helpText={t(`clients-help:${helpLabel || "decisionStrategy"}`)}
+          fieldLabelId="clients:decisionStrategy"
         />
       }
       fieldId="decisionStrategy"

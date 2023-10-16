@@ -47,7 +47,7 @@ import { toMapper } from "./routes/Mapper";
 import { toClientScopes } from "./routes/ClientScopes";
 
 export default function EditClientScope() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("client-scopes");
   const navigate = useNavigate();
   const { realm } = useRealm();
   const { id } = useParams<ClientScopeParams>();
@@ -63,7 +63,7 @@ export default function EditClientScope() {
       const clientScope = await adminClient.clientScopes.findOne({ id });
 
       if (!clientScope) {
-        throw new Error(t("notFound"));
+        throw new Error(t("common:notFound"));
       }
 
       return {
@@ -120,9 +120,9 @@ export default function EditClientScope() {
       await adminClient.clientScopes.update({ id }, clientScope);
       await changeScope({ ...clientScope, id }, clientScope.type);
 
-      addAlert(t("updateSuccessClientScope"), AlertVariant.success);
+      addAlert(t("updateSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("updateErrorClientScope", error);
+      addError("client-scopes:updateError", error);
     }
   };
 
@@ -131,16 +131,16 @@ export default function EditClientScope() {
       count: 1,
       name: clientScope?.name,
     }),
-    messageKey: "deleteConfirmClientScopes",
-    continueButtonLabel: "delete",
+    messageKey: "client-scopes:deleteConfirm",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await adminClient.clientScopes.del({ id });
-        addAlert(t("deletedSuccessClientScope"), AlertVariant.success);
+        addAlert(t("deletedSuccess"), AlertVariant.success);
         navigate(toClientScopes({ realm }));
       } catch (error) {
-        addError("deleteErrorClientScope", error);
+        addError("client-scopes:deleteError", error);
       }
     },
   });
@@ -172,7 +172,7 @@ export default function EditClientScope() {
       );
       addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("roleMappingUpdatedError", error);
+      addError("client-scopes:roleMappingUpdatedError", error);
     }
   };
 
@@ -195,9 +195,9 @@ export default function EditClientScope() {
           mappers as ProtocolMapperRepresentation[],
         );
         refresh();
-        addAlert(t("mappingCreatedSuccess"), AlertVariant.success);
+        addAlert(t("common:mappingCreatedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("mappingCreatedError", error);
+        addError("common:mappingCreatedError", error);
       }
     }
   };
@@ -208,10 +208,10 @@ export default function EditClientScope() {
         id: clientScope!.id!,
         mapperId: mapper.id!,
       });
-      addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
+      addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addError("mappingDeletedError", error);
+      addError("common:mappingDeletedError", error);
     }
     return true;
   };
@@ -227,7 +227,7 @@ export default function EditClientScope() {
         titleKey={clientScope.name!}
         dropdownItems={[
           <DropdownItem key="delete" onClick={toggleDeleteDialog}>
-            {t("delete")}
+            {t("common:delete")}
           </DropdownItem>,
         ]}
         badges={[{ text: clientScope.protocol }]}
@@ -239,7 +239,7 @@ export default function EditClientScope() {
           <Tab
             id="settings"
             data-testid="settings"
-            title={<TabTitleText>{t("settings")}</TabTitleText>}
+            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
             {...settingsTab}
           >
             <PageSection variant="light">
@@ -249,7 +249,7 @@ export default function EditClientScope() {
           <Tab
             id="mappers"
             data-testid="mappers"
-            title={<TabTitleText>{t("mappers")}</TabTitleText>}
+            title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
             {...mappersTab}
           >
             <MapperList
@@ -272,7 +272,7 @@ export default function EditClientScope() {
                 <Alert
                   variant="info"
                   isInline
-                  title={t("clientScopesRolesScope")}
+                  title={t("client-scopes-help:rolesScope")}
                   component="h2"
                 />
               </PageSection>

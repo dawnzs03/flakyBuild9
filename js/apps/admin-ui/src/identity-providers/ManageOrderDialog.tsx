@@ -30,7 +30,7 @@ export const ManageOrderDialog = ({
   providers,
   onClose,
 }: ManageOrderDialogProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const { addAlert, addError } = useAlerts();
 
   const [alias, setAlias] = useState("");
@@ -41,19 +41,19 @@ export const ManageOrderDialog = ({
 
   const onDragStart = (id: string) => {
     setAlias(id);
-    setLiveText(t("onDragStart", { item: id }));
+    setLiveText(t("common:onDragStart", { item: id }));
   };
 
   const onDragMove = () => {
-    setLiveText(t("onDragMove", { item: alias }));
+    setLiveText(t("common:onDragMove", { item: alias }));
   };
 
   const onDragCancel = () => {
-    setLiveText(t("onDragCancel"));
+    setLiveText(t("common:onDragCancel"));
   };
 
   const onDragFinish = (providerOrder: string[]) => {
-    setLiveText(t("onDragFinish", { list: providerOrder }));
+    setLiveText(t("common:onDragFinish", { list: providerOrder }));
     setOrder(providerOrder);
   };
 
@@ -85,7 +85,7 @@ export const ManageOrderDialog = ({
             onClose();
           }}
         >
-          {t("save")}
+          {t("common:save")}
         </Button>,
         <Button
           id="modal-cancel"
@@ -94,7 +94,7 @@ export const ManageOrderDialog = ({
           variant={ButtonVariant.link}
           onClick={onClose}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >
@@ -120,7 +120,7 @@ export const ManageOrderDialog = ({
           >
             <DataListItemRow>
               <DataListControl>
-                <DataListDragButton aria-label={t("dragHelp")} />
+                <DataListDragButton aria-label={t("common-help:dragHelp")} />
               </DataListControl>
               <DataListItemCells
                 dataListCells={[

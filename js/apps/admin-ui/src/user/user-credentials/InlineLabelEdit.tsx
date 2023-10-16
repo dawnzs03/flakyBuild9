@@ -25,7 +25,7 @@ export const InlineLabelEdit = ({
   isEditable,
   toggle,
 }: InlineLabelEditProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const { register, handleSubmit } = useForm<UserLabelForm>();
 
   const { addAlert, addError } = useAlerts();

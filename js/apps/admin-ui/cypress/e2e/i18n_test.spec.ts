@@ -141,7 +141,7 @@ describe("i18n tests", () => {
   it("should apply plurals and interpolation for REALM localization", () => {
     addLocalization(
       "en",
-      "addProvider_other",
+      "user-federation:addProvider_other",
       "addProvider_other en: {{provider}}",
     );
     updateUserLocale("en");
@@ -169,7 +169,7 @@ describe("i18n tests", () => {
     locale: string,
     value: string,
   ) {
-    addLocalization(locale, "realmSettings", value);
+    addLocalization(locale, "common:realmSettings", value);
   }
 
   function addLocalization(locale: string, key: string, value: string) {

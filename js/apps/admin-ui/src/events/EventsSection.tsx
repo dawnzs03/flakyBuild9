@@ -59,7 +59,7 @@ type UserEventSearchForm = {
   dateTo: string;
   user: string;
   type: EventType[];
-  ipAddress: string;
+  authIpAddress: string;
 };
 
 const defaultValues: UserEventSearchForm = {
@@ -68,7 +68,7 @@ const defaultValues: UserEventSearchForm = {
   dateTo: "",
   user: "",
   type: [],
-  ipAddress: "",
+  authIpAddress: "",
 };
 
 const StatusRow = (event: EventRepresentation) =>
@@ -103,7 +103,7 @@ const DetailCell = (event: EventRepresentation) => (
 );
 
 const UserDetailLink = (event: EventRepresentation) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("events");
   const { realm } = useRealm();
 
   return (
@@ -126,7 +126,7 @@ const UserDetailLink = (event: EventRepresentation) => {
 };
 
 export default function EventsSection() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("events");
   const { realm } = useRealm();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
@@ -143,7 +143,7 @@ export default function EventsSection() {
     dateTo: t("dateTo"),
     user: t("userId"),
     type: t("eventType"),
-    ipAddress: t("ipAddress"),
+    authIpAddress: t("ipAddress"),
   };
 
   const {
@@ -279,8 +279,8 @@ export default function EventsSection() {
                       data-testid="event-type-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: t("hide"),
-                        collapsedText: t("showRemaining"),
+                        expandedText: t("common:hide"),
+                        collapsedText: t("common:showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
@@ -382,7 +382,7 @@ export default function EventsSection() {
                 <KeycloakTextInput
                   id="kc-ipAddress"
                   data-testid="ipAddress-searchField"
-                  {...register("ipAddress")}
+                  {...register("authIpAddress")}
                 />
               </FormGroup>
               <ActionGroup>
@@ -454,9 +454,9 @@ export default function EventsSection() {
   return (
     <>
       <ViewHeader
-        titleKey="titleEvents"
+        titleKey="events:title"
         subKey={
-          <Trans i18nKey="eventExplain">
+          <Trans i18nKey="events:eventExplain">
             If you want to configure user events, Admin events or Event
             listeners, please enter
             <Link to={toRealmSettings({ realm, tab: "events" })}>
@@ -489,34 +489,34 @@ export default function EventsSection() {
                   },
                 ]}
                 isPaginated
-                ariaLabelKey="titleEvents"
+                ariaLabelKey="events:title"
                 toolbarItem={userEventSearchFormDisplay()}
                 columns={[
                   {
                     name: "time",
-                    displayKey: "time",
+                    displayKey: "events:time",
                     cellFormatters: [expandable],
                     cellRenderer: (row) =>
                       formatDate(new Date(row.time!), FORMAT_DATE_AND_TIME),
                   },
                   {
                     name: "userId",
-                    displayKey: "user",
+                    displayKey: "events:user",
                     cellRenderer: UserDetailLink,
                   },
                   {
                     name: "type",
-                    displayKey: "eventType",
+                    displayKey: "events:eventType",
                     cellRenderer: StatusRow,
                   },
                   {
                     name: "ipAddress",
-                    displayKey: "ipAddress",
+                    displayKey: "events:ipAddress",
                     transforms: [cellWidth(10)],
                   },
                   {
                     name: "clientId",
-                    displayKey: "client",
+                    displayKey: "events:client",
                   },
                 ]}
                 emptyState={

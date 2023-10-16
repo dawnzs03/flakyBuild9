@@ -31,7 +31,7 @@ import { toMapper } from "../routes/Mapper";
 import { DedicatedScope } from "./DecicatedScope";
 
 export default function DedicatedScopes() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const navigate = useNavigate();
   const { realm, clientId } = useParams<DedicatedScopeDetailsParams>();
   const { addAlert, addError } = useAlerts();
@@ -69,9 +69,9 @@ export default function DedicatedScopes() {
           mappers as ProtocolMapperRepresentation[],
         );
         setClient(await adminClient.clients.findOne({ id: client.id! }));
-        addAlert(t("mappingCreatedSuccess"), AlertVariant.success);
+        addAlert(t("common:mappingCreatedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("mappingCreatedError", error);
+        addError("common:mappingCreatedError", error);
       }
     }
   };
@@ -88,9 +88,9 @@ export default function DedicatedScopes() {
           (m) => m.id !== mapper.id,
         ),
       });
-      addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
+      addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("mappingDeletedError", error);
+      addError("common:mappingDeletedError", error);
     }
     return true;
   };
@@ -99,7 +99,7 @@ export default function DedicatedScopes() {
     <>
       <ViewHeader
         titleKey={client.clientId!}
-        subKey="dedicatedScopeExplain"
+        subKey="clients-help:dedicatedScopeExplain"
         divider={false}
       />
       <PageSection variant="light" className="pf-u-p-0">

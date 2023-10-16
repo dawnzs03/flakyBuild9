@@ -14,7 +14,7 @@ import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput
 const comparisonValues = ["exact", "minimum", "maximum", "better"];
 
 export const ReqAuthnConstraints = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const { control } = useFormContext();
   const [comparisonOpen, setComparisonOpen] = useState(false);
   return (
@@ -23,7 +23,7 @@ export const ReqAuthnConstraints = () => {
         label={t("comparison")}
         labelIcon={
           <HelpItem
-            helpText={t("comparisonHelp")}
+            helpText={t("identity-providers-help:comparison")}
             fieldLabelId="identity-providers:comparison"
           />
         }
@@ -66,7 +66,7 @@ export const ReqAuthnConstraints = () => {
         fieldId="kc-authnContextClassRefs"
         labelIcon={
           <HelpItem
-            helpText={t("authnContextClassRefsHelp")}
+            helpText={t("identity-providers-help:authnContextClassRefs")}
             fieldLabelId="authnContextClassRefs"
           />
         }
@@ -83,7 +83,7 @@ export const ReqAuthnConstraints = () => {
         fieldId="kc-authnContextDeclRefs"
         labelIcon={
           <HelpItem
-            helpText={t("authnContextDeclRefsHelp")}
+            helpText={t("identity-providers-help:authnContextDeclRefs")}
             fieldLabelId="authnContextDeclRefs"
           />
         }

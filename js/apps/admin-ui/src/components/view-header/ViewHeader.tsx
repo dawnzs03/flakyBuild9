@@ -124,12 +124,12 @@ export const ViewHeader = ({
                     <Switch
                       id={`${toKey(titleKey)}-switch`}
                       data-testid={`${titleKey}-switch`}
-                      label={t("enabled")}
-                      labelOff={t("disabled")}
+                      label={t("common:enabled")}
+                      labelOff={t("common:disabled")}
                       className="pf-u-mr-lg"
                       isDisabled={isReadOnly}
                       isChecked={isEnabled}
-                      aria-label={t("enabled")}
+                      aria-label={t("common:enabled")}
                       onChange={(value) => {
                         onToggle(value);
                       }}
@@ -152,7 +152,7 @@ export const ViewHeader = ({
                           id={actionsDropdownId}
                           onToggle={onDropdownToggle}
                         >
-                          {t("action")}
+                          {t("common:action")}
                         </DropdownToggle>
                       }
                       isOpen={isDropdownOpen}
@@ -175,7 +175,7 @@ export const ViewHeader = ({
                 : ""}
               {helpUrl && (
                 <FormattedLink
-                  title={t("learnMore")}
+                  title={t("common:learnMore")}
                   href={helpUrl}
                   isInline
                   className="pf-u-ml-md"

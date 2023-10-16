@@ -24,7 +24,7 @@ export const BruteForceDetection = ({
   realm,
   save,
 }: BruteForceDetectionProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const form = useForm();
   const {
     setValue,
@@ -54,7 +54,7 @@ export const BruteForceDetection = ({
         onSubmit={handleSubmit(save)}
       >
         <FormGroup
-          label={t("enabled")}
+          label={t("common:enabled")}
           fieldId="bruteForceProtected"
           hasNoPaddingTop
         >
@@ -65,8 +65,8 @@ export const BruteForceDetection = ({
             render={({ field }) => (
               <Switch
                 id="bruteForceProtected"
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 isChecked={field.value}
                 onChange={field.onChange}
               />
@@ -79,7 +79,7 @@ export const BruteForceDetection = ({
               label={t("failureFactor")}
               labelIcon={
                 <HelpItem
-                  helpText={t("failureFactorHelp")}
+                  helpText={t("realm-settings-help:failureFactor")}
                   fieldLabelId="realm-settings:failureFactor"
                 />
               }
@@ -118,8 +118,8 @@ export const BruteForceDetection = ({
                 render={({ field }) => (
                   <Switch
                     id="permanentLockout"
-                    label={t("on")}
-                    labelOff={t("off")}
+                    label={t("common:on")}
+                    labelOff={t("common:off")}
                     isChecked={field.value}
                     onChange={field.onChange}
                     aria-label={t("permanentLockout")}
@@ -140,7 +140,9 @@ export const BruteForceDetection = ({
               label={t("quickLoginCheckMilliSeconds")}
               labelIcon={
                 <HelpItem
-                  helpText={t("quickLoginCheckMilliSecondsHelp")}
+                  helpText={t(
+                    "realm-settings-help:quickLoginCheckMilliSeconds",
+                  )}
                   fieldLabelId="realm-settings:quickLoginCheckMilliSeconds"
                 />
               }
@@ -178,10 +180,10 @@ export const BruteForceDetection = ({
             data-testid="brute-force-tab-save"
             isDisabled={!isDirty}
           >
-            {t("save")}
+            {t("common:save")}
           </Button>
           <Button variant="link" onClick={setupForm}>
-            {t("revert")}
+            {t("common:revert")}
           </Button>
         </ActionGroup>
       </FormAccess>

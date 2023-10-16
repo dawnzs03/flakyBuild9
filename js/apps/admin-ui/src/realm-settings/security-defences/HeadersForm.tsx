@@ -75,10 +75,10 @@ export const HeadersForm = ({ realm, save }: HeadersFormProps) => {
             data-testid="headers-form-tab-save"
             isDisabled={!isDirty}
           >
-            {t("save")}
+            {t("common:save")}
           </Button>
           <Button variant="link" onClick={setupForm}>
-            {t("revert")}
+            {t("common:revert")}
           </Button>
         </ActionGroup>
       </FormAccess>

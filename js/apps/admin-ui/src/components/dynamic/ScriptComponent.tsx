@@ -14,7 +14,7 @@ export const ScriptComponent = ({
   defaultValue,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
 
   return (
@@ -23,7 +23,7 @@ export const ScriptComponent = ({
       labelIcon={
         <HelpItem
           helpText={<span style={{ whiteSpace: "pre-wrap" }}>{helpText}</span>}
-          fieldLabelId={`${label}`}
+          fieldLabelId={`dynamic:${label}`}
         />
       }
       fieldId={name!}

@@ -30,7 +30,7 @@ export const UserIdpModal = ({
   onClose,
   onRefresh,
 }: UserIdpModalProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const { addAlert, addError } = useAlerts();
   const {
     register,
@@ -81,7 +81,7 @@ export const UserIdpModal = ({
           variant={ButtonVariant.link}
           onClick={onClose}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
       isOpen
@@ -102,7 +102,7 @@ export const UserIdpModal = ({
           label={t("users:userID")}
           fieldId="userID"
           helperText={t("users-help:userIdHelperText")}
-          helperTextInvalid={t("required")}
+          helperTextInvalid={t("common:required")}
           validated={
             errors.userId ? ValidatedOptions.error : ValidatedOptions.default
           }
@@ -122,7 +122,7 @@ export const UserIdpModal = ({
           label={t("users:username")}
           fieldId="username"
           helperText={t("users-help:usernameHelperText")}
-          helperTextInvalid={t("required")}
+          helperTextInvalid={t("common:required")}
           validated={
             errors.userName ? ValidatedOptions.error : ValidatedOptions.default
           }

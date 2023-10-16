@@ -30,7 +30,6 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.BruteForceProtector;
@@ -52,7 +51,9 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import jakarta.mail.internet.MimeMessage;
 import java.net.MalformedURLException;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -476,7 +477,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testPermanentLockout() {
+    public void testPermanentLockout() throws Exception {
         RealmRepresentation realm = testRealm().toRepresentation();
 
         try {
@@ -485,15 +486,8 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             testRealm().update(realm);
 
             // act
-            loginInvalidPassword("test-user@localhost");
-            loginInvalidPassword("test-user@localhost", false);
-
-            // As of now, there are two events: USER_DISABLED_BY_PERMANENT_LOCKOUT and LOGIN_ERROR but Order is not
-            // guarantee though since the brute force detector is running separately "in its own thread" named
-            // "Brute Force Protector".
-            List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll());
-            assertIsContained(events.expect(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
-            assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
+            loginInvalidPassword();
+            loginInvalidPassword();
 
             // assert
             expectPermanentlyDisabled();
@@ -515,7 +509,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testResetLoginFailureCount() {
+    public void testResetLoginFailureCount() throws Exception {
         RealmRepresentation realm = testRealm().toRepresentation();
 
         try {
@@ -614,19 +608,20 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         events.clear();
     }
 
-    public void expectTemporarilyDisabled() {
+    public void expectTemporarilyDisabled() throws Exception {
         expectTemporarilyDisabled("test-user@localhost", null, "password");
     }
 
-    public void expectTemporarilyDisabled(String username, String userId) {
+    public void expectTemporarilyDisabled(String username, String userId) throws Exception {
         expectTemporarilyDisabled(username, userId, "password");
     }
 
-    public void expectTemporarilyDisabled(String username, String userId, String password) {
+    public void expectTemporarilyDisabled(String username, String userId, String password) throws Exception {
         loginPage.open();
         loginPage.login(username, password);
 
         loginPage.assertCurrent();
+        String src = driver.getPageSource();
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
         ExpectedEvent event = events.expectLogin()
                 .session((String) null)
@@ -639,11 +634,11 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         event.assertEvent();
     }
 
-    public void expectPermanentlyDisabled() {
-        expectPermanentlyDisabled("test-user@localhost");
+    public void expectPermanentlyDisabled() throws Exception {
+        expectPermanentlyDisabled("test-user@localhost", null);
     }
 
-    public void expectPermanentlyDisabled(String username) {
+    public void expectPermanentlyDisabled(String username, String userId) throws Exception {
         loginPage.open();
         loginPage.login(username, "password");
 
@@ -654,14 +649,17 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             .error(Errors.USER_DISABLED)
             .detail(Details.USERNAME, username)
             .removeDetail(Details.CONSENT);
+        if (userId != null) {
+            event.user(userId);
+        }
         event.assertEvent();
     }
 
-    public void loginSuccess() {
+    public void loginSuccess() throws Exception {
         loginSuccess("test-user@localhost");
     }
 
-    public void loginSuccess(String username) {
+    public void loginSuccess(String username) throws Exception {
         loginPage.open();
         loginPage.login(username, "password");
 
@@ -678,6 +676,8 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
         appPage.logout(idTokenHint);
         events.clear();
+
+
     }
 
     public void loginWithTotpFailure() {
@@ -752,15 +752,11 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         events.clear();
     }
 
-    public void loginInvalidPassword() {
+    public void loginInvalidPassword() throws Exception {
         loginInvalidPassword("test-user@localhost");
     }
 
-    public void loginInvalidPassword(String username) {
-        loginInvalidPassword(username, true);
-    }
-
-    public void loginInvalidPassword(String username, boolean clearEventsQueue) {
+    public void loginInvalidPassword(String username) throws Exception {
         loginPage.open();
         loginPage.login(username, "invalid");
 
@@ -768,9 +764,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-        if (clearEventsQueue) {
-            events.clear();
-        }
+        events.clear();
     }
 
     public void loginMissingPassword() {
@@ -831,28 +825,5 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         for (int i = 0; i < failureFactor; ++i) {
             sendInvalidPasswordPasswordGrant();
         }
-    }
-
-    /**
-     * Verifies the given {@link ExpectedEvent} is "contained" in the collection of actual events. An
-     * {@link ExpectedEvent expectedEvent} object is considered equal to a
-     * {@link EventRepresentation eventRepresentation} object if {@code
-     * expectedEvent.assertEvent(eventRepresentation)} does not throw any {@link AssertionError}.
-     *
-     * @param expectedEvent the expected event
-     * @param actualEvents the collection of {@link EventRepresentation}
-     */
-    public void assertIsContained(ExpectedEvent expectedEvent, List<? extends EventRepresentation> actualEvents) {
-        List<String> messages = new ArrayList<>();
-        for (EventRepresentation e : actualEvents) {
-            try {
-                expectedEvent.assertEvent(e);
-                return;
-            } catch (AssertionError error) {
-                // silently fail
-                messages.add(error.getMessage());
-            }
-        }
-        Assert.fail(String.format("Expected event not found. Possible reasons are: %s", messages));
     }
 }

@@ -36,7 +36,6 @@ import java.util.Iterator;
  *
  * @author Vlastimil Elias (velias at redhat dot com)
  */
-@Deprecated
 public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider<OAuth2IdentityProviderConfig> implements SocialIdentityProvider<OAuth2IdentityProviderConfig> {
 
 	private static final Logger log = Logger.getLogger(LinkedInIdentityProvider.class);

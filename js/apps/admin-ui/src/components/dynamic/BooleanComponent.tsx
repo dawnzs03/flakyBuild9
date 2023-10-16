@@ -14,7 +14,7 @@ export const BooleanComponent = ({
   defaultValue,
   isNew = true,
 }: ComponentProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
 
   return (
@@ -22,7 +22,9 @@ export const BooleanComponent = ({
       hasNoPaddingTop
       label={t(label!)}
       fieldId={name!}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
+      labelIcon={
+        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
+      }
     >
       <Controller
         name={convertToName(name!)}
@@ -33,8 +35,8 @@ export const BooleanComponent = ({
           <Switch
             id={name!}
             isDisabled={isDisabled}
-            label={t("on")}
-            labelOff={t("off")}
+            label={t("common:on")}
+            labelOff={t("common:off")}
             isChecked={
               field.value === "true" ||
               field.value === true ||

@@ -503,11 +503,6 @@ public class AdapterDeploymentContext {
         public void setVerifyTokenAudience(boolean verifyTokenAudience) {
             delegate.setVerifyTokenAudience(verifyTokenAudience);
         }
-
-        @Override
-        public AdapterConfig getAdapterConfig() {
-            return delegate.getAdapterConfig();
-        }
     }
 
     protected KeycloakUriBuilder getBaseBuilder(HttpFacade facade, String base) {

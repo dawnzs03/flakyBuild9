@@ -7,7 +7,7 @@ import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { credResetFormDefaultValues } from "./ResetCredentialDialog";
 
 export const LifespanField = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const { control } = useFormContext();
 
   return (
@@ -16,7 +16,10 @@ export const LifespanField = () => {
       label={t("lifespan")}
       isStack
       labelIcon={
-        <HelpItem helpText={t("lifespanHelp")} fieldLabelId="lifespan" />
+        <HelpItem
+          helpText={t("clients-help:lifespan")}
+          fieldLabelId="lifespan"
+        />
       }
     >
       <Controller

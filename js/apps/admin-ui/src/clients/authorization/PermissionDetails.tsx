@@ -43,7 +43,7 @@ type FormFields = PolicyRepresentation & {
 };
 
 export default function PermissionDetails() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
 
   const form = useForm<FormFields>({
     mode: "onChange",
@@ -91,7 +91,7 @@ export default function PermissionDetails() {
       ]);
 
       if (!permission) {
-        throw new Error(t("notFound"));
+        throw new Error(t("common:notFound"));
       }
 
       return {
@@ -139,17 +139,17 @@ export default function PermissionDetails() {
         AlertVariant.success,
       );
     } catch (error) {
-      addError("permissionSaveError", error);
+      addError("clients:permissionSaveError", error);
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "deletePermission",
+    titleKey: "clients:deletePermission",
     messageKey: t("deletePermissionConfirm", {
       permission: permission?.name,
     }),
     continueButtonVariant: ButtonVariant.danger,
-    continueButtonLabel: "confirm",
+    continueButtonLabel: "clients:confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.delPermission({
@@ -162,7 +162,7 @@ export default function PermissionDetails() {
           toAuthorizationTab({ realm, clientId: id, tab: "permissions" }),
         );
       } catch (error) {
-        addError("permissionDeletedError", error);
+        addError("clients:permissionDeletedError", error);
       }
     },
   });
@@ -194,7 +194,7 @@ export default function PermissionDetails() {
                   data-testid="delete-resource"
                   onClick={() => toggleDeleteDialog()}
                 >
-                  {t("delete")}
+                  {t("common:delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -208,13 +208,16 @@ export default function PermissionDetails() {
         >
           <FormProvider {...form}>
             <FormGroup
-              label={t("name")}
+              label={t("common:name")}
               isRequired
-              helperTextInvalid={t("required")}
+              helperTextInvalid={t("common:required")}
               validated={errors.name ? "error" : "default"}
               fieldId="name"
               labelIcon={
-                <HelpItem helpText={t("permissionName")} fieldLabelId="name" />
+                <HelpItem
+                  helpText={t("clients-help:permissionName")}
+                  fieldLabelId="name"
+                />
               }
             >
               <KeycloakTextInput
@@ -224,11 +227,11 @@ export default function PermissionDetails() {
               />
             </FormGroup>
             <FormGroup
-              label={t("description")}
+              label={t("common:description")}
               fieldId="description"
               labelIcon={
                 <HelpItem
-                  helpText={t("permissionDescription")}
+                  helpText={t("clients-help:permissionDescription")}
                   fieldLabelId="description"
                 />
               }
@@ -241,7 +244,7 @@ export default function PermissionDetails() {
                 {...register("description", {
                   maxLength: {
                     value: 255,
-                    message: t("maxLength", { length: 255 }),
+                    message: t("common:maxLength", { length: 255 }),
                   },
                 })}
               />
@@ -251,16 +254,16 @@ export default function PermissionDetails() {
               fieldId="applyToResourceTypeFlag"
               labelIcon={
                 <HelpItem
-                  helpText={t("applyToResourceTypeFlagHelp")}
-                  fieldLabelId="applyToResourceTypeFlag"
+                  helpText={t("clients-help:applyToResourceTypeFlag")}
+                  fieldLabelId="clients:applyToResourceTypeFlag"
                 />
               }
             >
               <Switch
                 id="applyToResourceTypeFlag"
                 name="applyToResourceTypeFlag"
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 isChecked={applyToResourceTypeFlag}
                 onChange={setApplyToResourceTypeFlag}
                 aria-label={t("applyToResourceTypeFlag")}
@@ -272,7 +275,7 @@ export default function PermissionDetails() {
                 fieldId="resourceType"
                 labelIcon={
                   <HelpItem
-                    helpText={t("resourceTypeHelp")}
+                    helpText={t("clients-help:resourceType")}
                     fieldLabelId="resourceType"
                   />
                 }
@@ -291,11 +294,11 @@ export default function PermissionDetails() {
                 fieldId="resources"
                 labelIcon={
                   <HelpItem
-                    helpText={t("permissionResourcesHelp")}
-                    fieldLabelId="resources"
+                    helpText={t("clients-help:permissionResources")}
+                    fieldLabelId="clients:resources"
                   />
                 }
-                helperTextInvalid={t("required")}
+                helperTextInvalid={t("common:required")}
                 validated={errors.resources ? "error" : "default"}
                 isRequired={permissionType !== "scope"}
               >
@@ -321,11 +324,11 @@ export default function PermissionDetails() {
                 fieldId="scopes"
                 labelIcon={
                   <HelpItem
-                    helpText={t("permissionScopesHelp")}
-                    fieldLabelId="scopesSelect"
+                    helpText={t("clients-help:permissionScopes")}
+                    fieldLabelId="clients:scopesSelect"
                   />
                 }
-                helperTextInvalid={t("required")}
+                helperTextInvalid={t("common:required")}
                 validated={errors.scopes ? "error" : "default"}
                 isRequired
               >
@@ -341,8 +344,8 @@ export default function PermissionDetails() {
               fieldId="policies"
               labelIcon={
                 <HelpItem
-                  helpText={t("permissionPoliciesHelp")}
-                  fieldLabelId="policies"
+                  helpText={t("clients-help:permissionPolicies")}
+                  fieldLabelId="clients:policies"
                 />
               }
             >
@@ -356,8 +359,8 @@ export default function PermissionDetails() {
               label={t("decisionStrategy")}
               labelIcon={
                 <HelpItem
-                  helpText={t("permissionDecisionStrategyHelp")}
-                  fieldLabelId="decisionStrategy"
+                  helpText={t("clients-help:permissionDecisionStrategy")}
+                  fieldLabelId="clients:decisionStrategy"
                 />
               }
               fieldId="policyEnforcementMode"
@@ -393,7 +396,7 @@ export default function PermissionDetails() {
                   type="submit"
                   data-testid="save"
                 >
-                  {t("save")}
+                  {t("common:save")}
                 </Button>
 
                 <Button
@@ -410,7 +413,7 @@ export default function PermissionDetails() {
                     ></Link>
                   )}
                 >
-                  {t("cancel")}
+                  {t("common:cancel")}
                 </Button>
               </div>
             </ActionGroup>

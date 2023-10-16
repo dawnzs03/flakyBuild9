@@ -16,7 +16,7 @@ export const AddEventTypesDialog = ({
   onClose,
   configured,
 }: AddEventTypesDialogProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const { enums } = useServerInfo();
 
   const [selectedTypes, setSelectedTypes] = useState<EventType[]>([]);
@@ -33,7 +33,7 @@ export const AddEventTypesDialog = ({
           variant="primary"
           onClick={() => onConfirm(selectedTypes)}
         >
-          {t("add")}
+          {t("common:add")}
         </Button>,
         <Button
           data-testid="moveCancel"
@@ -41,7 +41,7 @@ export const AddEventTypesDialog = ({
           variant="link"
           onClick={onClose}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >

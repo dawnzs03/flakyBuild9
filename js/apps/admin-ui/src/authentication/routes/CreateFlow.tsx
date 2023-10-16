@@ -10,7 +10,7 @@ const CreateFlow = lazy(() => import("../form/CreateFlow"));
 export const CreateFlowRoute: AppRouteObject = {
   path: "/:realm/authentication/flows/create",
   element: <CreateFlow />,
-  breadcrumb: (t) => t("createFlow"),
+  breadcrumb: (t) => t("authentication:createFlow"),
   handle: {
     access: "manage-authorization",
   },

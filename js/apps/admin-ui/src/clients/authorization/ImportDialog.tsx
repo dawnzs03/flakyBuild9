@@ -22,7 +22,7 @@ type ImportDialogProps = {
 };
 
 export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const [imported, setImported] = useState<ResourceServerRepresentation>({});
   return (
     <Modal
@@ -51,7 +51,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
             closeDialog();
           }}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >
@@ -67,8 +67,8 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               label={t("policyEnforcementMode")}
               labelIcon={
                 <HelpItem
-                  helpText={t("policyEnforcementModeHelp")}
-                  fieldLabelId="policyEnforcementMode"
+                  helpText={t("clients-help:policyEnforcementMode")}
+                  fieldLabelId="clients:policyEnforcementMode"
                 />
               }
               fieldId="policyEnforcementMode"
@@ -89,8 +89,8 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               label={t("decisionStrategy")}
               labelIcon={
                 <HelpItem
-                  helpText={t("decisionStrategyHelp")}
-                  fieldLabelId="decisionStrategy"
+                  helpText={t("clients-help:decisionStrategy")}
+                  fieldLabelId="clients:decisionStrategy"
                 />
               }
               fieldId="decisionStrategy"
@@ -112,14 +112,14 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               labelIcon={
                 <HelpItem
                   helpText={t("allowRemoteResourceManagement")}
-                  fieldLabelId="allowRemoteResourceManagement"
+                  fieldLabelId="clients:allowRemoteResourceManagement"
                 />
               }
             >
               <Switch
                 id="allowRemoteResourceManagement"
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 isChecked={imported.allowRemoteResourceManagement}
                 isDisabled
                 aria-label={t("allowRemoteResourceManagement")}

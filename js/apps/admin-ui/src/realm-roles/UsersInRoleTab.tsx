@@ -16,13 +16,13 @@ export const UsersInRoleTab = () => {
   const navigate = useNavigate();
   const { realm } = useRealm();
 
-  const { t } = useTranslation();
+  const { t } = useTranslation("roles");
   const { id, clientId } = useParams<ClientRoleParams>();
 
   const loader = async (first?: number, max?: number) => {
     const role = await adminClient.roles.findOneById({ id: id });
     if (!role) {
-      throw new Error(t("notFound"));
+      throw new Error(t("common:notFound"));
     }
 
     if (role.clientRole) {
@@ -57,13 +57,13 @@ export const UsersInRoleTab = () => {
               position="bottom"
               bodyContent={
                 <div>
-                  {t("whoWillAppearPopoverTextRoles")}
+                  {t("roles:whoWillAppearPopoverText")}
                   <Button
                     className="kc-groups-link"
                     variant="link"
                     onClick={() => navigate(`/${realm}/groups`)}
                   >
-                    {t("groups")}
+                    {t("common:groups")}
                   </Button>
                   {t("or")}
                   <Button
@@ -83,7 +83,7 @@ export const UsersInRoleTab = () => {
                 key="who-will-appear-button"
                 icon={<QuestionCircleIcon />}
               >
-                {t("whoWillAppearLinkTextRoles")}
+                {t("roles:whoWillAppearLinkText")}
               </Button>
             </Popover>
           )
@@ -100,7 +100,7 @@ export const UsersInRoleTab = () => {
                   variant="link"
                   onClick={() => navigate(`/${realm}/groups`)}
                 >
-                  {t("groups")}
+                  {t("common:groups")}
                 </Button>
                 {t("or")}
                 <Button

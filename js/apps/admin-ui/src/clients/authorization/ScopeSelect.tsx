@@ -18,7 +18,7 @@ export const ScopeSelect = ({
   resourceId,
   preSelected,
 }: ScopeSelectProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
 
   const {
     control,

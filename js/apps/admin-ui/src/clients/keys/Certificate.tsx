@@ -16,7 +16,7 @@ type CertificateDisplayProps = {
 };
 
 const CertificateDisplay = ({ id, keyInfo }: CertificateDisplayProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   return (
     <KeycloakTextArea
       readOnly
@@ -30,7 +30,7 @@ const CertificateDisplay = ({ id, keyInfo }: CertificateDisplayProps) => {
 };
 
 export const Certificate = ({ keyInfo, plain = false }: CertificateProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const id = useId();
 
   return plain ? (
@@ -41,7 +41,7 @@ export const Certificate = ({ keyInfo, plain = false }: CertificateProps) => {
       fieldId={id}
       labelIcon={
         <HelpItem
-          helpText={t("certificateHelp")}
+          helpText={t("clients-help:certificate")}
           fieldLabelId={`clients:${id}`}
         />
       }

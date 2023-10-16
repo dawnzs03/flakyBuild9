@@ -15,7 +15,7 @@ import { ScopeForm } from "./details/ScopeForm";
 import { toClientScope } from "./routes/ClientScope";
 
 export default function CreateClientScope() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("client-scopes");
   const navigate = useNavigate();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -34,12 +34,12 @@ export default function CreateClientScope() {
       });
 
       if (!scope) {
-        throw new Error(t("notFound"));
+        throw new Error(t("common:notFound"));
       }
 
       await changeScope({ ...clientScope, id: scope.id }, clientScope.type);
 
-      addAlert(t("createClientScopeSuccess", AlertVariant.success));
+      addAlert(t("createSuccess", AlertVariant.success));
 
       navigate(
         toClientScope({
@@ -49,13 +49,13 @@ export default function CreateClientScope() {
         }),
       );
     } catch (error) {
-      addError("createClientScopeError", error);
+      addError("client-scopes:createError", error);
     }
   };
 
   return (
     <>
-      <ViewHeader titleKey="createClientScope" />
+      <ViewHeader titleKey="client-scopes:createClientScope" />
       <PageSection variant="light" className="pf-u-p-0">
         <PageSection variant="light">
           <ScopeForm save={onSubmit} />

@@ -19,7 +19,7 @@ export const DiscoveryEndpointField = ({
   fileUpload,
   children,
 }: DiscoveryEndpointFieldProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const {
     setValue,
     register,
@@ -74,19 +74,17 @@ export const DiscoveryEndpointField = ({
         fieldId="kc-discovery-endpoint"
         labelIcon={
           <HelpItem
-            helpText={t(
-              id === "oidc"
-                ? "useDiscoveryEndpointHelp"
-                : "useEntityDescriptorHelp",
-            )}
+            helpText={`identity-providers-help:${
+              id === "oidc" ? "useDiscoveryEndpoint" : "useEntityDescriptor"
+            }`}
             fieldLabelId="identity-providers:discoveryEndpoint"
           />
         }
       >
         <Switch
           id="kc-discovery-endpoint-switch"
-          label={t("on")}
-          labelOff={t("off")}
+          label={t("common:on")}
+          labelOff={t("common:off")}
           isChecked={discovery}
           onChange={(checked) => {
             clearErrors("discoveryError");
@@ -105,11 +103,9 @@ export const DiscoveryEndpointField = ({
           fieldId="kc-discovery-endpoint"
           labelIcon={
             <HelpItem
-              helpText={t(
-                id === "oidc"
-                  ? "discoveryEndpointHelp"
-                  : "samlEntityDescriptorHelp",
-              )}
+              helpText={`identity-providers-help:${
+                id === "oidc" ? "discoveryEndpoint" : "samlEntityDescriptor"
+              }`}
               fieldLabelId="identity-providers:discoveryEndpoint"
             />
           }
@@ -122,7 +118,7 @@ export const DiscoveryEndpointField = ({
           }
           helperTextInvalid={
             errors.discoveryEndpoint
-              ? t("required")
+              ? t("common:required")
               : t("noValidMetaDataFound", {
                   error: errors.discoveryError?.message,
                 })

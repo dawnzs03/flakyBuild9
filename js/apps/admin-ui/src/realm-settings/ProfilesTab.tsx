@@ -42,7 +42,7 @@ type ClientProfile = ClientProfileRepresentation & {
 };
 
 export default function ProfilesTab() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [tableProfiles, setTableProfiles] = useState<ClientProfile[]>();
@@ -225,7 +225,7 @@ export default function ProfilesTab() {
           isRowDisabled={(value) => value.global}
           actions={[
             {
-              title: t("delete"),
+              title: t("common:delete"),
               onRowClick: (profile) => {
                 setSelectedProfile(profile);
                 toggleDeleteDialog();
@@ -235,7 +235,7 @@ export default function ProfilesTab() {
           columns={[
             {
               name: "name",
-              displayKey: t("name"),
+              displayKey: t("common:name"),
               cellRenderer: cellFormatter,
             },
             {

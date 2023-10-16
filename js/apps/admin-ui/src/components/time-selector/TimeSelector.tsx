@@ -58,7 +58,7 @@ export const TimeSelector = ({
   menuAppendTo,
   ...rest
 }: TimeSelectorProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
 
   const defaultMultiplier = useMemo(
     () => allTimes.find((time) => time.unit === units[0])?.multiplier,

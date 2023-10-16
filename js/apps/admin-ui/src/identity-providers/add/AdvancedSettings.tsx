@@ -26,7 +26,7 @@ const LoginFlow = ({
   label,
   defaultValue,
 }: FieldProps & { defaultValue: string }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const { control } = useFormContext();
 
   const [flows, setFlows] = useState<AuthenticationFlowRepresentation[]>();
@@ -44,7 +44,7 @@ const LoginFlow = ({
       label={t(label)}
       labelIcon={
         <HelpItem
-          helpText={t(`${label}Help`)}
+          helpText={t(`identity-providers-help:${label}`)}
           fieldLabelId={`identity-providers:${label}`}
         />
       }
@@ -63,7 +63,7 @@ const LoginFlow = ({
               field.onChange(value as string);
               setOpen(false);
             }}
-            selections={field.value || t("none")}
+            selections={field.value || t("common:none")}
             variant={SelectVariant.single}
             aria-label={t(label)}
             isOpen={open}
@@ -72,7 +72,7 @@ const LoginFlow = ({
               ...(defaultValue === ""
                 ? [
                     <SelectOption key="empty" value="">
-                      {t("none")}
+                      {t("common:none")}
                     </SelectOption>,
                   ]
                 : []),
@@ -97,7 +97,7 @@ const syncModes = ["import", "legacy", "force"];
 type AdvancedSettingsProps = { isOIDC: boolean; isSAML: boolean };
 
 export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const {
     control,
     register,
@@ -152,8 +152,8 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             render={({ field }) => (
               <Switch
                 id="filteredByClaim"
-                label={t("on")}
-                labelOff={t("off")}
+                label={t("common:on")}
+                labelOff={t("common:off")}
                 isChecked={field.value === "true"}
                 onChange={(value) => {
                   field.onChange(value.toString());
@@ -169,7 +169,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             label={t("identity-providers:claimFilterName")}
             labelIcon={
               <HelpItem
-                helpText={t("claimFilterNameHelp")}
+                helpText={t("identity-providers-help:claimFilterName")}
                 fieldLabelId="identity-providers:claimFilterName"
               />
             }
@@ -180,7 +180,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
             }
-            helperTextInvalid={t("required")}
+            helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
               isRequired
@@ -198,7 +198,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             label={t("identity-providers:claimFilterValue")}
             labelIcon={
               <HelpItem
-                helpText={t("claimFilterValueHelp")}
+                helpText={t("identity-providers-help:claimFilterValue")}
                 fieldLabelId="identity-providers:claimFilterName"
               />
             }
@@ -209,7 +209,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
             }
-            helperTextInvalid={t("required")}
+            helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
               isRequired
@@ -241,7 +241,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         label={t("syncMode")}
         labelIcon={
           <HelpItem
-            helpText={t("syncModeHelp")}
+            helpText={t("identity-providers-help:syncMode")}
             fieldLabelId="identity-providers:syncMode"
           />
         }

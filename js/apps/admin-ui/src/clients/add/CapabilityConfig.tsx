@@ -24,7 +24,7 @@ export const CapabilityConfig = ({
   unWrap,
   protocol: type,
 }: CapabilityConfigProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { control, watch, setValue } = useFormContext<FormFields>();
   const protocol = type || watch("protocol");
   const clientAuthentication = watch("publicClient");
@@ -46,8 +46,8 @@ export const CapabilityConfig = ({
             fieldId="kc-authentication"
             labelIcon={
               <HelpItem
-                helpText={t("authenticationHelp")}
-                fieldLabelId="authentication"
+                helpText={t("clients-help:authentication")}
+                fieldLabelId="clients:authentication"
               />
             }
           >
@@ -59,8 +59,8 @@ export const CapabilityConfig = ({
                 <Switch
                   data-testid="authentication"
                   id="kc-authentication-switch"
-                  label={t("on")}
-                  labelOff={t("off")}
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
                   isChecked={!field.value}
                   onChange={(value) => {
                     field.onChange(!value);
@@ -86,8 +86,8 @@ export const CapabilityConfig = ({
             fieldId="kc-authorization"
             labelIcon={
               <HelpItem
-                helpText={t("authorizationHelp")}
-                fieldLabelId="authorization"
+                helpText={t("clients-help:authorization")}
+                fieldLabelId="clients:authorization"
               />
             }
           >
@@ -99,8 +99,8 @@ export const CapabilityConfig = ({
                 <Switch
                   data-testid="authorization"
                   id="kc-authorization-switch"
-                  label={t("on")}
-                  labelOff={t("off")}
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
                   isChecked={field.value && !clientAuthentication}
                   onChange={(value) => {
                     field.onChange(value);
@@ -135,8 +135,8 @@ export const CapabilityConfig = ({
                         onChange={field.onChange}
                       />
                       <HelpItem
-                        helpText={t("standardFlowHelp")}
-                        fieldLabelId="standardFlow"
+                        helpText={t("clients-help:standardFlow")}
+                        fieldLabelId="clients:standardFlow"
                       />
                     </InputGroup>
                   )}
@@ -157,8 +157,8 @@ export const CapabilityConfig = ({
                         onChange={field.onChange}
                       />
                       <HelpItem
-                        helpText={t("directAccessHelp")}
-                        fieldLabelId="directAccess"
+                        helpText={t("clients-help:directAccess")}
+                        fieldLabelId="clients:directAccess"
                       />
                     </InputGroup>
                   )}
@@ -179,8 +179,8 @@ export const CapabilityConfig = ({
                         onChange={field.onChange}
                       />
                       <HelpItem
-                        helpText={t("implicitFlowHelp")}
-                        fieldLabelId="implicitFlow"
+                        helpText={t("clients-help:implicitFlow")}
+                        fieldLabelId="clients:implicitFlow"
                       />
                     </InputGroup>
                   )}
@@ -208,8 +208,8 @@ export const CapabilityConfig = ({
                         }
                       />
                       <HelpItem
-                        helpText={t("serviceAccountHelp")}
-                        fieldLabelId="serviceAccount"
+                        helpText={t("clients-help:serviceAccount")}
+                        fieldLabelId="clients:serviceAccount"
                       />
                     </InputGroup>
                   )}
@@ -233,8 +233,10 @@ export const CapabilityConfig = ({
                         onChange={field.onChange}
                       />
                       <HelpItem
-                        helpText={t("oauthDeviceAuthorizationGrantHelp")}
-                        fieldLabelId="oauthDeviceAuthorizationGrant"
+                        helpText={t(
+                          "clients-help:oauthDeviceAuthorizationGrant",
+                        )}
+                        fieldLabelId="clients:oauthDeviceAuthorizationGrant"
                       />
                     </InputGroup>
                   )}
@@ -259,8 +261,8 @@ export const CapabilityConfig = ({
                         isDisabled={clientAuthentication}
                       />
                       <HelpItem
-                        helpText={t("oidcCibaGrantHelp")}
-                        fieldLabelId="oidcCibaGrant"
+                        helpText={t("clients-help:oidcCibaGrant")}
+                        fieldLabelId="clients:oidcCibaGrant"
                       />
                     </InputGroup>
                   )}
@@ -275,8 +277,8 @@ export const CapabilityConfig = ({
           <FormGroup
             labelIcon={
               <HelpItem
-                helpText={t("encryptAssertionsHelp")}
-                fieldLabelId="encryptAssertions"
+                helpText={t("clients-help:encryptAssertions")}
+                fieldLabelId="clients:encryptAssertions"
               />
             }
             label={t("encryptAssertions")}
@@ -293,8 +295,8 @@ export const CapabilityConfig = ({
                 <Switch
                   data-testid="encrypt"
                   id="kc-encrypt"
-                  label={t("on")}
-                  labelOff={t("off")}
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
                   isChecked={field.value}
                   onChange={field.onChange}
                   aria-label={t("encryptAssertions")}
@@ -305,8 +307,8 @@ export const CapabilityConfig = ({
           <FormGroup
             labelIcon={
               <HelpItem
-                helpText={t("clientSignatureHelp")}
-                fieldLabelId="clientSignature"
+                helpText={t("clients-help:clientSignature")}
+                fieldLabelId="clients:clientSignature"
               />
             }
             label={t("clientSignature")}
@@ -323,8 +325,8 @@ export const CapabilityConfig = ({
                 <Switch
                   data-testid="client-signature"
                   id="kc-client-signature"
-                  label={t("on")}
-                  labelOff={t("off")}
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
                   isChecked={field.value}
                   onChange={field.onChange}
                   aria-label={t("clientSignature")}

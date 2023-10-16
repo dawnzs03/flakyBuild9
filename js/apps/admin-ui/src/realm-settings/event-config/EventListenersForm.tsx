@@ -22,7 +22,7 @@ export const EventListenersForm = ({
   form,
   reset,
 }: EventListenersFormProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const {
     control,
     formState: { isDirty },
@@ -40,7 +40,7 @@ export const EventListenersForm = ({
         fieldId={"kc-eventListeners"}
         labelIcon={
           <HelpItem
-            helpText={t("eventListenersHelpTextHelp")}
+            helpText={t("eventListenersHelpText")}
             fieldLabelId="realm-settings:eventListeners"
           />
         }
@@ -56,8 +56,8 @@ export const EventListenersForm = ({
               data-testid="eventListeners-select"
               chipGroupProps={{
                 numChips: 3,
-                expandedText: t("hide"),
-                collapsedText: t("showRemaining"),
+                expandedText: t("common:hide"),
+                collapsedText: t("common:showRemaining"),
               }}
               variant={SelectVariant.typeaheadMulti}
               typeAheadAriaLabel="Select"
@@ -91,14 +91,14 @@ export const EventListenersForm = ({
           data-testid={"saveEventListenerBtn"}
           isDisabled={!isDirty}
         >
-          {t("save")}
+          {t("common:save")}
         </Button>
         <Button
           variant="link"
           data-testid={"revertEventListenerBtn"}
           onClick={reset}
         >
-          {t("revert")}
+          {t("common:revert")}
         </Button>
       </ActionGroup>
     </>

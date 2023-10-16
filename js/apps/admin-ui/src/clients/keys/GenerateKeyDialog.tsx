@@ -57,7 +57,7 @@ export const KeyForm = ({
   hasPem = false,
   useFile = false,
 }: KeyFormProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
 
   const [filename, setFilename] = useState<string>();
   const [openArchiveFormat, setOpenArchiveFormat] = useState(false);
@@ -77,8 +77,8 @@ export const KeyForm = ({
         label={t("archiveFormat")}
         labelIcon={
           <HelpItem
-            helpText={t("archiveFormatHelp")}
-            fieldLabelId="archiveFormat"
+            helpText={t("clients-help:archiveFormat")}
+            fieldLabelId="clients:archiveFormat"
           />
         }
         fieldId="archiveFormat"
@@ -117,8 +117,8 @@ export const KeyForm = ({
           label={t("importFile")}
           labelIcon={
             <HelpItem
-              helpText={t("importFileHelp")}
-              fieldLabelId="importFile"
+              helpText={t("clients-help:importFile")}
+              fieldLabelId="clients:importFile"
             />
           }
           fieldId="importFile"
@@ -154,7 +154,7 @@ export const GenerateKeyDialog = ({
   save,
   toggleDialog,
 }: GenerateKeyDialogProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const form = useForm<KeyStoreConfig>({
     defaultValues: { keyAlias: clientId },
     mode: "onChange",
@@ -195,12 +195,12 @@ export const GenerateKeyDialog = ({
             toggleDialog();
           }}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >
       <TextContent>
-        <Text>{t("generateKeysDescription")}</Text>
+        <Text>{t("clients-help:generateKeysDescription")}</Text>
       </TextContent>
       <FormProvider {...form}>
         <KeyForm />

@@ -16,7 +16,7 @@ export const SwitchField = ({
   fieldType = "string",
   isReadOnly = false,
 }: SwitchFieldProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const { control } = useFormContext();
   return (
     <FormGroupField label={label}>
@@ -27,8 +27,8 @@ export const SwitchField = ({
         render={({ field }) => (
           <Switch
             id={label}
-            label={t("on")}
-            labelOff={t("off")}
+            label={t("common:on")}
+            labelOff={t("common:off")}
             isChecked={
               fieldType === "string"
                 ? field.value === "true"

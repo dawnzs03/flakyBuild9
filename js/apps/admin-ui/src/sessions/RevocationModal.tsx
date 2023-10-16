@@ -31,7 +31,7 @@ export const RevocationModal = ({
   handleModalToggle,
   save,
 }: RevocationModalProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("sessions");
   const { addAlert } = useAlerts();
 
   const { realm: realmName } = useRealm();
@@ -61,23 +61,23 @@ export const RevocationModal = ({
     const failedCount = result.failedRequests?.length || 0;
 
     if (successCount === 0 && failedCount === 0) {
-      addAlert(t("noAdminUrlSet"), AlertVariant.warning);
+      addAlert(t("clients:noAdminUrlSet"), AlertVariant.warning);
     } else if (failedCount > 0) {
       addAlert(
-        t("" + prefixKey + "Success", {
+        t("clients:" + prefixKey + "Success", {
           successNodes: result.successRequests,
         }),
         AlertVariant.success,
       );
       addAlert(
-        t("" + prefixKey + "Fail", {
+        t("clients:" + prefixKey + "Fail", {
           failedNodes: result.failedRequests,
         }),
         AlertVariant.danger,
       );
     } else {
       addAlert(
-        t("" + prefixKey + "Success", {
+        t("clients:" + prefixKey + "Success", {
           successNodes: result.successRequests,
         }),
         AlertVariant.success,
@@ -178,7 +178,7 @@ export const RevocationModal = ({
             handleModalToggle();
           }}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >

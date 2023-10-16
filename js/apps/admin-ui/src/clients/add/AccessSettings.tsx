@@ -16,7 +16,7 @@ export const AccessSettings = ({
   save,
   reset,
 }: ClientSettingsProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { register, watch } = useFormContext<FormFields>();
 
   const { hasAccess } = useAccess();
@@ -36,7 +36,10 @@ export const AccessSettings = ({
           label={t("adminURL")}
           fieldId="kc-admin-url"
           labelIcon={
-            <HelpItem helpText={t("adminURLHelp")} fieldLabelId="adminURL" />
+            <HelpItem
+              helpText={t("clients-help:adminURL")}
+              fieldLabelId="clients:adminURL"
+            />
           }
         >
           <KeycloakTextInput

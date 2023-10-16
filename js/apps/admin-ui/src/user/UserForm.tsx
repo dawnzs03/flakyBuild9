@@ -29,7 +29,6 @@ import useFormatDate from "../utils/useFormatDate";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { FederatedUserLink } from "./FederatedUserLink";
 import { UserProfileFields } from "./UserProfileFields";
-import { UserFormFields } from "./form-state";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
 
 export type BruteForced = {
@@ -41,21 +40,21 @@ export type UserFormProps = {
   user?: UserRepresentation;
   bruteForce?: BruteForced;
   realm?: RealmRepresentation;
-  save: (user: UserFormFields) => void;
+  save: (user: UserRepresentation) => void;
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
 
 const EmailVerified = () => {
-  const { t } = useTranslation();
-  const { control } = useFormContext<UserFormFields>();
+  const { t } = useTranslation("users");
+  const { control } = useFormContext();
   return (
     <FormGroup
       label={t("emailVerified")}
       fieldId="kc-email-verified"
-      helperTextInvalid={t("required")}
+      helperTextInvalid={t("common:required")}
       labelIcon={
         <HelpItem
-          helpText={t("emailVerifiedHelp")}
+          helpText={t("users-help:emailVerified")}
           fieldLabelId="users:emailVerified"
         />
       }
@@ -70,8 +69,8 @@ const EmailVerified = () => {
             id="kc-user-email-verified"
             onChange={(value) => field.onChange(value)}
             isChecked={field.value}
-            label={t("yes")}
-            labelOff={t("no")}
+            label={t("common:yes")}
+            labelOff={t("common:no")}
           />
         )}
       />
@@ -89,7 +88,7 @@ export const UserForm = ({
   save,
   onGroupsUpdate,
 }: UserFormProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("users");
   const { realm: realmName } = useRealm();
   const formatDate = useFormatDate();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -107,7 +106,7 @@ export const UserForm = ({
     control,
     reset,
     formState: { errors },
-  } = useFormContext<UserFormFields>();
+  } = useFormContext();
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     [],
@@ -185,7 +184,7 @@ export const UserForm = ({
       {isUserProfileEnabled && <EmailVerified />}
       {user?.id && (
         <>
-          <FormGroup label={t("id")} fieldId="kc-id" isRequired>
+          <FormGroup label={t("common:id")} fieldId="kc-id" isRequired>
             <KeycloakTextInput
               id={user.id}
               aria-label={t("userID")}
@@ -209,14 +208,14 @@ export const UserForm = ({
       <RequiredActionMultiSelect
         name="requiredActions"
         label="requiredUserActions"
-        help="requiredUserActionsHelp"
+        help="users-help:requiredUserActions"
       />
       {(user?.federationLink || user?.origin) && canViewFederationLink && (
         <FormGroup
           label={t("federationLink")}
           labelIcon={
             <HelpItem
-              helpText={t("federationLinkHelp")}
+              helpText={t("users-help:federationLink")}
               fieldLabelId="users:federationLink"
             />
           }
@@ -225,7 +224,7 @@ export const UserForm = ({
         </FormGroup>
       )}
       {isUserProfileEnabled ? (
-        <UserProfileFields config={user?.userProfileMetadata!} />
+        <UserProfileFields />
       ) : (
         <>
           {!realm?.registrationEmailAsUsername && (
@@ -234,7 +233,7 @@ export const UserForm = ({
               fieldId="kc-username"
               isRequired
               validated={errors.username ? "error" : "default"}
-              helperTextInvalid={t("required")}
+              helperTextInvalid={t("common:required")}
             >
               <KeycloakTextInput
                 id="kc-username"
@@ -267,7 +266,7 @@ export const UserForm = ({
             label={t("firstName")}
             fieldId="kc-firstName"
             validated={errors.firstName ? "error" : "default"}
-            helperTextInvalid={t("required")}
+            helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
               data-testid="firstName-input"
@@ -295,7 +294,7 @@ export const UserForm = ({
           fieldId="temporaryLocked"
           labelIcon={
             <HelpItem
-              helpText={t("temporaryLockedHelp")}
+              helpText={t("users-help:temporaryLocked")}
               fieldLabelId="users:temporaryLocked"
             />
           }
@@ -309,18 +308,20 @@ export const UserForm = ({
             }}
             isChecked={locked}
             isDisabled={!locked}
-            label={t("on")}
-            labelOff={t("off")}
+            label={t("common:on")}
+            labelOff={t("common:off")}
           />
         </FormGroup>
       )}
       {!user?.id && (
         <FormGroup
-          label={t("groups")}
+          label={t("common:groups")}
           fieldId="kc-groups"
           validated={errors.requiredActions ? "error" : "default"}
-          helperTextInvalid={t("required")}
-          labelIcon={<HelpItem helpText={t("groups")} fieldLabelId="groups" />}
+          helperTextInvalid={t("common:required")}
+          labelIcon={
+            <HelpItem helpText={t("users-help:groups")} fieldLabelId="groups" />
+          }
         >
           <Controller
             name="groups"
@@ -363,7 +364,7 @@ export const UserForm = ({
           variant="primary"
           type="submit"
         >
-          {user?.id ? t("save") : t("create")}
+          {user?.id ? t("common:save") : t("common:create")}
         </Button>
         <Button
           data-testid="cancel-create-user"
@@ -372,7 +373,7 @@ export const UserForm = ({
           }
           variant="link"
         >
-          {user?.id ? t("revert") : t("cancel")}
+          {user?.id ? t("common:revert") : t("common:cancel")}
         </Button>
       </ActionGroup>
     </FormAccess>

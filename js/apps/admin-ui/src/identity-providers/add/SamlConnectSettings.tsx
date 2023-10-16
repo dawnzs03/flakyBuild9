@@ -19,7 +19,7 @@ type FormFields = IdentityProviderRepresentation & {
 };
 
 export const SamlConnectSettings = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("identity-providers");
   const id = "saml";
 
   const { realm } = useRealm();
@@ -85,12 +85,12 @@ export const SamlConnectSettings = () => {
         fieldId="kc-service-provider-entity-id"
         labelIcon={
           <HelpItem
-            helpText={t("serviceProviderEntityIdHelp")}
+            helpText={t("identity-providers-help:serviceProviderEntityId")}
             fieldLabelId="identity-providers:serviceProviderEntityId"
           />
         }
         isRequired
-        helperTextInvalid={t("required")}
+        helperTextInvalid={t("common:required")}
         validated={errors.config?.entityId ? "error" : "default"}
       >
         <KeycloakTextInput
@@ -110,7 +110,7 @@ export const SamlConnectSettings = () => {
             fieldId="kc-import-config"
             labelIcon={
               <HelpItem
-                helpText={t("importConfigHelp")}
+                helpText={t("identity-providers-help:importConfig")}
                 fieldLabelId="identity-providers:importConfig"
               />
             }

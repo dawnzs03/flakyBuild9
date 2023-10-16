@@ -50,10 +50,10 @@ export const JsonEditorTab = () => {
             onClick={handleSave}
             isDisabled={isSaving}
           >
-            {t("save")}
+            {t("common:save")}
           </Button>
           <Button variant="link" onClick={resetCode} isDisabled={isSaving}>
-            {t("revert")}
+            {t("common:revert")}
           </Button>
         </ActionGroup>
       </Form>

@@ -47,7 +47,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     private ClientModel client;
 
-    protected KeycloakSession session;
+    private KeycloakSession session;
 
     private Map<UrlType, KeycloakUriInfo> uriInfo;
 
@@ -177,9 +177,5 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     protected HttpResponse createHttpResponse() {
         return new HttpResponseImpl(session, getContextObject(org.jboss.resteasy.spi.HttpResponse.class));
-    }
-
-    protected KeycloakSession getSession() {
-        return session;
     }
 }

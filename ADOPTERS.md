@@ -37,7 +37,6 @@ List of organization names below is based on information collected using Keycloa
 * ISAAC
 * ITROI Solutions
 * Kindly Ops, LLC
-* [Microcks](https://landscape.cncf.io/?selected=microcks)
 * msg systems ag
 * Netdava International
 * Ohio Supercomputer Center
