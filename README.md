@@ -1,527 +1,291 @@
-# Selenium
+Apache Kafka
+=================
+See our [web site](https://kafka.apache.org) for details on the project.
 
-[![CI](https://github.com/SeleniumHQ/selenium/actions/workflows/ci.yml/badge.svg?branch=trunk&event=schedule)](https://github.com/SeleniumHQ/selenium/actions/workflows/ci.yml)
+You need to have [Java](http://www.oracle.com/technetwork/java/javase/downloads/index.html) installed.
 
-<a href="https://selenium.dev"><img src="https://selenium.dev/images/selenium_logo_square_green.png" width="180" alt="Selenium"/></a>
+We build and test Apache Kafka with Java 8, 11, 17 and 21. We set the `release` parameter in javac and scalac
+to `8` to ensure the generated binaries are compatible with Java 8 or higher (independently of the Java version
+used for compilation). Java 8 support has been deprecated since Apache Kafka 3.0 and will be removed in Apache
+Kafka 4.0 (see [KIP-750](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=181308223) for more details).
 
-Selenium is an umbrella project encapsulating a variety of tools and
-libraries enabling web browser automation. Selenium specifically
-provides an infrastructure for the [W3C WebDriver specification](https://w3c.github.io/webdriver/)
-— a platform and language-neutral coding interface compatible with all
-major web browsers.
+Scala 2.12 and 2.13 are supported and 2.13 is used by default. Scala 2.12 support has been deprecated since
+Apache Kafka 3.0 and will be removed in Apache Kafka 4.0 (see [KIP-751](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=181308218)
+for more details). See below for how to use a specific Scala version or all of the supported Scala versions.
 
-The project is made possible by volunteer contributors who've
-generously donated thousands of hours in code development and upkeep.
+### Build a jar and run it ###
+    ./gradlew jar
 
-Selenium's source code is made available under the [Apache 2.0 license](https://github.com/SeleniumHQ/selenium/blob/trunk/LICENSE).
+Follow instructions in https://kafka.apache.org/quickstart
 
-## Documentation
+### Build source jar ###
+    ./gradlew srcJar
 
-Narrative documentation:
+### Build aggregated javadoc ###
+    ./gradlew aggregatedJavadoc
 
-* [User Manual](https://selenium.dev/documentation/)
+### Build javadoc and scaladoc ###
+    ./gradlew javadoc
+    ./gradlew javadocJar # builds a javadoc jar for each module
+    ./gradlew scaladoc
+    ./gradlew scaladocJar # builds a scaladoc jar for each module
+    ./gradlew docsJar # builds both (if applicable) javadoc and scaladoc jars for each module
 
-API documentation:
+### Run unit/integration tests ###
+    ./gradlew test # runs both unit and integration tests
+    ./gradlew unitTest
+    ./gradlew integrationTest
+    
+### Force re-running tests without code change ###
+    ./gradlew test --rerun
+    ./gradlew unitTest --rerun
+    ./gradlew integrationTest --rerun
 
-* [C#](https://seleniumhq.github.io/selenium/docs/api/dotnet/)
-* [JavaScript](https://seleniumhq.github.io/selenium/docs/api/javascript/)
-* [Java](https://seleniumhq.github.io/selenium/docs/api/java/index.html)
-* [Python](https://seleniumhq.github.io/selenium/docs/api/py/)
-* [Ruby](https://seleniumhq.github.io/selenium/docs/api/rb/)
+### Running a particular unit/integration test ###
+    ./gradlew clients:test --tests RequestResponseTest
 
-## Pull Requests
+### Repeatedly running a particular unit/integration test ###
+    I=0; while ./gradlew clients:test --tests RequestResponseTest --rerun --fail-fast; do (( I=$I+1 )); echo "Completed run: $I"; sleep 1; done
 
-Please read [CONTRIBUTING.md](https://github.com/SeleniumHQ/selenium/blob/trunk/CONTRIBUTING.md)
-before submitting your pull requests.
+### Running a particular test method within a unit/integration test ###
+    ./gradlew core:test --tests kafka.api.ProducerFailureHandlingTest.testCannotSendToInternalTopic
+    ./gradlew clients:test --tests org.apache.kafka.clients.MetadataTest.testTimeToNextUpdate
 
-## Requirements
+### Running a particular unit/integration test with log4j output ###
+Change the log4j setting in either `clients/src/test/resources/log4j.properties` or `core/src/test/resources/log4j.properties`
 
-* [Bazelisk](https://github.com/bazelbuild/bazelisk), a Bazel wrapper that automatically downloads
-  the version of Bazel specified in `.bazelversion` file and transparently passes through all
-  command-line arguments to the real Bazel binary.
-* Java JDK version 11 or greater (e.g., [Java 11 OpenJDK](https://openjdk.java.net/))
-* `java` and `jar` on the `$PATH` (make sure you use `java` executable from JDK but not JRE).
-  * To test this, try running the command `javac`. This command won't exist if you only have the JRE
-  installed. If you're met with a list of command-line options, you're referencing the JDK properly.
-* macOS users:
-  * Install the latest version of Xcode including the command-line tools. This command should work `xcode-select --install`
-  * Apple Silicon Macs should add `build --host_platform=//:rosetta` to their `.bazelrc.local` file. We are working
-  to make sure this isn't required in the long run.
-* Windows users:
-  *  Latest version of [Visual Studio](https://www.visualstudio.com/) with command line tools and build tools installed
-  * A setup guide with detailed explanations can be seen on Jim Evan's [post](http://jimevansmusic.blogspot.com/2020/04/setting-up-windows-development.html)
-  * An up-to-date list of instructions for Windows 11, including avoiding issues with the latest versions of Visual Studio, can be seen in this [gist](https://gist.github.com/titusfortner/aec103e9b02709f771497fdb8b21154c)
+    ./gradlew clients:test --tests RequestResponseTest
 
-### Internet Explorer Driver
+### Specifying test retries ###
+By default, each failed test is retried once up to a maximum of five retries per test run. Tests are retried at the end of the test task. Adjust these parameters in the following way:
 
-If you plan to compile the
-[IE driver](https://github.com/SeleniumHQ/selenium/wiki/InternetExplorerDriver),
-you also need:
+    ./gradlew test -PmaxTestRetries=1 -PmaxTestRetryFailures=5
+    
+See [Test Retry Gradle Plugin](https://github.com/gradle/test-retry-gradle-plugin) for more details.
 
-* [Visual Studio 2022](https://www.visualstudio.com/)
-* 32 and 64-bit cross compilers
+### Generating test coverage reports ###
+Generate coverage reports for the whole project:
 
-The build will work on any platform, but the tests for IE will be
-skipped silently if you are not building on Windows.
+    ./gradlew reportCoverage -PenableTestCoverage=true -Dorg.gradle.parallel=false
 
-## Building
+Generate coverage for a single module, i.e.: 
 
-### Contribute with GitPod
+    ./gradlew clients:reportCoverage -PenableTestCoverage=true -Dorg.gradle.parallel=false
+    
+### Building a binary release gzipped tar ball ###
+    ./gradlew clean releaseTarGz
 
-GitPod provides a ready to use environment to develop.
+The release file can be found inside `./core/build/distributions/`.
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/SeleniumHQ/selenium)
+### Building auto generated messages ###
+Sometimes it is only necessary to rebuild the RPC auto-generated message data when switching between branches, as they could
+fail due to code changes. You can just run:
+ 
+    ./gradlew processMessages processTestMessages
 
-To configure and use your local machine, keep reading.
+### Running a Kafka broker in KRaft mode
 
-### Bazel
+    KAFKA_CLUSTER_ID="$(./bin/kafka-storage.sh random-uuid)"
+    ./bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties
+    ./bin/kafka-server-start.sh config/kraft/server.properties
 
-[Bazel](https://bazel.build/) was built by the fine folks at Google. Bazel manages dependency
-downloads, generates the Selenium binaries, executes tests, and does it all rather quickly.
+### Running a Kafka broker in ZooKeeper mode
 
-More detailed instructions for getting Bazel running are below, but if you can successfully get
-the java and javascript folders to build without errors, you should be confident that you have the
-correct binaries on your system.
+    ./bin/zookeeper-server-start.sh config/zookeeper.properties
+    ./bin/kafka-server-start.sh config/server.properties
 
-### Before Building
+### Cleaning the build ###
+    ./gradlew clean
 
-Ensure that you have Firefox installed and the latest
-[`geckodriver`](https://github.com/mozilla/geckodriver/releases/) on your `$PATH`.
-You may have to update this from time to time.
+### Running a task with one of the Scala versions available (2.12.x or 2.13.x) ###
+*Note that if building the jars with a version other than 2.13.x, you need to set the `SCALA_VERSION` variable or change it in `bin/kafka-run-class.sh` to run the quick start.*
 
-### Common Build Targets
+You can pass either the major version (eg 2.12) or the full version (eg 2.12.7):
 
-#### Java
+    ./gradlew -PscalaVersion=2.12 jar
+    ./gradlew -PscalaVersion=2.12 test
+    ./gradlew -PscalaVersion=2.12 releaseTarGz
 
-<details>
-<summary>Click to see Java Build Steps</summary>
+### Running a task with all the scala versions enabled by default ###
 
-To build the most commonly-used modules of Selenium from source, execute this command from the root
-project folder:
+Invoke the `gradlewAll` script followed by the task(s):
 
-```sh
-bazel build java/...
-```
+    ./gradlewAll test
+    ./gradlewAll jar
+    ./gradlewAll releaseTarGz
 
-If you want to test you can run then you can do so by running the following command
+### Running a task for a specific project ###
+This is for `core`, `examples` and `clients`
 
-```sh
-bazel test //java/... --test_size_filters=small,medium,large --test_tag_filters=<browser>
-```
+    ./gradlew core:jar
+    ./gradlew core:test
 
-The `test_size_filters` argument takes small, medium, large. Small are akin to unit tests,
-medium is akin to integration tests, and large is akin to end-to-end tests.
+Streams has multiple sub-projects, but you can run all the tests:
 
-The `test_tag_filters` allow us to pass in browser names and a few different tags that we can
-find in the code base.
+    ./gradlew :streams:testAll
 
-To build the Grid deployment jar, run this command:
+### Listing all gradle tasks ###
+    ./gradlew tasks
 
-```sh
-bazel build grid
-```
+### Building IDE project ####
+*Note that this is not strictly necessary (IntelliJ IDEA has good built-in support for Gradle projects, for example).*
 
-The log will show where the output jar is located.
+    ./gradlew eclipse
+    ./gradlew idea
 
-</details>
+The `eclipse` task has been configured to use `${project_dir}/build_eclipse` as Eclipse's build directory. Eclipse's default
+build directory (`${project_dir}/bin`) clashes with Kafka's scripts directory and we don't use Gradle's build directory
+to avoid known issues with this configuration.
 
-#### JavaScript
-<details>
-<summary>Click to see JavaScript Build Steps</summary>
+### Publishing the jar for all versions of Scala and for all projects to maven ###
+The recommended command is:
 
-If you want to build all the JavaScript code you can run:
+    ./gradlewAll publish
 
-```sh
-bazel build javascript/...
-```
+For backwards compatibility, the following also works:
 
-To build the NodeJS bindings you will need to run:
+    ./gradlewAll uploadArchives
 
-```sh
-bazel build //javascript/node/selenium-webdriver
-```
+Please note for this to work you should create/update `${GRADLE_USER_HOME}/gradle.properties` (typically, `~/.gradle/gradle.properties`) and assign the following variables
 
-To run the tests run:
+    mavenUrl=
+    mavenUsername=
+    mavenPassword=
+    signing.keyId=
+    signing.password=
+    signing.secretKeyRingFile=
 
-```sh
-bazel test //javascript/node/selenium-webdriver:tests
-```
+### Publishing the streams quickstart archetype artifact to maven ###
+For the Streams archetype project, one cannot use gradle to upload to maven; instead the `mvn deploy` command needs to be called at the quickstart folder:
 
-You can pass in the environment variable `SELENIUM_BROWSER` with the name of the browser.
+    cd streams/quickstart
+    mvn deploy
 
-To publish to NPM run:
+Please note for this to work you should create/update user maven settings (typically, `${USER_HOME}/.m2/settings.xml`) to assign the following variables
 
-```sh
-bazel run //javascript/node/selenium-webdriver:selenium-webdriver.publish
-```
-</details>
+    <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                           https://maven.apache.org/xsd/settings-1.0.0.xsd">
+    ...                           
+    <servers>
+       ...
+       <server>
+          <id>apache.snapshots.https</id>
+          <username>${maven_username}</username>
+          <password>${maven_password}</password>
+       </server>
+       <server>
+          <id>apache.releases.https</id>
+          <username>${maven_username}</username>
+          <password>${maven_password}</password>
+        </server>
+        ...
+     </servers>
+     ...
 
-#### Python
-<details>
-<summary>Click to see Python Build Steps</summary>
 
-If you want to build the python bindings run:
+### Installing ALL the jars to the local Maven repository ###
+The recommended command to build for both Scala 2.12 and 2.13 is:
 
-```sh
-bazel build //py:selenium
-```
+    ./gradlewAll publishToMavenLocal
 
-To run the tests run:
+For backwards compatibility, the following also works:
 
-```sh
-bazel test //py:test-<browsername>
-```
+    ./gradlewAll install
 
-If you add `--//common:pin_browsers` it will download the browsers and drivers for you to use.
+### Installing specific projects to the local Maven repository ###
 
-To install locally run:
+    ./gradlew -PskipSigning=true :streams:publishToMavenLocal
+    
+If needed, you can specify the Scala version with `-PscalaVersion=2.13`.
 
-```sh
-bazel build //py:selenium-wheel
-pip install bazel-bin/py/selenium-*.whl
-```
+### Building the test jar ###
+    ./gradlew testJar
 
-To publish run:
+### Running code quality checks ###
+There are two code quality analysis tools that we regularly run, spotbugs and checkstyle.
 
-```sh
-bazel build //py:selenium-wheel //py:selenium-sdist
-twine upload bazel-bin/py/selenium-*.whl bazel-bin/py/selenium-*.tar.gz
-```
-</details>
+#### Checkstyle ####
+Checkstyle enforces a consistent coding style in Kafka.
+You can run checkstyle using:
 
-#### Ruby
-<details>
-<summary>Click to see Ruby Build Steps</summary>
+    ./gradlew checkstyleMain checkstyleTest
 
-Build targets:
+The checkstyle warnings will be found in `reports/checkstyle/reports/main.html` and `reports/checkstyle/reports/test.html` files in the
+subproject build directories. They are also printed to the console. The build will fail if Checkstyle fails.
 
-| Command                                     | Description                                       |
-|---------------------------------------------|---------------------------------------------------|
-| `bazel build //rb:selenium-devtools`        | Build selenium-devtools Ruby gem                  |
-| `bazel build //rb:selenium-webdriver`       | Build selenium-webdriver Ruby gem                 |
-| `bazel run //rb:selenium-devtools-release`  | Build and push selenium-devtools gem to RubyGems  |
-| `bazel run //rb:selenium-webdriver-release` | Build and push selenium-webdriver gem to RubyGems |
-| `bazel run //rb:console`                    | Start REPL with all gems loaded                   |
-| `bazel run //rb:docs`                       | Generate YARD docs                                |
+#### Spotbugs ####
+Spotbugs uses static analysis to look for bugs in the code.
+You can run spotbugs using:
 
-Test targets:
+    ./gradlew spotbugsMain spotbugsTest -x test
 
-| Command                                                                              | Description                                    |
-|--------------------------------------------------------------------------------------|------------------------------------------------|
-| `bazel test //rb/...`                                                                | Run unit, integration tests (Chrome) and lint  |
-| `bazel test //rb:lint`                                                               | Run RuboCop linter                             |
-| `bazel test //rb/spec/...`                                                           | Run unit and integration tests (Chrome)        |
-| `bazel test --test_size_filters large //rb/...`                                      | Run integration tests using (Chrome)           |
-| `bazel test //rb/spec/integration/...`                                               | Run integration tests using (Chrome)           |
-| `bazel test //rb/spec/integration/... --define browser=firefox`                      | Run integration tests using (Firefox)          |
-| `bazel test //rb/spec/integration/... --define remote=true`                          | Run integration tests using (Chrome and Grid)  |
-| `bazel test //rb/spec/integration/... --define browser=firefox --define remote=true` | Run integration tests using (Firefox and Grid) |
-| `bazel test --test_size_filters small //rb/...`                                      | Run unit tests                                 |
-| `bazel test //rb/spec/unit/...`                                                      | Run unit tests                                 |
+The spotbugs warnings will be found in `reports/spotbugs/main.html` and `reports/spotbugs/test.html` files in the subproject build
+directories.  Use -PxmlSpotBugsReport=true to generate an XML report instead of an HTML one.
 
-Suffix `...` tells Bazel to run all the test targets. They are conveniently named by test file name with `_spec.rb` removed so you can run them individually:
+### JMH microbenchmarks ###
+We use [JMH](https://openjdk.java.net/projects/code-tools/jmh/) to write microbenchmarks that produce reliable results in the JVM.
+    
+See [jmh-benchmarks/README.md](https://github.com/apache/kafka/blob/trunk/jmh-benchmarks/README.md) for details on how to run the microbenchmarks.
 
-| Test file                                                      | Test target                                              |
-|----------------------------------------------------------------|----------------------------------------------------------|
-| `rb/spec/integration/selenium/webdriver/chrome/driver_spec.rb` | `//rb/spec/integration/selenium/webdriver/chrome:driver` |
-| `rb/spec/unit/selenium/webdriver/proxy_spec.rb`                | `//rb/spec/unit/selenium/webdriver:proxy`                |
+### Dependency Analysis ###
 
-Supported browsers:
+The gradle [dependency debugging documentation](https://docs.gradle.org/current/userguide/viewing_debugging_dependencies.html) mentions using the `dependencies` or `dependencyInsight` tasks to debug dependencies for the root project or individual subprojects.
 
-* `chrome`
-* `edge`
-* `firefox`
-* `ie`
-* `safari` (cannot be run in parallel - use `--local_test_jobs 1`)
-* `safari-preview` (cannot be run in parallel - use `--local_test_jobs 1`)
+Alternatively, use the `allDeps` or `allDepInsight` tasks for recursively iterating through all subprojects:
 
-Useful command line options:
+    ./gradlew allDeps
 
-* `--flaky_test_attempts 3` - re-run failed tests up to 3 times
-* `--local_test_jobs 1` - control parallelism of tests
-* `--no-cache_test_results`, `-t-` - disable caching of test results and re-runs all of them
-* `--test_arg "-tfocus"` - test only [focused specs](https://relishapp.com/rspec/rspec-core/v/3-12/docs/filtering/inclusion-filters)
-* `--test_arg "-eTimeouts"` - test only specs which name include "Timeouts"
-* `--test_arg "<any other RSpec argument>"` - pass any extra RSpec arguments (see `bazel run @bundle//:bin/rspec -- --help`)
-* `--test_env FOO=bar` - pass extra environment variable to test process (see below for supported variables)
-* `--test_output all` - print all output from the tests, not just errors
-* `--test_output streamed` - run all tests one by one and print its output immediately
+    ./gradlew allDepInsight --configuration runtimeClasspath --dependency com.fasterxml.jackson.core:jackson-databind
 
-Supported environment variables:
+These take the same arguments as the builtin variants.
 
-- `WD_SPEC_DRIVER` - the driver to test; either the browser name or 'remote' (gets set by Bazel)
-- `WD_REMOTE_BROWSER` - when `WD_SPEC_DRIVER` is `remote`; the name of the browser to test (gets set by Bazel)
-- `WD_REMOTE_URL` - URL of an already running server to use for remote tests
-- `DOWNLOAD_SERVER` - when `WD_REMOTE_URL` not set; whether to download and use most recently released server version for remote tests
-- `DEBUG` - turns on verbose debugging
-- `HEADLESS` - for chrome, edge and firefox; runs tests in headless mode
-- `DISABLE_BUILD_CHECK` - for chrome and edge; whether to ignore driver and browser version mismatches (allows testing Canary builds)
-- `CHROME_BINARY` - path to test specific Chrome browser
-- `EDGE_BINARY` - path to test specific Edge browser
-- `FIREFOX_BINARY` - path to test specific Firefox browser
+### Determining if any dependencies could be updated ###
+    ./gradlew dependencyUpdates
 
-To run with a specific version of Ruby you can change the version in `rb/ruby_version.bzl` or from command line:
-```sh
-echo 'RUBY_VERSION = "<X.Y.Z>"' > rb/ruby_version.bzl
-```
+### Common build options ###
 
-If you want to debug code in tests, you can do it via [`debug`](https://github.com/ruby/debug) gem:
+The following options should be set with a `-P` switch, for example `./gradlew -PmaxParallelForks=1 test`.
 
-1. Add `binding.break` to the code where you want the debugger to start.
-2. Run tests with  `ruby_debug` configuration: `bazel test --config ruby_debug <test>`.
-3. When debugger starts, run the following in a separate terminal to connect to debugger:
+* `commitId`: sets the build commit ID as .git/HEAD might not be correct if there are local commits added for build purposes.
+* `mavenUrl`: sets the URL of the maven deployment repository (`file://path/to/repo` can be used to point to a local repository).
+* `maxParallelForks`: maximum number of test processes to start in parallel. Defaults to the number of processors available to the JVM.
+* `maxScalacThreads`: maximum number of worker threads for the scalac backend. Defaults to the lowest of `8` and the number of processors
+available to the JVM. The value must be between 1 and 16 (inclusive). 
+* `ignoreFailures`: ignore test failures from junit
+* `showStandardStreams`: shows standard out and standard error of the test JVM(s) on the console.
+* `skipSigning`: skips signing of artifacts.
+* `testLoggingEvents`: unit test events to be logged, separated by comma. For example `./gradlew -PtestLoggingEvents=started,passed,skipped,failed test`.
+* `xmlSpotBugsReport`: enable XML reports for spotBugs. This also disables HTML reports as only one can be enabled at a time.
+* `maxTestRetries`: maximum number of retries for a failing test case.
+* `maxTestRetryFailures`: maximum number of test failures before retrying is disabled for subsequent tests.
+* `enableTestCoverage`: enables test coverage plugins and tasks, including bytecode enhancement of classes required to track said
+coverage. Note that this introduces some overhead when running tests and hence why it's disabled by default (the overhead
+varies, but 15-20% is a reasonable estimate).
+* `keepAliveMode`: configures the keep alive mode for the Gradle compilation daemon - reuse improves start-up time. The values should 
+be one of `daemon` or `session` (the default is `daemon`). `daemon` keeps the daemon alive until it's explicitly stopped while
+`session` keeps it alive until the end of the build session. This currently only affects the Scala compiler, see
+https://github.com/gradle/gradle/pull/21034 for a PR that attempts to do the same for the Java compiler.
+* `scalaOptimizerMode`: configures the optimizing behavior of the scala compiler, the value should be one of `none`, `method`, `inline-kafka` or
+`inline-scala` (the default is `inline-kafka`). `none` is the scala compiler default, which only eliminates unreachable code. `method` also
+includes method-local optimizations. `inline-kafka` adds inlining of methods within the kafka packages. Finally, `inline-scala` also
+includes inlining of methods within the scala library (which avoids lambda allocations for methods like `Option.exists`). `inline-scala` is
+only safe if the Scala library version is the same at compile time and runtime. Since we cannot guarantee this for all cases (for example, users
+may depend on the kafka jar for integration tests where they may include a scala library with a different version), we don't enable it by
+default. See https://www.lightbend.com/blog/scala-inliner-optimizer for more details.
 
-```sh
-bazel-selenium/external/bundle/bin/rdbg -A
-```
+### Running system tests ###
 
-If you want to use RubyMine for development, a bit of extra configuration is necessary to let the IDE know about Bazel toolchain and artifacts:
+See [tests/README.md](tests/README.md).
 
-1. Run `bundle exec rake update` as necessary to update generated artifacts.
-2. Open `rb/` as a main project directory.
-3. In <kbd>Settings / Languages & Frameworks / Ruby SDK and Gems</kbd> add new <kbd>Interpreter</kbd> pointing to `../bazel-selenium/external/rules_ruby_dist/dist/bin/ruby`.
-4. You should now be able to run and debug any spec. It uses Chrome by default, but you can alter it using environment variables above.
+### Running in Vagrant ###
 
-</details>
+See [vagrant/README.md](vagrant/README.md).
 
-#### .NET
-<details>
-<summary>Click to see .NET Build Steps</summary>
+### Contribution ###
 
-Bazel can not build .NET, yet, but it can set up tests with:
+Apache Kafka is interested in building the community; we would welcome any thoughts or [patches](https://issues.apache.org/jira/browse/KAFKA). You can reach us [on the Apache mailing lists](http://kafka.apache.org/contact.html).
 
-```sh
-bazel build //dotnet/test/common:chrome
-```
-
-Tests can then be run with:
-```sh
-cd dotnet
-dotnet test
-```
-
-More information about running Selenium's .NET tests can be found in this [README.md](dotnet/test/README.md)
-
-</details>
-
-#### Rust
-<details>
-<summary>Click to see Rust Build Steps</summary>
-
-Targets:
-
-| Command                                           | Description                               |
-|---------------------------------------------------|-------------------------------------------|
-| `bazel build //rust:selenium-manager`             | Build selenium-manager binary             |
-| `bazel test //rust/...`                           | Run both unit and integration tests       |
-| `CARGO_BAZEL_REPIN=true bazel sync --only=crates` | Sync `Cargo.Bazel.lock` with `Cargo.lock` |
-
-</details>
-
-### Build Details
-
-Bazel files are called BUILD.bazel, and the order the modules are built is determined
-by the build system. If you want to build an individual module (assuming all dependent
-modules have previously been built), try the following:
-
-```sh
-bazel test javascript/atoms:test
-```
-
-In this case, `javascript/atoms` is the module directory,
-`test` is a target in that directory's `BUILD.bazel` file.
-
-As you see *build targets* scroll past in the log,
-you may want to run them individually.
-
-### Build Output
-
-`bazel` makes a top-level group of directories with the  `bazel-` prefix on each directory.
-
-
-### Common Tasks (Bazel)
-
-To build the bulk of the Selenium binaries from source, run the
-following command from the root folder:
-
-```sh
-bazel build java/... javascript/...
-```
-
-To run tests within a particular area of the project, use the "test" command, followed
-by the folder or target. Tests are tagged with "small", "medium", or "large", and can be filtered
-with the `--test_size_filters` option:
-
-```sh
-bazel test --test_size_filters=small,medium java/...
-```
-
-Bazel's "test" command will run *all* tests in the package, including integration tests. Expect
-the ```test java/...``` to launch browsers and consume a considerable amount of time and resources.
-
-To bump the versions of the pinned browsers to their latest stable versions:
-
-```sh
-bazel run scripts:pinned_browsers > temp.bzl && mv temp.bzl common/repositories.bzl
-```
-
-### Editing Code
-
-Most of the team use either Intellij IDEA or VS.Code for their day-to-day editing. If you're
-working in IntelliJ, then we highly recommend installing the [Bazel IJ
-plugin](https://plugins.jetbrains.com/plugin/8609-bazel) which is documented on
-[its own site](https://plugins.jetbrains.com/plugin/8609-bazel).
-
-If you do use IntelliJ and the Bazel plugin, there is a project view checked into the tree
-in [scripts/ij.bazelproject](scripts/ij.bazelproject) which will make it easier to get up
-running, and editing code :)
-
-
-## Tour
-
-The codebase is generally segmented around the languages used to
-write the component. Selenium makes extensive use of JavaScript, so
-let's start there. First of all, start the development server:
-
-```sh
-bazel run debug-server
-```
-
-Now, navigate to
-[http://localhost:2310/javascript](http://localhost:2310/javascript).
-You'll find the contents of the `javascript/` directory being shown.
-We use the [Closure Library](https://developers.google.com/closure/library/)
-for developing much of the JavaScript, so now navigate to
-[http://localhost:2310/javascript/atoms/test](http://localhost:2310/javascript/atoms/test).
-
-The tests in this directory are normal HTML files with names ending
-with `_test.html`.  Click on one to load the page and run the test.
-
-## Help with `go`
-
-More general, but basic, help for `go`…
-
-```sh
-./go --help
-```
-
-`go` is a wrapper around
-[Rake](http://rake.rubyforge.org/), so you can use the standard
-commands such as `rake -T` to get more information about available
-targets.
-
-## Maven _per se_
-
-Selenium is not built with Maven. It is built with `bazel`,
-though that is invoked with `go` as outlined above,
-so you do not have to learn too much about that.
-
-That said, it is possible to relatively quickly build Selenium pieces
-for Maven to use. You are only really going to want to do this when
-you are testing the cutting-edge of Selenium development (which we
-welcome) against your application. Here is the quickest way to build
-and deploy into your local maven repository (`~/.m2/repository`), while
-skipping Selenium's own tests.
-
-```sh
-./go maven-install
-```
-
-The maven jars should now be in your local `~/.m2/repository`.
-
-## Updating Java dependencies
-
-The coordinates (_groupId_:_artifactId_:_version_) of the Java dependencies
-are defined in the file [maven_deps.bzl](https://github.com/SeleniumHQ/selenium/blob/trunk/java/maven_deps.bzl).
-The process to modify these dependencies is the following:
-
-1. (Optional) If we want to detect the dependencies which are not updated,
-   we can use the following command for automatic discovery:
-
-```sh
-bazel run @maven//:outdated
-```
-
-2. Modify [maven_deps.bzl](https://github.com/SeleniumHQ/selenium/blob/trunk/java/maven_deps.bzl).
-   For instance, we can bump the version of a given artifact detected in the step before.
-
-3. Repin dependencies. This process is required to update the file [maven_install.json](https://github.com/SeleniumHQ/selenium/blob/trunk/java/maven_install.json),
-   which is used to manage the Maven dependencies tree (see [rules_jvm_external](https://github.com/bazelbuild/rules_jvm_external) for further details). The command to carry out this step is the following:
-
-```sh
-RULES_JVM_EXTERNAL_REPIN=1 bazel run @unpinned_maven//:pin
-```
-
-4. (Optional) If we use IntelliJ with the Bazel plugin, we need to synchronize
-   our project. To that aim, we click on _Bazel_ &rarr; _Sync_ &rarr; _Sync Project
-   with BUILD Files_.
-
-
-## Running browser tests on Linux
-
-In order to run Browser tests, you first need to install the browser-specific drivers,
-such as [`geckodriver`](https://github.com/mozilla/geckodriver/releases),
-[`chromedriver`](https://chromedriver.chromium.org/), or
-[`edgedriver`](https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/).
-These need to be on your `PATH`.
-
-By default, Bazel runs these tests in your current X-server UI. If you prefer, you can
-alternatively run them in a virtual or nested X-server.
-
-1. Run the X server `Xvfb :99` or `Xnest :99`
-2. Run a window manager, for example, `DISPLAY=:99 jwm`
-3. Run the tests you are interested in:
-```sh
-bazel test --test_env=DISPLAY=:99 //java/... --test_tag_filters=chrome
-```
-
-An easy way to run tests in a virtual X-server is to use Bazel's `--run_under`
-functionality:
-```
-bazel test --run_under="xvfb-run -a" //java/... --test_tag_filters=chrome
-```
-
-## Bazel Installation/Troubleshooting
-
-### Selenium Build Docker Image
-
-If you're finding it hard to set up a development environment using bazel
-and you have access to Docker, then you can build a Docker image suitable
-for building and testing Selenium in from the Dockerfile in the
-[dev image](scripts/dev-image/Dockerfile) directory.
-
-### MacOS
-
-#### bazelisk
-
-Bazelisk is a Mac-friendly launcher for Bazel. To install, follow these steps:
-
-```sh
-brew tap bazelbuild/tap && \
-brew uninstall bazel; \
-brew install bazelbuild/tap/bazelisk
-```
-
-#### Xcode
-
-If you're getting errors that mention Xcode, you'll need to install the command-line tools.
-
-Bazel for Mac requires some additional steps to configure properly. First things first: use
-the Bazelisk project (courtesy of philwo), a pure golang implementation of Bazel. In order to
-install Bazelisk, first verify that your Xcode will cooperate: execute the following command:
-
-`xcode-select -p`
-
-If the value is `/Applications/Xcode.app/Contents/Developer/`, you can proceed with bazelisk
-installation. If, however, the return value is `/Library/Developer/CommandLineTools/`, you'll
-need to redirect the Xcode system to the correct value.
-
-```
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer/
-sudo xcodebuild -license
-```
-
-The first command will prompt you for a password. The second step requires you to read a new Xcode
-license, and then accept it by typing "agree".
-
-(Thanks to [this thread](https://github.com/bazelbuild/bazel/issues/4314) for these steps)
+To contribute follow the instructions here:
+ * https://kafka.apache.org/contributing.html 
