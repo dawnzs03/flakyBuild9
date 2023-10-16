@@ -544,14 +544,6 @@ public class ConsumerGroup implements Group {
     }
 
     /**
-     * Validates the OffsetFetch request.
-     */
-    @Override
-    public void validateOffsetFetch() {
-        // Nothing.
-    }
-
-    /**
      * Updates the current state of the group.
      */
     private void maybeUpdateGroupState() {

@@ -124,7 +124,7 @@ public class ClientState {
         );
     }
 
-    public int capacity() {
+    int capacity() {
         return capacity;
     }
 
@@ -267,10 +267,6 @@ public class ClientState {
                 assignedStandbyTaskIds
             )
         );
-    }
-
-    public boolean previouslyOwnedStandby(final TaskId task) {
-        return previousStandbyTasks.taskIds().contains(task);
     }
 
     public int assignedTaskCount() {

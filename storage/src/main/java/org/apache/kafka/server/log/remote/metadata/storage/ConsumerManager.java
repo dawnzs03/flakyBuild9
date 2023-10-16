@@ -27,7 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
@@ -38,6 +40,8 @@ import java.util.concurrent.TimeoutException;
  * {@link TopicBasedRemoteLogMetadataManagerConfig#consumeWaitMs()}.
  */
 public class ConsumerManager implements Closeable {
+
+    public static final String COMMITTED_OFFSETS_FILE_NAME = "_rlmm_committed_offsets";
 
     private static final Logger log = LoggerFactory.getLogger(ConsumerManager.class);
     private static final long CONSUME_RECHECK_INTERVAL_MS = 50L;
@@ -56,13 +60,15 @@ public class ConsumerManager implements Closeable {
 
         //Create a task to consume messages and submit the respective events to RemotePartitionMetadataEventHandler.
         KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(rlmmConfig.consumerProperties());
+        Path committedOffsetsPath = new File(rlmmConfig.logDir(), COMMITTED_OFFSETS_FILE_NAME).toPath();
         consumerTask = new ConsumerTask(
-            remotePartitionMetadataEventHandler,
-            topicPartitioner,
-            consumer,
-            100L,
-            300_000L,
-            time
+                consumer,
+                rlmmConfig.remoteLogMetadataTopicName(),
+                remotePartitionMetadataEventHandler,
+                topicPartitioner,
+                committedOffsetsPath,
+                time,
+                60_000L
         );
         consumerTaskThread = KafkaThread.nonDaemon("RLMMConsumerTask", consumerTask);
     }
@@ -104,7 +110,7 @@ public class ConsumerManager implements Closeable {
         log.info("Waiting until consumer is caught up with the target partition: [{}]", partition);
 
         // If the current assignment does not have the subscription for this partition then return immediately.
-        if (!consumerTask.isMetadataPartitionAssigned(partition)) {
+        if (!consumerTask.isPartitionAssigned(partition)) {
             throw new KafkaException("This consumer is not assigned to the target partition " + partition + ". " +
                     "Partitions currently assigned: " + consumerTask.metadataPartitionsAssigned());
         }
@@ -113,17 +119,17 @@ public class ConsumerManager implements Closeable {
         long startTimeMs = time.milliseconds();
         while (true) {
             log.debug("Checking if partition [{}] is up to date with offset [{}]", partition, offset);
-            long readOffset = consumerTask.readOffsetForMetadataPartition(partition).orElse(-1L);
-            if (readOffset >= offset) {
+            long receivedOffset = consumerTask.receivedOffsetForPartition(partition).orElse(-1L);
+            if (receivedOffset >= offset) {
                 return;
             }
 
             log.debug("Expected offset [{}] for partition [{}], but the committed offset: [{}],  Sleeping for [{}] to retry again",
-                    offset, partition, readOffset, consumeCheckIntervalMs);
+                    offset, partition, receivedOffset, consumeCheckIntervalMs);
 
             if (time.milliseconds() - startTimeMs > timeoutMs) {
                 log.warn("Expected offset for partition:[{}] is : [{}], but the committed offset: [{}] ",
-                        partition, readOffset, offset);
+                        partition, receivedOffset, offset);
                 throw new TimeoutException("Timed out in catching up with the expected offset by consumer.");
             }
 
@@ -152,7 +158,7 @@ public class ConsumerManager implements Closeable {
         consumerTask.removeAssignmentsForPartitions(partitions);
     }
 
-    public Optional<Long> readOffsetForPartition(int metadataPartition) {
-        return consumerTask.readOffsetForMetadataPartition(metadataPartition);
+    public Optional<Long> receivedOffsetForPartition(int metadataPartition) {
+        return consumerTask.receivedOffsetForPartition(metadataPartition);
     }
 }

@@ -168,7 +168,7 @@ public final class Batch<T> implements Iterable<T> {
         if (records.isEmpty()) {
             throw new IllegalArgumentException(
                 String.format(
-                    "Control batch must contain at least one record; baseOffset = %d; epoch = %d",
+                    "Control batch must contain at least one record; baseOffset = %s; epoch = %s",
                     baseOffset,
                     epoch
                 )
@@ -205,7 +205,7 @@ public final class Batch<T> implements Iterable<T> {
         if (records.isEmpty()) {
             throw new IllegalArgumentException(
                 String.format(
-                    "Batch must contain at least one record; baseOffset = %d; epoch = %d",
+                    "Batch must contain at least one record; baseOffset = %s; epoch = %s",
                     baseOffset,
                     epoch
                 )

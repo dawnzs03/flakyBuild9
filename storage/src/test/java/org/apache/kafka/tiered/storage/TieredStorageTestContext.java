@@ -17,8 +17,6 @@
 package org.apache.kafka.tiered.storage;
 
 import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.tiered.storage.specs.ExpandPartitionCountSpec;
 import org.apache.kafka.tiered.storage.specs.TopicSpec;
 import org.apache.kafka.tiered.storage.utils.BrokerLocalStorage;
@@ -39,6 +37,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.server.log.remote.storage.LocalTieredStorage;
@@ -70,8 +69,8 @@ import static org.apache.kafka.clients.producer.ProducerConfig.LINGER_MS_CONFIG;
 public final class TieredStorageTestContext implements AutoCloseable {
 
     private final TieredStorageTestHarness harness;
-    private final Serializer<String> ser = new StringSerializer();
-    private final Deserializer<String> de = new StringDeserializer();
+    private final Serializer<String> ser = Serdes.String().serializer();
+    private final Deserializer<String> de = Serdes.String().deserializer();
     private final Map<String, TopicSpec> topicSpecs = new HashMap<>();
     private final TieredStorageTestReport testReport;
 
@@ -310,5 +309,7 @@ public final class TieredStorageTestContext implements AutoCloseable {
 
     @Override
     public void close() throws IOException {
+        Utils.closeAll(producer, consumer);
+        Utils.closeQuietly(admin, "Admin client");
     }
 }
