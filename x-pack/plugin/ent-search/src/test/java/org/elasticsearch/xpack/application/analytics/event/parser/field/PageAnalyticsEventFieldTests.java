@@ -7,15 +7,14 @@
 
 package org.elasticsearch.xpack.application.analytics.event.parser.field;
 
+import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.xcontent.ContextParser;
 import org.elasticsearch.xpack.application.analytics.event.AnalyticsEvent;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Map.entry;
 import static org.elasticsearch.xpack.application.analytics.event.parser.field.PageAnalyticsEventField.PAGE_REFERRER_FIELD;
 import static org.elasticsearch.xpack.application.analytics.event.parser.field.PageAnalyticsEventField.PAGE_TITLE_FIELD;
 import static org.elasticsearch.xpack.application.analytics.event.parser.field.PageAnalyticsEventField.PAGE_URL_FIELD;
@@ -28,7 +27,7 @@ public class PageAnalyticsEventFieldTests extends AnalyticsEventFieldParserTestC
 
     @Override
     protected Map<String, String> createTestInstance() {
-        return new HashMap<>(randomEventPageField());
+        return randomEventPageField();
     }
 
     @Override
@@ -37,10 +36,10 @@ public class PageAnalyticsEventFieldTests extends AnalyticsEventFieldParserTestC
     }
 
     public static Map<String, String> randomEventPageField() {
-        return Map.ofEntries(
-            entry(PAGE_URL_FIELD.getPreferredName(), randomIdentifier()),
-            entry(PAGE_TITLE_FIELD.getPreferredName(), randomIdentifier()),
-            entry(PAGE_REFERRER_FIELD.getPreferredName(), randomIdentifier())
-        );
+        return MapBuilder.<String, String>newMapBuilder()
+            .put(PAGE_URL_FIELD.getPreferredName(), randomIdentifier())
+            .put(PAGE_TITLE_FIELD.getPreferredName(), randomIdentifier())
+            .put(PAGE_REFERRER_FIELD.getPreferredName(), randomIdentifier())
+            .map();
     }
 }

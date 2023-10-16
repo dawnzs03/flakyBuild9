@@ -13,7 +13,7 @@ import org.elasticsearch.xpack.ql.type.DataType;
 
 import java.util.List;
 
-public abstract class UnresolvedNamedExpression extends NamedExpression implements Unresolvable {
+abstract class UnresolvedNamedExpression extends NamedExpression implements Unresolvable {
 
     UnresolvedNamedExpression(Source source, List<Expression> children) {
         super(source, "<unresolved>", children, new NameId());

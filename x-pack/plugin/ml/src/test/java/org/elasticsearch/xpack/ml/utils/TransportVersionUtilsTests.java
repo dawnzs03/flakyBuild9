@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.ml.utils;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.block.ClusterBlocks;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.core.ml.utils.TransportVersionUtils;
 
@@ -38,7 +37,7 @@ public class TransportVersionUtilsTests extends ESTestCase {
         null,
         null,
         transportVersions,
-        ClusterBlocks.EMPTY_CLUSTER_BLOCK,
+        null,
         null,
         false,
         null
@@ -61,7 +60,7 @@ public class TransportVersionUtilsTests extends ESTestCase {
             null,
             null,
             transportVersions1,
-            ClusterBlocks.EMPTY_CLUSTER_BLOCK,
+            null,
             null,
             false,
             null

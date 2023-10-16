@@ -21,7 +21,7 @@ import static org.elasticsearch.rest.RestRequest.Method.PUT;
 
 public class RestPutLicenseAction extends BaseRestHandler {
 
-    public RestPutLicenseAction() {}
+    RestPutLicenseAction() {}
 
     @Override
     public List<Route> routes() {

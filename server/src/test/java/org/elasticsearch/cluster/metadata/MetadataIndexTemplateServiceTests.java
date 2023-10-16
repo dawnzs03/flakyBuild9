@@ -1504,23 +1504,21 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
 
         DataStreamLifecycle emptyLifecycle = new DataStreamLifecycle();
 
-        DataStreamLifecycle lifecycle30d = DataStreamLifecycle.newBuilder().dataRetention(TimeValue.timeValueDays(30)).build();
+        DataStreamLifecycle lifecycle30d = new DataStreamLifecycle(TimeValue.timeValueDays(30));
         String ct30d = "ct_30d";
         state = addComponentTemplate(service, state, ct30d, lifecycle30d);
 
-        DataStreamLifecycle lifecycle45d = DataStreamLifecycle.newBuilder()
-            .dataRetention(TimeValue.timeValueDays(45))
-            .downsampling(
-                new DataStreamLifecycle.Downsampling(
-                    List.of(
-                        new DataStreamLifecycle.Downsampling.Round(
-                            TimeValue.timeValueDays(30),
-                            new DownsampleConfig(new DateHistogramInterval("3h"))
-                        )
+        DataStreamLifecycle lifecycle45d = new DataStreamLifecycle(
+            new DataStreamLifecycle.Retention(TimeValue.timeValueDays(45)),
+            new DataStreamLifecycle.Downsampling(
+                List.of(
+                    new DataStreamLifecycle.Downsampling.Round(
+                        TimeValue.timeValueDays(30),
+                        new DownsampleConfig(new DateHistogramInterval("3h"))
                     )
                 )
             )
-            .build();
+        );
         String ct45d = "ct_45d";
         state = addComponentTemplate(service, state, ct45d, lifecycle45d);
 
@@ -1565,10 +1563,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             state,
             List.of(ctEmptyLifecycle, ct45d),
             lifecycle30d,
-            DataStreamLifecycle.newBuilder()
-                .dataRetention(lifecycle30d.getDataRetention())
-                .downsampling(lifecycle45d.getDownsampling())
-                .build()
+            new DataStreamLifecycle(lifecycle30d.getDataRetention(), lifecycle45d.getDownsampling())
         );
 
         // Component A: "lifecycle": {"retention": "30d"}
@@ -1589,10 +1584,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             state,
             List.of(ctEmptyLifecycle, ct45d),
             lifecycleNullRetention,
-            DataStreamLifecycle.newBuilder()
-                .dataRetention(DataStreamLifecycle.Retention.NULL)
-                .downsampling(lifecycle45d.getDownsampling())
-                .build()
+            new DataStreamLifecycle(DataStreamLifecycle.Retention.NULL, lifecycle45d.getDownsampling())
         );
 
         // Component A: "lifecycle": {"retention": "30d"}
@@ -1866,7 +1858,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
         ClusterState state = ClusterState.EMPTY_STATE;
 
         ComponentTemplate ct = new ComponentTemplate(
-            new Template(null, null, null, DataStreamLifecycle.newBuilder().dataRetention(randomMillisUpToYear9999()).build()),
+            new Template(null, null, null, new DataStreamLifecycle(randomMillisUpToYear9999())),
             null,
             null
         );

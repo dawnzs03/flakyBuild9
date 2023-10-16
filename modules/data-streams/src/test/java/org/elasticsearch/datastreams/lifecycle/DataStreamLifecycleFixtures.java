@@ -98,9 +98,7 @@ public class DataStreamLifecycleFixtures {
     }
 
     static DataStreamLifecycle randomLifecycle() {
-        return rarely()
-            ? Template.NO_LIFECYCLE
-            : DataStreamLifecycle.newBuilder().dataRetention(randomRetention()).downsampling(randomDownsampling()).build();
+        return rarely() ? Template.NO_LIFECYCLE : new DataStreamLifecycle(randomRetention(), randomDownsampling());
     }
 
     @Nullable

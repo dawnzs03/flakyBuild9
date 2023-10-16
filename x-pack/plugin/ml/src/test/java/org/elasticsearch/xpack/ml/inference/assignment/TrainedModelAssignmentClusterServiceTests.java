@@ -10,7 +10,6 @@ package org.elasticsearch.xpack.ml.inference.assignment;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.ResourceAlreadyExistsException;
 import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.TransportVersion;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.LatchedActionListener;
@@ -22,11 +21,11 @@ import org.elasticsearch.cluster.metadata.NodesShutdownMetadata;
 import org.elasticsearch.cluster.metadata.SingleNodeShutdownMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
-import org.elasticsearch.cluster.node.DiscoveryNodeUtils;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.node.VersionInformation;
 import org.elasticsearch.cluster.routing.allocation.decider.AwarenessAllocationDecider;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -64,7 +63,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 
-import static java.util.Map.entry;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.containsString;
@@ -122,7 +120,6 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
                     .add(buildNode(startedNode, true, ByteSizeValue.ofGb(4).getBytes(), 8))
                     .build()
             )
-            .putTransportVersion(nodeId, TransportVersion.current())
             .metadata(
                 Metadata.builder()
                     .putCustom(
@@ -236,7 +233,6 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
 
         ClusterState clusterStateWithAssignment = ClusterState.builder(new ClusterName("testRemoveAssignment"))
             .nodes(DiscoveryNodes.builder().add(buildNode("test-node", true, ByteSizeValue.ofGb(4).getBytes(), 8)).build())
-            .putTransportVersion("test-node", TransportVersion.current())
             .metadata(
                 Metadata.builder()
                     .putCustom(
@@ -268,7 +264,6 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
 
         ClusterState clusterStateWithAssignments = ClusterState.builder(new ClusterName("testRemoveAllAssignments"))
             .nodes(DiscoveryNodes.builder().add(buildNode("test-node", true, ByteSizeValue.ofGb(4).getBytes(), 8)).build())
-            .putTransportVersion("test-node", TransportVersion.current())
             .metadata(
                 Metadata.builder()
                     .putCustom(TrainedModelAssignmentMetadata.NAME, TrainedModelAssignmentMetadataTests.randomInstance())
@@ -365,7 +360,6 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
 
         ClusterState currentState = ClusterState.builder(new ClusterName("testCreateAssignment"))
             .nodes(discoveryNodes)
-            .putTransportVersion("ml-node-with-room", TransportVersion.current())
             .metadata(Metadata.builder().putCustom(MlMetadata.TYPE, new MlMetadata.Builder().isResetMode(true).build()))
             .build();
         when(clusterService.state()).thenReturn(currentState);
@@ -1364,8 +1358,6 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
         DiscoveryNode node3 = buildNode(nodeId3, true, ByteSizeValue.ofGb(4).getBytes(), 8);
         ClusterState currentState = ClusterState.builder(new ClusterName("testAreAssignedNodesRemoved"))
             .nodes(DiscoveryNodes.builder().add(node1).add(node3).build())
-            .putTransportVersion(nodeId1, TransportVersion.current())
-            .putTransportVersion(nodeId3, TransportVersion.current())
             .metadata(metadata)
             .build();
 
@@ -1418,7 +1410,6 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
 
         ClusterState clusterStateWithAllocation = ClusterState.builder(new ClusterName("testSetAllocationToStopping"))
             .nodes(DiscoveryNodes.builder().add(buildNode("test-node", true, ByteSizeValue.ofGb(4).getBytes(), 8)).build())
-            .putTransportVersion("test-node", TransportVersion.current())
             .metadata(
                 Metadata.builder()
                     .putCustom(
@@ -1487,18 +1478,18 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
         int allocatedProcessors,
         VersionInformation version
     ) {
-        return DiscoveryNodeUtils.builder(name)
-            .name(name)
-            .attributes(
-                Map.ofEntries(
-                    entry(MachineLearning.MACHINE_MEMORY_NODE_ATTR, String.valueOf(nativeMemory)),
-                    entry(MachineLearning.MAX_JVM_SIZE_NODE_ATTR, String.valueOf(10)),
-                    entry(MachineLearning.ALLOCATED_PROCESSORS_NODE_ATTR, String.valueOf(allocatedProcessors))
-                )
-            )
-            .roles(isML ? DiscoveryNodeRole.roles() : Set.of(DiscoveryNodeRole.DATA_ROLE, DiscoveryNodeRole.MASTER_ROLE))
-            .version(version)
-            .build();
+        return new DiscoveryNode(
+            name,
+            name,
+            buildNewFakeTransportAddress(),
+            MapBuilder.<String, String>newMapBuilder()
+                .put(MachineLearning.MACHINE_MEMORY_NODE_ATTR, String.valueOf(nativeMemory))
+                .put(MachineLearning.MAX_JVM_SIZE_NODE_ATTR, String.valueOf(10))
+                .put(MachineLearning.ALLOCATED_PROCESSORS_NODE_ATTR, String.valueOf(allocatedProcessors))
+                .map(),
+            isML ? DiscoveryNodeRole.roles() : Set.of(DiscoveryNodeRole.DATA_ROLE, DiscoveryNodeRole.MASTER_ROLE),
+            version
+        );
     }
 
     private static RoutingInfoUpdate started() {

@@ -20,15 +20,11 @@ import org.elasticsearch.xpack.ql.type.KeywordEsField;
 import org.elasticsearch.xpack.sql.type.SqlDataTypeRegistry;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.Collections.singletonMap;
@@ -54,7 +50,6 @@ public class IndexResolverTests extends ESTestCase {
 
         assertTrue(resolution.isValid());
         assertEqualsMaps(oneMapping, resolution.get().mapping());
-        assertEquals(Set.of("a", "b"), resolution.get().concreteIndices());
     }
 
     public void testMergeCompatibleMapping() throws Exception {
@@ -67,7 +62,6 @@ public class IndexResolverTests extends ESTestCase {
 
         assertTrue(resolution.isValid());
         assertEquals(basicMapping.size() + numericMapping.size(), resolution.get().mapping().size());
-        assertEquals(Set.of("basic", "numeric"), resolution.get().concreteIndices());
     }
 
     public void testMergeIncompatibleTypes() throws Exception {
@@ -83,7 +77,6 @@ public class IndexResolverTests extends ESTestCase {
 
         EsIndex esIndex = resolution.get();
         assertEquals(wildcard, esIndex.name());
-        assertEquals(Set.of("basic", "incompatible"), esIndex.concreteIndices());
         EsField esField = esIndex.mapping().get("gender");
         assertEquals(InvalidMappedField.class, esField.getClass());
 
@@ -109,7 +102,6 @@ public class IndexResolverTests extends ESTestCase {
         EsField esField = esIndex.mapping().get("emp_no");
         assertEquals(InvalidMappedField.class, esField.getClass());
         assertEquals("mapped as aggregatable except in [incompatible]", ((InvalidMappedField) esField).errorMessage());
-        assertEquals(Set.of("basic", "incompatible"), resolution.get().concreteIndices());
     }
 
     public void testMultiLevelObjectMappings() throws Exception {
@@ -119,7 +111,6 @@ public class IndexResolverTests extends ESTestCase {
 
         assertTrue(resolution.isValid());
         assertEqualsMaps(dottedMapping, resolution.get().mapping());
-        assertEquals(Set.of("a"), resolution.get().concreteIndices());
     }
 
     public void testMultiLevelNestedMappings() throws Exception {
@@ -150,7 +141,6 @@ public class IndexResolverTests extends ESTestCase {
         assertNull(esIndex.mapping().get("_doc_count"));
         assertEquals(INTEGER, esIndex.mapping().get("_not_meta_field").getDataType());
         assertEquals(KEYWORD, esIndex.mapping().get("text").getDataType());
-        assertEquals(Set.of("index"), resolution.get().concreteIndices());
     }
 
     public void testFlattenedHiddenSubfield() throws Exception {
@@ -170,7 +160,6 @@ public class IndexResolverTests extends ESTestCase {
 
         EsIndex esIndex = resolution.get();
         assertEquals(wildcard, esIndex.name());
-        assertEquals(Set.of("index"), resolution.get().concreteIndices());
         assertEquals(UNSUPPORTED, esIndex.mapping().get("some_field").getDataType());
         assertEquals(UNSUPPORTED, esIndex.mapping().get("some_field").getProperties().get("_keyed").getDataType());
         assertEquals(OBJECT, esIndex.mapping().get("nested_field").getDataType());
@@ -200,7 +189,6 @@ public class IndexResolverTests extends ESTestCase {
 
         EsIndex esIndex = resolution.get();
         assertEquals(wildcard, esIndex.name());
-        assertEquals(Set.of("index"), resolution.get().concreteIndices());
         assertEquals(TEXT, esIndex.mapping().get("a").getDataType());
         assertEquals(UNSUPPORTED, esIndex.mapping().get("a").getProperties().get("b").getDataType());
         assertEquals(UNSUPPORTED, esIndex.mapping().get("a").getProperties().get("b").getProperties().get("c").getDataType());
@@ -236,7 +224,6 @@ public class IndexResolverTests extends ESTestCase {
 
         EsIndex esIndex = resolution.get();
         assertEquals(wildcard, esIndex.name());
-        assertEquals(Set.of("index"), resolution.get().concreteIndices());
         assertEquals(UNSUPPORTED, esIndex.mapping().get("some_field").getDataType());
         assertEquals(OBJECT, esIndex.mapping().get("nested_field").getDataType());
         assertEquals(UNSUPPORTED, esIndex.mapping().get("nested_field").getProperties().get("sub_field1").getDataType());
@@ -299,7 +286,6 @@ public class IndexResolverTests extends ESTestCase {
 
         EsIndex esIndex = resolution.get();
         assertEquals(wildcard, esIndex.name());
-        assertEquals(Set.of("one-index"), resolution.get().concreteIndices());
         EsField esField = null;
         Map<String, EsField> props = esIndex.mapping();
         for (String lvl : level) {
@@ -323,9 +309,7 @@ public class IndexResolverTests extends ESTestCase {
 
         assertEquals(2, indices.size());
         assertEqualsMaps(oneMapping, indices.get(0).mapping());
-        assertEquals(Set.of("a"), indices.get(0).concreteIndices());
         assertEqualsMaps(sameMapping, indices.get(1).mapping());
-        assertEquals(Set.of("b"), indices.get(1).concreteIndices());
     }
 
     public void testSeparateIncompatibleTypes() throws Exception {
@@ -338,9 +322,7 @@ public class IndexResolverTests extends ESTestCase {
 
         assertEquals(2, indices.size());
         assertEqualsMaps(basicMapping, indices.get(0).mapping());
-        assertEquals(Set.of("basic"), indices.get(0).concreteIndices());
         assertEqualsMaps(incompatible, indices.get(1).mapping());
-        assertEquals(Set.of("incompatible"), indices.get(1).concreteIndices());
     }
 
     // covers the scenario described in https://github.com/elastic/elasticsearch/issues/43876
@@ -355,34 +337,12 @@ public class IndexResolverTests extends ESTestCase {
             mapping.put(fieldName, new KeywordEsField(fieldName));
             expectedIndices[i] = new EsIndex("index" + (i + 1), mapping);
         }
-        Arrays.sort(expectedIndices, Comparator.comparing(EsIndex::name));
 
         List<EsIndex> actualIndices = separate(expectedIndices);
-        actualIndices.sort(Comparator.comparing(EsIndex::name));
         assertEquals(indicesCount, actualIndices.size());
         for (int i = 0; i < indicesCount; i++) {
             assertEqualsMaps(expectedIndices[i].mapping(), actualIndices.get(i).mapping());
-            assertEquals(Set.of(expectedIndices[i].name()), actualIndices.get(i).concreteIndices());
         }
-    }
-
-    public void testMergeConcreteIndices() {
-        int indicesCount = randomIntBetween(2, 15);
-        EsIndex[] expectedIndices = new EsIndex[indicesCount];
-        Set<String> indexNames = new HashSet<>();
-
-        for (int i = 0; i < indicesCount; i++) {
-            Map<String, EsField> mapping = Maps.newMapWithExpectedSize(1);
-            String fieldName = "field" + (i + 1);
-            mapping.put(fieldName, new KeywordEsField(fieldName));
-            String indexName = "index" + (i + 1);
-            expectedIndices[i] = new EsIndex(indexName, mapping, Set.of(indexName));
-            indexNames.add(indexName);
-        }
-
-        IndexResolution resolution = merge(expectedIndices);
-        assertEquals(indicesCount, resolution.get().mapping().size());
-        assertEquals(indexNames, resolution.get().concreteIndices());
     }
 
     public void testIndexWithNoMapping() {

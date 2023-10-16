@@ -53,7 +53,7 @@ public class DataStreamLifecycleUsageTransportAction extends XPackUsageFeatureTr
         ClusterState state,
         ActionListener<XPackUsageFeatureResponse> listener
     ) {
-        if (DataStreamLifecycle.isFeatureEnabled() == false) {
+        if (DataStreamLifecycle.isEnabled() == false) {
             listener.onResponse(new XPackUsageFeatureResponse(DataStreamLifecycleFeatureSetUsage.DISABLED));
             return;
         }

@@ -40,7 +40,7 @@ public class RestSimulateTemplateAction extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) throws IOException {
         SimulateTemplateAction.Request simulateRequest = new SimulateTemplateAction.Request();
         simulateRequest.templateName(request.param("name"));
-        if (DataStreamLifecycle.isFeatureEnabled()) {
+        if (DataStreamLifecycle.isEnabled()) {
             simulateRequest.includeDefaults(request.paramAsBoolean("include_defaults", false));
         }
         if (request.hasContent()) {

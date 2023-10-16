@@ -388,7 +388,9 @@ public abstract class AbstractHttpServerTransport extends AbstractLifecycleCompo
         try {
             rlock.lock();
             if (shuttingDown) {
-                throw new IllegalStateException("Server cannot accept new channel while shutting down");
+                logger.warn("server accepted channel after shutting down");
+                httpChannel.close();
+                return;
             }
             RequestTrackingHttpChannel trackingChannel = httpChannels.putIfAbsent(httpChannel, new RequestTrackingHttpChannel(httpChannel));
             assert trackingChannel == null : "Channel should only be added to http channel set once";

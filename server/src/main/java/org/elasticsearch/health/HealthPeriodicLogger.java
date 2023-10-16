@@ -42,17 +42,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class HealthPeriodicLogger implements ClusterStateListener, Closeable, SchedulerEngine.Listener {
     public static final String HEALTH_FIELD_PREFIX = "elasticsearch.health";
 
-    public static final Setting<TimeValue> POLL_INTERVAL_SETTING = Setting.timeSetting(
-        "health.periodic_logger.poll_interval",
+    public static final String HEALTH_PERIODIC_LOGGER_POLL_INTERVAL = "health.periodic_logger.poll_interval";
+    public static final Setting<TimeValue> HEALTH_PERIODIC_LOGGER_POLL_INTERVAL_SETTING = Setting.timeSetting(
+        HEALTH_PERIODIC_LOGGER_POLL_INTERVAL,
         TimeValue.timeValueSeconds(60),
         TimeValue.timeValueSeconds(15),
-        Setting.Property.Dynamic,
-        Setting.Property.NodeScope
-    );
-
-    public static final Setting<Boolean> ENABLED_SETTING = Setting.boolSetting(
-        "health.periodic_logger.enabled",
-        false,
         Setting.Property.Dynamic,
         Setting.Property.NodeScope
     );
@@ -77,7 +71,6 @@ public class HealthPeriodicLogger implements ClusterStateListener, Closeable, Sc
 
     private final SetOnce<SchedulerEngine> scheduler = new SetOnce<>();
     private volatile TimeValue pollInterval;
-    private volatile boolean enabled;
 
     private static final Logger logger = LogManager.getLogger(HealthPeriodicLogger.class);
 
@@ -96,19 +89,16 @@ public class HealthPeriodicLogger implements ClusterStateListener, Closeable, Sc
         this.client = client;
         this.healthService = healthService;
         this.clock = Clock.systemUTC();
-        this.pollInterval = POLL_INTERVAL_SETTING.get(settings);
-        this.enabled = ENABLED_SETTING.get(settings);
+        this.pollInterval = HEALTH_PERIODIC_LOGGER_POLL_INTERVAL_SETTING.get(settings);
     }
 
     /**
      * Initializer method to avoid the publication of a self reference in the constructor.
      */
     public void init() {
-        if (this.enabled) {
-            clusterService.addListener(this);
-        }
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(ENABLED_SETTING, this::enable);
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(POLL_INTERVAL_SETTING, this::updatePollInterval);
+        clusterService.addListener(this);
+        clusterService.getClusterSettings()
+            .addSettingsUpdateConsumer(HEALTH_PERIODIC_LOGGER_POLL_INTERVAL_SETTING, this::updatePollInterval);
     }
 
     @Override
@@ -147,7 +137,7 @@ public class HealthPeriodicLogger implements ClusterStateListener, Closeable, Sc
 
     @Override
     public void triggered(SchedulerEngine.Event event) {
-        if (event.getJobName().equals(HEALTH_PERIODIC_LOGGER_JOB_NAME) && this.enabled) {
+        if (event.getJobName().equals(HEALTH_PERIODIC_LOGGER_JOB_NAME)) {
             this.tryToLogHealth();
         }
     }
@@ -239,10 +229,6 @@ public class HealthPeriodicLogger implements ClusterStateListener, Closeable, Sc
             return;
         }
 
-        if (this.enabled == false) {
-            return;
-        }
-
         // don't schedule the job if the node is shutting down
         if (isClusterServiceStoppedOrClosed()) {
             logger.trace(
@@ -268,17 +254,6 @@ public class HealthPeriodicLogger implements ClusterStateListener, Closeable, Sc
     private void maybeCancelJob() {
         if (scheduler.get() != null) {
             scheduler.get().remove(HEALTH_PERIODIC_LOGGER_JOB_NAME);
-        }
-    }
-
-    private void enable(boolean enabled) {
-        this.enabled = enabled;
-        if (enabled) {
-            clusterService.addListener(this);
-            maybeScheduleJob();
-        } else {
-            clusterService.removeListener(this);
-            maybeCancelJob();
         }
     }
 

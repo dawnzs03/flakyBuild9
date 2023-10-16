@@ -7,6 +7,7 @@
 package org.elasticsearch.xpack.watcher.notification.jira;
 
 import org.apache.http.HttpStatus;
+import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -205,7 +206,7 @@ public class JiraAccountTests extends ESTestCase {
     }
 
     public static Map<String, Object> randomIssueDefaults() {
-        Map<String, Object> builder = new HashMap<>();
+        MapBuilder<String, Object> builder = MapBuilder.newMapBuilder();
         if (randomBoolean()) {
             Map<String, Object> project = new HashMap<>();
             project.put("project", singletonMap("id", randomAlphaOfLength(10)));
@@ -228,7 +229,7 @@ public class JiraAccountTests extends ESTestCase {
                 builder.put("customfield_" + i, randomAlphaOfLengthBetween(5, 10));
             }
         }
-        return Collections.unmodifiableMap(builder);
+        return builder.immutableMap();
     }
 
     static Tuple<Integer, String> randomHttpError() {

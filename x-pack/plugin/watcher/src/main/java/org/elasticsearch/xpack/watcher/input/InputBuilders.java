@@ -6,6 +6,7 @@
  */
 package org.elasticsearch.xpack.watcher.input;
 
+import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.xpack.core.watcher.input.none.NoneInput;
 import org.elasticsearch.xpack.core.watcher.watch.Payload;
 import org.elasticsearch.xpack.watcher.common.http.HttpRequestTemplate;
@@ -35,7 +36,11 @@ public final class InputBuilders {
     }
 
     public static SimpleInput.Builder simpleInput(String key, Object value) {
-        return simpleInput(Map.of(key, value));
+        return simpleInput(MapBuilder.<String, Object>newMapBuilder().put(key, value));
+    }
+
+    public static SimpleInput.Builder simpleInput(MapBuilder<String, Object> data) {
+        return simpleInput(data.map());
     }
 
     public static SimpleInput.Builder simpleInput(Map<String, Object> data) {

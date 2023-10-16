@@ -9,16 +9,15 @@ package org.elasticsearch.xpack.application.analytics.event.parser.field;
 
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.xcontent.ContextParser;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xpack.application.analytics.event.AnalyticsEvent;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Map.entry;
 import static org.elasticsearch.xpack.application.analytics.event.AnalyticsEventTestUtils.convertMapToJson;
 import static org.elasticsearch.xpack.application.analytics.event.parser.field.PaginationAnalyticsEventField.CURRENT_PAGE_FIELD;
 import static org.elasticsearch.xpack.application.analytics.event.parser.field.PaginationAnalyticsEventField.PAGE_SIZE_FIELD;
@@ -58,7 +57,7 @@ public class PaginationAnalyticsEventFieldTests extends AnalyticsEventFieldParse
 
     @Override
     protected Map<String, Integer> createTestInstance() {
-        return new HashMap<>(randomEventSearchPaginationField());
+        return randomEventSearchPaginationField();
     }
 
     @Override
@@ -67,9 +66,9 @@ public class PaginationAnalyticsEventFieldTests extends AnalyticsEventFieldParse
     }
 
     public static Map<String, Integer> randomEventSearchPaginationField() {
-        return Map.ofEntries(
-            entry(CURRENT_PAGE_FIELD.getPreferredName(), randomNonNegativeInt()),
-            entry(PAGE_SIZE_FIELD.getPreferredName(), randomNonNegativeInt())
-        );
+        return MapBuilder.<String, Integer>newMapBuilder()
+            .put(CURRENT_PAGE_FIELD.getPreferredName(), randomNonNegativeInt())
+            .put(PAGE_SIZE_FIELD.getPreferredName(), randomNonNegativeInt())
+            .map();
     }
 }

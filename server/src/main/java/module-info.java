@@ -385,7 +385,6 @@ module org.elasticsearch.server {
     uses org.elasticsearch.jdk.ModuleQualifiedExportsService;
     uses org.elasticsearch.node.internal.TerminationHandlerProvider;
     uses org.elasticsearch.internal.VersionExtension;
-    uses org.elasticsearch.internal.BuildExtension;
 
     provides org.apache.lucene.codecs.PostingsFormat
         with

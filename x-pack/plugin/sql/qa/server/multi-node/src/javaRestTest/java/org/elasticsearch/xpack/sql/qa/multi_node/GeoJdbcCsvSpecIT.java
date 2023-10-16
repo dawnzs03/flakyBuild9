@@ -8,8 +8,7 @@
 package org.elasticsearch.xpack.sql.qa.multi_node;
 
 import org.elasticsearch.xpack.sql.qa.geo.GeoCsvSpecTestCase;
-
-import static org.elasticsearch.xpack.ql.CsvSpecReader.CsvTestCase;
+import org.elasticsearch.xpack.sql.qa.jdbc.CsvTestUtils.CsvTestCase;
 
 public class GeoJdbcCsvSpecIT extends GeoCsvSpecTestCase {
     public GeoJdbcCsvSpecIT(String fileName, String groupName, String testName, Integer lineNumber, CsvTestCase testCase) {

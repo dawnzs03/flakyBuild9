@@ -19,7 +19,7 @@ import static org.elasticsearch.rest.RestRequest.Method.GET;
 
 public class RestGetBasicStatus extends BaseRestHandler {
 
-    public RestGetBasicStatus() {}
+    RestGetBasicStatus() {}
 
     @Override
     public List<Route> routes() {

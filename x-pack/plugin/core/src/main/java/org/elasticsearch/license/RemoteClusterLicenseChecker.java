@@ -125,6 +125,7 @@ public final class RemoteClusterLicenseChecker {
 
     }
 
+    private static final ClusterNameExpressionResolver clusterNameExpressionResolver = new ClusterNameExpressionResolver();
     private final Client client;
     private final LicensedFeature feature;
 

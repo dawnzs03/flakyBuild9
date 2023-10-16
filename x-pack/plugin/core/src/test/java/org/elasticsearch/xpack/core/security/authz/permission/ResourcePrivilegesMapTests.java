@@ -7,10 +7,9 @@
 
 package org.elasticsearch.xpack.core.security.authz.permission;
 
+import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.EqualsHashCodeTestUtils;
-
-import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -19,19 +18,21 @@ public class ResourcePrivilegesMapTests extends ESTestCase {
 
     public void testBuilder() {
         ResourcePrivilegesMap instance = ResourcePrivilegesMap.builder()
-            .addResourcePrivilege("*", Map.of("read", true, "write", true))
+            .addResourcePrivilege("*", mapBuilder().put("read", true).put("write", true).map())
             .build();
         assertThat(instance.getResourceToResourcePrivileges().size(), is(1));
         assertThat(instance.getResourceToResourcePrivileges().get("*").isAllowed("read"), is(true));
         assertThat(instance.getResourceToResourcePrivileges().get("*").isAllowed("write"), is(true));
 
-        instance = ResourcePrivilegesMap.builder().addResourcePrivilege("*", Map.of("read", true, "write", false)).build();
+        instance = ResourcePrivilegesMap.builder()
+            .addResourcePrivilege("*", mapBuilder().put("read", true).put("write", false).map())
+            .build();
         assertThat(instance.getResourceToResourcePrivileges().size(), is(1));
         assertThat(instance.getResourceToResourcePrivileges().get("*").isAllowed("read"), is(true));
         assertThat(instance.getResourceToResourcePrivileges().get("*").isAllowed("write"), is(false));
 
         instance = ResourcePrivilegesMap.builder()
-            .addResourcePrivilege("some-other", Map.of("index", true, "write", true))
+            .addResourcePrivilege("some-other", mapBuilder().put("index", true).put("write", true).map())
             .addResourcePrivilegesMap(instance)
             .build();
         assertThat(instance.getResourceToResourcePrivileges().size(), is(2));
@@ -44,12 +45,12 @@ public class ResourcePrivilegesMapTests extends ESTestCase {
     public void testIntersection() {
         ResourcePrivilegesMap.Builder builder = ResourcePrivilegesMap.builder();
         ResourcePrivilegesMap instance = ResourcePrivilegesMap.builder()
-            .addResourcePrivilege("*", Map.of("read", true, "write", true))
-            .addResourcePrivilege("index-*", Map.of("read", true, "write", true))
+            .addResourcePrivilege("*", mapBuilder().put("read", true).put("write", true).map())
+            .addResourcePrivilege("index-*", mapBuilder().put("read", true).put("write", true).map())
             .build();
         ResourcePrivilegesMap otherInstance = ResourcePrivilegesMap.builder()
-            .addResourcePrivilege("*", Map.of("read", true, "write", false))
-            .addResourcePrivilege("index-*", Map.of("read", false, "write", true))
+            .addResourcePrivilege("*", mapBuilder().put("read", true).put("write", false).map())
+            .addResourcePrivilege("index-*", mapBuilder().put("read", false).put("write", true).map())
             .build();
         ResourcePrivilegesMap result = builder.addResourcePrivilegesMap(instance).addResourcePrivilegesMap(otherInstance).build();
         assertThat(result.getResourceToResourcePrivileges().size(), is(2));
@@ -62,7 +63,7 @@ public class ResourcePrivilegesMapTests extends ESTestCase {
 
     public void testEqualsHashCode() {
         ResourcePrivilegesMap instance = ResourcePrivilegesMap.builder()
-            .addResourcePrivilege("*", Map.of("read", true, "write", true))
+            .addResourcePrivilege("*", mapBuilder().put("read", true).put("write", true).map())
             .build();
 
         EqualsHashCodeTestUtils.checkEqualsAndHashCode(instance, (original) -> {
@@ -76,12 +77,18 @@ public class ResourcePrivilegesMapTests extends ESTestCase {
     private static ResourcePrivilegesMap mutateTestItem(ResourcePrivilegesMap original) {
         return switch (randomIntBetween(0, 1)) {
             case 0 -> ResourcePrivilegesMap.builder()
-                .addResourcePrivilege(randomAlphaOfLength(6), Map.of("read", true, "write", true))
+                .addResourcePrivilege(randomAlphaOfLength(6), mapBuilder().put("read", true).put("write", true).map())
                 .build();
-            case 1 -> ResourcePrivilegesMap.builder().addResourcePrivilege("*", Map.of("read", false, "write", false)).build();
+            case 1 -> ResourcePrivilegesMap.builder()
+                .addResourcePrivilege("*", mapBuilder().put("read", false).put("write", false).map())
+                .build();
             default -> ResourcePrivilegesMap.builder()
-                .addResourcePrivilege(randomAlphaOfLength(6), Map.of("read", true, "write", true))
+                .addResourcePrivilege(randomAlphaOfLength(6), mapBuilder().put("read", true).put("write", true).map())
                 .build();
         };
+    }
+
+    private static MapBuilder<String, Boolean> mapBuilder() {
+        return MapBuilder.newMapBuilder();
     }
 }

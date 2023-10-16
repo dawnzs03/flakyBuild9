@@ -42,7 +42,6 @@ public class BuildTests extends ESTestCase {
 
     public void testIsProduction() {
         Build build = new Build(
-            Build.current().flavor(),
             Build.current().type(),
             Build.current().hash(),
             Build.current().date(),
@@ -53,7 +52,6 @@ public class BuildTests extends ESTestCase {
 
         assertFalse(
             new Build(
-                Build.current().flavor(),
                 Build.current().type(),
                 Build.current().hash(),
                 Build.current().date(),
@@ -63,21 +61,15 @@ public class BuildTests extends ESTestCase {
         );
 
         assertFalse(
-            new Build(
-                Build.current().flavor(),
-                Build.current().type(),
-                Build.current().hash(),
-                Build.current().date(),
-                Build.current().isSnapshot(),
-                "Unknown"
-            ).isProductionRelease()
+            new Build(Build.current().type(), Build.current().hash(), Build.current().date(), Build.current().isSnapshot(), "Unknown")
+                .isProductionRelease()
         );
     }
 
     public void testEqualsAndHashCode() {
         Build build = Build.current();
 
-        Build another = new Build(build.flavor(), build.type(), build.hash(), build.date(), build.isSnapshot(), build.qualifiedVersion());
+        Build another = new Build(build.type(), build.hash(), build.date(), build.isSnapshot(), build.qualifiedVersion());
         assertEquals(build, another);
         assertEquals(build.hashCode(), another.hashCode());
 
@@ -85,18 +77,10 @@ public class BuildTests extends ESTestCase {
             .filter(f -> f.equals(build.type()) == false)
             .collect(Collectors.toSet());
         final Build.Type otherType = randomFrom(otherTypes);
-        Build differentType = new Build(
-            build.flavor(),
-            otherType,
-            build.hash(),
-            build.date(),
-            build.isSnapshot(),
-            build.qualifiedVersion()
-        );
+        Build differentType = new Build(otherType, build.hash(), build.date(), build.isSnapshot(), build.qualifiedVersion());
         assertNotEquals(build, differentType);
 
         Build differentHash = new Build(
-            build.flavor(),
             build.type(),
             randomAlphaOfLengthBetween(3, 10),
             build.date(),
@@ -105,18 +89,10 @@ public class BuildTests extends ESTestCase {
         );
         assertNotEquals(build, differentHash);
 
-        Build differentDate = new Build(
-            build.flavor(),
-            build.type(),
-            build.hash(),
-            "1970-01-01",
-            build.isSnapshot(),
-            build.qualifiedVersion()
-        );
+        Build differentDate = new Build(build.type(), build.hash(), "1970-01-01", build.isSnapshot(), build.qualifiedVersion());
         assertNotEquals(build, differentDate);
 
         Build differentSnapshot = new Build(
-            build.flavor(),
             build.type(),
             build.hash(),
             build.date(),
@@ -125,7 +101,7 @@ public class BuildTests extends ESTestCase {
         );
         assertNotEquals(build, differentSnapshot);
 
-        Build differentVersion = new Build(build.flavor(), build.type(), build.hash(), build.date(), build.isSnapshot(), "1.2.3");
+        Build differentVersion = new Build(build.type(), build.hash(), build.date(), build.isSnapshot(), "1.2.3");
         assertNotEquals(build, differentVersion);
     }
 
@@ -165,11 +141,9 @@ public class BuildTests extends ESTestCase {
 
     @AwaitsFix(bugUrl = "https://github.com/elastic/elasticsearch/issues/85800")
     public void testSerialization() {
-        final String[] testFlavors = new String[] { "flavor1", "flavor2" };
         EqualsHashCodeTestUtils.checkEqualsAndHashCode(
             new WriteableBuild(
                 new Build(
-                    randomFrom(testFlavors),
                     randomFrom(Build.Type.values()),
                     randomAlphaOfLength(6),
                     randomAlphaOfLength(6),
@@ -180,11 +154,10 @@ public class BuildTests extends ESTestCase {
             // Note: the cast of the Copy- and MutateFunction is needed for some IDE (specifically Eclipse 4.10.0) to infer the right type
             (WriteableBuild b) -> copyWriteable(b, writableRegistry(), WriteableBuild::new, TransportVersion.current()),
             (WriteableBuild b) -> {
-                switch (randomIntBetween(1, 6)) {
+                switch (randomIntBetween(1, 5)) {
                     case 1:
                         return new WriteableBuild(
                             new Build(
-                                b.build.flavor(),
                                 randomValueOtherThan(b.build.type(), () -> randomFrom(Build.Type.values())),
                                 b.build.hash(),
                                 b.build.date(),
@@ -195,7 +168,6 @@ public class BuildTests extends ESTestCase {
                     case 2:
                         return new WriteableBuild(
                             new Build(
-                                b.build.flavor(),
                                 b.build.type(),
                                 randomStringExcept(b.build.hash()),
                                 b.build.date(),
@@ -206,7 +178,6 @@ public class BuildTests extends ESTestCase {
                     case 3:
                         return new WriteableBuild(
                             new Build(
-                                b.build.flavor(),
                                 b.build.type(),
                                 b.build.hash(),
                                 randomStringExcept(b.build.date()),
@@ -217,7 +188,6 @@ public class BuildTests extends ESTestCase {
                     case 4:
                         return new WriteableBuild(
                             new Build(
-                                b.build.flavor(),
                                 b.build.type(),
                                 b.build.hash(),
                                 b.build.date(),
@@ -228,23 +198,11 @@ public class BuildTests extends ESTestCase {
                     case 5:
                         return new WriteableBuild(
                             new Build(
-                                b.build.flavor(),
                                 b.build.type(),
                                 b.build.hash(),
                                 b.build.date(),
                                 b.build.isSnapshot(),
                                 randomStringExcept(b.build.qualifiedVersion())
-                            )
-                        );
-                    case 6:
-                        return new WriteableBuild(
-                            new Build(
-                                randomValueOtherThan(b.build.flavor(), () -> randomFrom(testFlavors)),
-                                b.build.type(),
-                                b.build.hash(),
-                                b.build.date(),
-                                b.build.isSnapshot(),
-                                b.build.qualifiedVersion()
                             )
                         );
                 }

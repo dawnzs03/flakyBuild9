@@ -252,9 +252,6 @@ public class ContextIndexSearcherTests extends ESTestCase {
         ) {
             @Override
             protected LeafSlice[] slices(List<LeafReaderContext> leaves) {
-                if (leaves.size() == 1) {
-                    return super.slices(leaves);
-                }
                 return slices(leaves, 1, 1);
             }
         };
@@ -264,6 +261,7 @@ public class ContextIndexSearcherTests extends ESTestCase {
             () -> searcher.search(new MatchAllDocsQuery(), collectorManager)
         );
         assertThat(exception.getMessage(), equalTo("fake exception"));
+
         assertThat(visitDocs.get() + missingDocs.get(), equalTo(numDocs));
         directoryReader.close();
         directory.close();
