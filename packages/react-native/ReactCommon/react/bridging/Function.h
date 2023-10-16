@@ -12,6 +12,8 @@
 
 #include <ReactCommon/SchedulerPriority.h>
 
+#include <butter/function.h>
+
 namespace facebook::react {
 
 template <typename F>
@@ -167,8 +169,8 @@ struct Bridging<SyncCallback<R(Args...)>> {
 };
 
 template <typename R, typename... Args>
-struct Bridging<std::function<R(Args...)>> {
-  using Func = std::function<R(Args...)>;
+struct Bridging<butter::function<R(Args...)>> {
+  using Func = butter::function<R(Args...)>;
   using IndexSequence = std::index_sequence_for<Args...>;
 
   static constexpr size_t kArgumentCount = sizeof...(Args);
@@ -217,14 +219,15 @@ struct Bridging<std::function<R(Args...)>> {
 template <typename R, typename... Args>
 struct Bridging<
     std::function<R(Args...)>,
-    std::enable_if_t<
-        !std::is_same_v<std::function<R(Args...)>, std::function<R(Args...)>>>>
-    : Bridging<std::function<R(Args...)>> {};
+    std::enable_if_t<!std::is_same_v<
+        std::function<R(Args...)>,
+        butter::function<R(Args...)>>>>
+    : Bridging<butter::function<R(Args...)>> {};
 
 template <typename R, typename... Args>
-struct Bridging<R(Args...)> : Bridging<std::function<R(Args...)>> {};
+struct Bridging<R(Args...)> : Bridging<butter::function<R(Args...)>> {};
 
 template <typename R, typename... Args>
-struct Bridging<R (*)(Args...)> : Bridging<std::function<R(Args...)>> {};
+struct Bridging<R (*)(Args...)> : Bridging<butter::function<R(Args...)>> {};
 
 } // namespace facebook::react

@@ -16,8 +16,6 @@ import type {
 } from './IPerformanceLogger';
 
 import * as Systrace from '../Performance/Systrace';
-import ReactNativeFeatureFlags from '../ReactNative/ReactNativeFeatureFlags';
-import NativePerformance from '../WebPerformance/NativePerformance';
 import infoLog from './infoLog';
 
 const _cookies: {[key: string]: number, ...} = {};
@@ -37,22 +35,10 @@ class PerformanceLogger implements IPerformanceLogger {
   _points: {[key: string]: ?number} = {};
   _pointExtras: {[key: string]: ?Extras, ...} = {};
   _closed: boolean = false;
-  _isGlobalLogger: boolean = false;
-  _isGlobalWebPerformanceLoggerEnabled: ?boolean;
+  _isLoggingForWebPerformance: boolean = false;
 
-  constructor(isGlobalLogger?: boolean) {
-    this._isGlobalLogger = isGlobalLogger === true;
-  }
-
-  _isLoggingForWebPerformance(): boolean {
-    if (!this._isGlobalLogger || NativePerformance == null) {
-      return false;
-    }
-    if (this._isGlobalWebPerformanceLoggerEnabled == null) {
-      this._isGlobalWebPerformanceLoggerEnabled =
-        ReactNativeFeatureFlags.isGlobalWebPerformanceLoggerEnabled();
-    }
-    return this._isGlobalWebPerformanceLoggerEnabled === true;
+  constructor(isLoggingForWebPerformance?: boolean) {
+    this._isLoggingForWebPerformance = isLoggingForWebPerformance === true;
   }
 
   // NOTE: The Performance.mark/measure calls are wrapped here to ensure that
@@ -63,7 +49,7 @@ class PerformanceLogger implements IPerformanceLogger {
   // In most of the other cases this kind of check for `performance` being defined
   // wouldn't be necessary.
   _performanceMark(key: string, startTime: number) {
-    if (this._isLoggingForWebPerformance()) {
+    if (this._isLoggingForWebPerformance) {
       global.performance?.mark?.(key, {
         startTime,
       });
@@ -75,7 +61,7 @@ class PerformanceLogger implements IPerformanceLogger {
     start: number | string,
     end: number | string,
   ) {
-    if (this._isLoggingForWebPerformance()) {
+    if (this._isLoggingForWebPerformance) {
       global.performance?.measure?.(key, {
         start,
         end,
@@ -365,7 +351,7 @@ export type {Extras, ExtraValue, IPerformanceLogger, Timespan};
  * The loggers need to have minimal overhead since they're used in production.
  */
 export default function createPerformanceLogger(
-  isGlobalLogger?: boolean,
+  isLoggingForWebPerformance?: boolean,
 ): IPerformanceLogger {
-  return new PerformanceLogger(isGlobalLogger);
+  return new PerformanceLogger(isLoggingForWebPerformance);
 }

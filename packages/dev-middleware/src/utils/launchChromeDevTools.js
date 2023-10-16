@@ -9,6 +9,10 @@
  * @oncall react_native
  */
 
+import type {LaunchedChrome} from 'chrome-launcher';
+
+import launchDebuggerAppWindow from './launchDebuggerAppWindow';
+
 /**
  * The Chrome DevTools frontend revision to use. This should be set to the
  * latest version known to be compatible with Hermes.
@@ -19,13 +23,16 @@
 const DEVTOOLS_FRONTEND_REV = 'd9568d04d7dd79269c5a655d7ada69650c5a8336'; // Chrome 100.0.4896.75
 
 /**
- * Construct the URL to Chrome DevTools connected to a given debugger target.
+ * Attempt to launch Chrome DevTools on the host machine for a given CDP target.
  */
-export default function getDevToolsFrontendUrl(
+export default async function launchChromeDevTools(
   webSocketDebuggerUrl: string,
-): string {
+): Promise<LaunchedChrome> {
   const urlBase = `https://chrome-devtools-frontend.appspot.com/serve_rev/@${DEVTOOLS_FRONTEND_REV}/devtools_app.html`;
   const ws = webSocketDebuggerUrl.replace(/^ws:\/\//, '');
 
-  return `${urlBase}?panel=console&ws=${encodeURIComponent(ws)}`;
+  return launchDebuggerAppWindow(
+    `${urlBase}?panel=console&ws=${encodeURIComponent(ws)}`,
+    'open-debugger',
+  );
 }

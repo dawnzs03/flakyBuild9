@@ -10,5 +10,3 @@
  */
 
 export {default as createDevMiddleware} from './createDevMiddleware';
-
-export type {EventReporter, ReportableEvent} from './types/EventReporter';

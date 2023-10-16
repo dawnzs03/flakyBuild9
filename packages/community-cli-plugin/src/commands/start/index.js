@@ -9,14 +9,10 @@
  * @oncall react_native
  */
 
-import type {Command} from '@react-native-community/cli-types';
-
 import path from 'path';
 import runServer from './runServer';
 
-export type {StartCommandArgs} from './runServer';
-
-const startCommand: Command = {
+export default {
   name: 'start',
   func: runServer,
   description: 'Start the React Native development server.',
@@ -97,5 +93,3 @@ const startCommand: Command = {
     },
   ],
 };
-
-export default startCommand;

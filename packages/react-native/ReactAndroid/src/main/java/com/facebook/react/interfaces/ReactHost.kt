@@ -101,8 +101,4 @@ interface ReactHost {
    * @return A task that completes when React Native gets destroyed.
    */
   fun destroy(reason: String, ex: Exception?): TaskInterface<Void>
-
-  fun addBeforeDestroyListener(onBeforeDestroy: () -> Unit)
-
-  fun removeBeforeDestroyListener(onBeforeDestroy: () -> Unit)
 }

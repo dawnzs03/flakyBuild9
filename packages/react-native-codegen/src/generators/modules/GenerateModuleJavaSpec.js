@@ -355,20 +355,16 @@ function getFalsyReturnStatementFromReturnType(
 function buildGetConstantsMethod(
   method: NativeModulePropertyShape,
   imports: Set<string>,
-  resolveAlias: AliasResolver,
 ): string {
   const [methodTypeAnnotation] =
     unwrapNullable<NativeModuleFunctionTypeAnnotation>(method.typeAnnotation);
-  let returnTypeAnnotation = methodTypeAnnotation.returnTypeAnnotation;
-  if (returnTypeAnnotation.type === 'TypeAliasTypeAnnotation') {
-    // The return type is an alias, resolve it to get the expected undelying object literal type
-    returnTypeAnnotation = resolveAlias(returnTypeAnnotation.name);
-  }
-
-  if (returnTypeAnnotation.type === 'ObjectTypeAnnotation') {
+  if (
+    methodTypeAnnotation.returnTypeAnnotation.type === 'ObjectTypeAnnotation'
+  ) {
     const requiredProps = [];
     const optionalProps = [];
-    const rawProperties = returnTypeAnnotation.properties || [];
+    const rawProperties =
+      methodTypeAnnotation.returnTypeAnnotation.properties || [];
     rawProperties.forEach(p => {
       if (p.optional || p.typeAnnotation.type === 'NullableTypeAnnotation') {
         optionalProps.push(p.name);
@@ -474,7 +470,7 @@ module.exports = {
 
       const methods = properties.map(method => {
         if (method.name === 'getConstants') {
-          return buildGetConstantsMethod(method, imports, resolveAlias);
+          return buildGetConstantsMethod(method, imports);
         }
 
         const [methodTypeAnnotation] =

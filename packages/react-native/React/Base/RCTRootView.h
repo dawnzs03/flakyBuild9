@@ -78,6 +78,11 @@ extern
                     launchOptions:(nullable NSDictionary *)launchOptions;
 
 /**
+ * This API allows RCTRootView users to know if the root view is backed by the bridge.
+ */
+@property (nonatomic, readonly) BOOL hasBridge;
+
+/**
  * This API allows users of RCTRootView to access other NativeModules, without
  * directly accessing the bridge.
  */
