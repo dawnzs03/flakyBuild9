@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,25 @@
  * questions.
  */
 
+/*
+ * @test
+ * @key headful
+ * @bug     4529206
+ * @summary JToolBar - setFloating does not work correctly
+ * @run     main bug4529206
+ */
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Robot;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
-
-/*
- * @test
- * @key headful
- * @bug 4529206
- * @summary JToolBar - setFloating does not work correctly
- * @run main bug4529206
- */
 
 public class bug4529206 {
     static JFrame frame;
@@ -56,7 +58,11 @@ public class bug4529206 {
         JTextField tf = new JTextField("click here");
         jPanFrame.add(tf);
         jToolBar1.add(jButton1, null);
-        jButton1.addActionListener(e -> buttonPressed());
+        jButton1.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                buttonPressed(e);
+            }
+        });
 
         frame.setUndecorated(true);
         frame.setLocationRelativeTo(null);
@@ -71,24 +77,32 @@ public class bug4529206 {
         }
     }
 
-    private static void buttonPressed() {
+    private static void buttonPressed(ActionEvent e) {
         makeToolbarFloat();
     }
 
     public static void main(String[] args) throws Exception {
         try {
-            SwingUtilities.invokeAndWait(() -> test());
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    test();
+                }
+            });
             Robot robot = new Robot();
-            robot.setAutoWaitForIdle(true);
+            robot.waitForIdle();
             robot.delay(1000);
 
-            SwingUtilities.invokeAndWait(() -> makeToolbarFloat());
-            robot.delay(300);
-
             SwingUtilities.invokeAndWait(() -> {
-                if (frame.isFocused()) {
-                    throw
-                      new RuntimeException("setFloating does not work correctly");
+                makeToolbarFloat();
+            });
+
+            robot.waitForIdle();
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    if (frame.isFocused()) {
+                        throw
+                          new RuntimeException("setFloating does not work correctly");
+                    }
                 }
             });
         } finally {
