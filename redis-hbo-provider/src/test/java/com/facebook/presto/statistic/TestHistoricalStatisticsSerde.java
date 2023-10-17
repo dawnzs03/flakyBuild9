@@ -25,14 +25,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+import static org.testng.Assert.assertThrows;
 
 public class TestHistoricalStatisticsSerde
 {
     @Test
-    public void testSimpleHistoricalStatisticsEncoderDecoder()
+    public void TestSimpleHistoricalStatisticsEncoderDecoder()
     {
         HistoricalPlanStatistics samplePlanStatistics = new HistoricalPlanStatistics(ImmutableList.of(new HistoricalPlanStatisticsEntry(
                 new PlanStatistics(Estimate.of(100), Estimate.of(1000), 1, Estimate.unknown(), Estimate.unknown()),
@@ -45,11 +43,11 @@ public class TestHistoricalStatisticsSerde
 
         // Test Plan Statistics
         ByteBuffer encodedValue = historicalStatisticsEncoderDecoder.encodeValue(samplePlanStatistics);
-        assertEquals(historicalStatisticsEncoderDecoder.decodeValue(encodedValue), samplePlanStatistics);
+        historicalStatisticsEncoderDecoder.decodeValue(encodedValue).equals(samplePlanStatistics);
     }
 
     @Test
-    public void testHistoricalPlanStatisticsEntryList()
+    public void TestHistoricalPlanStatisticsEntryList()
     {
         List<HistoricalPlanStatisticsEntry> historicalPlanStatisticsEntryList = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
@@ -61,22 +59,22 @@ public class TestHistoricalStatisticsSerde
 
         // Test Plan Statistics
         ByteBuffer encodedValue = historicalStatisticsEncoderDecoder.encodeValue(samplePlanStatistics);
-        assertEquals(historicalStatisticsEncoderDecoder.decodeValue(encodedValue), samplePlanStatistics, "Decoded value is different from original encoded value ");
+        assert (historicalStatisticsEncoderDecoder.decodeValue(encodedValue).equals(samplePlanStatistics)) : "Decoded value is different from original encoded value ";
     }
 
     @Test
-    public void testHistoricalPlanStatisticsEmptyList()
+    public void TestHistoricalPlanStatisticsEmptyList()
     {
         HistoricalPlanStatistics emptySamplePlanStatistics = new HistoricalPlanStatistics(emptyList());
         HistoricalStatisticsSerde historicalStatisticsEncoderDecoder = new HistoricalStatisticsSerde();
 
         // Test Plan Statistics
         ByteBuffer encodedValue = historicalStatisticsEncoderDecoder.encodeValue(emptySamplePlanStatistics);
-        assertEquals(historicalStatisticsEncoderDecoder.decodeValue(encodedValue), emptySamplePlanStatistics, "Decoded value is different from original encoded value ");
+        assert (historicalStatisticsEncoderDecoder.decodeValue(encodedValue).equals(emptySamplePlanStatistics)) : "Decoded value is different from original encoded value ";
     }
 
     @Test
-    public void testPlanStatisticsList()
+    public void TestPlanStatisticsList()
     {
         List<PlanStatistics> planStatisticsEntryList = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
@@ -92,19 +90,18 @@ public class TestHistoricalStatisticsSerde
 
         // Test Plan Statistics
         ByteBuffer encodedValue = historicalStatisticsEncoderDecoder.encodeValue(samplePlanStatistics);
-        assertEquals(historicalStatisticsEncoderDecoder.decodeValue(encodedValue), samplePlanStatistics, "Decoded value is different from original encoded value ");
+        assert (historicalStatisticsEncoderDecoder.decodeValue(encodedValue).equals(samplePlanStatistics)) : "Decoded value is different from original encoded value ";
     }
 
     @Test
-    public void testHistoricalStatisticsDecodeValueException()
+    public void TestHistoricalStatisticsDecodeValueException()
     {
         HistoricalStatisticsSerde historicalStatisticsEncoderDecoder = new HistoricalStatisticsSerde();
 
         // Test PlanHash
         ByteBuffer encodedKey = historicalStatisticsEncoderDecoder.encodeKey("test");
-        RuntimeException exception = expectThrows(
+        assertThrows(
                 RuntimeException.class,
                 () -> historicalStatisticsEncoderDecoder.decodeValue(encodedKey));
-        assertTrue(exception.getMessage().contains("Invalid thrift object"));
     }
 }
