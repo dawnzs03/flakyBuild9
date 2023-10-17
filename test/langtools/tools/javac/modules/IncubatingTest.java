@@ -28,13 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
- *          java.base/jdk.internal.module
+ *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask toolbox.JavapTask ModuleTestBase
  * @run main IncubatingTest
@@ -53,14 +47,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
-import jdk.internal.classfile.constantpool.*;
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.Attributes;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ClassWriter;
+import com.sun.tools.classfile.ConstantPool;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_Utf8_info;
+import com.sun.tools.classfile.ConstantPool.CPInfo;
+import com.sun.tools.classfile.ModuleResolution_attribute;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.Expect;
-import static jdk.internal.module.ClassFileConstants.DO_NOT_RESOLVE_BY_DEFAULT;
-import static jdk.internal.module.ClassFileConstants.WARN_INCUBATING;
 
 public class IncubatingTest extends ModuleTestBase {
 
@@ -88,7 +85,7 @@ public class IncubatingTest extends ModuleTestBase {
         copyJavaBase(classes);
 
         Path jdkIModuleInfo = iClasses.resolve("module-info.class");
-        addModuleResolutionAttribute(jdkIModuleInfo, DO_NOT_RESOLVE_BY_DEFAULT);
+        addModuleResolutionAttribute(jdkIModuleInfo, ModuleResolution_attribute.DO_NOT_RESOLVE_BY_DEFAULT);
 
         Path testSrc = base.resolve("test-src");
         tb.writeJavaFiles(testSrc,
@@ -178,7 +175,7 @@ public class IncubatingTest extends ModuleTestBase {
                 .writeAll();
 
         Path jdkIModuleInfo = iClasses.resolve("module-info.class");
-        addModuleResolutionAttribute(jdkIModuleInfo, WARN_INCUBATING);
+        addModuleResolutionAttribute(jdkIModuleInfo, ModuleResolution_attribute.WARN_INCUBATING);
 
         Path testSrc = base.resolve("test-src");
         tb.writeJavaFiles(testSrc,
@@ -258,12 +255,34 @@ public class IncubatingTest extends ModuleTestBase {
     }
 
     private void addModuleResolutionAttribute(Path classfile, int resolution_flags) throws Exception {
-        ClassModel cm = Classfile.of().parse(classfile);
-        ModuleResolutionAttribute modRAttr = ModuleResolutionAttribute.of(resolution_flags);
-        byte[] newBytes = Classfile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleResolutionAttribute).
-                andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modRAttr))));
+        ClassFile cf = ClassFile.read(classfile);
+        Attributes attrs = cf.attributes;
+        List<CPInfo> cpData = new ArrayList<>();
+        cpData.add(null);
+        for (CPInfo info : cf.constant_pool.entries()) {
+            cpData.add(info);
+            if (info.size() == 2)
+                cpData.add(null);
+        }
+        cpData.add(new CONSTANT_Utf8_info(Attribute.ModuleResolution));
+        ConstantPool newCP = new ConstantPool(cpData.toArray(new CPInfo[0]));
+        ModuleResolution_attribute res = new ModuleResolution_attribute(newCP, resolution_flags);
+        Map<String, Attribute> newAttributeMap = new HashMap<>(attrs.map);
+        newAttributeMap.put(Attribute.ModuleResolution, res);
+        Attributes newAttrs = new Attributes(newAttributeMap);
+        ClassFile newCF = new ClassFile(cf.magic,
+                                        cf.minor_version,
+                                        cf.major_version,
+                                        newCP,
+                                        cf.access_flags,
+                                        cf.this_class,
+                                        cf.super_class,
+                                        cf.interfaces,
+                                        cf.fields,
+                                        cf.methods,
+                                        newAttrs);
         try (OutputStream out = Files.newOutputStream(classfile)) {
-            out.write(newBytes);
+            new ClassWriter().write(newCF, out);
         }
     }
 }

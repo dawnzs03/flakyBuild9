@@ -162,7 +162,7 @@ public final class VerificationWrapper {
         }
 
         int entryCount() {
-            return cp.size();
+            return cp.entryCount();
         }
 
         String classNameAt(int index) {

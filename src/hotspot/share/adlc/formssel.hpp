@@ -45,7 +45,6 @@ class MatchRule;
 class Attribute;
 class Effect;
 class ExpandRule;
-class Flag;
 class RewriteRule;
 class ConstructRule;
 class FormatRule;
@@ -109,7 +108,6 @@ public:
   FormatRule    *_format;              // Format for assembly generation
   Peephole      *_peephole;            // List of peephole rules for instruction
   const char    *_ins_pipe;            // Instruction Scheduling description class
-  Flag          *_flag;               // List of Flags that should be set by default for this node
 
   uint          *_uniq_idx;            // Indexes of unique operands
   uint           _uniq_idx_length;     // Length of _uniq_idx array
@@ -515,26 +513,6 @@ public:
 
   void dump();                    // Debug printer
   void output(FILE *fp);          // Write info to output files
-};
-
-//---------------------------------Flag----------------------------------------
-class Flag : public Form {
-private:
-    Flag* _next;
-public:
-  const char *_name; // Name of the flag (See Node::<flag_name> or Node::Pd::<flag_name>
-
-  // Public Methods
-  Flag(const char *name);      // Constructor
-  ~Flag();                     // Destructor
-
-  // Append a flag rule for the same instruction
-  void append_flag(Flag *next_flag);
-
-  Flag* next();
-
-  void dump();                   // Debug printer
-  void output(FILE *fp);         // Write info to output files
 };
 
 //------------------------------RewriteRule------------------------------------

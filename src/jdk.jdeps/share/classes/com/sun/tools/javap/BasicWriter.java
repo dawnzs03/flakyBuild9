@@ -26,7 +26,10 @@
 package com.sun.tools.javap;
 
 import java.io.PrintWriter;
-import java.util.function.Supplier;
+
+import com.sun.tools.classfile.AttributeException;
+import com.sun.tools.classfile.ConstantPoolException;
+import com.sun.tools.classfile.DescriptorException;
 
 /*
  *  A writer similar to a PrintWriter but which does not hide exceptions.
@@ -54,14 +57,6 @@ public class BasicWriter {
         lineWriter.print(o == null ? null : o.toString());
     }
 
-    protected void print(Supplier<Object> safeguardedCode) {
-        try {
-            print(safeguardedCode.get());
-        } catch (IllegalArgumentException e) {
-            print(report(e));
-        }
-    }
-
     protected void println() {
         lineWriter.println();
     }
@@ -73,11 +68,6 @@ public class BasicWriter {
 
     protected void println(Object o) {
         lineWriter.print(o == null ? null : o.toString());
-        lineWriter.println();
-    }
-
-    protected void println(Supplier<Object> safeguardedCode) {
-        print(safeguardedCode);
         lineWriter.println();
     }
 
@@ -93,15 +83,23 @@ public class BasicWriter {
         lineWriter.pendingNewline = b;
     }
 
-    protected String report(Exception e) {
+    protected String report(AttributeException e) {
         out.println("Error: " + e.getMessage()); // i18n?
-        errorReported = true;
+        return "???";
+    }
+
+    protected String report(ConstantPoolException e) {
+        out.println("Error: " + e.getMessage()); // i18n?
+        return "???";
+    }
+
+    protected String report(DescriptorException e) {
+        out.println("Error: " + e.getMessage()); // i18n?
         return "???";
     }
 
     protected String report(String msg) {
         out.println("Error: " + msg); // i18n?
-        errorReported = true;
         return "???";
     }
 
@@ -125,7 +123,6 @@ public class BasicWriter {
     private LineWriter lineWriter;
     private PrintWriter out;
     protected Messages messages;
-    protected boolean errorReported;
 
     private static class LineWriter {
         static LineWriter instance(Context context) {

@@ -34,11 +34,7 @@ import tests.JImageGenerator;
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library /tools/lib
  * @modules java.base/jdk.internal.jimage
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build HijrahConfigCheck tests.*

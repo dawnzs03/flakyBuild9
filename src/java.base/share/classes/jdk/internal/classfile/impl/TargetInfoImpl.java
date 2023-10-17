@@ -29,7 +29,6 @@ import java.util.Objects;
 import jdk.internal.classfile.Label;
 import jdk.internal.classfile.TypeAnnotation.*;
 import static jdk.internal.classfile.Classfile.*;
-import static java.util.Objects.requireNonNull;
 
 public final class TargetInfoImpl {
 
@@ -105,11 +104,6 @@ public final class TargetInfoImpl {
 
     public record LocalVarTargetInfoImpl(Label startLabel, Label endLabel, int index)
             implements LocalVarTargetInfo {
-
-        public LocalVarTargetInfoImpl {
-            requireNonNull(startLabel);
-            requireNonNull(endLabel);
-        }
     }
 
     public record CatchTargetImpl(int exceptionTableIndex) implements CatchTarget {
@@ -123,7 +117,7 @@ public final class TargetInfoImpl {
 
         public OffsetTargetImpl(TargetType targetType, Label target) {
             this.targetType = checkValid(targetType, TAT_INSTANCEOF, TAT_METHOD_REFERENCE);
-            this.target = requireNonNull(target);
+            this.target = target;
         }
     }
 
@@ -132,7 +126,7 @@ public final class TargetInfoImpl {
 
         public TypeArgumentTargetImpl(TargetType targetType, Label target, int typeArgumentIndex) {
             this.targetType = checkValid(targetType, TAT_CAST, TAT_METHOD_REFERENCE_TYPE_ARGUMENT);
-            this.target = requireNonNull(target);
+            this.target = target;
             this.typeArgumentIndex = typeArgumentIndex;
         }
     }

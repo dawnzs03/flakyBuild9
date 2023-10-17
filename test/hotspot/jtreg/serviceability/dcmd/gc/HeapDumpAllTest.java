@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.io.IOException;
+
 import jdk.test.lib.dcmd.CommandExecutor;
 
 /*
@@ -40,7 +42,7 @@ public class HeapDumpAllTest extends HeapDumpTest {
     }
 
     @Override
-    public void run(CommandExecutor executor, boolean overwrite) throws Exception {
+    public void run(CommandExecutor executor, boolean overwrite) throws IOException {
         // Trigger gc by hand, so the created heap dump isnt't too large and
         // takes too long to parse.
         System.gc();

@@ -397,7 +397,7 @@ public class MethodHandleAccessorsTest {
     };
     private static final Throwable[] mismatched_target_type = new Throwable[] {
             new IllegalArgumentException("argument type mismatch"),
-            new IllegalArgumentException("object of type java.lang.Object is not an instance of MethodHandleAccessorsTest"),
+            new IllegalArgumentException("object is not an instance of declaring class"),
     };
     private static final Throwable[] cannot_get_field = new Throwable[] {
             new IllegalArgumentException("Can not get")

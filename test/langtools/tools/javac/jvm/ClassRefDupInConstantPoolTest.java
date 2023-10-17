@@ -25,33 +25,30 @@
  * @test
  * @bug 8015927
  * @summary Class reference duplicates in constant pool
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @clean ClassRefDupInConstantPoolTest$Duplicates
  * @run main ClassRefDupInConstantPoolTest
  */
 
 import java.util.TreeSet;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.*;
+import com.sun.tools.classfile.*;
+import com.sun.tools.classfile.ConstantPool.*;
 
 public class ClassRefDupInConstantPoolTest {
     public static void main(String[] args) throws Exception {
-        ClassModel cls = Classfile.of().parse(ClassRefDupInConstantPoolTest.class.
-                                       getResourceAsStream("ClassRefDupInConstantPoolTest$Duplicates.class").readAllBytes());
-        ConstantPool pool = cls.constantPool();
+        ClassFile cls = ClassFile.read(ClassRefDupInConstantPoolTest.class.
+                                       getResourceAsStream("ClassRefDupInConstantPoolTest$Duplicates.class"));
+        ConstantPool pool = cls.constant_pool;
 
         int duplicates = 0;
-        TreeSet<String> set = new TreeSet<>();
-        for (PoolEntry pe : pool) {
-            if (pe instanceof ClassEntry ce) {
-                if (!set.add(ce.asInternalName())) {
+        TreeSet<Integer> set = new TreeSet<>();
+        for (CPInfo i : pool.entries()) {
+            if (i.getTag() == ConstantPool.CONSTANT_Class) {
+                CONSTANT_Class_info ci = (CONSTANT_Class_info)i;
+                if (!set.add(ci.name_index)) {
                     duplicates++;
-                    System.out.println("DUPLICATE CLASS REF " + ce.asInternalName());
+                    System.out.println("DUPLICATE CLASS REF " + ci.getName());
                 }
             }
         }

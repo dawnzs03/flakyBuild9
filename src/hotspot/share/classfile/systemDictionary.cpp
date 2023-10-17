@@ -1545,10 +1545,10 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
     // First, mark for unload all ClassLoaderData referencing a dead class loader.
     unloading_occurred = ClassLoaderDataGraph::do_unloading();
     if (unloading_occurred) {
-      ConditionalMutexLocker ml2(Module_lock, is_concurrent);
+      MutexLocker ml2(is_concurrent ? Module_lock : nullptr);
       JFR_ONLY(Jfr::on_unloading_classes();)
       MANAGEMENT_ONLY(FinalizerService::purge_unloaded();)
-      ConditionalMutexLocker ml1(SystemDictionary_lock, is_concurrent);
+      MutexLocker ml1(is_concurrent ? SystemDictionary_lock : nullptr);
       ClassLoaderDataGraph::clean_module_and_package_info();
       LoaderConstraintTable::purge_loader_constraints();
       ResolutionErrorTable::purge_resolution_errors();
@@ -1571,7 +1571,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
       assert(ProtectionDomainCacheTable::number_of_entries() == 0, "should be empty");
     }
 
-    ConditionalMutexLocker ml(ClassInitError_lock, is_concurrent);
+    MutexLocker ml(is_concurrent ? ClassInitError_lock : nullptr);
     InstanceKlass::clean_initialization_error_table();
   }
 

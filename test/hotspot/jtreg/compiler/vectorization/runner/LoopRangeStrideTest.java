@@ -36,8 +36,8 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.LoopRangeStrideTest
  *
- * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
- * @requires vm.compiler2.enabled
+ * @requires vm.compiler2.enabled & vm.flagless
+ * @requires (os.arch=="amd64" | os.arch=="x86_64" | os.simpleArch == "aarch64")
  */
 
 package compiler.vectorization.runner;

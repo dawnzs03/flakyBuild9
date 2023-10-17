@@ -36,20 +36,14 @@ final class LibFallback {
 
     static final boolean SUPPORTED = tryLoadLibrary();
 
-    @SuppressWarnings("removal")
     private static boolean tryLoadLibrary() {
-        return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<>() {
-                    public Boolean run() {
-                        try {
-                            System.loadLibrary("fallbackLinker");
-                            init();
-                            return true;
-                        } catch (UnsatisfiedLinkError ule) {
-                            return false;
-                        }
-                    }
-                });
+        try {
+            System.loadLibrary("fallbackLinker");
+        } catch (UnsatisfiedLinkError ule) {
+            return false;
+        }
+        init();
+        return true;
     }
 
     static int defaultABI() { return NativeConstants.DEFAULT_ABI; }

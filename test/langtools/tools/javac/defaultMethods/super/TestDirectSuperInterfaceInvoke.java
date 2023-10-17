@@ -25,21 +25,19 @@
  * @test
  * @bug 8027281
  * @summary As per JVMS 4.9.2, invokespecial can only refer to direct superinterfaces
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile TestDirectSuperInterfaceInvoke.java
  * @run main TestDirectSuperInterfaceInvoke
  */
 
 import java.io.File;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.Code_attribute;
+import com.sun.tools.classfile.ConstantPool.CPRefInfo;
+import com.sun.tools.classfile.Instruction;
+import com.sun.tools.classfile.Method;
+import com.sun.tools.classfile.Opcode;
 
 interface BaseInterface {
     public default int testedMethod(){ return 1; }
@@ -88,13 +86,14 @@ public class TestDirectSuperInterfaceInvoke {
         String workDir = System.getProperty("test.classes");
         File file = new File(workDir, classFile);
         try {
-            final ClassModel cf = Classfile.of().parse(file.toPath());
-            for (MethodModel m : cf.methods()) {
-                CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
-                for (CodeElement ce : codeAttr.elementList()) {
-                    if (ce instanceof InvokeInstruction instr && instr.opcode() == Opcode.INVOKESPECIAL) {
-                        MemberRefEntry ref = instr.method();
-                        String className = ref.owner().asInternalName();
+            final ClassFile cf = ClassFile.read(file);
+            for (Method m : cf.methods) {
+                Code_attribute codeAttr = (Code_attribute)m.attributes.get(Attribute.Code);
+                for (Instruction instr : codeAttr.getInstructions()) {
+                    if (instr.getOpcode() == Opcode.INVOKESPECIAL) {
+                        int pc_index = instr.getShort(1);
+                        CPRefInfo ref = (CPRefInfo)cf.constant_pool.get(pc_index);
+                        String className = ref.getClassName();
                         if (className.equals("BaseInterface"))
                             throw new IllegalStateException("Must not directly refer to TestedInterface");
                     }

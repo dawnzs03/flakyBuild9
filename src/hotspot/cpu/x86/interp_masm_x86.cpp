@@ -569,6 +569,9 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 
   // Do the check.
   check_klass_subtype(Rsub_klass, rax, rcx, ok_is_subtype); // blows rcx
+
+  // Profile the failure of the check.
+  profile_typecheck_failed(rcx); // blows rcx
 }
 
 
@@ -1236,7 +1239,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 #endif
       // Load object header, prepare for CAS from unlocked to locked.
       movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      lightweight_lock(obj_reg, swap_reg, thread, tmp_reg, slow_case);
+      fast_lock_impl(obj_reg, swap_reg, thread, tmp_reg, slow_case);
     } else if (LockingMode == LM_LEGACY) {
       // Load immediate 1 into swap_reg %rax
       movl(swap_reg, 1);
@@ -1366,7 +1369,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
       // Try to swing header from locked to unlocked.
       movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
-      lightweight_unlock(obj_reg, swap_reg, header_reg, slow_case);
+      fast_unlock_impl(obj_reg, swap_reg, header_reg, slow_case);
     } else if (LockingMode == LM_LEGACY) {
       // Load the old header from BasicLock structure
       movptr(header_reg, Address(swap_reg,
@@ -1715,17 +1718,34 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
                                         Register reg2, int start_row,
                                         Label& done, bool is_virtual_call) {
   if (TypeProfileWidth == 0) {
-    increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
+    if (is_virtual_call) {
+      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
+    }
+#if INCLUDE_JVMCI
+    else if (EnableJVMCI) {
+      increment_mdp_data_at(mdp, in_bytes(ReceiverTypeData::nonprofiled_receiver_count_offset()));
+    }
+#endif // INCLUDE_JVMCI
   } else {
+    int non_profiled_offset = -1;
+    if (is_virtual_call) {
+      non_profiled_offset = in_bytes(CounterData::count_offset());
+    }
+#if INCLUDE_JVMCI
+    else if (EnableJVMCI) {
+      non_profiled_offset = in_bytes(ReceiverTypeData::nonprofiled_receiver_count_offset());
+    }
+#endif // INCLUDE_JVMCI
+
     record_item_in_profile_helper(receiver, mdp, reg2, 0, done, TypeProfileWidth,
-                                  &VirtualCallData::receiver_offset, &VirtualCallData::receiver_count_offset);
+        &VirtualCallData::receiver_offset, &VirtualCallData::receiver_count_offset, non_profiled_offset);
   }
 }
 
-void InterpreterMacroAssembler::record_item_in_profile_helper(Register item, Register mdp, Register reg2, int start_row,
-                                                              Label& done, int total_rows,
-                                                              OffsetFunction item_offset_fn,
-                                                              OffsetFunction item_count_offset_fn) {
+void InterpreterMacroAssembler::record_item_in_profile_helper(Register item, Register mdp,
+                                        Register reg2, int start_row, Label& done, int total_rows,
+                                        OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn,
+                                        int non_profiled_offset) {
   int last_row = total_rows - 1;
   assert(start_row <= last_row, "must be work left to do");
   // Test this row for both the item and for null.
@@ -1756,13 +1776,17 @@ void InterpreterMacroAssembler::record_item_in_profile_helper(Register item, Reg
       testptr(reg2, reg2);
       if (start_row == last_row) {
         // The only thing left to do is handle the null case.
-        Label found_null;
-        jccb(Assembler::zero, found_null);
-        // Item did not match any saved item and there is no empty row for it.
-        // Increment total counter to indicate polymorphic case.
-        increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-        jmp(done);
-        bind(found_null);
+        if (non_profiled_offset >= 0) {
+          Label found_null;
+          jccb(Assembler::zero, found_null);
+          // Item did not match any saved item and there is no empty row for it.
+          // Increment total counter to indicate polymorphic case.
+          increment_mdp_data_at(mdp, non_profiled_offset);
+          jmp(done);
+          bind(found_null);
+        } else {
+          jcc(Assembler::notZero, done);
+        }
         break;
       }
       Label found_null;
@@ -1771,7 +1795,7 @@ void InterpreterMacroAssembler::record_item_in_profile_helper(Register item, Reg
 
       // Put all the "Case 3" tests here.
       record_item_in_profile_helper(item, mdp, reg2, start_row + 1, done, total_rows,
-                                    item_offset_fn, item_count_offset_fn);
+        item_offset_fn, item_count_offset_fn, non_profiled_offset);
 
       // Found a null.  Keep searching for a matching item,
       // but remember that this is an empty (unused) slot.
@@ -1883,6 +1907,25 @@ void InterpreterMacroAssembler::profile_null_seen(Register mdp) {
     update_mdp_by_constant(mdp, mdp_delta);
 
     bind(profile_continue);
+  }
+}
+
+
+void InterpreterMacroAssembler::profile_typecheck_failed(Register mdp) {
+  if (ProfileInterpreter && TypeProfileCasts) {
+    Label profile_continue;
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(mdp, profile_continue);
+
+    int count_offset = in_bytes(CounterData::count_offset());
+    // Back up the address, since we have already bumped the mdp.
+    count_offset -= in_bytes(VirtualCallData::virtual_call_data_size());
+
+    // *Decrement* the counter.  We expect to see zero or small negatives.
+    increment_mdp_data_at(mdp, count_offset, true);
+
+    bind (profile_continue);
   }
 }
 

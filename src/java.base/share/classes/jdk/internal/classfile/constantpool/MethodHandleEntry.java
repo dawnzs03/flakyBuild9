@@ -32,7 +32,6 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 /**
  * Models a {@code CONSTANT_MethodHandle_info} constant in the constant pool of a
  * classfile.
- * @jvms 4.4.8 The CONSTANT_MethodHandle_info Structure
  */
 public sealed interface MethodHandleEntry
         extends LoadableConstantEntry

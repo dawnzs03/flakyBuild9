@@ -143,7 +143,31 @@ public class HeapDumpCompressedTest {
         output = executor.execute("GC.heap_dump -gz=1 " + dump.getAbsolutePath());
         output.shouldContain("Unable to create ");
 
-        HprofParser.parseAndVerify(dump);
+        verifyHeapDump(dump);
         dump.delete();
+    }
+
+    private static void verifyHeapDump(File dump) throws Exception {
+
+        Asserts.assertTrue(dump.exists() && dump.isFile(),
+                           "Could not create dump file " + dump.getAbsolutePath());
+
+        try {
+            File out = HprofParser.parse(dump);
+
+            Asserts.assertTrue(out != null && out.exists() && out.isFile(),
+                               "Could not find hprof parser output file");
+            List<String> lines = Files.readAllLines(out.toPath());
+            Asserts.assertTrue(lines.size() > 0, "hprof parser output file is empty");
+            for (String line : lines) {
+                Asserts.assertFalse(line.matches(".*WARNING(?!.*Failed to resolve " +
+                                                 "object.*constantPoolOop.*).*"));
+            }
+
+            out.delete();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Asserts.fail("Could not parse dump file " + dump.getAbsolutePath());
+        }
     }
 }

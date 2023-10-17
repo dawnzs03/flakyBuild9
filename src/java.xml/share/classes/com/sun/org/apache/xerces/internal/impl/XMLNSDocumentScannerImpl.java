@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,8 +34,9 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+
 import javax.xml.stream.events.XMLEvent;
-import jdk.xml.internal.XMLSecurityManager;
 
 /**
  * This class adds the functionality of namespace processing.
@@ -54,7 +55,7 @@ import jdk.xml.internal.XMLSecurityManager;
  * @author Venugopal Rao K, Sun Microsystems
  * @author Elena Litani, IBM
  *
- * @LastModified: July 2023
+ * @LastModified: Nov 2022
  */
 public class XMLNSDocumentScannerImpl
         extends XMLDocumentScannerImpl {

@@ -30,7 +30,6 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interp_masm_ppc.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
@@ -987,7 +986,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_lock(object, /* mark word */ header, tmp, slow_case);
+      fast_lock(object, /* mark word */ header, tmp, slow_case);
       b(count_locking);
     } else if (LockingMode == LM_LEGACY) {
 
@@ -1137,7 +1136,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
       ld(header, oopDesc::mark_offset_in_bytes(), object);
       andi_(R0, header, markWord::monitor_value);
       bne(CCR0, slow_case);
-      lightweight_unlock(object, header, slow_case);
+      fast_unlock(object, header, slow_case);
     } else {
       addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 

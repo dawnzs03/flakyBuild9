@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,14 @@
 
 /*
  * @test
- * @bug 8175000 8314491
+ * @bug 8175000
  * @summary test jexec
- * @requires os.family == "linux"
  * @build TestHelper
  * @run main Jexec
  */
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 
 public class Jexec extends TestHelper {
     private final File testJar;
@@ -56,12 +54,20 @@ public class Jexec extends TestHelper {
     }
 
     public static void main(String... args) throws Exception {
+        // linux is the only supported platform, give the others a pass
+        if (!isLinux) {
+            System.err.println("Warning: unsupported platform test passes vacuously");
+            return;
+        }
+        // ok to run the test now
         Jexec t = new Jexec();
         t.run(null);
     }
 
-    private void runTest(String... cmds) throws Exception {
-        TestResult tr = doExec(cmds);
+    @Test
+    void jexec() throws Exception {
+        TestResult tr = doExec(jexecCmd.getAbsolutePath(),
+                testJar.getAbsolutePath(), message);
         if (!tr.isOK()) {
             System.err.println(tr);
             throw new Exception("incorrect exit value");
@@ -70,18 +76,5 @@ public class Jexec extends TestHelper {
             System.err.println(tr);
             throw new Exception("expected message \'" + message + "\' not found");
         }
-    }
-
-    @Test
-    void jexec() throws Exception {
-        runTest(jexecCmd.getAbsolutePath(),
-                testJar.getAbsolutePath(), message);
-    }
-
-    @Test
-    void jexecInPath() throws Exception {
-        Path jexec = Path.of(jexecCmd.getAbsolutePath());
-        runTest("/bin/sh", "-c",
-                String.format("PATH=%s ; jexec %s '%s'",jexec.getParent(), testJar.getAbsolutePath(), message));
     }
 }

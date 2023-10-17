@@ -134,10 +134,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergeLBSkippedCards
   };
 
-  enum GCCodeRootsWorkItems {
-    CodeRootsScannedNMethods
-  };
-
   enum GCMergePSSWorkItems {
     MergePSSCopiedBytes,
     MergePSSLABSize,

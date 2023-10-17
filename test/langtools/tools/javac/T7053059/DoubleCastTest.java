@@ -25,23 +25,14 @@
  * @test
  * @bug 8015499
  * @summary javac, Gen is generating extra checkcast instructions in some corner cases
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.util
  * @run main DoubleCastTest
  */
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Objects;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.instruction.TypeCheckInstruction;
+import com.sun.tools.classfile.*;
 import com.sun.tools.javac.util.Assert;
 
 public class DoubleCastTest {
@@ -64,23 +55,22 @@ public class DoubleCastTest {
 
     public static void main(String... cmdline) throws Exception {
 
-        ClassModel cls = Classfile.of().parse(Objects.requireNonNull(DoubleCastTest.class.getResourceAsStream("DoubleCastTest$C.class")).readAllBytes());
-        for (MethodModel m: cls.methods())
+        ClassFile cls = ClassFile.read(DoubleCastTest.class.getResourceAsStream("DoubleCastTest$C.class"));
+        for (Method m: cls.methods)
             check(m);
     }
 
-    static void check(MethodModel m) throws Exception {
+    static void check(Method m) throws Exception {
         boolean last_is_cast = false;
-        ClassEntry last_ref = null;
-        CodeAttribute ea = m.findAttribute(Attributes.CODE).orElseThrow();
-        for (int i = 0; i < ea.elementList().size(); ++i) {
-            CodeElement ce = ea.elementList().get(i);
-            if (ce instanceof TypeCheckInstruction ins && ins.opcode() == Opcode.CHECKCAST) {
+        int last_ref = 0;
+        Code_attribute ea = (Code_attribute)m.attributes.get(Attribute.Code);
+        for (Instruction i : ea.getInstructions()) {
+            if (i.getOpcode() == Opcode.CHECKCAST) {
                 Assert.check
-                    (!(last_is_cast && last_ref == ins.type()),
+                    (!(last_is_cast && last_ref == i.getUnsignedShort(1)),
                      "Double cast found - Test failed");
                 last_is_cast = true;
-                last_ref = ins.type();
+                last_ref = i.getUnsignedShort(1);
             } else {
                 last_is_cast = false;
             }

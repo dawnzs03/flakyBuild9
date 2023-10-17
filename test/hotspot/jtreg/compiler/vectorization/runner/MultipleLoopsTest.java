@@ -36,7 +36,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.MultipleLoopsTest
  *
- * @requires vm.compiler2.enabled
+ * @requires vm.compiler2.enabled & vm.flagless
  */
 
 package compiler.vectorization.runner;

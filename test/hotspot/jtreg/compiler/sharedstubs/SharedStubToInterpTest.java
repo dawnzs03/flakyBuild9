@@ -23,21 +23,15 @@
  */
 
 /**
- * @test id=C1
- * @bug 8280481
+ * @test SharedStubToInterpTest
  * @summary Checks that stubs to the interpreter can be shared for static or final method.
+ * @bug 8280481
  * @library /test/lib
- * @requires vm.opt.TieredStopAtLevel == null & vm.opt.TieredCompilation == null
- * @requires vm.simpleArch == "x86" | vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
- * @requires vm.debug
- * @run driver compiler.sharedstubs.SharedStubToInterpTest -XX:TieredStopAtLevel=1
  *
- * @test id=C2
- * @requires vm.opt.TieredStopAtLevel == null & vm.opt.TieredCompilation == null
- * @requires vm.simpleArch == "x86" | vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="i386" | os.arch=="x86" | os.arch=="aarch64" | os.arch=="riscv64"
  * @requires vm.debug
- * @run driver compiler.sharedstubs.SharedStubToInterpTest -XX:-TieredCompilation
  *
+ * @run driver compiler.sharedstubs.SharedStubToInterpTest
  */
 
 package compiler.sharedstubs;
@@ -51,9 +45,10 @@ import jdk.test.lib.process.ProcessTools;
 public class SharedStubToInterpTest {
     private final static int ITERATIONS_TO_HEAT_LOOP = 20_000;
 
-    private static void runTest(String test) throws Exception {
+    private static void runTest(String compiler, String test) throws Exception {
         String testClassName = SharedStubToInterpTest.class.getName() + "$" + test;
         ArrayList<String> command = new ArrayList<String>();
+        command.add(compiler);
         command.add("-XX:+UnlockDiagnosticVMOptions");
         command.add("-Xbatch");
         command.add("-XX:+PrintRelocations");
@@ -66,7 +61,7 @@ public class SharedStubToInterpTest {
         command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "log02");
         command.add(testClassName);
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(command);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
@@ -78,9 +73,14 @@ public class SharedStubToInterpTest {
     }
 
     public static void main(String[] args) throws Exception {
-        String[] methods = new String[] { "StaticMethodTest", "FinalClassTest", "FinalMethodTest"};
-        for (String methodName : methods) {
-            runTest(methodName);
+        List<String> compilers = java.util.Arrays.asList("-XX:-TieredCompilation" /* C2 */,
+            "-XX:TieredStopAtLevel=1" /* C1 */);
+        List<String> tests = java.util.Arrays.asList("StaticMethodTest",
+            "FinalClassTest", "FinalMethodTest");
+        for (String compiler : compilers) {
+            for (String test : tests) {
+                runTest(compiler, test);
+            }
         }
     }
 

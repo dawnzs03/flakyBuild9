@@ -28,12 +28,7 @@
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ *          jdk.jdeps/com.sun.tools.classfile
  * @build JavacTestingAbstractProcessor
  * @compile Annotations.java
  * @compile -processor Annotations -proc:only Annotations.java
@@ -54,10 +49,9 @@ import com.sun.source.tree.BindingPatternTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import com.sun.tools.classfile.*;
 import java.io.InputStream;
+import java.util.Arrays;
 
 public class Annotations extends JavacTestingAbstractProcessor {
     public static void main(String... args) throws Exception {
@@ -67,22 +61,19 @@ public class Annotations extends JavacTestingAbstractProcessor {
     void run() throws Exception {
         InputStream annotationsClass =
                 Annotations.class.getResourceAsStream("Annotations.class");
-        assert annotationsClass != null;
-        ClassModel cf = Classfile.of().parse(annotationsClass.readAllBytes());
-        for (MethodModel m : cf.methods()) {
-            if (m.methodName().equalsString("test")) {
-                CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
-                RuntimeInvisibleTypeAnnotationsAttribute annotations = codeAttr.findAttribute(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS).orElseThrow();
-                String expected = "LAnnotations$DTA; pos: [LOCAL_VARIABLE, {start_pc=31, end_pc=38, index=1}], " +
-                                  "LAnnotations$TA; pos: [LOCAL_VARIABLE, {start_pc=50, end_pc=57, index=1}], ";
-                StringBuilder actual = new StringBuilder();
-                for (TypeAnnotation ta: annotations.annotations()) {
-                    TypeAnnotation.LocalVarTargetInfo info = ((TypeAnnotation.LocalVarTarget) ta.targetInfo()).table().getFirst();
-                    actual.append(ta.className().stringValue() + " pos: [" + ta.targetInfo().targetType());
-                    actual.append(", {start_pc=" + codeAttr.labelToBci(info.startLabel()) + ", end_pc=" + codeAttr.labelToBci(info.endLabel()));
-                    actual.append(", index=" + info.index()+ "}], ");
-                }
-                if (!expected.contentEquals(actual)) {
+        ClassFile cf = ClassFile.read(annotationsClass);
+        for (Method m : cf.methods) {
+            if ("test".equals(cf.constant_pool.getUTF8Value(m.name_index))) {
+                Code_attribute codeAttr =
+                        (Code_attribute) m.attributes.map.get(Attribute.Code);
+                Attribute annoAttr =
+                        codeAttr.attributes.map.get(Attribute.RuntimeInvisibleTypeAnnotations);
+                RuntimeInvisibleTypeAnnotations_attribute annotations =
+                        (RuntimeInvisibleTypeAnnotations_attribute) annoAttr;
+                String expected = "[@Annotations$DTA; pos: [LOCAL_VARIABLE, {start_pc = 31, length = 7, index = 1}, pos = -1], " +
+                                  "@Annotations$TA; pos: [LOCAL_VARIABLE, {start_pc = 50, length = 7, index = 1}, pos = -1]]";
+                String actual = Arrays.toString(annotations.annotations);
+                if (!expected.equals(actual)) {
                     throw new AssertionError("Unexpected type annotations: " +
                                               actual);
                 }

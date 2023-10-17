@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,7 @@
  * @summary Verify location of type annotations on records
  * @library /tools/lib
  * @modules
- *      java.base/jdk.internal.classfile
- *      java.base/jdk.internal.classfile.attribute
- *      java.base/jdk.internal.classfile.constantpool
- *      java.base/jdk.internal.classfile.instruction
- *      java.base/jdk.internal.classfile.components
- *      java.base/jdk.internal.classfile.impl
+ *      jdk.jdeps/com.sun.tools.classfile
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.code
@@ -50,8 +45,7 @@ import java.nio.file.Paths;
 import java.lang.annotation.*;
 import java.util.Arrays;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import com.sun.tools.classfile.*;
 import com.sun.tools.javac.util.Assert;
 
 import toolbox.JavacTask;
@@ -115,11 +109,11 @@ public class TypeAnnotationsPositionsOnRecords {
     }
 
     void checkClassFile(final File cfile, int... taPositions) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassFile classFile = ClassFile.read(cfile);
         int accessorPos = 0;
         int checkedAccessors = 0;
-        for (MethodModel method : classFile.methods()) {
-            String methodName = method.methodName().stringValue();
+        for (Method method : classFile.methods) {
+            String methodName = method.getName(classFile.constant_pool);
             if (methodName.equals("toString") || methodName.equals("hashCode") || methodName.equals("equals")) {
                 // ignore
                 continue;
@@ -144,16 +138,15 @@ public class TypeAnnotationsPositionsOnRecords {
      * there can be several parameters annotated we have to check that the ones annotated are the
      * expected ones
      */
-    void checkConstructor(ClassModel classFile, MethodModel method, int... positions) throws Exception {
+    void checkConstructor(ClassFile classFile, Method method, int... positions) throws Exception {
         List<TypeAnnotation> annos = new ArrayList<>();
         findAnnotations(classFile, method, annos);
         Assert.check(annos.size() == positions.length);
         int i = 0;
         for (int pos : positions) {
             TypeAnnotation ta = annos.get(i);
-            Assert.check(ta.targetInfo().targetType().name().equals("METHOD_FORMAL_PARAMETER"));
-            assert ta.targetInfo() instanceof TypeAnnotation.FormalParameterTarget;
-            Assert.check(((TypeAnnotation.FormalParameterTarget)ta.targetInfo()).formalParameterIndex() == pos);
+            Assert.check(ta.position.type.toString().equals("METHOD_FORMAL_PARAMETER"));
+            Assert.check(ta.position.parameter_index == pos);
             i++;
         }
     }
@@ -162,25 +155,25 @@ public class TypeAnnotationsPositionsOnRecords {
      * this case is simpler as there can only be one annotation at the accessor and it has to be applied
      * at the return type
      */
-    void checkAccessor(ClassModel classFile, MethodModel method) {
+    void checkAccessor(ClassFile classFile, Method method) {
         List<TypeAnnotation> annos = new ArrayList<>();
         findAnnotations(classFile, method, annos);
         Assert.check(annos.size() == 1);
         TypeAnnotation ta = annos.get(0);
-        Assert.check(ta.targetInfo().targetType().name().equals("METHOD_RETURN"));
+        Assert.check(ta.position.type.toString().equals("METHOD_RETURN"));
     }
 
     /*
      * here we have to check that only the fields for which its position matches with the one of the
      * original annotated record component are annotated
      */
-    void checkFields(ClassModel classFile, int... positions) {
+    void checkFields(ClassFile classFile, int... positions) {
         if (positions != null && positions.length > 0) {
             int fieldPos = 0;
             int annotationPos = 0;
             int currentAnnoPosition = positions[annotationPos];
             int annotatedFields = 0;
-            for (FieldModel field : classFile.fields()) {
+            for (Field field : classFile.fields) {
                 List<TypeAnnotation> annos = new ArrayList<>();
                 findAnnotations(classFile, field, annos);
                 if (fieldPos != currentAnnoPosition) {
@@ -188,7 +181,7 @@ public class TypeAnnotationsPositionsOnRecords {
                 } else {
                     Assert.check(annos.size() == 1);
                     TypeAnnotation ta = annos.get(0);
-                    Assert.check(ta.targetInfo().targetType().name().equals("FIELD"));
+                    Assert.check(ta.position.type.toString().equals("FIELD"));
                     annotationPos++;
                     currentAnnoPosition = annotationPos < positions.length ? positions[annotationPos] : -1;
                     annotatedFields++;
@@ -200,36 +193,47 @@ public class TypeAnnotationsPositionsOnRecords {
     }
 
     // utility methods
-    void findAnnotations(ClassModel cm, AttributedElement m, List<TypeAnnotation> annos) {
-        findAnnotations(cm, m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, annos);
-        findAnnotations(cm, m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, annos);
+    void findAnnotations(ClassFile cf, Method m, List<TypeAnnotation> annos) {
+        findAnnotations(cf, m, Attribute.RuntimeVisibleTypeAnnotations, annos);
+        findAnnotations(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, annos);
     }
 
-    <T extends Attribute<T>> void findAnnotations(ClassModel cf, AttributedElement m, AttributeMapper<T> attrName, List<TypeAnnotation> annos) {
-        Attribute<T> attr = m.findAttribute(attrName).orElse(null);
-        addAnnos(annos, attr);
-        if (m instanceof MethodModel) {
-            CodeAttribute cattr = m.findAttribute(Attributes.CODE).orElse(null);
-            if (cattr != null) {
-                attr = cattr.findAttribute(attrName).orElse(null);
-                addAnnos(annos, attr);
+    void findAnnotations(ClassFile cf, Field m, List<TypeAnnotation> annos) {
+        findAnnotations(cf, m, Attribute.RuntimeVisibleTypeAnnotations, annos);
+        findAnnotations(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, annos);
+    }
+
+    void findAnnotations(ClassFile cf, Method m, String name, List<TypeAnnotation> annos) {
+        int index = m.attributes.getIndex(cf.constant_pool, name);
+        if (index != -1) {
+            Attribute attr = m.attributes.get(index);
+            assert attr instanceof RuntimeTypeAnnotations_attribute;
+            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
+            annos.addAll(Arrays.asList(tAttr.annotations));
+        }
+
+        int cindex = m.attributes.getIndex(cf.constant_pool, Attribute.Code);
+        if (cindex != -1) {
+            Attribute cattr = m.attributes.get(cindex);
+            assert cattr instanceof Code_attribute;
+            Code_attribute cAttr = (Code_attribute)cattr;
+            index = cAttr.attributes.getIndex(cf.constant_pool, name);
+            if (index != -1) {
+                Attribute attr = cAttr.attributes.get(index);
+                assert attr instanceof RuntimeTypeAnnotations_attribute;
+                RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
+                annos.addAll(Arrays.asList(tAttr.annotations));
             }
         }
     }
 
-    private <T extends Attribute<T>> void addAnnos(List<TypeAnnotation> annos, Attribute<T> attr) {
-        if (attr != null) {
-            switch (attr) {
-                case RuntimeVisibleTypeAnnotationsAttribute vanno -> {
-                    annos.addAll(vanno.annotations());
-                }
-                case RuntimeInvisibleTypeAnnotationsAttribute ivanno -> {
-                    annos.addAll(ivanno.annotations());
-                }
-                default -> {
-                    throw new AssertionError();
-                }
-            }
+    void findAnnotations(ClassFile cf, Field m, String name, List<TypeAnnotation> annos) {
+        int index = m.attributes.getIndex(cf.constant_pool, name);
+        if (index != -1) {
+            Attribute attr = m.attributes.get(index);
+            assert attr instanceof RuntimeTypeAnnotations_attribute;
+            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
+            annos.addAll(Arrays.asList(tAttr.annotations));
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @bug 8140450 8152893 8189291 8210375
+ * @bug 8140450 8152893 8189291
  * @summary Basic test for StackWalker.getCallerClass()
  * @run main/othervm GetCallerClassTest
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames GetCallerClassTest
  * @run main/othervm -Djava.security.manager=allow GetCallerClassTest sm
  */
 
@@ -119,10 +118,8 @@ public class GetCallerClassTest {
                                                 Class<?> expected,
                                                 boolean expectUOE) {
         try {
-            // Use reflection to call Method::invoke that invokes StackWalker::getCallerClass
             Method m = StackWalker.class.getMethod("getCallerClass");
-            Method invoke = Method.class.getMethod("invoke", Object.class, Object[].class);
-            Class<?> c = (Class<?>) invoke.invoke(m, new Object[] { stackWalker, null });
+            Class<?> c = (Class<?>) m.invoke(stackWalker);
             assertEquals(c, expected);
             if (expectUOE) { // Should have thrown
                 throw new RuntimeException("Didn't get expected exception");

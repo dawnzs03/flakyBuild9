@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,13 @@
 
 /*
  * @test
- * @bug 8136500 8310929
- * @summary Test Long.toString method for both compact and non-compact strings
- * @run junit/othervm -XX:+CompactStrings ToString
- * @run junit/othervm -XX:-CompactStrings ToString
+ * @bug 8136500
+ * @summary Test Long.toString method
  */
-
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ToString {
 
-    @Test
-    public void testBase10() {
+    public static void main(String[] args) throws Exception {
         test("-9223372036854775808", Long.MIN_VALUE);
         test("9223372036854775807",  Long.MAX_VALUE);
         test("0", 0);
@@ -84,6 +77,9 @@ public class ToString {
     }
 
     private static void test(String expected, long value) {
-        assertEquals(expected, Long.toString(value));
+        String actual = Long.toString(value);
+        if (!expected.equals(actual)) {
+            throw new RuntimeException("Expected " + expected + ", but got " + actual);
+        }
     }
 }

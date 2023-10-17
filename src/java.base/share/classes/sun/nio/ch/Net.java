@@ -730,7 +730,7 @@ public class Net {
     }
 
     /**
-     * Unblock IPv4 source
+     * Unblock IPv6 source
      */
     static void unblock4(FileDescriptor fd, int group, int interf, int source)
         throws IOException

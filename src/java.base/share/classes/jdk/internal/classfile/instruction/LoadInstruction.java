@@ -42,15 +42,8 @@ import jdk.internal.classfile.impl.Util;
 public sealed interface LoadInstruction extends Instruction
         permits AbstractInstruction.BoundLoadInstruction,
                 AbstractInstruction.UnboundLoadInstruction {
-
-    /**
-     * {@return the local variable slot to load from}
-     */
     int slot();
 
-    /**
-     * {@return the type of the value to be loaded}
-     */
     TypeKind typeKind();
 
     /**

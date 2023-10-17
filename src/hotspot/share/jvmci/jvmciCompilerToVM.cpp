@@ -171,7 +171,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
 #define C2V_BLOCK(result_type, name, signature)      \
   JVMCI_VM_ENTRY_MARK;                               \
   ResourceMark rm;                                   \
-  JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env);
+  JNI_JVMCIENV(JVMCI::compilation_tick(thread), env);
 
 static JavaThread* get_current_thread(bool allow_null=true) {
   Thread* thread = Thread::current_or_null_safe();
@@ -2436,13 +2436,16 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
   JVMCIRuntime* runtime;
   {
     // Ensure the JVMCI shared library runtime is initialized.
-    PEER_JVMCIENV_FROM_THREAD(THREAD, false);
-    PEER_JVMCIENV->check_init(JVMCI_CHECK_NULL);
-
+    bool jni_enomem_is_fatal = false;
+    JVMCIEnv __peer_jvmci_env__(thread, false, jni_enomem_is_fatal, __FILE__, __LINE__);
+    JVMCIEnv* peerEnv = &__peer_jvmci_env__;
+    if (peerEnv->has_jni_enomem()) {
+      JVMCI_THROW_MSG_0(OutOfMemoryError, "JNI_ENOMEM creating or attaching to libjvmci");
+    }
     HandleMark hm(THREAD);
     runtime = JVMCI::compiler_runtime(thread);
-    if (PEER_JVMCIENV->has_pending_exception()) {
-      PEER_JVMCIENV->describe_pending_exception(tty);
+    if (peerEnv->has_pending_exception()) {
+      peerEnv->describe_pending_exception(tty);
     }
     sl_handle = JVMCI::get_shared_library(sl_path, false);
     if (sl_handle == nullptr) {
@@ -2601,13 +2604,17 @@ C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jb
 
     {
       // Ensure the JVMCI shared library runtime is initialized.
-      PEER_JVMCIENV_FROM_THREAD(THREAD, false);
-      PEER_JVMCIENV->check_init(JVMCI_CHECK_0);
+      bool jni_enomem_is_fatal = false;
+      JVMCIEnv __peer_jvmci_env__(thread, false, jni_enomem_is_fatal, __FILE__, __LINE__);
+      JVMCIEnv* peerJVMCIEnv = &__peer_jvmci_env__;
+      if (peerJVMCIEnv->has_jni_enomem()) {
+        JVMCI_THROW_MSG_0(OutOfMemoryError, "JNI_ENOMEM creating or attaching to libjvmci");
+      }
 
       HandleMark hm(thread);
-      JVMCIObject receiver = runtime->get_HotSpotJVMCIRuntime(PEER_JVMCIENV);
-      if (PEER_JVMCIENV->has_pending_exception()) {
-        PEER_JVMCIENV->describe_pending_exception(tty);
+      JVMCIObject receiver = runtime->get_HotSpotJVMCIRuntime(peerJVMCIEnv);
+      if (peerJVMCIEnv->has_pending_exception()) {
+        peerJVMCIEnv->describe_pending_exception(tty);
       }
       char* sl_path;
       if (JVMCI::get_shared_library(sl_path, false) == nullptr) {
@@ -2697,29 +2704,33 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
   if (obj_handle == nullptr) {
     return 0L;
   }
-  PEER_JVMCIENV_FROM_THREAD(THREAD, !JVMCIENV->is_hotspot());
-  PEER_JVMCIENV->check_init(JVMCI_CHECK_0);
-
+  bool jni_enomem_is_fatal = false;
+  JVMCIEnv __peer_jvmci_env__(thread, !JVMCIENV->is_hotspot(), jni_enomem_is_fatal, __FILE__, __LINE__);
+  JVMCIEnv* peerEnv = &__peer_jvmci_env__;
   JVMCIEnv* thisEnv = JVMCIENV;
+  if (peerEnv->has_jni_enomem()) {
+      JVMCI_THROW_MSG_0(OutOfMemoryError, "JNI_ENOMEM creating or attaching to libjvmci");
+  }
+
   JVMCIObject obj = thisEnv->wrap(obj_handle);
   JVMCIObject result;
   if (thisEnv->isa_HotSpotResolvedJavaMethodImpl(obj)) {
     methodHandle method(THREAD, thisEnv->asMethod(obj));
-    result = PEER_JVMCIENV->get_jvmci_method(method, JVMCI_CHECK_0);
+    result = peerEnv->get_jvmci_method(method, JVMCI_CHECK_0);
   } else if (thisEnv->isa_HotSpotResolvedObjectTypeImpl(obj)) {
     Klass* klass = thisEnv->asKlass(obj);
     JVMCIKlassHandle klass_handle(THREAD);
     klass_handle = klass;
-    result = PEER_JVMCIENV->get_jvmci_type(klass_handle, JVMCI_CHECK_0);
+    result = peerEnv->get_jvmci_type(klass_handle, JVMCI_CHECK_0);
   } else if (thisEnv->isa_HotSpotResolvedPrimitiveType(obj)) {
     BasicType type = JVMCIENV->kindToBasicType(JVMCIENV->get_HotSpotResolvedPrimitiveType_kind(obj), JVMCI_CHECK_0);
-    result = PEER_JVMCIENV->get_jvmci_primitive_type(type);
+    result = peerEnv->get_jvmci_primitive_type(type);
   } else if (thisEnv->isa_IndirectHotSpotObjectConstantImpl(obj) ||
              thisEnv->isa_DirectHotSpotObjectConstantImpl(obj)) {
     Handle constant = thisEnv->asConstant(obj, JVMCI_CHECK_0);
-    result = PEER_JVMCIENV->get_object_constant(constant());
+    result = peerEnv->get_object_constant(constant());
   } else if (thisEnv->isa_HotSpotNmethod(obj)) {
-    if (PEER_JVMCIENV->is_hotspot()) {
+    if (peerEnv->is_hotspot()) {
       nmethod* nm = JVMCIENV->get_nmethod(obj);
       if (nm != nullptr) {
         JVMCINMethodData* data = nm->jvmci_nmethod_data();
@@ -2742,7 +2753,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
       JVMCIObject name_string = thisEnv->get_InstalledCode_name(obj);
       const char* cstring = name_string.is_null() ? nullptr : thisEnv->as_utf8_string(name_string);
       // Create a new HotSpotNmethod instance in the peer runtime
-      result = PEER_JVMCIENV->new_HotSpotNmethod(mh, cstring, isDefault, compileIdSnapshot, JVMCI_CHECK_0);
+      result = peerEnv->new_HotSpotNmethod(mh, cstring, isDefault, compileIdSnapshot, JVMCI_CHECK_0);
       nmethod* nm = JVMCIENV->get_nmethod(obj);
       if (result.is_null()) {
         // exception occurred (e.g. OOME) creating a new HotSpotNmethod
@@ -2750,9 +2761,9 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
         // nmethod must have been unloaded
       } else {
         // Link the new HotSpotNmethod to the nmethod
-        PEER_JVMCIENV->initialize_installed_code(result, nm, JVMCI_CHECK_0);
+        peerEnv->initialize_installed_code(result, nm, JVMCI_CHECK_0);
         // Only HotSpotNmethod instances in the HotSpot heap are tracked directly by the runtime.
-        if (PEER_JVMCIENV->is_hotspot()) {
+        if (peerEnv->is_hotspot()) {
           JVMCINMethodData* data = nm->jvmci_nmethod_data();
           if (data == nullptr) {
             JVMCI_THROW_MSG_0(IllegalArgumentException, "Cannot set HotSpotNmethod mirror for default nmethod");
@@ -2770,13 +2781,13 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
                 err_msg("Cannot translate object of type: %s", thisEnv->klass_name(obj)));
   }
   if (callPostTranslation) {
-    PEER_JVMCIENV->call_HotSpotJVMCIRuntime_postTranslation(result, JVMCI_CHECK_0);
+    peerEnv->call_HotSpotJVMCIRuntime_postTranslation(result, JVMCI_CHECK_0);
   }
   // Propagate any exception that occurred while creating the translated object
-  if (PEER_JVMCIENV->transfer_pending_exception(thread, thisEnv)) {
+  if (peerEnv->transfer_pending_exception(thread, thisEnv)) {
     return 0L;
   }
-  return (jlong) PEER_JVMCIENV->make_global(result).as_jobject();
+  return (jlong) peerEnv->make_global(result).as_jobject();
 }
 
 C2V_VMENTRY_NULL(jobject, unhand, (JNIEnv* env, jobject, jlong obj_handle))

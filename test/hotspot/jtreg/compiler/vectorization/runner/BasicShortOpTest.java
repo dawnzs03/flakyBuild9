@@ -35,7 +35,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.BasicShortOpTest
  *
- * @requires vm.compiler2.enabled
+ * @requires vm.compiler2.enabled & vm.flagless
  */
 
 package compiler.vectorization.runner;

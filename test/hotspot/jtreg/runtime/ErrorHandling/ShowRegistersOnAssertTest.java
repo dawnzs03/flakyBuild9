@@ -28,7 +28,6 @@
  * @bug 8191101
  * @summary Show Registers on assert/guarantee
  * @library /test/lib
- * @requires vm.flagless
  * @requires (vm.debug == true) & (os.family == "linux")
  * @author Thomas Stuefe (SAP)
  * @modules java.base/jdk.internal.misc

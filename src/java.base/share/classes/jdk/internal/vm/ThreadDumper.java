@@ -24,7 +24,6 @@
  */
 package jdk.internal.vm;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -111,8 +110,7 @@ public class ThreadDumper {
                 : new OpenOption[] { StandardOpenOption.CREATE_NEW };
         String reply;
         try (OutputStream out = Files.newOutputStream(path, options);
-             BufferedOutputStream bos = new BufferedOutputStream(out);
-             PrintStream ps = new PrintStream(bos, false, StandardCharsets.UTF_8)) {
+             PrintStream ps = new PrintStream(out, true, StandardCharsets.UTF_8)) {
             if (json) {
                 dumpThreadsToJson(ps);
             } else {
@@ -134,12 +132,11 @@ public class ThreadDumper {
      * This method is invoked by HotSpotDiagnosticMXBean.dumpThreads.
      */
     public static void dumpThreads(OutputStream out) {
-        BufferedOutputStream bos = new BufferedOutputStream(out);
-        PrintStream ps = new PrintStream(bos, false, StandardCharsets.UTF_8);
+        PrintStream ps = new PrintStream(out, true, StandardCharsets.UTF_8);
         try {
             dumpThreads(ps);
         } finally {
-            ps.flush();  // flushes underlying stream
+            ps.flush();
         }
     }
 
@@ -161,10 +158,9 @@ public class ThreadDumper {
 
     private static void dumpThread(Thread thread, PrintStream ps) {
         String suffix = thread.isVirtual() ? " virtual" : "";
-        ps.println("#" + thread.threadId() + " \"" + thread.getName() + "\"" + suffix);
+        ps.format("#%d \"%s\"%s%n", thread.threadId(), thread.getName(), suffix);
         for (StackTraceElement ste : thread.getStackTrace()) {
-            ps.print("      ");
-            ps.println(ste);
+            ps.format("      %s%n", ste);
         }
         ps.println();
     }
@@ -175,12 +171,11 @@ public class ThreadDumper {
      * This method is invoked by HotSpotDiagnosticMXBean.dumpThreads.
      */
     public static void dumpThreadsToJson(OutputStream out) {
-        BufferedOutputStream bos = new BufferedOutputStream(out);
-        PrintStream ps = new PrintStream(bos, false, StandardCharsets.UTF_8);
+        PrintStream ps = new PrintStream(out, true, StandardCharsets.UTF_8);
         try {
             dumpThreadsToJson(ps);
         } finally {
-            ps.flush();  // flushes underlying stream
+            ps.flush();
         }
     }
 
@@ -262,16 +257,13 @@ public class ThreadDumper {
      */
     private static void dumpThreadToJson(Thread thread, PrintStream out, boolean more) {
         out.println("         {");
-        out.println("           \"tid\": \"" + thread.threadId() + "\",");
-        out.println("           \"name\": \"" + escape(thread.getName()) + "\",");
-        out.println("           \"stack\": [");
-
+        out.format("           \"tid\": \"%d\",%n", thread.threadId());
+        out.format("           \"name\": \"%s\",%n", escape(thread.getName()));
+        out.format("           \"stack\": [%n");
         int i = 0;
         StackTraceElement[] stackTrace = thread.getStackTrace();
         while (i < stackTrace.length) {
-            out.print("              \"");
-            out.print(escape(stackTrace[i].toString()));
-            out.print("\"");
+            out.format("              \"%s\"", escape(stackTrace[i].toString()));
             i++;
             if (i < stackTrace.length) {
                 out.println(",");

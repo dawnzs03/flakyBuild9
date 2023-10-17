@@ -38,7 +38,7 @@
  *                   -XX:LoopUnrollLimit=1000
  *                   compiler.vectorization.runner.BasicByteOpTest
  *
- * @requires vm.compiler2.enabled
+ * @requires vm.compiler2.enabled & vm.flagless
  */
 
 package compiler.vectorization.runner;

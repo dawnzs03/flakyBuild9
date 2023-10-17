@@ -65,8 +65,6 @@ public final class JstatdTest {
     private static final int JSTAT_GCUTIL_INTERVAL_MS = 250;
     private static final String JPS_OUTPUT_REGEX = "^\\d+\\s*.*";
 
-    private static final int MAX_JSTATD_TRIES = 10;
-
     private boolean useDefaultPort = true;
     private boolean useDefaultRmiPort = true;
     private String port;
@@ -284,7 +282,7 @@ public final class JstatdTest {
     private ProcessThread tryToSetupJstatdProcess() throws Throwable {
         portInUse = false;
         ProcessThread jstatdThread = new ProcessThread("Jstatd-Thread",
-                JstatdTest::isJstatdReady, getJstatdCmd());
+                JstatdTest::isJstadReady, getJstatdCmd());
         try {
             jstatdThread.start();
             // Make sure jstatd is up and running
@@ -304,8 +302,8 @@ public final class JstatdTest {
         return jstatdThread;
     }
 
-    private static boolean isJstatdReady(String line) {
-        if (line.contains("Port already in use") || line.contains("Could not bind")) {
+    private static boolean isJstadReady(String line) {
+        if (line.contains("Port already in use")) {
             portInUse = true;
             return true;
         }
@@ -324,9 +322,8 @@ public final class JstatdTest {
         }
 
         ProcessThread jstatdThread = null;
-        int tries = 0;
         try {
-            while (jstatdThread == null && ++tries <= MAX_JSTATD_TRIES) {
+            while (jstatdThread == null) {
                 if (!useDefaultPort) {
                     port = String.valueOf(Utils.getFreePort());
                 }
@@ -342,11 +339,10 @@ public final class JstatdTest {
                         continue;
                     }
                 }
+
                 jstatdThread = tryToSetupJstatdProcess();
             }
-            if (jstatdThread == null) {
-                throw new RuntimeException("Cannot start jstatd.");
-            }
+
             runToolsAndVerify();
         } finally {
             cleanUpThread(jstatdThread);

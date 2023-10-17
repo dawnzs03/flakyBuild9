@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.Vector;
 import java.util.EventObject;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.*;
 import javax.naming.event.*;
@@ -118,9 +117,6 @@ final class EventSupport {
 
     private LdapCtx ctx;
 
-    // EventSupport instance lock. Accessed by LdapCtx
-    final ReentrantLock lock = new ReentrantLock();
-
     /**
      * NamingEventNotifiers; hashed by search arguments;
      */
@@ -153,33 +149,28 @@ final class EventSupport {
      * 2. ensure that NamingEventNotifier thread's access to 'notifiers'
      *    is safe
      */
-    void addNamingListener(String nm, int scope,
+    synchronized void addNamingListener(String nm, int scope,
         NamingListener l) throws NamingException {
 
-        lock.lock();
-        try {
-            if (l instanceof ObjectChangeListener ||
-                l instanceof NamespaceChangeListener) {
-                NotifierArgs args = new NotifierArgs(nm, scope, l);
+        if (l instanceof ObjectChangeListener ||
+            l instanceof NamespaceChangeListener) {
+            NotifierArgs args = new NotifierArgs(nm, scope, l);
 
-                NamingEventNotifier notifier = notifiers.get(args);
-                if (notifier == null) {
-                    notifier = new NamingEventNotifier(this, ctx, args, l);
-                    notifiers.put(args, notifier);
-                } else {
-                    notifier.addNamingListener(l);
-                }
+            NamingEventNotifier notifier = notifiers.get(args);
+            if (notifier == null) {
+                notifier = new NamingEventNotifier(this, ctx, args, l);
+                notifiers.put(args, notifier);
+            } else {
+                notifier.addNamingListener(l);
             }
-            if (l instanceof UnsolicitedNotificationListener) {
-                // Add listener to this's list of unsolicited notifiers
-                if (unsolicited == null) {
-                    unsolicited = new Vector<>(3);
-                }
+        }
+        if (l instanceof UnsolicitedNotificationListener) {
+            // Add listener to this's list of unsolicited notifiers
+            if (unsolicited == null) {
+                unsolicited = new Vector<>(3);
+            }
 
-                unsolicited.addElement((UnsolicitedNotificationListener) l);
-            }
-        } finally {
-            lock.unlock();
+            unsolicited.addElement((UnsolicitedNotificationListener)l);
         }
     }
 
@@ -187,82 +178,67 @@ final class EventSupport {
      * Adds {@code l} to list of listeners interested in {@code nm}
      * and filter.
      */
-    void addNamingListener(String nm, String filter,
+    synchronized void addNamingListener(String nm, String filter,
         SearchControls ctls, NamingListener l) throws NamingException {
 
-        lock.lock();
-        try {
-            if (l instanceof ObjectChangeListener ||
-                l instanceof NamespaceChangeListener) {
-                NotifierArgs args = new NotifierArgs(nm, filter, ctls, l);
+        if (l instanceof ObjectChangeListener ||
+            l instanceof NamespaceChangeListener) {
+            NotifierArgs args = new NotifierArgs(nm, filter, ctls, l);
 
-                NamingEventNotifier notifier = notifiers.get(args);
-                if (notifier == null) {
-                    notifier = new NamingEventNotifier(this, ctx, args, l);
-                    notifiers.put(args, notifier);
-                } else {
-                    notifier.addNamingListener(l);
-                }
+            NamingEventNotifier notifier = notifiers.get(args);
+            if (notifier == null) {
+                notifier = new NamingEventNotifier(this, ctx, args, l);
+                notifiers.put(args, notifier);
+            } else {
+                notifier.addNamingListener(l);
             }
-            if (l instanceof UnsolicitedNotificationListener) {
-                // Add listener to this's list of unsolicited notifiers
-                if (unsolicited == null) {
-                    unsolicited = new Vector<>(3);
-                }
-                unsolicited.addElement((UnsolicitedNotificationListener) l);
+        }
+        if (l instanceof UnsolicitedNotificationListener) {
+            // Add listener to this's list of unsolicited notifiers
+            if (unsolicited == null) {
+                unsolicited = new Vector<>(3);
             }
-        } finally {
-            lock.unlock();
+            unsolicited.addElement((UnsolicitedNotificationListener)l);
         }
     }
 
     /**
      * Removes {@code l} from all notifiers in this context.
      */
-    void removeNamingListener(NamingListener l) {
-        lock.lock();
-        try {
-            if (debug) {
-                System.err.println("EventSupport removing listener");
-            }
-            // Go through list of notifiers, remove 'l' from each.
-            // If 'l' is notifier's only listener, remove notifier too.
-            Iterator<NamingEventNotifier> iterator = notifiers.values().iterator();
-            while (iterator.hasNext()) {
-                NamingEventNotifier notifier = iterator.next();
-                if (notifier != null) {
+    synchronized void removeNamingListener(NamingListener l) {
+        if (debug) {
+            System.err.println("EventSupport removing listener");
+        }
+        // Go through list of notifiers, remove 'l' from each.
+        // If 'l' is notifier's only listener, remove notifier too.
+        Iterator<NamingEventNotifier> iterator = notifiers.values().iterator();
+        while (iterator.hasNext()) {
+            NamingEventNotifier notifier = iterator.next();
+            if (notifier != null) {
+                if (debug) {
+                    System.err.println("EventSupport removing listener from notifier");
+                }
+                notifier.removeNamingListener(l);
+                if (!notifier.hasNamingListeners()) {
                     if (debug) {
-                        System.err.println("EventSupport removing listener from notifier");
+                        System.err.println("EventSupport stopping notifier");
                     }
-                    notifier.removeNamingListener(l);
-                    if (!notifier.hasNamingListeners()) {
-                        if (debug) {
-                            System.err.println("EventSupport stopping notifier");
-                        }
-                        notifier.stop();
-                        iterator.remove();
-                    }
+                    notifier.stop();
+                    iterator.remove();
                 }
             }
-            // Remove from list of unsolicited notifier
-            if (debug) {
-                System.err.println("EventSupport removing unsolicited: " + unsolicited);
-            }
-            if (unsolicited != null) {
-                unsolicited.removeElement(l);
-            }
-        } finally {
-            lock.unlock();
+        }
+        // Remove from list of unsolicited notifier
+        if (debug) {
+            System.err.println("EventSupport removing unsolicited: " + unsolicited);
+        }
+        if (unsolicited != null) {
+            unsolicited.removeElement(l);
         }
     }
 
-    boolean hasUnsolicited() {
-        lock.lock();
-        try {
-            return (unsolicited != null && unsolicited.size() > 0);
-        } finally {
-            lock.unlock();
-        }
+    synchronized boolean hasUnsolicited() {
+        return (unsolicited != null && unsolicited.size() > 0);
     }
 
     /**
@@ -270,20 +246,15 @@ final class EventSupport {
       * Called by NamingEventNotifier to remove itself when it encounters
       * a NamingException.
       */
-    void removeDeadNotifier(NotifierArgs info) {
-        lock.lock();
-        try {
-            if (debug) {
-                System.err.println("EventSupport.removeDeadNotifier: " + info.name);
-            }
-            if (notifiers != null) {
-                // Only do this if cleanup() not been triggered, otherwise here
-                // will throw NullPointerException since notifiers will be set to
-                // null in cleanup()
-                notifiers.remove(info);
-            }
-        } finally {
-            lock.unlock();
+    synchronized void removeDeadNotifier(NotifierArgs info) {
+        if (debug) {
+            System.err.println("EventSupport.removeDeadNotifier: " + info.name);
+        }
+        if (notifiers != null) {
+            // Only do this if cleanup() not been triggered, otherwise here
+            // will throw NullPointerException since notifiers will be set to
+            // null in cleanup()
+            notifiers.remove(info);
         }
     }
 
@@ -292,46 +263,41 @@ final class EventSupport {
      * package private;
      * Called by LdapCtx when its clnt receives an unsolicited notification.
      */
-    void fireUnsolicited(Object obj) {
-        lock.lock();
-        try {
-            if (debug) {
-                System.err.println("EventSupport.fireUnsolicited: " + obj + " "
-                        + unsolicited);
-            }
-            if (unsolicited == null || unsolicited.size() == 0) {
-                // This shouldn't really happen, but might in case
-                // there is a timing problem that removes a listener
-                // before a fired event reaches here.
-                return;
-            }
+    synchronized void fireUnsolicited(Object obj) {
+        if (debug) {
+            System.err.println("EventSupport.fireUnsolicited: " + obj + " "
+                + unsolicited);
+        }
+        if (unsolicited == null || unsolicited.size() == 0) {
+            // This shouldn't really happen, but might in case
+            // there is a timing problem that removes a listener
+            // before a fired event reaches here.
+            return;
+        }
 
-            if (obj instanceof UnsolicitedNotification) {
+        if (obj instanceof UnsolicitedNotification) {
 
-                // Fire UnsolicitedNotification to unsolicited listeners
+            // Fire UnsolicitedNotification to unsolicited listeners
 
-                UnsolicitedNotificationEvent evt =
-                        new UnsolicitedNotificationEvent(ctx, (UnsolicitedNotification) obj);
-                queueEvent(evt, unsolicited);
+            UnsolicitedNotificationEvent evt =
+                new UnsolicitedNotificationEvent(ctx, (UnsolicitedNotification)obj);
+            queueEvent(evt, unsolicited);
 
-            } else if (obj instanceof NamingException) {
+        } else if (obj instanceof NamingException) {
 
-                // Fire NamingExceptionEvent to unsolicited listeners.
+            // Fire NamingExceptionEvent to unsolicited listeners.
 
-                NamingExceptionEvent evt =
-                        new NamingExceptionEvent(ctx, (NamingException) obj);
-                queueEvent(evt, unsolicited);
+            NamingExceptionEvent evt =
+                new NamingExceptionEvent(ctx, (NamingException)obj);
+            queueEvent(evt, unsolicited);
 
-                // When an exception occurs, the unsolicited listeners
-                // are automatically deregistered.
-                // When LdapClient.processUnsolicited() fires a NamingException,
-                // it will update its listener list so we don't have to.
-                // Likewise for LdapCtx.
+            // When an exception occurs, the unsolicited listeners
+            // are automatically deregistered.
+            // When LdapClient.processUnsolicited() fires a NamingException,
+            // it will update its listener list so we don't have to.
+            // Likewise for LdapCtx.
 
-                unsolicited = null;
-            }
-        } finally {
-            lock.unlock();
+            unsolicited = null;
         }
     }
 
@@ -340,24 +306,19 @@ final class EventSupport {
      * stops the event queue from dispatching events.
      * Package private; used by LdapCtx.
      */
-    void cleanup() {
-        lock.lock();
-        try {
-            if (debug) System.err.println("EventSupport clean up");
-            if (notifiers != null) {
-                for (NamingEventNotifier notifier : notifiers.values()) {
-                    notifier.stop();
-                }
-                notifiers = null;
+    synchronized void cleanup() {
+        if (debug) System.err.println("EventSupport clean up");
+        if (notifiers != null) {
+            for (NamingEventNotifier notifier : notifiers.values()) {
+                notifier.stop();
             }
-            if (eventQueue != null) {
-                eventQueue.stop();
-                eventQueue = null;
-            }
-            // %%% Should we fire NamingExceptionEvents to unsolicited listeners?
-        } finally {
-            lock.unlock();
+            notifiers = null;
         }
+        if (eventQueue != null) {
+            eventQueue.stop();
+            eventQueue = null;
+        }
+        // %%% Should we fire NamingExceptionEvents to unsolicited listeners?
     }
 
     /*
@@ -371,33 +332,28 @@ final class EventSupport {
      * them to the registered listeners.
      * Package private; used by NamingEventNotifier to fire events
      */
-    void queueEvent(EventObject event,
-                    Vector<? extends NamingListener> vector) {
-        lock.lock();
-        try {
-            if (notifiers == null) {
-                // That means cleanup() already done, not queue event anymore,
-                // otherwise, new created EventQueue will not been cleanup.
-                return;
-            }
-            if (eventQueue == null)
-                eventQueue = new EventQueue();
-
-            /*
-             * Copy the vector in order to freeze the state of the set
-             * of EventListeners the event should be delivered to prior
-             * to delivery.  This ensures that any changes made to the
-             * Vector from a target listener's method during the delivery
-             * of this event will not take effect until after the event is
-             * delivered.
-             */
-            @SuppressWarnings("unchecked") // clone()
-            Vector<NamingListener> v =
-                    (Vector<NamingListener>) vector.clone();
-            eventQueue.enqueue(event, v);
-        } finally {
-            lock.unlock();
+    synchronized void queueEvent(EventObject event,
+                                 Vector<? extends NamingListener> vector) {
+        if (notifiers == null) {
+            // That means cleanup() already done, not queue event anymore,
+            // otherwise, new created EventQueue will not been cleanup.
+            return;
         }
+        if (eventQueue == null)
+            eventQueue = new EventQueue();
+
+        /*
+         * Copy the vector in order to freeze the state of the set
+         * of EventListeners the event should be delivered to prior
+         * to delivery.  This ensures that any changes made to the
+         * Vector from a target listener's method during the delivery
+         * of this event will not take effect until after the event is
+         * delivered.
+         */
+        @SuppressWarnings("unchecked") // clone()
+        Vector<NamingListener> v =
+                (Vector<NamingListener>)vector.clone();
+        eventQueue.enqueue(event, v);
     }
 
     // No finalize() needed because EventSupport is always owned by

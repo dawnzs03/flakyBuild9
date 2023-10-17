@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,6 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=NMT*:os* -XX:NativeMemoryTracking=off
  */
 
@@ -41,7 +40,6 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=NMT*:os* -XX:NativeMemoryTracking=summary
  */
 
@@ -50,6 +48,5 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=NMT*:os* -XX:NativeMemoryTracking=detail
  */

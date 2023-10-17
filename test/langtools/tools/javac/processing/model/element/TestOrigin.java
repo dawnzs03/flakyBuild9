@@ -28,19 +28,13 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.TestRunner
  * @build TestOrigin
  * @run main TestOrigin
  */
 
 import java.io.OutputStream;
-import java.lang.instrument.ClassFileTransformer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,8 +55,14 @@ import javax.lang.model.element.ModuleElement.OpensDirective;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.util.Elements;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.Attributes;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ClassWriter;
+import com.sun.tools.classfile.Module_attribute;
+import com.sun.tools.classfile.Module_attribute.ExportsEntry;
+import com.sun.tools.classfile.Module_attribute.OpensEntry;
+import com.sun.tools.classfile.Module_attribute.RequiresEntry;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.TestRunner;
@@ -140,7 +140,8 @@ public class TestOrigin extends TestRunner {
             TypeElement test = elements.getTypeElement("test.Test");
             List<? extends Element> members = new ArrayList<>(test.getEnclosedElements());
 
-            members.sort((e1, e2) -> e1.getSimpleName().toString().compareTo(e2.getSimpleName().toString()));
+            Collections.sort(members,
+                             (e1, e2) -> e1.getSimpleName().toString().compareTo(e2.getSimpleName().toString()));
 
             for (Element el : members) {
                 System.out.println(el.getSimpleName() + ":" + elements.getOrigin(el));
@@ -183,7 +184,7 @@ public class TestOrigin extends TestRunner {
             .writeAll()
             .getOutputLines(Task.OutputKind.STDOUT);
 
-        expected = List.of("test.Container:MANDATED");
+        expected = Arrays.asList("test.Container:MANDATED");
 
         if (!expected.equals(log))
             throw new AssertionError("expected output not found: " + log);
@@ -199,7 +200,7 @@ public class TestOrigin extends TestRunner {
             .writeAll()
             .getOutputLines(Task.OutputKind.STDOUT);
 
-        expected = List.of("test.Container:EXPLICIT");
+        expected = Arrays.asList("test.Container:EXPLICIT");
 
         if (!expected.equals(log))
             throw new AssertionError("expected output not found: " + log);
@@ -254,7 +255,7 @@ public class TestOrigin extends TestRunner {
             .writeAll()
             .getOutputLines(Task.OutputKind.STDOUT);
 
-        expected = List.of("REQUIRES:java.base:MANDATED");
+        expected = Arrays.asList("REQUIRES:java.base:MANDATED");
 
         if (!expected.equals(log))
             throw new AssertionError("expected output not found: " + log);
@@ -279,37 +280,64 @@ public class TestOrigin extends TestRunner {
             .writeAll();
 
         Path moduleInfo = classes.resolve("module-info.class");
-        ClassModel cf = Classfile.of().parse(moduleInfo);
-        ModuleAttribute module = cf.findAttribute(Attributes.MODULE).orElseThrow();
+        ClassFile cf = ClassFile.read(moduleInfo);
+        Module_attribute module = (Module_attribute) cf.getAttribute(Attribute.Module);
 
-        List<ModuleRequireInfo> newRequires = new ArrayList<>(3);
-        newRequires.add(ModuleRequireInfo.of(module.requires().get(0).requires(), Classfile.ACC_MANDATED, module.requires().get(0).requiresVersion().orElse(null)));
-        newRequires.add(ModuleRequireInfo.of(module.requires().get(1).requires(), Classfile.ACC_SYNTHETIC, module.requires().get(1).requiresVersion().orElse(null)));
-        newRequires.add(module.requires().get(2));
+        RequiresEntry[] newRequires = new RequiresEntry[3];
+        newRequires[0] = new RequiresEntry(module.requires[0].requires_index,
+                                           Module_attribute.ACC_MANDATED,
+                                           module.requires[0].requires_version_index);
+        newRequires[1] = new RequiresEntry(module.requires[1].requires_index,
+                                           Module_attribute.ACC_SYNTHETIC,
+                                           module.requires[1].requires_version_index);
+        newRequires[2] = module.requires[2];
 
-        List<ModuleExportInfo> newExports = new ArrayList<>(3);
-        newExports.add(ModuleExportInfo.of(module.exports().get(0).exportedPackage(), Classfile.ACC_MANDATED, module.exports().get(0).exportsTo()));
-        newExports.add(ModuleExportInfo.of(module.exports().get(1).exportedPackage(), Classfile.ACC_SYNTHETIC, module.exports().get(1).exportsTo()));
-        newExports.add(module.exports().get(2));
+        ExportsEntry[] newExports = new ExportsEntry[3];
+        newExports[0] = new ExportsEntry(module.exports[0].exports_index,
+                                         Module_attribute.ACC_MANDATED,
+                                         module.exports[0].exports_to_index);
+        newExports[1] = new ExportsEntry(module.exports[1].exports_index,
+                                         Module_attribute.ACC_SYNTHETIC,
+                                         module.exports[1].exports_to_index);
+        newExports[2] = module.exports[2];
 
-        List<ModuleOpenInfo> newOpens = new ArrayList<>(3);
-        newOpens.add(ModuleOpenInfo.of(module.opens().get(0).openedPackage(), Classfile.ACC_MANDATED, module.opens().get(0).opensTo()));
-        newOpens.add(ModuleOpenInfo.of(module.opens().get(1).openedPackage(), Classfile.ACC_SYNTHETIC, module.opens().get(1).opensTo()));
-        newOpens.add(module.opens().get(2));
+        OpensEntry[] newOpens = new OpensEntry[3];
+        newOpens[0] = new OpensEntry(module.opens[0].opens_index,
+                                     Module_attribute.ACC_MANDATED,
+                                     module.opens[0].opens_to_index);
+        newOpens[1] = new OpensEntry(module.opens[1].opens_index,
+                                     Module_attribute.ACC_SYNTHETIC,
+                                     module.opens[1].opens_to_index);
+        newOpens[2] = module.opens[2];
 
-
-        ModuleAttribute newModule = ModuleAttribute.of(module.moduleName(),
-                                                          module.moduleFlagsMask(),
-                                                          module.moduleVersion().orElse(null),
+        Module_attribute newModule = new Module_attribute(module.attribute_name_index,
+                                                          module.module_name,
+                                                          module.module_flags,
+                                                          module.module_version_index,
                                                           newRequires,
                                                           newExports,
                                                           newOpens,
-                                                          module.uses(),
-                                                          module.provides());
-        byte[] newClassFileBytes = Classfile.of().transform(cf, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute)
-                                                 .andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newModule))));
+                                                          module.uses_index,
+                                                          module.provides);
+        Map<String, Attribute> newAttributesMap = new HashMap<>(cf.attributes.map);
+
+        newAttributesMap.put(Attribute.Module, newModule);
+
+        Attributes newAttributes = new Attributes(newAttributesMap);
+        ClassFile newClassFile = new ClassFile(cf.magic,
+                                               cf.minor_version,
+                                               cf.major_version,
+                                               cf.constant_pool,
+                                               cf.access_flags,
+                                               cf.this_class,
+                                               cf.super_class,
+                                               cf.interfaces,
+                                               cf.fields,
+                                               cf.methods,
+                                               newAttributes);
+
         try (OutputStream out = Files.newOutputStream(moduleInfo)) {
-            out.write(newClassFileBytes);
+            new ClassWriter().write(newClassFile, out);
         }
 
         //from class:
@@ -349,24 +377,24 @@ public class TestOrigin extends TestRunner {
 
             for (Directive d : m.getDirectives()) {
                 switch (d.getKind()) {
-                    case REQUIRES -> {
+                    case REQUIRES:
                         RequiresDirective rd = (RequiresDirective) d;
                         System.out.println(rd.getKind() + ":" +
-                                rd.getDependency().getQualifiedName() + ":" +
-                                elements.getOrigin(m, rd));
-                    }
-                    case EXPORTS -> {
+                                           rd.getDependency().getQualifiedName() + ":" +
+                                           elements.getOrigin(m, rd));
+                        break;
+                    case EXPORTS:
                         ExportsDirective ed = (ExportsDirective) d;
                         System.out.println(ed.getKind() + ":" +
-                                ed.getPackage() + ":" +
-                                elements.getOrigin(m, ed));
-                    }
-                    case OPENS -> {
+                                           ed.getPackage() + ":" +
+                                           elements.getOrigin(m, ed));
+                        break;
+                    case OPENS:
                         OpensDirective od = (OpensDirective) d;
                         System.out.println(od.getKind() + ":" +
-                                od.getPackage() + ":" +
-                                elements.getOrigin(m, od));
-                    }
+                                           od.getPackage() + ":" +
+                                           elements.getOrigin(m, od));
+                        break;
                 }
             }
 

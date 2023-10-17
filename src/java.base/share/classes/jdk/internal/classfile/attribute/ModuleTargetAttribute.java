@@ -51,10 +51,6 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  *   u2 target_platform_index;
  * }
  * } </pre>
- * <p>
- * The attribute does not permit multiple instances in a given location.
- * Subsequent occurrence of the attribute takes precedence during the attributed
- * element build or transformation.
  */
 public sealed interface ModuleTargetAttribute
         extends Attribute<ModuleTargetAttribute>, ClassElement

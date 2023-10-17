@@ -115,7 +115,7 @@ bool JVMCICompileState::jvmti_state_changed() const {
   return false;
 }
 
-void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
+void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, bool jni_enomem_is_fatal) {
   assert(thread != nullptr, "npe");
   _env = nullptr;
   _pop_frame_on_close = false;
@@ -147,14 +147,18 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
   _is_hotspot = false;
 
   _runtime = JVMCI::compiler_runtime(thread);
-  _env = _runtime->init_shared_library_javavm(&_init_error);
+  int create_JavaVM_err = JNI_OK;
+  _env = _runtime->init_shared_library_javavm(&create_JavaVM_err);
   if (_env != nullptr) {
     // Creating the JVMCI shared library VM also attaches the current thread
     _detach_on_close = true;
-  } else if (_init_error != JNI_OK) {
-    // Caller creating this JVMCIEnv must handle the error.
-    JVMCI_event_1("[%s:%d] Error creating libjvmci (err: %d)", _file, _line, _init_error);
-    return;
+  } else if (create_JavaVM_err != JNI_OK) {
+    if (!jni_enomem_is_fatal && create_JavaVM_err == JNI_ENOMEM) {
+      _jni_enomem = true;
+      return;
+    } else {
+      fatal("JNI_CreateJavaVM failed with return value %d", create_JavaVM_err);
+    }
   } else {
     _runtime->GetEnv(thread, (void**)&parent_env, JNI_VERSION_1_2);
     if (parent_env != nullptr) {
@@ -170,14 +174,15 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
       attach_args.version = JNI_VERSION_1_2;
       attach_args.name = const_cast<char*>(thread->name());
       attach_args.group = nullptr;
-      _init_error = _runtime->AttachCurrentThread(thread, (void**) &_env, &attach_args);
-      if (_init_error == JNI_OK) {
+      jint attach_result = _runtime->AttachCurrentThread(thread, (void**) &_env, &attach_args);
+      if (attach_result == JNI_OK) {
         _detach_on_close = true;
-      } else {
-        // Caller creating this JVMCIEnv must handle the error.
+      } else if (!jni_enomem_is_fatal && attach_result == JNI_ENOMEM) {
         _env = nullptr;
-        JVMCI_event_1("[%s:%d] Error attaching to libjvmci (err: %d)", _file, _line, _init_error);
+        _jni_enomem = true;
         return;
+      } else {
+        fatal("Error attaching current thread (%s) to JVMCI shared library JNI interface", attach_args.name);
       }
     }
   }
@@ -188,36 +193,41 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
   JNIAccessMark jni(this, thread);
   jint result = _env->PushLocalFrame(32);
   if (result != JNI_OK) {
-    JVMCI_event_1("[%s:%d] Error pushing local JNI frame (err: %d)", _file, _line, _init_error);
-    return;
+    char message[256];
+    jio_snprintf(message, 256, "Uncaught exception pushing local frame for JVMCIEnv scope entered at %s:%d", _file, _line);
+    JVMCIRuntime::fatal_exception(this, message);
   }
   _pop_frame_on_close = true;
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, JVMCICompileState* compile_state, const char* file, int line):
-    _throw_to_caller(false), _file(file), _line(line), _init_error(JNI_OK), _compile_state(compile_state) {
-  init_env_mode_runtime(thread, nullptr);
+    _throw_to_caller(false), _file(file), _line(line), _jni_enomem(false), _compile_state(compile_state) {
+  // In case of JNI_ENOMEM, there's a good chance a subsequent attempt to create libjvmci or attach to it
+  // might succeed. Other errors most likely indicate a non-recoverable error in the JVMCI runtime.
+  bool jni_enomem_is_fatal = false;
+  init_env_mode_runtime(thread, nullptr, jni_enomem_is_fatal);
+  if (_jni_enomem) {
+    compile_state->set_failure(true, "Out of memory while attaching JVMCI compiler to current thread");
+  }
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, const char* file, int line):
-    _throw_to_caller(false), _file(file), _line(line), _init_error(JNI_OK), _compile_state(nullptr) {
+    _throw_to_caller(false), _file(file), _line(line), _jni_enomem(false), _compile_state(nullptr) {
   init_env_mode_runtime(thread, nullptr);
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, JNIEnv* parent_env, const char* file, int line):
-    _throw_to_caller(true), _file(file), _line(line), _init_error(JNI_OK), _compile_state(nullptr) {
-  assert(parent_env != nullptr, "npe");
+    _throw_to_caller(true), _file(file), _line(line), _jni_enomem(false), _compile_state(nullptr) {
   init_env_mode_runtime(thread, parent_env);
   assert(_env == nullptr || parent_env == _env, "mismatched JNIEnvironment");
-  assert(_init_error == JNI_OK, "err: %d", _init_error);
 }
 
-void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, const char* file, int line) {
+void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, bool jni_enomem_is_fatal, const char* file, int line) {
   _compile_state = nullptr;
   _throw_to_caller = false;
   _file = file;
   _line = line;
-  _init_error = JNI_OK;
+  _jni_enomem = false;
   if (is_hotspot) {
     _env = nullptr;
     _pop_frame_on_close = false;
@@ -225,29 +235,8 @@ void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, const char* file, int l
     _is_hotspot = true;
     _runtime = JVMCI::java_runtime();
   } else {
-    init_env_mode_runtime(thread, nullptr);
+    init_env_mode_runtime(thread, nullptr, jni_enomem_is_fatal);
   }
-}
-
-void JVMCIEnv::check_init(JVMCI_TRAPS) {
-  guarantee(JVMCIENV != this, "must be");
-  if (_init_error == JNI_OK) {
-    return;
-  }
-  if (_init_error == JNI_ENOMEM) {
-    JVMCI_THROW_MSG(OutOfMemoryError, "JNI_ENOMEM creating or attaching to libjvmci");
-  }
-  JVMCI_THROW_MSG(InternalError, err_msg("Error creating or attaching to libjvmci (err: %d)", _init_error));
-}
-
-void JVMCIEnv::check_init(TRAPS) {
-  if (_init_error == JNI_OK) {
-    return;
-  }
-  if (_init_error == JNI_ENOMEM) {
-    THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "JNI_ENOMEM creating or attaching to libjvmci");
-  }
-  THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), err_msg("Error creating or attaching to libjvmci (err: %d)", _init_error));
 }
 
 // Prints a pending exception (if any) and its stack trace to st.
@@ -572,7 +561,7 @@ jboolean JVMCIEnv::transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer
 }
 
 JVMCIEnv::~JVMCIEnv() {
-  if (_init_error != JNI_OK) {
+  if (_jni_enomem) {
     return;
   }
   if (_throw_to_caller) {

@@ -138,7 +138,7 @@ public final class ClassImpl
                 arr[i] = reader.readClassEntry(pos);
                 pos += 2;
             }
-            this.interfaces = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(arr);
+            this.interfaces = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(arr);
         }
         return interfaces;
     }

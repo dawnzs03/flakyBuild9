@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,13 +98,8 @@ public class PrintLatinCJKTest implements Printable {
     }
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("Test Instructions Frame")
-                .instructions(info)
-                .testTimeOut(10)
-                .rows(10)
-                .columns(45)
-                .build();
+        PassFailJFrame passFailJFrame = new PassFailJFrame("Test Instruction" +
+                "Frame", info, 10, 10, 45);
         showFrame();
         passFailJFrame.awaitAndCheck();
     }

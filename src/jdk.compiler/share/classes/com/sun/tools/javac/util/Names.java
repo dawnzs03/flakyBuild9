@@ -428,25 +428,11 @@ public class Names {
     }
 
     protected Name.Table createTable(Options options) {
-        boolean useStringTable = options.isSet("useStringTable");
-        if (useStringTable)
-            return newStringNameTable();
         boolean useUnsharedTable = options.isSet("useUnsharedTable");
         if (useUnsharedTable)
-            return newUnsharedNameTable();
-        return newSharedNameTable();
-    }
-
-    public StringNameTable newStringNameTable() {
-        return StringNameTable.create(this);
-    }
-
-    public SharedNameTable newSharedNameTable() {
-        return SharedNameTable.create(this);
-    }
-
-    public UnsharedNameTable newUnsharedNameTable() {
-        return UnsharedNameTable.create(this);
+            return UnsharedNameTable.create(this);
+        else
+            return SharedNameTable.create(this);
     }
 
     public void dispose() {

@@ -32,12 +32,7 @@
  *      jdk.compiler/com.sun.tools.javac.file
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.util
- *      java.base/jdk.internal.classfile
- *      java.base/jdk.internal.classfile.attribute
- *      java.base/jdk.internal.classfile.constantpool
- *      java.base/jdk.internal.classfile.instruction
- *      java.base/jdk.internal.classfile.components
- *      java.base/jdk.internal.classfile.impl
+ *      jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @run main PreviewErrors
@@ -60,8 +55,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.tools.Diagnostic;
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ConstantPoolException;
 import java.io.FileWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
@@ -399,7 +394,7 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                     if (!result.get().iterator().hasNext()) {
                         throw new IllegalStateException("Did not succeed as expected for preview=" + preview + ", lint=" + lint + ", suppress=" + suppress + ", elementType=" + elementType + ": actual:\"" + actual + "\"");
                     }
-                    ClassModel cf;
+                    ClassFile cf;
                     try {
                         JavaFileObject testClass = null;
                         for (JavaFileObject classfile : result.get()) {
@@ -411,15 +406,15 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                             throw new IllegalStateException("Cannot find Test.class");
                         }
                         try (InputStream input = testClass.openInputStream()) {
-                            cf = Classfile.of().parse(input.readAllBytes());
+                            cf = ClassFile.read(input);
                         }
-                    } catch (IOException ex) {
+                    } catch (IOException | ConstantPoolException ex) {
                         throw new IllegalStateException(ex);
                     }
-                    if (previewClass && cf.minorVersion() != 65535) {
-                        throw new IllegalStateException("Expected preview class, but got: " + cf.minorVersion());
-                    } else if (!previewClass && cf.minorVersion() != 0) {
-                        throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minorVersion());
+                    if (previewClass && cf.minor_version != 65535) {
+                        throw new IllegalStateException("Expected preview class, but got: " + cf.minor_version);
+                    } else if (!previewClass && cf.minor_version != 0) {
+                        throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minor_version);
                     }
                 } else {
                     if (result.get().iterator().hasNext()) {

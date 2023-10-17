@@ -21,10 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
+import com.sun.tools.classfile.*;
+import com.sun.tools.classfile.ConstantPool.*;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -34,12 +32,7 @@ import java.util.List;
  * @test
  * @bug     8273914
  * @summary Indy string concat changes order of operations
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *
  * @clean *
  * @compile -XDstringConcat=indy              WellKnownTypeSignatures.java
@@ -101,19 +94,23 @@ public class WellKnownTypeSignatures {
     public static void readIndyTypes() throws Exception {
         actualTypes = new ArrayList<String>();
 
-        ClassModel classFile = Classfile.of().parse(
+        ClassFile classFile =
+                ClassFile.read(
                         new File(
                                 System.getProperty("test.classes", "."),
-                                WellKnownTypeSignatures.class.getName() + ".class").toPath());
+                                WellKnownTypeSignatures.class.getName() + ".class"));
+        ConstantPool constantPool = classFile.constant_pool;
 
-        for (MethodModel method : classFile.methods()) {
-            if (method.methodName().equalsString("main")) {
-                CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
-                for (CodeElement i : code.elementList()) {
-                    if (i instanceof InvokeDynamicInstruction) {
-                        InvokeDynamicInstruction indy = (InvokeDynamicInstruction) i;
-                        NameAndTypeEntry natInfo = indy.invokedynamic().nameAndType();
-                        actualTypes.add(natInfo.type().stringValue());
+        for (Method method : classFile.methods) {
+            if (method.getName(constantPool).equals("main")) {
+                Code_attribute code = (Code_attribute) method.attributes.get(Attribute.Code);
+                for (Instruction i : code.getInstructions()) {
+                    if (i.getOpcode() == Opcode.INVOKEDYNAMIC) {
+                        CONSTANT_InvokeDynamic_info indyInfo =
+                                (CONSTANT_InvokeDynamic_info)
+                                        constantPool.get(i.getUnsignedShort(1));
+                        CONSTANT_NameAndType_info natInfo = indyInfo.getNameAndTypeInfo();
+                        actualTypes.add(natInfo.getType());
                     }
                 }
             }

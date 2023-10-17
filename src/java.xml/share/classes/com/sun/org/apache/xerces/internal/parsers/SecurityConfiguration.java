@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * reserved comment block
+ * DO NOT REMOVE OR ALTER!
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,7 +25,7 @@ import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import jdk.xml.internal.XMLSecurityManager;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 
 /**
  * This configuration allows Xerces to behave in a security-conscious manner; that is,
@@ -43,7 +44,7 @@ import jdk.xml.internal.XMLSecurityManager;
  * </ul>
  *
  * @author Neil Graham, IBM
- * @LastModified: July 2023
+ *
  */
 public class SecurityConfiguration extends XIncludeAwareParserConfiguration
 {

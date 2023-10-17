@@ -32,23 +32,35 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import java.lang.constant.ClassDesc;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassSignature;
-import jdk.internal.classfile.Classfile;
-import static jdk.internal.classfile.Classfile.*;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.MethodSignature;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.SignatureAttribute;
+import com.sun.tools.classfile.AccessFlags;
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.Attributes;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.Code_attribute;
+import com.sun.tools.classfile.ConstantPool;
+import com.sun.tools.classfile.ConstantPoolException;
+import com.sun.tools.classfile.ConstantValue_attribute;
+import com.sun.tools.classfile.Descriptor;
+import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
+import com.sun.tools.classfile.Exceptions_attribute;
+import com.sun.tools.classfile.Field;
+import com.sun.tools.classfile.Method;
+import com.sun.tools.classfile.Module_attribute;
+import com.sun.tools.classfile.Signature;
+import com.sun.tools.classfile.Signature_attribute;
+import com.sun.tools.classfile.SourceFile_attribute;
+import com.sun.tools.classfile.Type;
+import com.sun.tools.classfile.Type.ArrayType;
+import com.sun.tools.classfile.Type.ClassSigType;
+import com.sun.tools.classfile.Type.ClassType;
+import com.sun.tools.classfile.Type.MethodType;
+import com.sun.tools.classfile.Type.SimpleType;
+import com.sun.tools.classfile.Type.TypeParamType;
+import com.sun.tools.classfile.Type.WildcardType;
+
+import static com.sun.tools.classfile.AccessFlags.*;
+import static com.sun.tools.classfile.ConstantPool.CONSTANT_Module;
+import static com.sun.tools.classfile.ConstantPool.CONSTANT_Package;
 
 /*
  *  The main javap class to write the contents of a class file as text.
@@ -73,7 +85,6 @@ public class ClassWriter extends BasicWriter {
         attrWriter = AttributeWriter.instance(context);
         codeWriter = CodeWriter.instance(context);
         constantWriter = ConstantWriter.instance(context);
-        sigPrinter = new SignaturePrinter(options.verbose);
     }
 
     void setDigest(String name, byte[] digest) {
@@ -93,25 +104,25 @@ public class ClassWriter extends BasicWriter {
         this.lastModified = lastModified;
     }
 
-    protected ClassModel getClassModel() {
-        return classModel;
+    protected ClassFile getClassFile() {
+        return classFile;
     }
 
-    protected void setClassFile(ClassModel cm) {
-        classModel = cm;
+    protected void setClassFile(ClassFile cf) {
+        classFile = cf;
+        constant_pool = classFile.constant_pool;
     }
 
-    protected MethodModel getMethod() {
+    protected Method getMethod() {
         return method;
     }
 
-    protected void setMethod(MethodModel m) {
+    protected void setMethod(Method m) {
         method = m;
     }
 
-    public boolean write(ClassModel cm) {
-        errorReported = false;
-        setClassFile(cm);
+    public void write(ClassFile cf) {
+        setClassFile(cf);
 
         if (options.sysInfo || options.verbose) {
             if (uri != null) {
@@ -125,8 +136,7 @@ public class ClassWriter extends BasicWriter {
                 Date lm = new Date(lastModified);
                 DateFormat df = DateFormat.getDateInstance();
                 if (size > 0) {
-                    println("Last modified " + df.format(lm) + "; size " + size
-                            + " bytes");
+                    println("Last modified " + df.format(lm) + "; size " + size + " bytes");
                 } else {
                     println("Last modified " + df.format(lm));
                 }
@@ -141,94 +151,111 @@ public class ClassWriter extends BasicWriter {
             }
         }
 
-        cm.findAttribute(Attributes.SOURCE_FILE).ifPresent(sfa ->
-            println("Compiled from \"" + sfa.sourceFile().stringValue() + "\""));
+        Attribute sfa = cf.getAttribute(Attribute.SourceFile);
+        if (sfa instanceof SourceFile_attribute) {
+            println("Compiled from \"" + getSourceFile((SourceFile_attribute) sfa) + "\"");
+        }
 
         if (options.sysInfo || options.verbose) {
             indent(-1);
         }
 
-        writeModifiers(getClassModifiers(cm.flags().flagsMask()));
+        AccessFlags flags = cf.access_flags;
+        writeModifiers(flags.getClassModifiers());
 
-        if ((classModel.flags().flagsMask() & ACC_MODULE) != 0) {
-            var attr = classModel.findAttribute(Attributes.MODULE);
-            if (attr.isPresent()) {
-                var modAttr = attr.get();
-                if ((modAttr.moduleFlagsMask() & ACC_OPEN) != 0) {
+        if (classFile.access_flags.is(AccessFlags.ACC_MODULE)) {
+            Attribute attr = classFile.attributes.get(Attribute.Module);
+            if (attr instanceof Module_attribute) {
+                Module_attribute modAttr = (Module_attribute) attr;
+                String name;
+                try {
+                    // FIXME: compatibility code
+                    if (constant_pool.get(modAttr.module_name).getTag() == CONSTANT_Module) {
+                        name = getJavaName(constant_pool.getModuleInfo(modAttr.module_name).getName());
+                    } else {
+                        name = getJavaName(constant_pool.getUTF8Value(modAttr.module_name));
+                    }
+                } catch (ConstantPoolException e) {
+                    name = report(e);
+                }
+                if ((modAttr.module_flags & Module_attribute.ACC_OPEN) != 0) {
                     print("open ");
                 }
                 print("module ");
-                print(() -> modAttr.moduleName().name().stringValue());
-                if (modAttr.moduleVersion().isPresent()) {
+                print(name);
+                if (modAttr.module_version_index != 0) {
                     print("@");
-                    print(() -> modAttr.moduleVersion().get().stringValue());
+                    print(getUTF8Value(modAttr.module_version_index));
                 }
             } else {
                 // fallback for malformed class files
                 print("class ");
-                print(() -> getJavaName(classModel.thisClass().asInternalName()));
+                print(getJavaName(classFile));
             }
         } else {
-            if ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0)
+            if (classFile.isClass())
                 print("class ");
-            else
+            else if (classFile.isInterface())
                 print("interface ");
 
-            print(() -> getJavaName(classModel.thisClass().asInternalName()));
+            print(getJavaName(classFile));
         }
 
-        try {
-            var sigAttr = classModel.findAttribute(Attributes.SIGNATURE).orElse(null);
-            if (sigAttr == null) {
-                // use info from class file header
-                if ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0
-                        && classModel.superclass().isPresent()) {
-                    String sn = getJavaName(classModel.superclass().get().asInternalName());
-                    if (!sn.equals("java.lang.Object")) {
-                        print(" extends ");
-                        print(sn);
-                    }
+        Signature_attribute sigAttr = getSignature(cf.attributes);
+        if (sigAttr == null) {
+            // use info from class file header
+            if (classFile.isClass() && classFile.super_class != 0 ) {
+                String sn = getJavaSuperclassName(cf);
+                if (!sn.equals("java.lang.Object")) {
+                    print(" extends ");
+                    print(sn);
                 }
-                var interfaces = classModel.interfaces();
-                for (int i = 0; i < interfaces.size(); i++) {
-                    print(i == 0 ? ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0
-                            ? " implements " : " extends ") : ",");
-                    print(getJavaName(interfaces.get(i).asInternalName()));
-                }
-            } else {
-                var t = sigAttr.asClassSignature();
-                print(sigPrinter.print(t, (classModel.flags().flagsMask() & ACC_INTERFACE) != 0));
             }
-        } catch (IllegalArgumentException e) {
-            report(e);
+            for (int i = 0; i < classFile.interfaces.length; i++) {
+                print(i == 0 ? (classFile.isClass() ? " implements " : " extends ") : ",");
+                print(getJavaInterfaceName(classFile, i));
+            }
+        } else {
+            try {
+                Type t = sigAttr.getParsedSignature().getType(constant_pool);
+                JavaTypePrinter p = new JavaTypePrinter(classFile.isInterface());
+                // The signature parser cannot disambiguate between a
+                // FieldType and a ClassSignatureType that only contains a superclass type.
+                if (t instanceof Type.ClassSigType) {
+                    print(p.print(t));
+                } else if (options.verbose || !t.isObject()) {
+                    print(" extends ");
+                    print(p.print(t));
+                }
+            } catch (ConstantPoolException e) {
+                print(report(e));
+            } catch (IllegalStateException e) {
+                report("Invalid value for Signature attribute: " + e.getMessage());
+            }
         }
 
         if (options.verbose) {
             println();
             indent(+1);
-            println("minor version: " + classModel.minorVersion());
-            println("major version: " + classModel.majorVersion());
-            writeList(String.format("flags: (0x%04x) ", cm.flags().flagsMask()),
-                    getClassFlags(cm.flags().flagsMask()), "\n");
-            print("this_class: #");print(() -> classModel.thisClass().index());
-            tab();
-            print(() -> "// " + classModel.thisClass().asInternalName());
-            println();
-            print("super_class: #");print(() -> classModel.superclass()
-                    .map(ClassEntry::index).orElse(0));
-            try {
-                if (classModel.superclass().isPresent()) {
-                    tab();
-                    print(() -> "// " + classModel.superclass().get().asInternalName());
-                }
-            } catch (IllegalArgumentException e) {
-                report(e);
+            println("minor version: " + cf.minor_version);
+            println("major version: " + cf.major_version);
+            writeList(String.format("flags: (0x%04x) ", flags.flags), flags.getClassFlags(), "\n");
+            print("this_class: #" + cf.this_class);
+            if (cf.this_class != 0) {
+                tab();
+                print("// " + constantWriter.stringValue(cf.this_class));
             }
             println();
-            print("interfaces: ");print(() -> classModel.interfaces().size());
-            print(", fields: " + classModel.fields().size());
-            print(", methods: " + classModel.methods().size());
-            println(", attributes: " + classModel.attributes().size());
+            print("super_class: #" + cf.super_class);
+            if (cf.super_class != 0) {
+                tab();
+                print("// " + constantWriter.stringValue(cf.super_class));
+            }
+            println();
+            print("interfaces: " + cf.interfaces.length);
+            print(", fields: " + cf.fields.length);
+            print(", methods: " + cf.methods.length);
+            println(", attributes: " + cf.attributes.attrs.length);
             indent(-1);
             constantWriter.writeConstantPool();
         } else {
@@ -237,7 +264,7 @@ public class ClassWriter extends BasicWriter {
 
         println("{");
         indent(+1);
-        if ((cm.flags().flagsMask() & ACC_MODULE) != 0 && !options.verbose) {
+        if (flags.is(AccessFlags.ACC_MODULE) && !options.verbose) {
             writeDirectives();
         }
         writeFields();
@@ -246,166 +273,174 @@ public class ClassWriter extends BasicWriter {
         println("}");
 
         if (options.verbose) {
-            attrWriter.write(classModel.attributes());
+            attrWriter.write(cf, cf.attributes, constant_pool);
         }
-        return !errorReported;
     }
     // where
+        class JavaTypePrinter implements Type.Visitor<StringBuilder,StringBuilder> {
+            boolean isInterface;
 
-    final SignaturePrinter sigPrinter;
-
-    public static record SignaturePrinter(boolean verbose) {
-
-        public String print(ClassSignature cs, boolean isInterface) {
-            var sb = new StringBuilder();
-            print(sb, cs.typeParameters());
-            if (isInterface) {
-                String sep = " extends ";
-                for (var is : cs.superinterfaceSignatures()) {
-                    sb.append(sep);
-                    print(sb, is);
-                    sep = ", ";
-                }
-            } else {
-                if (cs.superclassSignature() != null
-                        && (verbose || !isObject(cs.superclassSignature()))) {
-                    sb.append(" extends ");
-                    print(sb, cs.superclassSignature());
-                }
-                String sep = " implements ";
-                for (var is : cs.superinterfaceSignatures()) {
-                    sb.append(sep);
-                    print(sb, is);
-                    sep = ", ";
-                }
+            JavaTypePrinter(boolean isInterface) {
+                this.isInterface = isInterface;
             }
-            return sb.toString();
-        }
 
-        public String print(Signature sig) {
-            var sb = new StringBuilder();
-            print(sb, sig);
-            return sb.toString();
-        }
-
-        public String printTypeParams(List<Signature.TypeParam> tps) {
-            var sb = new StringBuilder();
-            print(sb, tps);
-            return sb.toString();
-        }
-
-        public String printList(String prefix, List<? extends Signature> args,
-                String postfix) {
-            var sb = new StringBuilder();
-            sb.append(prefix);
-            String sep = "";
-            for (var arg : args) {
-                sb.append(sep);
-                print(sb, arg);
-                sep = ", ";
+            String print(Type t) {
+                return t.accept(this, new StringBuilder()).toString();
             }
-            return sb.append(postfix).toString();
-        }
 
-        private boolean isObject(Signature sig) {
-            return (sig instanceof Signature.ClassTypeSig cts)
-                    && cts.outerType().isEmpty()
-                    && cts.className().equals("java/lang/Object")
-                    && (cts.typeArgs().isEmpty());
-        }
+            String printTypeArgs(List<? extends TypeParamType> typeParamTypes) {
+                StringBuilder builder = new StringBuilder();
+                appendIfNotEmpty(builder, "<", typeParamTypes, "> ");
+                return builder.toString();
+            }
 
-        private void print(StringBuilder sb, List<Signature.TypeParam> tps) {
-            if (!tps.isEmpty()) {
-                sb.append('<');
-                String sep = "";
-                for (var tp : tps) {
-                    sb.append(sep).append(tp.identifier());
-                    sep = " extends ";
-                    if (tp.classBound().isPresent()
-                            && (verbose || !isObject(tp.classBound().get()))) {
-                        sb.append(sep);
-                        print(sb, tp.classBound().get());
-                        sep = " & ";
+            @Override
+            public StringBuilder visitSimpleType(SimpleType type, StringBuilder sb) {
+                sb.append(getJavaName(type.name));
+                return sb;
+            }
+
+            @Override
+            public StringBuilder visitArrayType(ArrayType type, StringBuilder sb) {
+                append(sb, type.elemType);
+                sb.append("[]");
+                return sb;
+            }
+
+            @Override
+            public StringBuilder visitMethodType(MethodType type, StringBuilder sb) {
+                appendIfNotEmpty(sb, "<", type.typeParamTypes, "> ");
+                append(sb, type.returnType);
+                append(sb, " (", type.paramTypes, ")");
+                appendIfNotEmpty(sb, " throws ", type.throwsTypes, "");
+                return sb;
+            }
+
+            @Override
+            public StringBuilder visitClassSigType(ClassSigType type, StringBuilder sb) {
+                appendIfNotEmpty(sb, "<", type.typeParamTypes, ">");
+                if (isInterface) {
+                    appendIfNotEmpty(sb, " extends ", type.superinterfaceTypes, "");
+                } else {
+                    if (type.superclassType != null
+                            && (options.verbose || !type.superclassType.isObject())) {
+                        sb.append(" extends ");
+                        append(sb, type.superclassType);
                     }
-                    for (var bound: tp.interfaceBounds()) {
-                        sb.append(sep);
-                        print(sb, bound);
-                        sep = " & ";
-                    }
-                    sep = ", ";
+                    appendIfNotEmpty(sb, " implements ", type.superinterfaceTypes, "");
                 }
-                sb.append('>');
+                return sb;
             }
-        }
 
-        private void print(StringBuilder sb, Signature sig) {
-            if (sig instanceof Signature.BaseTypeSig bts) {
-                    sb.append(ClassDesc.ofDescriptor("" + bts.baseType()).displayName());
-            } else if (sig instanceof Signature.ClassTypeSig cts) {
-                if (cts.outerType().isPresent()) {
-                    print(sb, cts.outerType().get());
+            @Override
+            public StringBuilder visitClassType(ClassType type, StringBuilder sb) {
+                if (type.outerType != null) {
+                    append(sb, type.outerType);
                     sb.append(".");
                 }
-                sb.append(getJavaName(cts.className()));
-                if (!cts.typeArgs().isEmpty()) {
-                    String sep = "";
-                    sb.append('<');
-                    for (var ta : cts.typeArgs()) {
-                        sb.append(sep);
-                        print(sb, ta);
-                        sep = ", ";
-                    }
-                    sb.append('>');
-                }
-            } else if (sig instanceof Signature.TypeVarSig tvs) {
-                sb.append(tvs.identifier());
-            } else if (sig instanceof Signature.ArrayTypeSig ats) {
-                print(sb, ats.componentSignature());
-                sb.append("[]");
+                sb.append(getJavaName(type.name));
+                appendIfNotEmpty(sb, "<", type.typeArgs, ">");
+                return sb;
             }
-        }
 
-        private void print(StringBuilder sb, Signature.TypeArg ta) {
-            switch (ta.wildcardIndicator()) {
-                case DEFAULT -> print(sb, ta.boundType().get());
-                case UNBOUNDED -> sb.append('?');
-                case EXTENDS -> {
-                    sb.append("? extends ");
-                    print(sb, ta.boundType().get());
+            @Override
+            public StringBuilder visitTypeParamType(TypeParamType type, StringBuilder sb) {
+                sb.append(type.name);
+                String sep = " extends ";
+                if (type.classBound != null
+                        && (options.verbose || !type.classBound.isObject())) {
+                    sb.append(sep);
+                    append(sb, type.classBound);
+                    sep = " & ";
                 }
-                case SUPER -> {
-                    sb.append("? super ");
-                    print(sb, ta.boundType().get());
+                if (type.interfaceBounds != null) {
+                    for (Type bound: type.interfaceBounds) {
+                        sb.append(sep);
+                        append(sb, bound);
+                        sep = " & ";
+                    }
                 }
+                return sb;
+            }
+
+            @Override
+            public StringBuilder visitWildcardType(WildcardType type, StringBuilder sb) {
+                switch (type.kind) {
+                    case UNBOUNDED:
+                        sb.append("?");
+                        break;
+                    case EXTENDS:
+                        sb.append("? extends ");
+                        append(sb, type.boundType);
+                        break;
+                    case SUPER:
+                        sb.append("? super ");
+                        append(sb, type.boundType);
+                        break;
+                    default:
+                        throw new AssertionError();
+                }
+                return sb;
+            }
+
+            private void append(StringBuilder sb, Type t) {
+                t.accept(this, sb);
+            }
+
+            private void append(StringBuilder sb, String prefix, List<? extends Type> list, String suffix) {
+                sb.append(prefix);
+                String sep = "";
+                for (Type t: list) {
+                    sb.append(sep);
+                    append(sb, t);
+                    sep = ", ";
+                }
+                sb.append(suffix);
+            }
+
+            private void appendIfNotEmpty(StringBuilder sb, String prefix, List<? extends Type> list, String suffix) {
+                if (!isEmpty(list))
+                    append(sb, prefix, list, suffix);
+            }
+
+            private boolean isEmpty(List<? extends Type> list) {
+                return (list == null || list.isEmpty());
             }
         }
-    }
 
     protected void writeFields() {
-        for (var f: classModel.fields()) {
+        for (Field f: classFile.fields) {
             writeField(f);
         }
     }
 
-    protected void writeField(FieldModel f) {
-        if (!options.checkAccess(f.flags().flagsMask()))
+    protected void writeField(Field f) {
+        if (!options.checkAccess(f.access_flags))
             return;
 
-        var flags = AccessFlags.ofField(f.flags().flagsMask());
-        writeModifiers(flags.flags().stream().filter(fl -> fl.sourceModifier())
-                .map(fl -> Modifier.toString(fl.mask())).toList());
-        print(() -> sigPrinter.print(
-                f.findAttribute(Attributes.SIGNATURE)
-                        .map(SignatureAttribute::asTypeSignature)
-                        .orElseGet(() -> Signature.of(f.fieldTypeSymbol()))));
+        AccessFlags flags = f.access_flags;
+        writeModifiers(flags.getFieldModifiers());
+        Signature_attribute sigAttr = getSignature(f.attributes);
+        if (sigAttr == null)
+            print(getJavaFieldType(f.descriptor));
+        else {
+            try {
+                Type t = sigAttr.getParsedSignature().getType(constant_pool);
+                print(getJavaName(t.toString()));
+            } catch (ConstantPoolException e) {
+                // report error?
+                // fall back on non-generic descriptor
+                print(getJavaFieldType(f.descriptor));
+            }
+        }
         print(" ");
-        print(() -> f.fieldName().stringValue());
+        print(getFieldName(f));
         if (options.showConstants) {
-            var a = f.findAttribute(Attributes.CONSTANT_VALUE);
-            if (a.isPresent()) {
+            Attribute a = f.attributes.get(Attribute.ConstantValue);
+            if (a instanceof ConstantValue_attribute) {
                 print(" = ");
-                var cv = a.get();
-                print(() -> getConstantValue(f.fieldTypeSymbol(), cv.constant()));
+                ConstantValue_attribute cv = (ConstantValue_attribute) a;
+                print(getConstantValue(f.descriptor, cv.constantvalue_index));
             }
         }
         print(";");
@@ -415,17 +450,15 @@ public class ClassWriter extends BasicWriter {
 
         boolean showBlank = false;
 
-        if (options.showDescriptors) {
-            print("descriptor: ");println(() -> f.fieldType().stringValue());
-        }
+        if (options.showDescriptors)
+            println("descriptor: " + getValue(f.descriptor));
 
         if (options.verbose)
-            writeList(String.format("flags: (0x%04x) ", flags.flagsMask()),
-                    flags.flags().stream().map(fl -> "ACC_" + fl.name()).toList(),
-                    "\n");
+            writeList(String.format("flags: (0x%04x) ", flags.flags), flags.getFieldFlags(), "\n");
 
         if (options.showAllAttrs) {
-            attrWriter.write(f.attributes());
+            for (Attribute attr: f.attributes)
+                attrWriter.write(f, attr, constant_pool);
             showBlank = true;
         }
 
@@ -436,7 +469,7 @@ public class ClassWriter extends BasicWriter {
     }
 
     protected void writeMethods() {
-        for (MethodModel m: classModel.methods())
+        for (Method m: classFile.methods)
             writeMethod(m);
         setPendingNewline(false);
     }
@@ -444,84 +477,89 @@ public class ClassWriter extends BasicWriter {
     private static final int DEFAULT_ALLOWED_MAJOR_VERSION = 52;
     private static final int DEFAULT_ALLOWED_MINOR_VERSION = 0;
 
-    protected void writeMethod(MethodModel m) {
-        if (!options.checkAccess(m.flags().flagsMask()))
+    protected void writeMethod(Method m) {
+        if (!options.checkAccess(m.access_flags))
             return;
 
         method = m;
 
-        int flags = m.flags().flagsMask();
+        AccessFlags flags = m.access_flags;
 
-        var modifiers = new ArrayList<String>();
-        for (var f : AccessFlags.ofMethod(flags).flags())
-            if (f.sourceModifier()) modifiers.add(Modifier.toString(f.mask()));
+        Descriptor d;
+        Type.MethodType methodType;
+        List<? extends Type> methodExceptions;
 
-        String name = "???";
-        try {
-            name = m.methodName().stringValue();
-        } catch (IllegalArgumentException e) {
-            report(e);
+        Signature_attribute sigAttr = getSignature(m.attributes);
+        if (sigAttr == null) {
+            d = m.descriptor;
+            methodType = null;
+            methodExceptions = null;
+        } else {
+            Signature methodSig = sigAttr.getParsedSignature();
+            d = methodSig;
+            try {
+                methodType = (Type.MethodType) methodSig.getType(constant_pool);
+                methodExceptions = methodType.throwsTypes;
+                if (methodExceptions != null && methodExceptions.isEmpty())
+                    methodExceptions = null;
+            } catch (ConstantPoolException | IllegalStateException e) {
+                // report error?
+                // fall back on standard descriptor
+                methodType = null;
+                methodExceptions = null;
+            }
         }
 
-        if ((classModel.flags().flagsMask() & ACC_INTERFACE) != 0 &&
-                ((flags & ACC_ABSTRACT) == 0) && !name.equals("<clinit>")) {
-            if (classModel.majorVersion() > DEFAULT_ALLOWED_MAJOR_VERSION ||
-                    (classModel.majorVersion() == DEFAULT_ALLOWED_MAJOR_VERSION
-                    && classModel.minorVersion() >= DEFAULT_ALLOWED_MINOR_VERSION)) {
-                if ((flags & (ACC_STATIC | ACC_PRIVATE)) == 0) {
+        Set<String> modifiers = flags.getMethodModifiers();
+
+        String name = getName(m);
+        if (classFile.isInterface() &&
+                (!flags.is(AccessFlags.ACC_ABSTRACT)) && !name.equals("<clinit>")) {
+            if (classFile.major_version > DEFAULT_ALLOWED_MAJOR_VERSION ||
+                    (classFile.major_version == DEFAULT_ALLOWED_MAJOR_VERSION && classFile.minor_version >= DEFAULT_ALLOWED_MINOR_VERSION)) {
+                if (!flags.is(AccessFlags.ACC_STATIC | AccessFlags.ACC_PRIVATE)) {
                     modifiers.add("default");
                 }
             }
         }
+
         writeModifiers(modifiers);
+        if (methodType != null) {
+            print(new JavaTypePrinter(false).printTypeArgs(methodType.typeParamTypes));
+        }
+        switch (name) {
+            case "<init>":
+                print(getJavaName(classFile));
+                print(getJavaParameterTypes(d, flags));
+                break;
+            case "<clinit>":
+                print("{}");
+                break;
+            default:
+                print(getJavaReturnType(d));
+                print(" ");
+                print(name);
+                print(getJavaParameterTypes(d, flags));
+                break;
+        }
 
-        try {
-            var sigAttr = m.findAttribute(Attributes.SIGNATURE);
-            MethodSignature d;
-            if (sigAttr.isEmpty()) {
-                d = MethodSignature.parseFrom(m.methodType().stringValue());
-            } else {
-                d = sigAttr.get().asMethodSignature();
-            }
-
-            if (!d.typeParameters().isEmpty()) {
-                print(sigPrinter.printTypeParams(d.typeParameters()) + " ");
-            }
-            switch (name) {
-                case "<init>":
-                    print(getJavaName(classModel.thisClass().asInternalName()));
-                    print(getJavaParameterTypes(d, flags));
-                    break;
-                case "<clinit>":
-                    print("{}");
-                    break;
-                default:
-                    print(getJavaName(sigPrinter.print(d.result())));
-                    print(" ");
-                    print(name);
-                    print(getJavaParameterTypes(d, flags));
-                    break;
-            }
-
-            var e_attr = m.findAttribute(Attributes.EXCEPTIONS);
-            // if there are generic exceptions, there must be erased exceptions
-            if (e_attr.isPresent()) {
-                var exceptions = e_attr.get();
+        Attribute e_attr = m.attributes.get(Attribute.Exceptions);
+        if (e_attr != null) { // if there are generic exceptions, there must be erased exceptions
+            if (e_attr instanceof Exceptions_attribute) {
+                Exceptions_attribute exceptions = (Exceptions_attribute) e_attr;
                 print(" throws ");
-                if (d != null && !d.throwableSignatures().isEmpty()) { // use generic list if available
-                    print(() -> sigPrinter.printList("", d.throwableSignatures(), ""));
+                if (methodExceptions != null) { // use generic list if available
+                    writeList("", methodExceptions, "");
                 } else {
-                    var exNames = exceptions.exceptions();
-                    for (int i = 0; i < exNames.size(); i++) {
+                    for (int i = 0; i < exceptions.number_of_exceptions; i++) {
                         if (i > 0)
                             print(", ");
-                        int ii = i;
-                        print(() -> getJavaName(exNames.get(ii).asInternalName()));
+                        print(getJavaException(exceptions, i));
                     }
                 }
+            } else {
+                report("Unexpected or invalid value for Exceptions attribute");
             }
-        } catch (IllegalArgumentException e) {
-            report(e);
         }
 
         println(";");
@@ -529,24 +567,26 @@ public class ClassWriter extends BasicWriter {
         indent(+1);
 
         if (options.showDescriptors) {
-            print("descriptor: ");println(() -> m.methodType().stringValue());
+            println("descriptor: " + getValue(m.descriptor));
         }
 
         if (options.verbose) {
-            StringBuilder sb = new StringBuilder();
-            String sep = "";
-            sb.append(String.format("flags: (0x%04x) ", flags));
-            for (var f : AccessFlags.ofMethod(flags).flags()) {
-                sb.append(sep).append("ACC_").append(f.name());
-                sep = ", ";
-            }
-            println(sb.toString());
+            writeList(String.format("flags: (0x%04x) ", flags.flags), flags.getMethodFlags(), "\n");
         }
 
-        var code = (CodeAttribute)m.code().orElse(null);
+        Code_attribute code = null;
+        Attribute c_attr = m.attributes.get(Attribute.Code);
+        if (c_attr != null) {
+            if (c_attr instanceof Code_attribute)
+                code = (Code_attribute) c_attr;
+            else
+                report("Unexpected or invalid value for Code attribute");
+        }
 
         if (options.showAllAttrs) {
-            attrWriter.write(m.attributes());
+            Attribute[] attrs = m.attributes.attrs;
+            for (Attribute attr: attrs)
+                attrWriter.write(m, attr, constant_pool);
         } else if (code != null) {
             if (options.showDisassembled) {
                 println("Code:");
@@ -555,10 +595,8 @@ public class ClassWriter extends BasicWriter {
             }
 
             if (options.showLineAndLocalVariableTables) {
-                code.findAttribute(Attributes.LINE_NUMBER_TABLE)
-                        .ifPresent(a -> attrWriter.write(a, code));
-                code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE)
-                        .ifPresent(a -> attrWriter.write(a, code));
+                attrWriter.write(code, code.attributes.get(Attribute.LineNumberTable), constant_pool);
+                attrWriter.write(code, code.attributes.get(Attribute.LocalVariableTable), constant_pool);
             }
         }
 
@@ -581,33 +619,47 @@ public class ClassWriter extends BasicWriter {
         }
     }
 
-    public static final int ACC_TRANSITIVE = 0x0020;
-    public static final int ACC_STATIC_PHASE = 0x0040;
-
     void writeDirectives() {
-        var attr = classModel.findAttribute(Attributes.MODULE);
-        if (attr.isEmpty())
+        Attribute attr = classFile.attributes.get(Attribute.Module);
+        if (!(attr instanceof Module_attribute))
             return;
 
-        var m = attr.get();
-        for (var entry: m.requires()) {
+        Module_attribute m = (Module_attribute) attr;
+        for (Module_attribute.RequiresEntry entry: m.requires) {
             print("requires");
-            if ((entry.requiresFlagsMask() & ACC_STATIC_PHASE) != 0)
+            if ((entry.requires_flags & Module_attribute.ACC_STATIC_PHASE) != 0)
                 print(" static");
-            if ((entry.requiresFlagsMask() & ACC_TRANSITIVE) != 0)
+            if ((entry.requires_flags & Module_attribute.ACC_TRANSITIVE) != 0)
                 print(" transitive");
             print(" ");
             String mname;
-            print(entry.requires().name().stringValue());
+            try {
+                mname = getModuleName(entry.requires_index);
+            } catch (ConstantPoolException e) {
+                mname = report(e);
+            }
+            print(mname);
             println(";");
         }
 
-        for (var entry: m.exports()) {
+        for (Module_attribute.ExportsEntry entry: m.exports) {
             print("exports");
             print(" ");
-            print(entry.exportedPackage().name().stringValue().replace('/', '.'));
+            String pname;
+            try {
+                pname = getPackageName(entry.exports_index).replace('/', '.');
+            } catch (ConstantPoolException e) {
+                pname = report(e);
+            }
+            print(pname);
             boolean first = true;
-            for (var mod: entry.exportsTo()) {
+            for (int i: entry.exports_to_index) {
+                String mname;
+                try {
+                    mname = getModuleName(i);
+                } catch (ConstantPoolException e) {
+                    mname = report(e);
+                }
                 if (first) {
                     println(" to");
                     indent(+1);
@@ -615,19 +667,31 @@ public class ClassWriter extends BasicWriter {
                 } else {
                     println(",");
                 }
-                print(mod.name().stringValue());
+                print(mname);
             }
             println(";");
             if (!first)
                 indent(-1);
         }
 
-        for (var entry: m.opens()) {
+        for (Module_attribute.OpensEntry entry: m.opens) {
             print("opens");
             print(" ");
-            print(entry.openedPackage().name().stringValue().replace('/', '.'));
+            String pname;
+            try {
+                pname = getPackageName(entry.opens_index).replace('/', '.');
+            } catch (ConstantPoolException e) {
+                pname = report(e);
+            }
+            print(pname);
             boolean first = true;
-            for (var mod: entry.opensTo()) {
+            for (int i: entry.opens_to_index) {
+                String mname;
+                try {
+                    mname = getModuleName(i);
+                } catch (ConstantPoolException e) {
+                    mname = report(e);
+                }
                 if (first) {
                     println(" to");
                     indent(+1);
@@ -635,24 +699,24 @@ public class ClassWriter extends BasicWriter {
                 } else {
                     println(",");
                 }
-                print(mod.name().stringValue());
+                print(mname);
             }
             println(";");
             if (!first)
                 indent(-1);
         }
 
-        for (var entry: m.uses()) {
+        for (int entry: m.uses_index) {
             print("uses ");
-            print(entry.asInternalName().replace('/', '.'));
+            print(getClassName(entry).replace('/', '.'));
             println(";");
         }
 
-        for (var entry: m.provides()) {
+        for (Module_attribute.ProvidesEntry entry: m.provides) {
             print("provides  ");
-            print(entry.provides().asInternalName().replace('/', '.'));
+            print(getClassName(entry.provides_index).replace('/', '.'));
             boolean first = true;
-            for (var ce: entry.providesWith()) {
+            for (int i: entry.with_index) {
                 if (first) {
                     println(" with");
                     indent(+1);
@@ -660,11 +724,43 @@ public class ClassWriter extends BasicWriter {
                 } else {
                     println(",");
                 }
-                print(ce.asInternalName().replace('/', '.'));
+                print(getClassName(i).replace('/', '.'));
             }
             println(";");
             if (!first)
                 indent(-1);
+        }
+    }
+
+    String getModuleName(int index) throws ConstantPoolException {
+        if (constant_pool.get(index).getTag() == CONSTANT_Module) {
+            return constant_pool.getModuleInfo(index).getName();
+        } else {
+            return constant_pool.getUTF8Value(index);
+        }
+    }
+
+    String getPackageName(int index) throws ConstantPoolException {
+        if (constant_pool.get(index).getTag() == CONSTANT_Package) {
+            return constant_pool.getPackageInfo(index).getName();
+        } else {
+            return constant_pool.getUTF8Value(index);
+        }
+    }
+
+    String getUTF8Value(int index) {
+        try {
+            return classFile.constant_pool.getUTF8Value(index);
+        } catch (ConstantPoolException e) {
+            return report(e);
+        }
+    }
+
+    String getClassName(int index) {
+        try {
+            return classFile.constant_pool.getClassInfo(index).getName();
+        } catch (ConstantPoolException e) {
+            return report(e);
         }
     }
 
@@ -684,8 +780,12 @@ public class ClassWriter extends BasicWriter {
             writeList(prefix, items, suffix);
     }
 
-    String adjustVarargs(int flags, String params) {
-        if ((flags & ACC_VARARGS) != 0) {
+    Signature_attribute getSignature(Attributes attributes) {
+        return (Signature_attribute) attributes.get(Attribute.Signature);
+    }
+
+    String adjustVarargs(AccessFlags flags, String params) {
+        if (flags.is(ACC_VARARGS)) {
             int i = params.lastIndexOf("[]");
             if (i > 0)
                 return params.substring(0, i) + "..." + params.substring(i+2);
@@ -694,13 +794,102 @@ public class ClassWriter extends BasicWriter {
         return params;
     }
 
-    String getJavaParameterTypes(MethodSignature d, int flags) {
-        return getJavaName(adjustVarargs(flags,
-                sigPrinter.printList("(", d.arguments(), ")")));
+    String getJavaName(ClassFile cf) {
+        try {
+            return getJavaName(cf.getName());
+        } catch (ConstantPoolException e) {
+            return report(e);
+        }
+    }
+
+    String getJavaSuperclassName(ClassFile cf) {
+        try {
+            return getJavaName(cf.getSuperclassName());
+        } catch (ConstantPoolException e) {
+            return report(e);
+        }
+    }
+
+    String getJavaInterfaceName(ClassFile cf, int index) {
+        try {
+            return getJavaName(cf.getInterfaceName(index));
+        } catch (ConstantPoolException e) {
+            return report(e);
+        }
+    }
+
+    String getJavaFieldType(Descriptor d) {
+        try {
+            return getJavaName(d.getFieldType(constant_pool));
+        } catch (ConstantPoolException e) {
+            return report(e);
+        } catch (InvalidDescriptor e) {
+            return report(e);
+        }
+    }
+
+    String getJavaReturnType(Descriptor d) {
+        try {
+            return getJavaName(d.getReturnType(constant_pool));
+        } catch (ConstantPoolException e) {
+            return report(e);
+        } catch (InvalidDescriptor e) {
+            return report(e);
+        }
+    }
+
+    String getJavaParameterTypes(Descriptor d, AccessFlags flags) {
+        try {
+            return getJavaName(adjustVarargs(flags, d.getParameterTypes(constant_pool)));
+        } catch (ConstantPoolException e) {
+            return report(e);
+        } catch (InvalidDescriptor e) {
+            return report(e);
+        }
+    }
+
+    String getJavaException(Exceptions_attribute attr, int index) {
+        try {
+            return getJavaName(attr.getException(index, constant_pool));
+        } catch (ConstantPoolException e) {
+            return report(e);
+        }
+    }
+
+    String getValue(Descriptor d) {
+        try {
+            return d.getValue(constant_pool);
+        } catch (ConstantPoolException e) {
+            return report(e);
+        }
+    }
+
+    String getFieldName(Field f) {
+        try {
+            return f.getName(constant_pool);
+        } catch (ConstantPoolException e) {
+            return report(e);
+        }
+    }
+
+    String getName(Method m) {
+        try {
+            return m.getName(constant_pool);
+        } catch (ConstantPoolException e) {
+            return report(e);
+        }
     }
 
     static String getJavaName(String name) {
         return name.replace('/', '.');
+    }
+
+    String getSourceFile(SourceFile_attribute attr) {
+        try {
+            return attr.getSourceFile(constant_pool);
+        } catch (ConstantPoolException e) {
+            return report(e);
+        }
     }
 
     /**
@@ -712,26 +901,39 @@ public class ClassWriter extends BasicWriter {
      * @param index the index of the value in the constant pool
      * @return a printable string containing the value of the constant.
      */
-    String getConstantValue(ClassDesc d, ConstantValueEntry cpInfo) {
-        switch (cpInfo.tag()) {
-            case Classfile.TAG_INTEGER: {
-                var val = (Integer)cpInfo.constantValue();
-                switch (d.descriptorString()) {
-                    case "C":
-                        // character
-                        return getConstantCharValue((char)val.intValue());
-                    case "Z":
-                        // boolean
-                        return String.valueOf(val == 1);
-                    default:
-                        // other: assume integer
-                        return String.valueOf(val);
+    String getConstantValue(Descriptor d, int index) {
+        try {
+            ConstantPool.CPInfo cpInfo = constant_pool.get(index);
+
+            switch (cpInfo.getTag()) {
+                case ConstantPool.CONSTANT_Integer: {
+                    ConstantPool.CONSTANT_Integer_info info =
+                            (ConstantPool.CONSTANT_Integer_info) cpInfo;
+                    String t = d.getValue(constant_pool);
+                    switch (t) {
+                        case "C":
+                            // character
+                            return getConstantCharValue((char) info.value);
+                        case "Z":
+                            // boolean
+                            return String.valueOf(info.value == 1);
+                        default:
+                            // other: assume integer
+                            return String.valueOf(info.value);
+                    }
                 }
+
+                case ConstantPool.CONSTANT_String: {
+                    ConstantPool.CONSTANT_String_info info =
+                            (ConstantPool.CONSTANT_String_info) cpInfo;
+                    return getConstantStringValue(info.getString());
+                }
+
+                default:
+                    return constantWriter.stringValue(cpInfo);
             }
-            case Classfile.TAG_STRING:
-                return getConstantStringValue(cpInfo.constantValue().toString());
-            default:
-                return constantWriter.stringValue(cpInfo);
+        } catch (ConstantPoolException e) {
+            return "#" + index;
         }
     }
 
@@ -769,97 +971,16 @@ public class ClassWriter extends BasicWriter {
         }
     }
 
-    private static Set<String> getClassModifiers(int mask) {
-        return getModifiers(AccessFlags.ofClass((mask & ACC_INTERFACE) != 0
-                ? mask & ~ACC_ABSTRACT : mask).flags());
-    }
-
-    private static Set<String> getMethodModifiers(int mask) {
-        return getModifiers(AccessFlags.ofMethod(mask).flags());
-    }
-
-    private static Set<String> getFieldModifiers(int mask) {
-        return getModifiers(AccessFlags.ofField(mask).flags());
-    }
-
-    private static Set<String> getModifiers(Set<java.lang.reflect.AccessFlag> flags) {
-        Set<String> s = new LinkedHashSet<>();
-        for (var f : flags)
-            if (f.sourceModifier()) s.add(Modifier.toString(f.mask()));
-        return s;
-    }
-
-    private static Set<String> getClassFlags(int mask) {
-        return getFlags(mask, AccessFlags.ofClass(mask).flags());
-    }
-
-    private static Set<String> getMethodFlags(int mask) {
-        return getFlags(mask, AccessFlags.ofMethod(mask).flags());
-    }
-
-    private static Set<String> getFieldFlags(int mask) {
-        return getFlags(mask, AccessFlags.ofField(mask).flags());
-    }
-
-    private static Set<String> getFlags(int mask, Set<java.lang.reflect.AccessFlag> flags) {
-        Set<String> s = new LinkedHashSet<>();
-        for (var f: flags) {
-            s.add("ACC_" + f.name());
-            mask = mask & ~f.mask();
-        }
-        while (mask != 0) {
-            int bit = Integer.highestOneBit(mask);
-            s.add("0x" + Integer.toHexString(bit));
-            mask = mask & ~bit;
-        }
-        return s;
-    }
-
-    public static enum AccessFlag {
-        ACC_PUBLIC      (Classfile.ACC_PUBLIC,       "public",       true,  true,  true,  true ),
-        ACC_PRIVATE     (Classfile.ACC_PRIVATE,      "private",      false, true,  true,  true ),
-        ACC_PROTECTED   (Classfile.ACC_PROTECTED,    "protected",    false, true,  true,  true ),
-        ACC_STATIC      (Classfile.ACC_STATIC,       "static",       false, true,  true,  true ),
-        ACC_FINAL       (Classfile.ACC_FINAL,        "final",        true,  true,  true,  true ),
-        ACC_SUPER       (Classfile.ACC_SUPER,        null,           true,  false, false, false),
-        ACC_SYNCHRONIZED(Classfile.ACC_SYNCHRONIZED, "synchronized", false, false, false, true ),
-        ACC_VOLATILE    (Classfile.ACC_VOLATILE,     "volatile",     false, false, true,  false),
-        ACC_BRIDGE      (Classfile.ACC_BRIDGE,       null,           false, false, false, true ),
-        ACC_TRANSIENT   (Classfile.ACC_TRANSIENT,    "transient",    false, false, true,  false),
-        ACC_VARARGS     (Classfile.ACC_VARARGS,      null,           false, false, false, true ),
-        ACC_NATIVE      (Classfile.ACC_NATIVE,       "native",       false, false, false, true ),
-        ACC_INTERFACE   (Classfile.ACC_INTERFACE,    null,           true,   true, false, false),
-        ACC_ABSTRACT    (Classfile.ACC_ABSTRACT,     "abstract",     true,   true, false, true ),
-        ACC_STRICT      (Classfile.ACC_STRICT,       "strictfp",     false, false, false, true ),
-        ACC_SYNTHETIC   (Classfile.ACC_SYNTHETIC,    null,           true,  true,  true,  true ),
-        ACC_ANNOTATION  (Classfile.ACC_ANNOTATION,   null,           true,   true, false, false),
-        ACC_ENUM        (Classfile.ACC_ENUM,         null,           true,   true, true,  false),
-        ACC_MODULE      (Classfile.ACC_MODULE,       null,           true,  false, false, false);
-
-        public final int flag;
-        public final String modifier;
-        public final boolean isClass, isInnerClass, isField, isMethod;
-
-        AccessFlag(int flag, String modifier, boolean isClass,
-                boolean isInnerClass, boolean isField, boolean isMethod) {
-            this.flag = flag;
-            this.modifier = modifier;
-            this.isClass = isClass;
-            this.isInnerClass = isInnerClass;
-            this.isField = isField;
-            this.isMethod = isMethod;
-        }
-    }
-
     private final Options options;
     private final AttributeWriter attrWriter;
     private final CodeWriter codeWriter;
     private final ConstantWriter constantWriter;
-    private ClassModel classModel;
+    private ClassFile classFile;
     private URI uri;
     private long lastModified;
     private String digestName;
     private byte[] digest;
     private int size;
-    private MethodModel method;
+    private ConstantPool constant_pool;
+    private Method method;
 }

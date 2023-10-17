@@ -59,6 +59,10 @@ void InvocationCounter::reset() {
   update(0);
 }
 
+void InvocationCounter::decay() {
+  update(count() >> 1);
+}
+
 void InvocationCounter::print() {
   uint counter = raw_counter();
   tty->print_cr("invocation count: up = %d, limit = " INTX_FORMAT ", carry = %s",

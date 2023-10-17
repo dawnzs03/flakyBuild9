@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -32,6 +32,9 @@ import com.sun.org.apache.xerces.internal.util.EncodingMap;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
+import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager.Limit;
 import com.sun.org.apache.xerces.internal.xni.*;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
@@ -45,9 +48,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Locale;
-import jdk.xml.internal.XMLLimitAnalyzer;
-import jdk.xml.internal.XMLSecurityManager;
-import jdk.xml.internal.XMLSecurityManager.Limit;
 
 /**
  * Implements the entity scanner methods.
@@ -57,7 +57,7 @@ import jdk.xml.internal.XMLSecurityManager.Limit;
  * @author Arnaud  Le Hors, IBM
  * @author K.Venugopal Sun Microsystems
  *
- * @LastModified: July 2023
+ * @LastModified: Mar 2022
  */
 public class XMLEntityScanner implements XMLLocator  {
 

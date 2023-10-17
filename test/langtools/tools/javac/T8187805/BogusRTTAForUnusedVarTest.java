@@ -24,15 +24,12 @@
 /*
  * @test 8187805
  * @summary bogus RuntimeVisibleTypeAnnotations for unused local in a block
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.util
  * @run main BogusRTTAForUnusedVarTest
  */
+
+import com.sun.tools.classfile.*;
 
 import java.io.File;
 import java.lang.annotation.Target;
@@ -40,9 +37,10 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute;
+import com.sun.tools.classfile.TypeAnnotation;
+import com.sun.tools.classfile.TypeAnnotation.Position;
 import com.sun.tools.javac.util.Assert;
 
 public class BogusRTTAForUnusedVarTest {
@@ -71,13 +69,14 @@ public class BogusRTTAForUnusedVarTest {
         File testClasses = new File(System.getProperty("test.classes"));
         File file = new File(testClasses,
                 BogusRTTAForUnusedVarTest.class.getName() + "$Foo.class");
-        ClassModel classFile = Classfile.of().parse(file.toPath());
-        for (MethodModel m : classFile.methods()) {
-            if (m.methodName().equalsString("something")) {
-                for (Attribute<?> a : m.attributes()) {
-                    if (a instanceof CodeAttribute code) {
-                        for (Attribute<?> codeAttrs : code.attributes()) {
-                            if (codeAttrs instanceof RuntimeVisibleTypeAnnotationsAttribute) {
+        ClassFile classFile = ClassFile.read(file);
+        for (Method m : classFile.methods) {
+            if (m.getName(classFile.constant_pool).equals("something")) {
+                for (Attribute a : m.attributes) {
+                    if (a.getName(classFile.constant_pool).equals("Code")) {
+                        Code_attribute code = (Code_attribute)a;
+                        for (Attribute codeAttrs : code.attributes) {
+                            if (codeAttrs.getName(classFile.constant_pool).equals("RuntimeVisibleTypeAnnotations")) {
                                 throw new AssertionError("no RuntimeVisibleTypeAnnotations attribute should have been generated in this case");
                             }
                         }

@@ -32,7 +32,7 @@
 
 class G1EdenRegions {
 private:
-  uint    _length;
+  int    _length;
   // Sum of used bytes from all retired eden regions.
   // I.e. updated when mutator regions are retired.
   volatile size_t _used_bytes;

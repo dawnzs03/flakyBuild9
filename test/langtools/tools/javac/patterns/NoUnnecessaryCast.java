@@ -26,56 +26,62 @@
  * @bug 8237528
  * @summary Verify there are no unnecessary checkcasts and conditions generated
  *          for the pattern matching in instanceof.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile NoUnnecessaryCast.java
  * @run main NoUnnecessaryCast
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.ConstantPool;
 import java.io.File;
 import java.io.IOException;
 
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.Code_attribute;
+import com.sun.tools.classfile.Code_attribute.InvalidIndex;
+import com.sun.tools.classfile.ConstantPool;
+import com.sun.tools.classfile.ConstantPoolException;
+import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
+import com.sun.tools.classfile.Instruction;
+import com.sun.tools.classfile.Method;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class NoUnnecessaryCast {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args)
+            throws IOException, ConstantPoolException, InvalidDescriptor, InvalidIndex {
         new NoUnnecessaryCast()
                 .checkClassFile(new File(System.getProperty("test.classes", "."),
                     NoUnnecessaryCast.class.getName() + ".class"));
     }
 
-    void checkClassFile(File file) throws IOException {
-        ClassModel classFile = Classfile.of().parse(file.toPath());
+    void checkClassFile(File file)
+            throws IOException, ConstantPoolException, InvalidDescriptor, InvalidIndex {
+        ClassFile classFile = ClassFile.read(file);
+        ConstantPool constantPool = classFile.constant_pool;
 
-        MethodModel method = classFile.methods().stream()
-                              .filter(m -> getName(m).equals("test"))
+        Method method = Arrays.stream(classFile.methods)
+                              .filter(m -> getName(m, constantPool)
+                                               .equals("test"))
                               .findAny()
                               .get();
         String expectedInstructions = """
-                                      ALOAD_1
-                                      INSTANCEOF
-                                      IFEQ
-                                      ALOAD_1
-                                      CHECKCAST
-                                      ASTORE_2
-                                      ALOAD_2
-                                      INVOKEVIRTUAL
-                                      IFEQ
-                                      ICONST_1
-                                      GOTO
-                                      ICONST_0
-                                      IRETURN
+                                      aload_1
+                                      instanceof
+                                      ifeq
+                                      aload_1
+                                      checkcast
+                                      astore_2
+                                      aload_2
+                                      invokevirtual
+                                      ifeq
+                                      iconst_1
+                                      goto
+                                      iconst_0
+                                      ireturn
                                       """;
-        CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
+        Code_attribute code = (Code_attribute) method.attributes
+                .get(Attribute.Code);
         String actualInstructions = printCode(code);
         if (!expectedInstructions.equals(actualInstructions)) {
             throw new AssertionError("Unexpected instructions found:\n" +
@@ -83,15 +89,18 @@ public class NoUnnecessaryCast {
         }
     }
 
-    String printCode(CodeAttribute code) {
-        return code.elementList().stream()
-                            .filter(e -> e instanceof Instruction)
-                            .map(ins -> ((Instruction) ins).opcode().name())
+    String printCode(Code_attribute code) {
+        return StreamSupport.stream(code.getInstructions().spliterator(), false)
+                            .map(Instruction::getMnemonic)
                             .collect(Collectors.joining("\n", "", "\n"));
     }
 
-    String getName(MethodModel m) {
-        return m.methodName().stringValue();
+    String getName(Method m, ConstantPool constantPool) {
+        try {
+            return m.getName(constantPool);
+        } catch (ConstantPoolException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     boolean test(Object o) {

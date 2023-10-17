@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ import java.util.function.Predicate;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardSocketOptions.SO_SNDBUF;
-import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static jdk.test.lib.net.IPSupport.hasIPv4;
 import static jdk.test.lib.net.IPSupport.hasIPv6;
 import static jdk.test.lib.net.IPSupport.preferIPv4Stack;
@@ -64,6 +63,8 @@ import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
 public class SendReceiveMaxSize {
+    private final static int IPV4_SNDBUF = 65507;
+    private final static int IPV6_SNDBUF = 65527;
     private final static Class<IOException> IOE = IOException.class;
     private final static Random random = RandomFactory.getRandom();
 
@@ -88,12 +89,12 @@ public class SendReceiveMaxSize {
                     .orElse((Inet4Address) InetAddress.getByName("127.0.0.1"));
             testcases.add(new Object[]{
                     supplier(() -> DatagramChannel.open()),
-                    IPSupport.getMaxUDPSendBufSizeIPv4(),
+                    IPV4_SNDBUF,
                     IPv4Addr
             });
             testcases.add(new Object[]{
                     supplier(() -> DatagramChannel.open(INET)),
-                    IPSupport.getMaxUDPSendBufSizeIPv4(),
+                    IPV4_SNDBUF,
                     IPv4Addr
             });
         }
@@ -104,12 +105,12 @@ public class SendReceiveMaxSize {
                     .orElse((Inet6Address) InetAddress.getByName("::1"));
             testcases.add(new Object[]{
                     supplier(() -> DatagramChannel.open()),
-                    IPSupport.getMaxUDPSendBufSizeIPv6(),
+                    IPV6_SNDBUF,
                     IPv6Addr
             });
             testcases.add(new Object[]{
                     supplier(() -> DatagramChannel.open(INET6)),
-                    IPSupport.getMaxUDPSendBufSizeIPv6(),
+                    IPV6_SNDBUF,
                     IPv6Addr
             });
         }
@@ -131,10 +132,6 @@ public class SendReceiveMaxSize {
             throws IOException {
         try (var receiver = DatagramChannel.open()) {
             receiver.bind(new InetSocketAddress(host, 0));
-            assertTrue(receiver.getOption(SO_RCVBUF) >= capacity,
-                       receiver.getOption(SO_RCVBUF) +
-                       " for UDP receive buffer too small to hold capacity " +
-                       capacity);
             var port = receiver.socket().getLocalPort();
             var addr = new InetSocketAddress(host, port);
 

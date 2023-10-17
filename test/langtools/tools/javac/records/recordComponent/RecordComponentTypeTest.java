@@ -28,18 +28,12 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ *          jdk.jdeps/com.sun.tools.classfile
  * @compile GenerateTypeProcessor.java
  * @run main RecordComponentTypeTest
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import com.sun.tools.classfile.*;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -53,7 +47,7 @@ import toolbox.Task;
 public class RecordComponentTypeTest extends TestRunner {
 
     ToolBox tb;
-    ClassModel cf;
+    ClassFile cf;
 
     public RecordComponentTypeTest() {
         super(System.err);
@@ -143,26 +137,27 @@ public class RecordComponentTypeTest extends TestRunner {
                 .options("-processor", "GenerateTypeProcessor")
                 .outdir(curPath)
                 .run();
-        cf = Classfile.of().parse(curPath.resolve("RecordComponentUsingGeneratedTypeWithAnnotation.class"));
+        cf = ClassFile.read(curPath.resolve("RecordComponentUsingGeneratedTypeWithAnnotation.class"));
 
-        for (FieldModel field : cf.fields()) {
-            if (field.fieldName().equalsString("generatedType")){
-                checkRuntimeVisibleAnnotation(field);
+        for (Field field : cf.fields) {
+            if ("generatedType".equals(field.getName(cf.constant_pool))) {
+                checkRuntimeVisibleAnnotation(field.attributes);
             }
         }
 
-        for (MethodModel method : cf.methods()) {
-            if (method.methodName().equalsString("generatedType")) {
-                checkRuntimeVisibleAnnotation(method);
+        for (Method method : cf.methods) {
+            if ("generatedType".equals(method.getName(cf.constant_pool))) {
+                checkRuntimeVisibleAnnotation(method.attributes);
             }
         }
     }
 
-    private void checkRuntimeVisibleAnnotation(AttributedElement attributedElement) throws Exception {
-        RuntimeVisibleAnnotationsAttribute annotations = attributedElement.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElseThrow();
+    private void checkRuntimeVisibleAnnotation(Attributes attributes) throws Exception {
+        RuntimeVisibleAnnotations_attribute annotations =
+                (RuntimeVisibleAnnotations_attribute) attributes.get(Attribute.RuntimeVisibleAnnotations);
         boolean hasAnnotation = false;
-        for (Annotation annotation : annotations.annotations()) {
-            if (annotation.classSymbol().descriptorString().equals("LTestAnnotation;")) {
+        for (Annotation annotation : annotations.annotations) {
+            if ("LTestAnnotation;".equals(cf.constant_pool.getUTF8Value(annotation.type_index))) {
                 hasAnnotation = true;
             }
         }

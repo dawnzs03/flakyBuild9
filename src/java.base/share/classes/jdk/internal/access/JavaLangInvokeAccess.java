@@ -40,27 +40,38 @@ import java.util.stream.Stream;
 
 public interface JavaLangInvokeAccess {
     /**
-     * Returns the declaring class for the given ResolvedMethodName.
+     * Create a new MemberName instance. Used by {@code StackFrameInfo}.
+     */
+    Object newMemberName();
+
+    /**
+     * Returns the name for the given MemberName. Used by {@code StackFrameInfo}.
+     */
+    String getName(Object mname);
+
+    /**
+     * Returns the {@code MethodType} for the given MemberName.
      * Used by {@code StackFrameInfo}.
      */
-    Class<?> getDeclaringClass(Object rmname);
+    MethodType getMethodType(Object mname);
 
     /**
-     * Returns the {@code MethodType} for the given method descriptor
-     * and class loader.
+     * Returns the descriptor for the given MemberName.
      * Used by {@code StackFrameInfo}.
      */
-    MethodType getMethodType(String descriptor, ClassLoader loader);
+    String getMethodDescriptor(Object mname);
 
     /**
-     * Returns true if the given flags has MN_CALLER_SENSITIVE flag set.
+     * Returns {@code true} if the given MemberName is a native method.
+     * Used by {@code StackFrameInfo}.
      */
-    boolean isCallerSensitive(int flags);
+    boolean isNative(Object mname);
 
     /**
-     * Returns true if the given flags has MN_HIDDEN_MEMBER flag set.
+     * Returns the declaring class for the given MemberName.
+     * Used by {@code StackFrameInfo}.
      */
-    boolean isHiddenMember(int flags);
+    Class<?> getDeclaringClass(Object mname);
 
     /**
      * Returns a map of class name in internal forms to its corresponding
@@ -162,12 +173,4 @@ public interface JavaLangInvokeAccess {
      * @return an array of exceptions, or {@code null}.
      */
     Class<?>[] exceptionTypes(MethodHandle handle);
-
-    /**
-     * Returns a method handle that allocates an instance of the given class
-     * and then invoke the given constructor of one of its superclasses.
-     *
-     * This method should only be used by ReflectionFactory::newConstructorForSerialization.
-     */
-    MethodHandle serializableConstructor(Class<?> decl, Constructor<?> ctorToCall) throws IllegalAccessException;
 }

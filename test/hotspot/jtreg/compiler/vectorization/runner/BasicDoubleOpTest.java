@@ -36,7 +36,7 @@
  *                   compiler.vectorization.runner.BasicDoubleOpTest
  *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
- * @requires vm.compiler2.enabled
+ * @requires vm.compiler2.enabled & vm.flagless
  */
 
 package compiler.vectorization.runner;

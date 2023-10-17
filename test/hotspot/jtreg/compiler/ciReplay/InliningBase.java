@@ -86,11 +86,11 @@ public abstract class InliningBase extends DumpReplayBase {
         }
 
         public boolean isDisallowedByReplay() {
-            return reason.equals("failed to inline: disallowed by ciReplay");
+            return reason.equals("disallowed by ciReplay");
         }
 
         public boolean isUnloadedSignatureClasses() {
-            return reason.equals("failed to inline: unloaded signature classes");
+            return reason.equals("unloaded signature classes");
         }
 
         public boolean isForcedIncrementalInlineByReplay() {
@@ -102,7 +102,7 @@ public abstract class InliningBase extends DumpReplayBase {
         }
 
         public boolean isTooDeep() {
-            return reason.equals("failed to inline: inlining too deep");
+            return reason.equals("inlining too deep");
         }
 
         @Override

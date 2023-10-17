@@ -27,12 +27,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.ModuleBuilder ModuleTestBase
  * @run main OpenModulesTest
@@ -47,8 +42,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.ModuleAttribute;
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.Attributes;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ClassWriter;
+import com.sun.tools.classfile.Module_attribute;
 import toolbox.JavacTask;
 import toolbox.JavapTask;
 import toolbox.Task;
@@ -236,21 +234,36 @@ public class OpenModulesTest extends ModuleTestBase {
             .writeAll();
 
         Path miClass = m1Classes.resolve("module-info.class");
-        ClassModel cm = Classfile.of().parse(miClass);
-        ModuleAttribute module = cm.findAttribute(Attributes.MODULE).orElseThrow();
-        ModuleAttribute newModule = ModuleAttribute.of(module.moduleName(),
-                                                          module.moduleFlagsMask() | Classfile.ACC_OPEN,
-                                                          module.moduleVersion().orElse(null),
-                                                          module.requires(),
-                                                          module.exports(),
-                                                          module.opens(),
-                                                          module.uses(),
-                                                          module.provides());
+        ClassFile cf = ClassFile.read(miClass);
+        Module_attribute module = (Module_attribute) cf.attributes.map.get(Attribute.Module);
+        Module_attribute newModule = new Module_attribute(module.attribute_name_index,
+                                                          module.module_name,
+                                                          module.module_flags | Module_attribute.ACC_OPEN,
+                                                          module.module_version_index,
+                                                          module.requires,
+                                                          module.exports,
+                                                          module.opens,
+                                                          module.uses_index,
+                                                          module.provides);
+        Map<String, Attribute> attrs = new HashMap<>(cf.attributes.map);
 
-        byte[] newBytes = Classfile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
-                andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newModule))));
+        attrs.put(Attribute.Module, newModule);
+
+        Attributes newAttributes = new Attributes(attrs);
+        ClassFile newClassFile = new ClassFile(cf.magic,
+                                               cf.minor_version,
+                                               cf.major_version,
+                                               cf.constant_pool,
+                                               cf.access_flags,
+                                               cf.this_class,
+                                               cf.super_class,
+                                               cf.interfaces,
+                                               cf.fields,
+                                               cf.methods,
+                                               newAttributes);
+
         try (OutputStream out = Files.newOutputStream(miClass)) {
-            out.write(newBytes);
+            new ClassWriter().write(newClassFile, out);
         }
 
         Path test = base.resolve("test");

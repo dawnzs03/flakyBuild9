@@ -26,7 +26,6 @@
  * @test
  * @summary Test that the JVM detects the OS hugepage/THP settings correctly.
  * @library /test/lib
- * @requires vm.flagless
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.misc
  *          java.management

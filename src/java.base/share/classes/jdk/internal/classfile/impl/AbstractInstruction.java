@@ -383,7 +383,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public FieldRefEntry field() {
             if (fieldEntry == null)
-                fieldEntry = code.classReader.readEntry(pos + 1, FieldRefEntry.class);
+                fieldEntry = (FieldRefEntry) code.classReader.readEntry(pos + 1);
             return fieldEntry;
         }
 
@@ -413,7 +413,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
-                methodEntry = code.classReader.readEntry(pos + 1, MemberRefEntry.class);
+                methodEntry = (MemberRefEntry) code.classReader.readEntry(pos + 1);
             return methodEntry;
         }
 
@@ -453,7 +453,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
-                methodEntry = code.classReader.readEntry(pos + 1, InterfaceMethodRefEntry.class);
+                methodEntry = (InterfaceMethodRefEntry) code.classReader.readEntry(pos + 1);
             return methodEntry;
         }
 
@@ -493,7 +493,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public InvokeDynamicEntry invokedynamic() {
             if (indyEntry == null)
-                indyEntry = code.classReader.readEntry(pos + 1, InvokeDynamicEntry.class);
+                indyEntry = (InvokeDynamicEntry) code.classReader.readEntry(pos + 1);
             return indyEntry;
         }
 

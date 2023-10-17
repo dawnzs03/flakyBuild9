@@ -104,20 +104,6 @@ void ShenandoahParallelCodeHeapIterator::parallel_blobs_do(CodeBlobClosure* f) {
 ShenandoahNMethodTable* ShenandoahCodeRoots::_nmethod_table;
 int ShenandoahCodeRoots::_disarmed_value = 1;
 
-bool ShenandoahCodeRoots::use_nmethod_barriers_for_mark() {
-  // Continuations need nmethod barriers for scanning stack chunk nmethods.
-  if (Continuations::enabled()) return true;
-
-  // Concurrent class unloading needs nmethod barriers.
-  // When a nmethod is about to be executed, we need to make sure that all its
-  // metadata are marked. The alternative is to remark thread roots at final mark
-  // pause, which would cause latency issues.
-  if (ShenandoahHeap::heap()->unload_classes()) return true;
-
-  // Otherwise, we can go without nmethod barriers.
-  return false;
-}
-
 void ShenandoahCodeRoots::initialize() {
   _nmethod_table = new ShenandoahNMethodTable();
 }
@@ -132,13 +118,8 @@ void ShenandoahCodeRoots::unregister_nmethod(nmethod* nm) {
   _nmethod_table->unregister_nmethod(nm);
 }
 
-void ShenandoahCodeRoots::arm_nmethods_for_mark() {
-  if (use_nmethod_barriers_for_mark()) {
-    BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
-  }
-}
-
-void ShenandoahCodeRoots::arm_nmethods_for_evac() {
+void ShenandoahCodeRoots::arm_nmethods() {
+  assert(BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr, "Sanity");
   BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
 }
 
@@ -182,7 +163,7 @@ public:
 };
 
 void ShenandoahCodeRoots::disarm_nmethods() {
-  if (use_nmethod_barriers_for_mark()) {
+  if (ShenandoahNMethodBarrier) {
     ShenandoahDisarmNMethodsTask task;
     ShenandoahHeap::heap()->workers()->run_task(&task);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -62,6 +62,7 @@ import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
@@ -108,7 +109,6 @@ import javax.xml.stream.XMLStreamReader;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
-import jdk.xml.internal.XMLSecurityManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -131,7 +131,7 @@ import org.xml.sax.XMLReader;
  * @author Neil Graham, IBM
  * @author Pavani Mukthipudi, Sun Microsystems
  *
- * @LastModified: July 2023
+ * @LastModified: May 2021
  */
 @SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public class XSDHandler {
@@ -2283,10 +2283,8 @@ public class XSDHandler {
                     catch (SAXException se) {}
                 }
                 else {
-                    parser = JdkXmlUtils.getXMLReader(fSecurityManager,
-                            fOverrideDefaultParser, fSecurityManager.isSecureProcessing(),
-                            fUseCatalog,
-                            JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve));
+                    parser = JdkXmlUtils.getXMLReader(fOverrideDefaultParser,
+                            fSecurityManager.isSecureProcessing());
 
                     try {
                         parser.setFeature(NAMESPACE_PREFIXES, true);

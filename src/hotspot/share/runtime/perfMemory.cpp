@@ -51,9 +51,9 @@ char*                    PerfMemory::_start = nullptr;
 char*                    PerfMemory::_end = nullptr;
 char*                    PerfMemory::_top = nullptr;
 size_t                   PerfMemory::_capacity = 0;
-volatile int             PerfMemory::_initialized = 0;
+int                      PerfMemory::_initialized = false;
 PerfDataPrologue*        PerfMemory::_prologue = nullptr;
-volatile bool            PerfMemory::_destroyed = false;
+bool                     PerfMemory::_destroyed = false;
 
 void perfMemory_init() {
 

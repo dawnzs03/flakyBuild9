@@ -56,9 +56,7 @@ public class T7186925
                 JavapTask t = new JavapTask(null, fileManager, null);
                 t.handleOptions(new String[] { "-sysinfo", className });
                 JavapTask.ClassFileInfo cfInfo = t.read(fo);
-                try (var in = fo.openInputStream()) {
-                    expectEqual(in.readAllBytes().length, cfInfo.size);
-                }
+                expectEqual(cfInfo.cf.byteLength(), cfInfo.size);
             }
         } catch (NullPointerException ee) {
             ee.printStackTrace();

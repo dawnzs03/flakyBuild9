@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,93 +23,80 @@
 
 /**
  * @test
- * @bug 8140450 8268829
+ * @bug 8140450
  * @summary Sanity test for exception cases
- * @run junit SanityTest
+ * @run testng SanityTest
  */
+
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.stream.Stream;
-import static java.lang.StackWalker.Option.*;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import static org.junit.jupiter.api.Assertions.*;
+import org.testng.annotations.Test;
 
 public class SanityTest {
     @Test
-    public void testNPE() {
-        assertThrows(NullPointerException.class, () ->
-                StackWalker.getInstance((Set<StackWalker.Option>) null));
-        assertThrows(NullPointerException.class, () ->
-                StackWalker.getInstance((StackWalker.Option) null));
-    }
+    public static void testNPE() {
+        try {
+            StackWalker sw = StackWalker.getInstance((Set<StackWalker.Option>) null);
+            throw new RuntimeException("NPE expected");
+        } catch (NullPointerException e) {}
 
-    private static Stream<StackWalker> noRetainClassRef() {
-        return Stream.of(StackWalker.getInstance(), StackWalker.getInstance(DROP_METHOD_INFO));
-    }
-
-    @ParameterizedTest
-    @MethodSource("noRetainClassRef")
-    public void testUOE(StackWalker sw) {
-        assertThrows(UnsupportedOperationException.class, () -> sw.getCallerClass());
+        try {
+            StackWalker sw = StackWalker.getInstance((StackWalker.Option) null);
+            throw new RuntimeException("NPE expected");
+        } catch (NullPointerException e) {}
     }
 
     @Test
-    public void testInvalidEstimateDepth() {
-        assertThrows(IllegalArgumentException.class, () ->
-                StackWalker.getInstance(Collections.emptySet(), 0));
+    public static void testUOE() {
+        try {
+            StackWalker.getInstance().getCallerClass();
+            throw new RuntimeException("UOE expected");
+        } catch (UnsupportedOperationException expected) {}
     }
 
     @Test
-    public void testNullFunction() {
-        assertThrows(NullPointerException.class, () ->
-                StackWalker.getInstance().walk(null));
+    public static void testInvalidEstimateDepth() {
+        try {
+            StackWalker sw = StackWalker.getInstance(Collections.emptySet(), 0);
+            throw new RuntimeException("Illegal estimateDepth should throw IAE");
+        } catch (IllegalArgumentException e) {}
     }
 
     @Test
-    public void testNullConsumer() {
-        assertThrows(NullPointerException.class, () ->
-                StackWalker.getInstance().forEach(null));
+    public static void testNullFuncation() {
+        try {
+            StackWalker.getInstance().walk(null);
+            throw new RuntimeException("NPE expected");
+        } catch (NullPointerException e) {}
     }
 
-    @ParameterizedTest
-    @MethodSource("noRetainClassRef")
-    public void testUOEFromGetDeclaringClass(StackWalker sw) {
-        assertThrows(UnsupportedOperationException.class, () ->
-                sw.forEach(StackWalker.StackFrame::getDeclaringClass));
+    @Test
+    public static void testNullConsumer() {
+        try {
+            StackWalker.getInstance().forEach(null);
+            throw new RuntimeException("NPE expected");
+        } catch (NullPointerException e) {}
     }
 
-    @ParameterizedTest
-    @MethodSource("noRetainClassRef")
-    public void testUOEFromGetMethodType(StackWalker sw) {
-        assertThrows(UnsupportedOperationException.class, () ->
-                sw.forEach(StackWalker.StackFrame::getMethodType));
+
+    @Test
+    public static void testUOEFromGetDeclaringClass() {
+        try {
+            StackWalker sw = StackWalker.getInstance();
+            sw.forEach(StackWalker.StackFrame::getDeclaringClass);
+            throw new RuntimeException("UOE expected");
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
-    private static Stream<StackWalker> noMethodInfo() {
-        return Stream.of(StackWalker.getInstance(DROP_METHOD_INFO),
-                         StackWalker.getInstance(Set.of(DROP_METHOD_INFO, RETAIN_CLASS_REFERENCE)));
-    }
-
-    @ParameterizedTest
-    @MethodSource("noMethodInfo")
-    public void testNoMethodInfo(StackWalker sw) {
-        assertThrows(UnsupportedOperationException.class, () ->
-                sw.forEach(StackWalker.StackFrame::getMethodName));
-        assertThrows(UnsupportedOperationException.class, () ->
-                sw.forEach(StackWalker.StackFrame::getMethodType));
-        assertThrows(UnsupportedOperationException.class, () ->
-                sw.forEach(StackWalker.StackFrame::getDescriptor));
-        assertThrows(UnsupportedOperationException.class, () ->
-                sw.forEach(StackWalker.StackFrame::getByteCodeIndex));
-        assertThrows(UnsupportedOperationException.class, () ->
-                sw.forEach(StackWalker.StackFrame::getFileName));
-        assertThrows(UnsupportedOperationException.class, () ->
-                sw.forEach(StackWalker.StackFrame::isNativeMethod));
-        assertThrows(UnsupportedOperationException.class, () ->
-                sw.forEach(StackWalker.StackFrame::toStackTraceElement));
+    @Test
+    public static void testUOEFromGetMethodType() {
+        try {
+            StackWalker sw = StackWalker.getInstance();
+            sw.forEach(StackWalker.StackFrame::getMethodType);
+            throw new RuntimeException("UOE expected");
+        } catch (UnsupportedOperationException expected) {}
     }
 }

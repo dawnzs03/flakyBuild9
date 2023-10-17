@@ -25,56 +25,27 @@
 
 package jdk.internal.classfile.constantpool;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import jdk.internal.classfile.BootstrapMethodEntry;
 import jdk.internal.classfile.ClassReader;
 
 /**
  * Provides read access to the constant pool and bootstrap method table of a
  * classfile.
- * @jvms 4.4 The Constant Pool
  */
-public sealed interface ConstantPool extends Iterable<PoolEntry>
+public sealed interface ConstantPool
         permits ClassReader, ConstantPoolBuilder {
 
     /**
      * {@return the entry at the specified index}
      *
      * @param index the index within the pool of the desired entry
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool, or is considered unusable
      */
     PoolEntry entryByIndex(int index);
 
     /**
-     * {@return the size of the constant pool}
+     * {@return the number of entries in the constant pool}
      */
-    int size();
-
-    /**
-     * @{return an iterator over pool entries}
-     */
-    @Override
-    default Iterator<PoolEntry> iterator() {
-        return new Iterator<>() {
-            int index = 1;
-
-            @Override
-            public boolean hasNext() {
-                return index < size();
-            }
-
-            @Override
-            public PoolEntry next() {
-                if (!hasNext()) throw new NoSuchElementException();
-                var e = entryByIndex(index);
-                index += e.width();
-                return e;
-            }
-        };
-    }
-
+    int entryCount();
 
     /**
      * {@return the {@link BootstrapMethodEntry} at the specified index within
@@ -82,8 +53,6 @@ public sealed interface ConstantPool extends Iterable<PoolEntry>
      *
      * @param index the index within the bootstrap method table of the desired
      *              entry
-     * @throws ConstantPoolException if the index is out of range of the
-     *         bootstrap methods
      */
     BootstrapMethodEntry bootstrapMethodEntry(int index);
 

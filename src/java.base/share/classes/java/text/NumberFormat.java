@@ -82,8 +82,8 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <blockquote>
  * {@snippet lang=java :
  * NumberFormat nf = NumberFormat.getInstance();
- * for (var myNumber : numbers) {
- *     output.println(nf.format(myNumber) + "; ");
+ * for (int i = 0; i < myNumber.length; ++i) {
+ *     output.println(nf.format(myNumber[i]) + "; ");
  * }
  * }
  * </blockquote>

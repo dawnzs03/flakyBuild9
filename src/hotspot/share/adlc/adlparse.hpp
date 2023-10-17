@@ -47,7 +47,6 @@ class Encode;
 class Attribute;
 class Effect;
 class ExpandRule;
-class Flag;
 class RewriteRule;
 class Constraint;
 class ConstructRule;
@@ -178,7 +177,6 @@ protected:
   FormatRule    *format_parse(void);     // Parse format rule
   FormatRule    *template_parse(void);     // Parse format rule
   void           effect_parse(InstructForm *instr); // Parse effect rule
-  Flag          *flag_parse(InstructForm *instr); // Parse flag rule
   ExpandRule    *expand_parse(InstructForm *instr); // Parse expand rule
   RewriteRule   *rewrite_parse(void);    // Parse rewrite rule
   Constraint    *constraint_parse(void); // Parse constraint rule

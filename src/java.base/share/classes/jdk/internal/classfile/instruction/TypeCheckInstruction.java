@@ -43,10 +43,6 @@ import jdk.internal.classfile.impl.Util;
 public sealed interface TypeCheckInstruction extends Instruction
         permits AbstractInstruction.BoundTypeCheckInstruction,
                 AbstractInstruction.UnboundTypeCheckInstruction {
-
-    /**
-     * {@return the type against which the instruction checks or casts}
-     */
     ClassEntry type();
 
     /**

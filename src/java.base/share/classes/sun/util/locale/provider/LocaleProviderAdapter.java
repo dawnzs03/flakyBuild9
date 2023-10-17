@@ -109,6 +109,12 @@ public abstract class LocaleProviderAdapter {
     private static final Map<Type, LocaleProviderAdapter> adapterInstances = new ConcurrentHashMap<>();
 
     /**
+     * Default fallback adapter type, which should return something meaningful in any case.
+     * This is either CLDR or FALLBACK.
+     */
+    static volatile LocaleProviderAdapter.Type defaultLocaleProviderAdapter;
+
+    /**
      * Adapter lookup cache.
      */
     private static final ConcurrentMap<Class<? extends LocaleServiceProvider>, ConcurrentMap<Locale, LocaleProviderAdapter>>
@@ -141,11 +147,13 @@ public abstract class LocaleProviderAdapter {
             }
         }
 
+        defaultLocaleProviderAdapter = Type.CLDR;
         if (!typeList.isEmpty()) {
             // bona fide preference exists
             if (!(typeList.contains(Type.CLDR) || typeList.contains(Type.JRE))) {
                 // Append FALLBACK as the last resort when no ResourceBundleBasedAdapter is available.
                 typeList.add(Type.FALLBACK);
+                defaultLocaleProviderAdapter = Type.FALLBACK;
             }
         } else {
             // Default preference list.
@@ -337,10 +345,10 @@ public abstract class LocaleProviderAdapter {
     public abstract BreakIteratorProvider getBreakIteratorProvider();
 
     /**
-     * Returns a CollatorProvider for this LocaleProviderAdapter, or null if no
-     * CollatorProvider is available.
+     * Returns a ollatorProvider for this LocaleProviderAdapter, or null if no
+     * ollatorProvider is available.
      *
-     * @return a collatorProvider
+     * @return a ollatorProvider
      */
     public abstract CollatorProvider getCollatorProvider();
 

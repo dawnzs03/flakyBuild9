@@ -25,17 +25,12 @@
  * @test
  * @bug 8042451
  * @summary Test population of reference info for method invocation type arguments
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -g Driver.java ReferenceInfoUtil.java MethodInvocationTypeArgument.java
  * @run main Driver MethodInvocationTypeArgument
  */
 
-import static jdk.internal.classfile.TypeAnnotation.TargetType.METHOD_INVOCATION_TYPE_ARGUMENT;
+import static com.sun.tools.classfile.TypeAnnotation.TargetType.METHOD_INVOCATION_TYPE_ARGUMENT;
 import static java.lang.System.lineSeparator;
 
 public class MethodInvocationTypeArgument {

@@ -24,13 +24,7 @@
 /**
  * @test 8200301 8201194
  * @summary deduplicate lambda methods with the same body, target type, and captured state
- * @modules java.base/jdk.internal.classfile
- *     java.base/jdk.internal.classfile.attribute
- *     java.base/jdk.internal.classfile.constantpool
- *     java.base/jdk.internal.classfile.instruction
- *     java.base/jdk.internal.classfile.components
- *     java.base/jdk.internal.classfile.impl
- *     jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.jdeps/com.sun.tools.classfile jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.code jdk.compiler/com.sun.tools.javac.comp
  *     jdk.compiler/com.sun.tools.javac.file jdk.compiler/com.sun.tools.javac.main
  *     jdk.compiler/com.sun.tools.javac.tree jdk.compiler/com.sun.tools.javac.util
@@ -46,10 +40,11 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskEvent.Kind;
 import com.sun.source.util.TaskListener;
-import jdk.internal.classfile.BootstrapMethodEntry;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.BootstrapMethods_attribute;
+import com.sun.tools.classfile.BootstrapMethods_attribute.BootstrapMethodSpecifier;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_MethodHandle_info;
 import com.sun.tools.javac.api.ClientCodeWrapper.Trusted;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Symbol;
@@ -141,19 +136,22 @@ public class DeduplicationTest {
         // lambdas.
         Set<String> bootstrapMethodNames = new TreeSet<>();
         for (JavaFileObject output : generated) {
-            ClassModel cm;
+            ClassFile cf;
             try (InputStream input = output.openInputStream()) {
-                cm = Classfile.of().parse(input.readAllBytes());
+                cf = ClassFile.read(input);
             }
-            if (cm.thisClass().asInternalName().equals("com/sun/tools/javac/comp/Deduplication$R")) {
+            if (cf.getName().equals("com/sun/tools/javac/comp/Deduplication$R")) {
                 continue;
             }
-            BootstrapMethodsAttribute bsm = cm.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
-            for (BootstrapMethodEntry b : bsm.bootstrapMethods()) {
+            BootstrapMethods_attribute bsm =
+                    (BootstrapMethods_attribute) cf.getAttribute(Attribute.BootstrapMethods);
+            for (BootstrapMethodSpecifier b : bsm.bootstrap_method_specifiers) {
                 bootstrapMethodNames.add(
-                        ((MethodHandleEntry)b.arguments().get(1))
-                                .reference()
-                                .name().stringValue());
+                        ((CONSTANT_MethodHandle_info)
+                                        cf.constant_pool.get(b.bootstrap_arguments[1]))
+                                .getCPRefInfo()
+                                .getNameAndTypeInfo()
+                                .getName());
             }
         }
         Set<String> deduplicatedNames =

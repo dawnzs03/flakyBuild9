@@ -63,8 +63,8 @@ public class InnerClassesHierarchyTest extends TestResult {
         for (File file : Arrays.asList(classDir.listFiles(filter))) {
             ClassModel classFile = readClassFile(file);
             String className = classFile.thisClass().name().stringValue();
-            for (PoolEntry pe : classFile.constantPool()) {
-                if (pe instanceof ClassEntry classInfo
+            for (int i = 1; i < classFile.constantPool().entryCount(); ++i) {
+                if (classFile.constantPool().entryByIndex(i) instanceof ClassEntry classInfo
                         && classInfo.asSymbol().isClassOrInterface()) {
                     String cpClassName = classInfo.asInternalName();
                     if (isInnerClass(cpClassName)) {

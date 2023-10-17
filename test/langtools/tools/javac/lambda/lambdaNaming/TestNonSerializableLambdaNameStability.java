@@ -26,12 +26,7 @@
  * @bug 8067422
  * @summary Check that the lambda names are not unnecessarily unstable
  * @library /tools/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
@@ -45,7 +40,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.tools.StandardLocation;
 
-import jdk.internal.classfile.*;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.Method;
 
 import toolbox.JavacTask;
 import toolbox.ToolBox;
@@ -87,11 +83,11 @@ public class TestNonSerializableLambdaNameStability {
                 byte[] fileBytes = fm.getFileBytes(StandardLocation.CLASS_OUTPUT, file);
                 try (InputStream in = new ByteArrayInputStream(fileBytes)) {
                     boolean foundLambdaMethod = false;
-                    ClassModel cf = Classfile.of().parse(in.readAllBytes());
+                    ClassFile cf = ClassFile.read(in);
                     StringBuilder seenMethods = new StringBuilder();
                     String sep = "";
-                    for (MethodModel m : cf.methods()) {
-                        String methodName = m.methodName().stringValue();
+                    for (Method m : cf.methods) {
+                        String methodName = m.getName(cf.constant_pool);
                         if (expectedLambdaMethodName.equals(methodName)) {
                             foundLambdaMethod = true;
                             break;

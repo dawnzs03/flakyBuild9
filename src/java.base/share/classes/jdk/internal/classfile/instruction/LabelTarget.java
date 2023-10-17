@@ -39,9 +39,5 @@ import jdk.internal.classfile.impl.LabelImpl;
  */
 public sealed interface LabelTarget extends PseudoInstruction
         permits LabelImpl {
-
-    /**
-     * {@return the label corresponding to this target}
-     */
     Label label();
 }

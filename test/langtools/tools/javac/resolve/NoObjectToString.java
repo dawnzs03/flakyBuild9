@@ -49,7 +49,8 @@ public class NoObjectToString {
         try (InputStream in = NoObjectToString.class.getResourceAsStream("NoObjectToString$Test.class")) {
             assert in != null;
             ClassModel cm = Classfile.of().parse(in.readAllBytes());
-            for (PoolEntry pe : cm.constantPool()) {
+            for (int i = 1; i < cm.constantPool().entryCount(); ++i) {
+                PoolEntry pe = cm.constantPool().entryByIndex(i);
                 if (pe instanceof MethodRefEntry ref) {
                     String methodDesc = ref.owner().name() + "." + ref.nameAndType().name() + ":" + ref.nameAndType().type();
 

@@ -26,18 +26,13 @@
  * @bug 8000518
  * @summary Javac generates duplicate name_and_type constant pool entry for
  * class BinaryOpValueExp.java
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main DuplicateConstantPoolEntry
  */
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ConstantPool;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ConstantPoolException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -47,7 +42,6 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
-import jdk.internal.classfile.constantpool.PoolEntry;
 
 /*
  * This bug was reproduced having two classes B and C referenced from a class A
@@ -93,16 +87,20 @@ public class DuplicateConstantPoolEntry {
         }
     }
 
-    void checkReference() throws IOException {
+    void checkReference() throws IOException, ConstantPoolException {
         File file = new File("A.class");
-        ClassModel classFile = Classfile.of().parse(file.toPath());
-        ConstantPool constantPool = classFile.constantPool();
-        for (PoolEntry pe1 : constantPool) {
-            for (PoolEntry pe2 : constantPool) {
-                if (pe2.index() > pe1.index() && pe1.equals(pe2)) {
+        ClassFile classFile = ClassFile.read(file);
+        for (int i = 1;
+                i < classFile.constant_pool.size() - 1;
+                i += classFile.constant_pool.get(i).size()) {
+            for (int j = i + classFile.constant_pool.get(i).size();
+                    j < classFile.constant_pool.size();
+                    j += classFile.constant_pool.get(j).size()) {
+                if (classFile.constant_pool.get(i).toString().
+                        equals(classFile.constant_pool.get(j).toString())) {
                     throw new AssertionError(
                             "Duplicate entries in the constant pool at positions " +
-                            pe1.index() + " and " + pe2.index());
+                            i + " and " + j);
                 }
             }
         }

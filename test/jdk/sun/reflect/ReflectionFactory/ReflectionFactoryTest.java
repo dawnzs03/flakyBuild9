@@ -136,11 +136,6 @@ public class ReflectionFactoryTest {
         }
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    static void testConstructorNotSuperClass() throws ReflectiveOperationException {
-        factory.newConstructorForSerialization(Bar.class, Baz.class.getDeclaredConstructor());
-    }
-
     static class Foo {
         private int foo;
         public Foo() {

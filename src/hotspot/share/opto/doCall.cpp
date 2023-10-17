@@ -66,7 +66,7 @@ void trace_type_profile(Compile* C, ciMethod* method, int depth, int bci, ciMeth
         method->print_short_name();
         tty->cr();
       }
-      CompileTask::print_inlining_tty(prof_method, depth, bci, InliningResult::SUCCESS);
+      CompileTask::print_inlining_tty(prof_method, depth, bci);
     } else {
       out = C->print_inlining_stream();
     }
@@ -373,7 +373,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   if (call_does_dispatch) {
     const char* msg = "virtual call";
     if (C->print_inlining()) {
-      print_inlining(callee, jvms->depth() - 1, jvms->bci(), InliningResult::FAILURE, msg);
+      print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
     }
     C->log_inline_failure(msg);
     if (IncrementalInlineVirtual && allow_inline) {

@@ -25,12 +25,7 @@
  * @test
  * @bug 8171132
  * @summary Improve class reading of invalid or out-of-range ConstantValue attributes
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.jvm
@@ -40,7 +35,9 @@
  * @run main BadConstantValue
  */
 
-import jdk.internal.classfile.*;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ClassWriter;
+import com.sun.tools.classfile.Field;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.ClassFinder.BadClassFile;
 import com.sun.tools.javac.code.Symtab;
@@ -48,8 +45,11 @@ import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.Names;
-import java.io.*;
-import java.nio.file.Files;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Objects;
 import javax.tools.JavaCompiler;
@@ -185,17 +185,16 @@ public class BadConstantValue {
      * B's type and A's ConstantValue attribute.
      */
     private static void swapConstantValues(File file) throws Exception {
-        ClassModel cf = Classfile.of().parse(file.toPath());
-        FieldModel a = cf.fields().getFirst();
-        FieldModel b = cf.fields().get(1);
-        byte[] Bytes = Classfile.of().transform(cf, ClassTransform
-                .dropping(ce -> ce instanceof ClassfileVersion || ce instanceof FieldModel)
-                .andThen(ClassTransform.endHandler(classBuilder -> classBuilder
-                        .withField(b.fieldName(), b.fieldType(), fieldBuilder -> {
-                            fieldBuilder.withFlags(b.flags().flagsMask());
-                            a.attributes().forEach(e -> fieldBuilder.with((FieldElement) e));})
-                        .withVersion(Target.JDK1_7.majorVersion, Target.JDK1_7.minorVersion))));
-        Files.write(file.toPath(), Bytes);
+        ClassFile cf = ClassFile.read(file);
+        Field a = cf.fields[0];
+        Field b = cf.fields[1];
+        Field[] fields = {
+            new Field(b.access_flags, b.name_index, b.descriptor, a.attributes),
+        };
+        cf = new ClassFile(cf.magic, Target.JDK1_7.minorVersion, Target.JDK1_7.majorVersion,
+                cf.constant_pool, cf.access_flags, cf.this_class, cf.super_class, cf.interfaces,
+                fields, cf.methods, cf.attributes);
+        new ClassWriter().write(cf, file);
     }
 
     static String compile(String... args) throws Exception {

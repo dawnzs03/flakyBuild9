@@ -35,6 +35,9 @@
  */
 // *                     -Dseed=3582896013206826205L
 // *                     -Dseed=5784221742235559231L
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
@@ -53,6 +56,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.Reference;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
@@ -75,15 +80,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
+import static java.lang.System.arraycopy;
 import static java.lang.System.out;
 import static java.lang.System.err;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class CancelRequestTest implements HttpServerAdapters {
@@ -172,19 +179,19 @@ public class CancelRequestTest implements HttpServerAdapters {
     }
 
     @AfterClass
-    static void printFailedTests(ITestContext context) {
+    static final void printFailedTests(ITestContext context) {
         out.println("\n=========================");
         var failed = context.getFailedTests().getAllResults().stream()
-                .collect(Collectors.toMap(CancelRequestTest::name, ITestResult::getThrowable));
+                .collect(Collectors.toMap(r -> name(r), ITestResult::getThrowable));
         FAILURES.putAll(failed);
         try {
             out.printf("%n%sCreated %d servers and %d clients%n",
                     now(), serverCount.get(), clientCount.get());
             if (FAILURES.isEmpty()) return;
             out.println("Failed tests: ");
-            FAILURES.forEach((key, value) -> {
-                out.printf("\t%s: %s%n", key, value);
-                value.printStackTrace(out);
+            FAILURES.entrySet().forEach((e) -> {
+                out.printf("\t%s: %s%n", e.getKey(), e.getValue());
+                e.getValue().printStackTrace(out);
             });
             if (tasksFailed) {
                 System.out.println("WARNING: Some tasks failed");
@@ -320,7 +327,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             out.println("cf2 after cancel: " + cf2);
             try {
                 String body = cf2.get().body();
-                assertEquals(body, String.join("", BODY.split("\\|")));
+                assertEquals(body, Stream.of(BODY.split("\\|")).collect(Collectors.joining()));
                 throw new AssertionError("Expected CancellationException not received");
             } catch (ExecutionException x) {
                 out.println("Got expected exception: " + x);
@@ -341,14 +348,14 @@ public class CancelRequestTest implements HttpServerAdapters {
             // completed yet - so wait for it here...
             try {
                 String body = response.get().body();
-                assertEquals(body, String.join("", BODY.split("\\|")));
+                assertEquals(body, Stream.of(BODY.split("\\|")).collect(Collectors.joining()));
                 if (mayInterruptIfRunning) {
                     // well actually - this could happen... In which case we'll need to
                     // increase the latency in the server handler...
                     throw new AssertionError("Expected Exception not received");
                 }
             } catch (ExecutionException x) {
-                assertTrue(response.isDone());
+                assertEquals(response.isDone(), true);
                 Throwable wrapped = x.getCause();
                 Throwable cause = wrapped;
                 if (mayInterruptIfRunning) {
@@ -376,11 +383,11 @@ public class CancelRequestTest implements HttpServerAdapters {
                 }
             }
 
-            assertTrue(response.isDone());
-            assertFalse(response.isCancelled());
+            assertEquals(response.isDone(), true);
+            assertEquals(response.isCancelled(), false);
             assertEquals(cf1.isCancelled(), hasCancellationException);
-            assertTrue(cf2.isDone());
-            assertFalse(cf2.isCancelled());
+            assertEquals(cf2.isDone(), true);
+            assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
 
             var error = TRACKER.check(tracker, 1000,
@@ -390,8 +397,6 @@ public class CancelRequestTest implements HttpServerAdapters {
             Reference.reachabilityFence(client);
             if (error != null) throw error;
         }
-        assert client != null;
-        if (!sameClient) client.close();
     }
 
     @Test(dataProvider = "asyncurls")
@@ -408,7 +413,7 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             CompletableFuture<CompletableFuture<?>> cancelFuture = new CompletableFuture<>();
 
-            Iterable<byte[]> iterable = new Iterable<>() {
+            Iterable<byte[]> iterable = new Iterable<byte[]>() {
                 @Override
                 public Iterator<byte[]> iterator() {
                     // this is dangerous
@@ -443,7 +448,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             out.println("cf2 after cancel: " + cf2);
             try {
                 String body = cf2.get().body();
-                assertEquals(body, String.join("", BODY.split("\\|")));
+                assertEquals(body, Stream.of(BODY.split("\\|")).collect(Collectors.joining()));
                 throw new AssertionError("Expected CancellationException not received");
             } catch (ExecutionException x) {
                 out.println("Got expected exception: " + x);
@@ -464,14 +469,14 @@ public class CancelRequestTest implements HttpServerAdapters {
             // completed yet - so wait for it here...
             try {
                 String body = response.get().body();
-                assertEquals(body, String.join("", BODY.split("\\|")));
+                assertEquals(body, Stream.of(BODY.split("\\|")).collect(Collectors.joining()));
                 if (mayInterruptIfRunning) {
                     // well actually - this could happen... In which case we'll need to
                     // increase the latency in the server handler...
                     throw new AssertionError("Expected Exception not received");
                 }
             } catch (ExecutionException x) {
-                assertTrue(response.isDone());
+                assertEquals(response.isDone(), true);
                 Throwable wrapped = x.getCause();
                 assertTrue(CancellationException.class.isAssignableFrom(wrapped.getClass()));
                 Throwable cause = wrapped.getCause();
@@ -490,11 +495,11 @@ public class CancelRequestTest implements HttpServerAdapters {
                 }
             }
 
-            assertTrue(response.isDone());
-            assertFalse(response.isCancelled());
+            assertEquals(response.isDone(), true);
+            assertEquals(response.isCancelled(), false);
             assertEquals(cf1.isCancelled(), hasCancellationException);
-            assertTrue(cf2.isDone());
-            assertFalse(cf2.isCancelled());
+            assertEquals(cf2.isDone(), true);
+            assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
 
             var error = TRACKER.check(tracker, 1000,
@@ -504,8 +509,6 @@ public class CancelRequestTest implements HttpServerAdapters {
             Reference.reachabilityFence(client);
             if (error != null) throw error;
         }
-        assert client != null;
-        if (!sameClient) client.close();
     }
 
     @Test(dataProvider = "urls")
@@ -569,19 +572,17 @@ public class CancelRequestTest implements HttpServerAdapters {
             } else {
                 assert failed == null;
                 out.println(uriStr + ": got body: " + body);
-                assertEquals(body, String.join("", BODY.split("\\|")));
+                assertEquals(body, Stream.of(BODY.split("\\|")).collect(Collectors.joining()));
             }
             out.println("next iteration");
 
-            var error = TRACKER.check(tracker, 2000,
+            var error = TRACKER.check(tracker, 1000,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                     "subscribers for testPostInterrupt(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
             Reference.reachabilityFence(client);
             if (error != null) throw error;
         }
-        assert client != null;
-        if (!sameClient) client.close();
     }
 
 

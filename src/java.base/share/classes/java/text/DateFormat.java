@@ -85,8 +85,8 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <blockquote>
  * {@snippet lang=java :
  * DateFormat df = DateFormat.getDateInstance();
- * for (Date myDate : dates) {
- *     output.println(df.format(myDate) + "; ");
+ * for (int i = 0; i < myDate.length; ++i) {
+ *     output.println(df.format(myDate[i]) + "; ");
  * }
  * }
  * </blockquote>

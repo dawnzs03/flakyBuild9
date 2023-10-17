@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -510,7 +509,18 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
 
     private final Map<Class<? extends Architecture>, JVMCIBackend> backends = new HashMap<>();
 
-    private final List<HotSpotVMEventListener> vmEventListeners;
+    private volatile List<HotSpotVMEventListener> vmEventListeners;
+
+    private Iterable<HotSpotVMEventListener> getVmEventListeners() {
+        if (vmEventListeners == null) {
+            synchronized (this) {
+                if (vmEventListeners == null) {
+                    vmEventListeners = JVMCIServiceLocator.getProviders(HotSpotVMEventListener.class);
+                }
+            }
+        }
+        return vmEventListeners;
+    }
 
     @SuppressWarnings("try")
     private HotSpotJVMCIRuntime() {
@@ -564,14 +574,12 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             }
             Option.printProperties(vmLogStream);
             compilerFactory.printProperties(vmLogStream);
-            exitHotSpot(0);
+            System.exit(0);
         }
 
         if (Option.PrintConfig.getBoolean()) {
             configStore.printConfig(this);
         }
-
-        vmEventListeners = JVMCIServiceLocator.getProviders(HotSpotVMEventListener.class);
     }
 
     /**
@@ -930,21 +938,22 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Guard to ensure shut down actions are performed by at most one thread.
+     * Guard to ensure shut down actions are performed at most once.
      */
-    private final AtomicBoolean isShutdown = new AtomicBoolean();
+    private boolean isShutdown;
 
     /**
      * Shuts down the runtime.
      */
     @VMEntryPoint
-    private void shutdown() throws Exception {
-        if (isShutdown.compareAndSet(false, true)) {
+    private synchronized void shutdown() throws Exception {
+        if (!isShutdown) {
+            isShutdown = true;
             // Cleaners are normally only processed when a new Cleaner is
             // instantiated so process all remaining cleaners now.
             Cleaner.clean();
 
-            for (HotSpotVMEventListener vmEventListener : vmEventListeners) {
+            for (HotSpotVMEventListener vmEventListener : getVmEventListeners()) {
                 vmEventListener.notifyShutdown();
             }
         }
@@ -955,7 +964,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      */
     @VMEntryPoint
     private void bootstrapFinished() throws Exception {
-        for (HotSpotVMEventListener vmEventListener : vmEventListeners) {
+        for (HotSpotVMEventListener vmEventListener : getVmEventListeners()) {
             vmEventListener.notifyBootstrapFinished();
         }
     }
@@ -968,7 +977,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * @param compiledCode
      */
     void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompiledCode compiledCode) {
-        for (HotSpotVMEventListener vmEventListener : vmEventListeners) {
+        for (HotSpotVMEventListener vmEventListener : getVmEventListeners()) {
             vmEventListener.notifyInstall(hotSpotCodeCacheProvider, installedCode, compiledCode);
         }
     }

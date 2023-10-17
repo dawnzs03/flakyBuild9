@@ -26,7 +26,6 @@
  * @summary Test using -XX:+CrashOnOutOfMemoryError
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @requires vm.flagless
  * @run driver TestCrashOnOutOfMemoryError
  * @bug 8138745
  */

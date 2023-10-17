@@ -264,7 +264,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * we have to keep a weak reference to each stream.
      */
 
-    private final WeakHashMap<Closeable,Void>
+    private WeakHashMap<Closeable,Void>
         closeables = new WeakHashMap<>();
 
     /**

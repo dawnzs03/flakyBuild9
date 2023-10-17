@@ -28,22 +28,19 @@
  * @summary Unambiguous varargs method calls flagged as ambiguous
  * @author mcimadamore
  *
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
  */
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import com.sun.tools.classfile.Instruction;
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.Code_attribute;
+import com.sun.tools.classfile.ConstantPool.*;
+import com.sun.tools.classfile.Method;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.util.List;
 
@@ -219,10 +216,10 @@ public class T6199075 {
         bytecodeCheckCount++;
         File compiledTest = new File("Test.class");
         try {
-            ClassModel cf = Classfile.of().parse(compiledTest.toPath());
-            MethodModel testMethod = null;
-            for (MethodModel m : cf.methods()) {
-                if (m.methodName().equalsString("test")) {
+            ClassFile cf = ClassFile.read(compiledTest);
+            Method testMethod = null;
+            for (Method m : cf.methods) {
+                if (m.getName(cf.constant_pool).equals("test")) {
                     testMethod = m;
                     break;
                 }
@@ -230,15 +227,17 @@ public class T6199075 {
             if (testMethod == null) {
                 throw new Error("Test method not found");
             }
-            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
-            if (ea == null) {
+            Code_attribute ea = (Code_attribute)testMethod.attributes.get(Attribute.Code);
+            if (testMethod == null) {
                 throw new Error("Code attribute for test() method not found");
             }
 
-            for (CodeElement i : ea.elementList()) {
-                if (i instanceof InvokeInstruction ins && ins.opcode() == Opcode.INVOKEVIRTUAL) {
-                    MemberRefEntry methRef = ins.method();
-                    String type = methRef.type().stringValue();
+            for (Instruction i : ea.getInstructions()) {
+                if (i.getMnemonic().equals("invokevirtual")) {
+                    int cp_entry = i.getUnsignedShort(1);
+                    CONSTANT_Methodref_info methRef =
+                            (CONSTANT_Methodref_info)cf.constant_pool.get(cp_entry);
+                    String type = methRef.getNameAndTypeInfo().getType();
                     if (!type.contains(selected.varargsElement.bytecodeString)) {
                         throw new Error("Unexpected type method call: " + type);
                     }

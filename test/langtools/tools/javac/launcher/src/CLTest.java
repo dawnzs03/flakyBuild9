@@ -31,7 +31,8 @@
  * the URLs and streams returned by the methods being tested.
  *
  * $ java \
- *      --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED
+ *      --add-modules jdk.jdeps \
+ *      --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED
  *      /path/to/CLTest.java
  */
 package p.q;
@@ -39,8 +40,7 @@ package p.q;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import com.sun.tools.classfile.ClassFile;
 
 public class CLTest {
     public static void main(String... args) throws Exception {
@@ -152,10 +152,10 @@ public class CLTest {
     }
 
     void checkClass(String name, InputStream in) throws Exception {
-        ClassModel cf = Classfile.of().parse(in.readAllBytes());
-        System.err.println("    class " + cf.thisClass().asInternalName());
-        if (!name.equals(cf.thisClass().asInternalName() + ".class")) {
-            error("unexpected class found: " + cf.thisClass().asInternalName());
+        ClassFile cf = ClassFile.read(in);
+        System.err.println("    class " + cf.getName());
+        if (!name.equals(cf.getName() + ".class")) {
+            error("unexpected class found: " + cf.getName());
         }
     }
 

@@ -25,72 +25,72 @@
  * @test
  * @bug 8134759
  * @summary Add LineNumberTable attribute for return bytecodes split around finally code
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ConstantPoolException;
+import com.sun.tools.classfile.Method;
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.Code_attribute;
+import com.sun.tools.classfile.LineNumberTable_attribute;
+import com.sun.tools.classfile.LineNumberTable_attribute.Entry;
 
 import java.io.IOException;
-import java.util.List;
 
 public class FinallyLineNumberTest {
     public static void main(String[] args) throws Exception {
         // check that we have 5 consecutive entries for method()
-        List<LineNumberInfo> lines = findEntries();
+        Entry[] lines = findEntries();
         if (lines == null) {
             throw new Exception("finally line number table could not be loaded");
         }
-        if (lines.size() != 5) {
+        if (lines.length != 5) {
             // Help debug
             System.err.println("LineTable error, got lines:");
-            for (LineNumberInfo e : lines) {
-                System.err.println(e.lineNumber());
+            for (Entry e : lines) {
+                System.err.println(e.line_number);
             }
-            throw new Exception("finally line number table incorrect: length=" + lines.size() + " expected length=5");
+            throw new Exception("finally line number table incorrect: length=" + lines.length + " expected length=5");
         }
 
         // return null line, for the load null operation
-        int current = lines.get(0).lineNumber();
+        int current = lines[0].line_number;
         int first = current;
 
         // finally line
-        current = lines.get(1).lineNumber();
+        current = lines[1].line_number;
         if (current != first + 2) {
             throw new Exception("finally line number table incorrect: got=" + current + " expected=" + (first + 2));
         }
 
         // return null line, for the return operation
-        current = lines.get(2).lineNumber();
+        current = lines[2].line_number;
         if (current != first) {
             throw new Exception("finally line number table incorrect: got=" + current + " expected=" + first);
         }
 
         // for when exception is thrown
-        current = lines.get(3).lineNumber();
+        current = lines[3].line_number;
         if (current != first + 2) {
             throw new Exception("finally line number table incorrect: got=" + current + " expected=" + (first + 2));
         }
 
         // the '}' closing the finally block
-        current = lines.get(4).lineNumber();
+        current = lines[4].line_number;
         if (current != first + 3) {
             throw new Exception("finally line number table incorrect: got=" + current + " expected=" + (first + 3));
         }
     }
 
-    static List<LineNumberInfo> findEntries() throws IOException {
-        ClassModel self = Classfile.of().parse(FinallyLineNumberTest.class.getResourceAsStream("FinallyLineNumberTest.class").readAllBytes());
-        for (MethodModel m : self.methods()) {
-            if (m.methodName().equalsString("method")) {
-                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElseThrow();
-                for (Attribute<?> at : code_attribute.attributes()) {
-                    if (at instanceof LineNumberTableAttribute lineAt) {
-                        return lineAt.lineNumbers();
+    static Entry[] findEntries() throws IOException, ConstantPoolException {
+        ClassFile self = ClassFile.read(FinallyLineNumberTest.class.getResourceAsStream("FinallyLineNumberTest.class"));
+        for (Method m : self.methods) {
+            if ("method".equals(m.getName(self.constant_pool))) {
+                Code_attribute code_attribute = (Code_attribute)m.attributes.get(Attribute.Code);
+                for (Attribute at : code_attribute.attributes) {
+                    if (Attribute.LineNumberTable.equals(at.getName(self.constant_pool))) {
+                        return ((LineNumberTable_attribute)at).line_number_table;
                     }
                 }
             }

@@ -37,9 +37,10 @@ public class StreamHandler implements Runnable {
     public interface Listener {
         /**
          * Called when a line has been read from the process output stream
+         * @param handler this StreamHandler
          * @param s the line
          */
-        void onStringRead(String s);
+        void onStringRead(StreamHandler handler, String s);
     }
 
     private final ExecutorService executor;
@@ -70,7 +71,7 @@ public class StreamHandler implements Runnable {
             BufferedReader br = new BufferedReader(new InputStreamReader(is));
             String line;
             while ((line = br.readLine()) != null) {
-                listener.onStringRead(line);
+                listener.onStringRead(this, line);
             }
         } catch (Exception x) {
             throw new RuntimeException(x);

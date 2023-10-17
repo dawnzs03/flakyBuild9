@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,6 @@ public final class Pool {
     private final int prefSize;   // preferred num of identical conn per pool
     private final int initSize;   // initial number of identical conn to create
     private final Map<Object, ConnectionsRef> map;
-    private final ReentrantLock mapLock = new ReentrantLock();
 
     public Pool(int initSize, int prefSize, int maxSize) {
         map = new WeakHashMap<>();
@@ -126,11 +125,8 @@ public final class Pool {
 
         d("get(): ", id);
         if (debug) {
-            mapLock.lock();
-            try {
+            synchronized (map) {
                 d("size: ", map.size());
-            } finally {
-                mapLock.unlock();
             }
             remaining = checkRemaining(start, remaining);
         }
@@ -163,8 +159,7 @@ public final class Pool {
             throws NamingException {
 
         Connections conns;
-        mapLock.lock();
-        try {
+        synchronized (map) {
             ConnectionsRef ref = map.get(id);
             if (ref != null) {
                 return ref.getConnections();
@@ -184,8 +179,6 @@ public final class Pool {
 
             // Keep the weak reference through the element of a linked list
             weakRefs.add(weakRef);
-        } finally {
-            mapLock.unlock();
         }
         return conns;
     }
@@ -241,11 +234,8 @@ public final class Pool {
      */
     public void expire(long threshold) {
         Collection<ConnectionsRef> copy;
-        mapLock.lock();
-        try {
+        synchronized (map) {
             copy = new ArrayList<>(map.values());
-        } finally {
-            mapLock.unlock();
         }
 
         ArrayList<ConnectionsRef> removed = new ArrayList<>();
@@ -258,11 +248,8 @@ public final class Pool {
             }
         }
 
-        mapLock.lock();
-        try {
+        synchronized (map) {
             map.values().removeAll(removed);
-        } finally {
-            mapLock.unlock();
         }
 
         expungeStaleConnections();
@@ -301,8 +288,7 @@ public final class Pool {
         out.println("preferred pool size: " + prefSize);
         out.println("initial pool size: " + initSize);
 
-        mapLock.lock();
-        try {
+        synchronized (map) {
             out.println("current pool size: " + map.size());
 
             for (Map.Entry<Object, ConnectionsRef> entry : map.entrySet()) {
@@ -310,19 +296,14 @@ public final class Pool {
                 conns = entry.getValue().getConnections();
                 out.println("   " + id + ":" + conns.getStats());
             }
-        } finally {
-            mapLock.unlock();
         }
 
         out.println("====== Pool end =====================");
     }
 
     public String toString() {
-        mapLock.lock();
-        try {
-            return super.toString() + " " + map;
-        } finally {
-            mapLock.unlock();
+        synchronized (map) {
+            return super.toString() + " " + map.toString();
         }
     }
 

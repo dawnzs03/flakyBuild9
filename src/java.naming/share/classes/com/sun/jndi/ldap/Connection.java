@@ -51,8 +51,6 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.HandshakeCompletedEvent;
@@ -176,10 +174,7 @@ public final class Connection implements Runnable {
     private volatile boolean isUpgradedToStartTls;
 
     // Lock to maintain isUpgradedToStartTls state
-    final ReentrantLock startTlsLock = new ReentrantLock();
-
-    // Connection instance lock
-    private final ReentrantLock lock = new ReentrantLock();
+    final Object startTlsLock = new Object();
 
     private static final boolean IS_HOSTNAME_VERIFICATION_DISABLED
             = hostnameVerificationDisabledValue();
@@ -378,13 +373,8 @@ public final class Connection implements Runnable {
     //
     ////////////////////////////////////////////////////////////////////////////
 
-    int getMsgId() {
-        lock.lock();
-        try {
-            return ++outMsgId;
-        } finally {
-            lock.unlock();
-        }
+    synchronized int getMsgId() {
+        return ++outMsgId;
     }
 
     LdapRequest writeRequest(BerEncoder ber, int msgId) throws IOException {
@@ -418,12 +408,9 @@ public final class Connection implements Runnable {
         }
 
         try {
-            lock.lock();
-            try {
+            synchronized (this) {
                 outStream.write(ber.getBuf(), 0, ber.getDataLen());
                 outStream.flush();
-            } finally {
-                lock.unlock();
             }
         } catch (IOException e) {
             cleanup(null, true);
@@ -440,14 +427,11 @@ public final class Connection implements Runnable {
         BerDecoder rber;
 
         // If socket closed, don't even try
-        lock.lock();
-        try {
+        synchronized (this) {
             if (sock == null) {
                 throw new ServiceUnavailableException(host + ":" + port +
                     "; socket closed");
             }
-        } finally {
-            lock.unlock();
         }
 
         IOException ioException = null;
@@ -492,61 +476,48 @@ public final class Connection implements Runnable {
     //
     ////////////////////////////////////////////////////////////////////////////
 
-    private void addRequest(LdapRequest ldapRequest) {
-        lock.lock();
-        try {
-            LdapRequest ldr = pendingRequests;
-            if (ldr == null) {
-                pendingRequests = ldapRequest;
-                ldapRequest.next = null;
-            } else {
-                ldapRequest.next = pendingRequests;
-                pendingRequests = ldapRequest;
-            }
-        } finally {
-            lock.unlock();
+    private synchronized void addRequest(LdapRequest ldapRequest) {
+
+        LdapRequest ldr = pendingRequests;
+        if (ldr == null) {
+            pendingRequests = ldapRequest;
+            ldapRequest.next = null;
+        } else {
+            ldapRequest.next = pendingRequests;
+            pendingRequests = ldapRequest;
         }
     }
 
-    LdapRequest findRequest(int msgId) {
-        lock.lock();
-        try {
-            LdapRequest ldr = pendingRequests;
-            while (ldr != null) {
-                if (ldr.msgId == msgId) {
-                    return ldr;
-                }
-                ldr = ldr.next;
+    synchronized LdapRequest findRequest(int msgId) {
+
+        LdapRequest ldr = pendingRequests;
+        while (ldr != null) {
+            if (ldr.msgId == msgId) {
+                return ldr;
             }
-            return null;
-        } finally {
-            lock.unlock();
+            ldr = ldr.next;
         }
+        return null;
 
     }
 
-    void removeRequest(LdapRequest req) {
-        lock.lock();
-        try {
-            LdapRequest ldr = pendingRequests;
-            LdapRequest ldrprev = null;
+    synchronized void removeRequest(LdapRequest req) {
+        LdapRequest ldr = pendingRequests;
+        LdapRequest ldrprev = null;
 
-            while (ldr != null) {
-                if (ldr == req) {
-                    ldr.cancel();
+        while (ldr != null) {
+            if (ldr == req) {
+                ldr.cancel();
 
-                    if (ldrprev != null) {
-                        ldrprev.next = ldr.next;
-                    } else {
-                        pendingRequests = ldr.next;
-                    }
-                    ldr.next = null;
+                if (ldrprev != null) {
+                    ldrprev.next = ldr.next;
+                } else {
+                    pendingRequests = ldr.next;
                 }
-                ldrprev = ldr;
-                ldr = ldr.next;
+                ldr.next = null;
             }
-        } finally {
-            lock.unlock();
+            ldrprev = ldr;
+            ldr = ldr.next;
         }
     }
 
@@ -575,12 +546,9 @@ public final class Connection implements Runnable {
                     ber.getDataLen());
             }
 
-            lock.lock();
-            try {
+            synchronized (this) {
                 outStream.write(ber.getBuf(), 0, ber.getDataLen());
                 outStream.flush();
-            } finally {
-                lock.unlock();
             }
 
         } catch (IOException ex) {
@@ -590,17 +558,12 @@ public final class Connection implements Runnable {
         // Don't expect any response for the abandon request.
     }
 
-    void abandonOutstandingReqs(Control[] reqCtls) {
-        lock.lock();
-        try {
-            LdapRequest ldr = pendingRequests;
+    synchronized void abandonOutstandingReqs(Control[] reqCtls) {
+        LdapRequest ldr = pendingRequests;
 
-            while (ldr != null) {
-                abandonRequest(ldr, reqCtls);
-                pendingRequests = ldr = ldr.next;
-            }
-        } finally {
-            lock.unlock();
+        while (ldr != null) {
+            abandonRequest(ldr, reqCtls);
+            pendingRequests = ldr = ldr.next;
         }
     }
 
@@ -638,12 +601,9 @@ public final class Connection implements Runnable {
                     0, ber.getDataLen());
             }
 
-            lock.lock();
-            try {
+            synchronized (this) {
                 outStream.write(ber.getBuf(), 0, ber.getDataLen());
                 outStream.flush();
-            } finally {
-                lock.unlock();
             }
 
         } catch (IOException ex) {
@@ -665,8 +625,8 @@ public final class Connection implements Runnable {
      */
     void cleanup(Control[] reqCtls, boolean notifyParent) {
         boolean nparent = false;
-        lock.lock();
-        try {
+
+        synchronized (this) {
             useable = false;
 
             if (sock != null) {
@@ -711,12 +671,10 @@ public final class Connection implements Runnable {
                 LdapRequest ldr = pendingRequests;
                 while (ldr != null) {
                     ldr.close();
-                    ldr = ldr.next;
+                        ldr = ldr.next;
+                    }
                 }
             }
-        } finally {
-            lock.unlock();
-        }
         if (nparent) {
             parent.processConnectionClosure();
         }
@@ -765,46 +723,33 @@ public final class Connection implements Runnable {
     // "synchronize" might lead to deadlock so don't synchronize method
     // Use streamLock instead for synchronizing update to stream
 
-    public void replaceStreams(InputStream newIn, OutputStream newOut) {
-        lock.lock();
-        try {
-            if (debug) {
-                System.err.println("Replacing " + inStream + " with: " + newIn);
-                System.err.println("Replacing " + outStream + " with: " + newOut);
-            }
-
-            inStream = newIn;
-
-            // Cleanup old stream
-            try {
-                outStream.flush();
-            } catch (IOException ie) {
-                if (debug)
-                    System.err.println("Connection: cannot flush outstream: " + ie);
-            }
-
-            // Replace stream
-            outStream = newOut;
-        } finally {
-            lock.unlock();
+    public synchronized void replaceStreams(InputStream newIn, OutputStream newOut) {
+        if (debug) {
+            System.err.println("Replacing " + inStream + " with: " + newIn);
+            System.err.println("Replacing " + outStream + " with: " + newOut);
         }
+
+        inStream = newIn;
+
+        // Cleanup old stream
+        try {
+            outStream.flush();
+        } catch (IOException ie) {
+            if (debug)
+                System.err.println("Connection: cannot flush outstream: " + ie);
+        }
+
+        // Replace stream
+        outStream = newOut;
     }
 
     /*
      * Replace streams and set isUpdradedToStartTls flag to the provided value
      */
-    public void replaceStreams(InputStream newIn, OutputStream newOut, boolean isStartTls) {
-        lock.lock();
-        try {
-            startTlsLock.lock();
-            try {
-                replaceStreams(newIn, newOut);
-                isUpgradedToStartTls = isStartTls;
-            } finally {
-                startTlsLock.unlock();
-            }
-        } finally {
-            lock.unlock();
+    public synchronized void replaceStreams(InputStream newIn, OutputStream newOut, boolean isStartTls) {
+        synchronized (startTlsLock) {
+            replaceStreams(newIn, newOut);
+            isUpgradedToStartTls = isStartTls;
         }
     }
 
@@ -820,13 +765,8 @@ public final class Connection implements Runnable {
      * This ensures that there is no contention between the main thread
      * and the Connection thread when the main thread updates inStream.
      */
-    private InputStream getInputStream() {
-        lock.lock();
-        try {
-            return inStream;
-        } finally {
-            lock.unlock();
-        }
+    private synchronized InputStream getInputStream() {
+        return inStream;
     }
 
 
@@ -877,37 +817,31 @@ public final class Connection implements Runnable {
      * the safest thing to do is to shut it down.
      */
 
-    // lock for reader to wait on while paused
-    private final ReentrantLock pauseLock = new ReentrantLock();
-    private final Condition pauseCondition = pauseLock.newCondition();
+    private final Object pauseLock = new Object();  // lock for reader to wait on while paused
     private boolean paused = false;           // paused state of reader
 
     /*
      * Unpauses reader thread if it was paused
      */
     private void unpauseReader() throws IOException {
-        pauseLock.lock();
-        try {
+        synchronized (pauseLock) {
             if (paused) {
                 if (debug) {
                     System.err.println("Unpausing reader; read from: " +
                                         inStream);
                 }
                 paused = false;
-                pauseCondition.signal();
+                pauseLock.notify();
             }
-        } finally {
-            pauseLock.unlock();
         }
     }
 
      /*
      * Pauses reader so that it stops reading from the input stream.
      * Reader blocks on pauseLock instead of read().
-     * MUST be called with pauseLock locked.
+     * MUST be called from within synchronized (pauseLock) clause.
      */
     private void pauseReader() throws IOException {
-        assert pauseLock.isHeldByCurrentThread();
         if (debug) {
             System.err.println("Pausing reader;  was reading from: " +
                                 inStream);
@@ -915,7 +849,7 @@ public final class Connection implements Runnable {
         paused = true;
         try {
             while (paused) {
-                pauseCondition.await(); // notified by unpauseReader
+                pauseLock.wait(); // notified by unpauseReader
             }
         } catch (InterruptedException e) {
             throw new InterruptedIOException(
@@ -1051,8 +985,7 @@ public final class Connection implements Runnable {
                                  * to ensure that reader goes into paused state
                                  * before writer can attempt to unpause reader
                                  */
-                                pauseLock.lock();
-                                try {
+                                synchronized (pauseLock) {
                                     needPause = ldr.addReplyBer(retBer);
                                     if (needPause) {
                                         /*
@@ -1063,8 +996,6 @@ public final class Connection implements Runnable {
                                     }
 
                                     // else release pauseLock
-                                } finally {
-                                    pauseLock.unlock();
                                 }
                             } else {
                                 // System.err.println("Cannot find" +
@@ -1146,17 +1077,12 @@ public final class Connection implements Runnable {
      */
     private volatile HandshakeListener tlsHandshakeListener;
 
-    public void setHandshakeCompletedListener(SSLSocket sslSocket) {
-        lock.lock();
-        try {
-            if (tlsHandshakeListener != null)
-                tlsHandshakeListener.tlsHandshakeCompleted.cancel(false);
+    public synchronized void setHandshakeCompletedListener(SSLSocket sslSocket) {
+        if (tlsHandshakeListener != null)
+            tlsHandshakeListener.tlsHandshakeCompleted.cancel(false);
 
-            tlsHandshakeListener = new HandshakeListener();
-            sslSocket.addHandshakeCompletedListener(tlsHandshakeListener);
-        } finally {
-            lock.unlock();
-        }
+        tlsHandshakeListener = new HandshakeListener();
+        sslSocket.addHandshakeCompletedListener(tlsHandshakeListener);
     }
 
     public X509Certificate getTlsServerCertificate()

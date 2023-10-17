@@ -86,7 +86,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void restore_sp_after_call() {
     Label L;
     ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
-    lea(rscratch1, Address(rfp, rscratch1, Address::lsl(LogBytesPerWord)));
 #ifdef ASSERT
     cbnz(rscratch1, L);
     stop("SP is null");
@@ -99,7 +98,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #ifdef ASSERT
     Label L;
     ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
-    lea(rscratch1, Address(rfp, rscratch1, Address::lsl(LogBytesPerWord)));
     cmp(sp, rscratch1);
     br(EQ, L);
     stop(msg);
@@ -266,13 +264,14 @@ class InterpreterMacroAssembler: public MacroAssembler {
                         Label& not_equal_continue);
 
   void record_klass_in_profile(Register receiver, Register mdp,
-                               Register reg2);
+                               Register reg2, bool is_virtual_call);
   void record_klass_in_profile_helper(Register receiver, Register mdp,
                                       Register reg2, int start_row,
-                                      Label& done);
+                                      Label& done, bool is_virtual_call);
   void record_item_in_profile_helper(Register item, Register mdp,
                                      Register reg2, int start_row, Label& done, int total_rows,
-                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn);
+                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn,
+                                     int non_profiled_offset);
 
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register reg, int offset_of_disp);
