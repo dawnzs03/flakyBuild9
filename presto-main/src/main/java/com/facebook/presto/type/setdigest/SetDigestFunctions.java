@@ -14,6 +14,7 @@
 
 package com.facebook.presto.type.setdigest;
 
+import com.facebook.airlift.json.JsonObjectMapperProvider;
 import com.facebook.presto.common.block.Block;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.type.StandardTypes;
@@ -21,8 +22,12 @@ import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.function.ScalarFunction;
 import com.facebook.presto.spi.function.SqlType;
 import com.facebook.presto.spi.function.TypeParameter;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
 
+import java.io.UncheckedIOException;
 import java.util.Map;
 
 import static com.facebook.presto.common.type.BigintType.BIGINT;
@@ -31,6 +36,8 @@ import static com.facebook.presto.type.setdigest.SetDigest.exactIntersectionCard
 
 public final class SetDigestFunctions
 {
+    private static final ObjectMapper OBJECT_MAPPER = new JsonObjectMapperProvider().get();
+
     private SetDigestFunctions()
     {
     }
@@ -92,5 +99,19 @@ public final class SetDigestFunctions
         blockBuilder.closeEntry();
 
         return (Block) mapType.getObject(blockBuilder, 0);
+    }
+
+    @ScalarFunction
+    @SqlType(StandardTypes.VARCHAR)
+    public static Slice hashCounts(@SqlType(SetDigestType.NAME) Slice slice)
+    {
+        SetDigest digest = SetDigest.newInstance(slice);
+
+        try {
+            return Slices.utf8Slice(OBJECT_MAPPER.writeValueAsString(digest.getHashCounts()));
+        }
+        catch (JsonProcessingException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

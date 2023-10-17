@@ -112,7 +112,6 @@ import com.facebook.presto.sql.planner.iterative.rule.ReorderJoins;
 import com.facebook.presto.sql.planner.iterative.rule.RewriteAggregationIfToFilter;
 import com.facebook.presto.sql.planner.iterative.rule.RewriteCaseExpressionPredicate;
 import com.facebook.presto.sql.planner.iterative.rule.RewriteCaseToMap;
-import com.facebook.presto.sql.planner.iterative.rule.RewriteConstantArrayContainsToInExpression;
 import com.facebook.presto.sql.planner.iterative.rule.RewriteFilterWithExternalFunctionToProject;
 import com.facebook.presto.sql.planner.iterative.rule.RewriteSpatialPartitioningAggregation;
 import com.facebook.presto.sql.planner.iterative.rule.RuntimeReorderJoinSides;
@@ -314,13 +313,6 @@ public class PlanOptimizers
                 estimatedExchangesCostCalculator,
                 new RewriteCaseToMap(metadata.getFunctionAndTypeManager()).rules());
 
-        IterativeOptimizer containsToInRewriter = new IterativeOptimizer(
-                metadata,
-                ruleStats,
-                statsCalculator,
-                estimatedExchangesCostCalculator,
-                new RewriteConstantArrayContainsToInExpression(metadata.getFunctionAndTypeManager()).rules());
-
         PlanOptimizer predicatePushDown = new StatsRecordingPlanOptimizer(optimizerStats, new PredicatePushDown(metadata, sqlParser));
         PlanOptimizer prefilterForLimitingAggregation = new StatsRecordingPlanOptimizer(optimizerStats, new PrefilterForLimitingAggregation(metadata, statsCalculator));
 
@@ -488,7 +480,6 @@ public class PlanOptimizers
         builder.add(
                 caseToMapRewriter,
                 caseExpressionPredicateRewriter,
-                containsToInRewriter,
                 new IterativeOptimizer(
                         metadata,
                         ruleStats,

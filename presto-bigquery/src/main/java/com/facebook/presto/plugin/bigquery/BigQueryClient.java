@@ -64,7 +64,8 @@ public class BigQueryClient
 
     public TableInfo getTable(TableId tableId)
     {
-        Table table = bigQuery.getTable(tableId);
+        TableId bigQueryTableId = tableIds.get(tableId);
+        Table table = bigQuery.getTable(bigQueryTableId != null ? bigQueryTableId : tableId);
         if (table != null) {
             tableIds.putIfAbsent(tableId, table.getTableId());
             datasetIds.putIfAbsent(toDatasetId(tableId), toDatasetId(table.getTableId()));

@@ -184,15 +184,6 @@ class SystemConfig : public ConfigBase {
       "experimental.spiller-spill-path"};
   static constexpr std::string_view kShutdownOnsetSec{"shutdown-onset-sec"};
   static constexpr std::string_view kSystemMemoryGb{"system-memory-gb"};
-  /// Specifies the total memory capacity that can be used by query execution in
-  /// GB. The query memory capacity should be configured less than the system
-  /// memory capacity ('system-memory-gb') to reserve memory for system usage
-  /// such as disk spilling and cache prefetch which are not counted in query
-  /// memory usage.
-  ///
-  /// NOTE: the query memory capacity is enforced by memory arbitrator so that
-  /// this config only applies if the memory arbitration has been enabled.
-  static constexpr std::string_view kQueryMemoryGb{"query-memory-gb"};
   static constexpr std::string_view kAsyncDataCacheEnabled{
       "async-data-cache-enabled"};
   static constexpr std::string_view kAsyncCacheSsdGb{"async-cache-ssd-gb"};
@@ -222,7 +213,6 @@ class SystemConfig : public ConfigBase {
   /// NOTE: this config only applies if the memory arbitration has been enabled.
   static constexpr std::string_view kMemoryPoolInitCapacity{
       "memory-pool-init-capacity"};
-
   /// The minimal memory capacity in bytes transferred between memory pools
   /// during memory arbitration.
   ///
@@ -235,6 +225,7 @@ class SystemConfig : public ConfigBase {
   /// NOTE: this config only applies if the memory arbitration has been enabled.
   static constexpr std::string_view kReservedMemoryPoolCapacityPct{
       "reserved-memory-pool-capacity-pct"};
+
   static constexpr std::string_view kEnableVeloxTaskLogging{
       "enable_velox_task_logging"};
   static constexpr std::string_view kEnableVeloxExprSetLogging{
@@ -275,13 +266,11 @@ class SystemConfig : public ConfigBase {
   /// cleanup.
   static constexpr std::string_view kOldTaskCleanUpMs{"old-task-cleanup-ms"};
 
+  static constexpr std::string_view kAnnouncementMinFrequencyMs{
+      "announcement-min-frequency-ms"};
+
   static constexpr std::string_view kAnnouncementMaxFrequencyMs{
       "announcement-max-frequency-ms"};
-
-  /// Time (ms) after which we periodically send heartbeats to discovery
-  /// endpoint.
-  static constexpr std::string_view kHeartbeatFrequencyMs{
-      "heartbeat-frequency-ms"};
 
   static constexpr std::string_view kExchangeMaxErrorDuration{
       "exchange.max-error-duration"};
@@ -420,8 +409,6 @@ class SystemConfig : public ConfigBase {
 
   std::string memoryArbitratorKind() const;
 
-  int32_t queryMemoryGb() const;
-
   uint64_t memoryPoolInitCapacity() const;
 
   uint64_t memoryPoolTransferCapacity() const;
@@ -448,9 +435,9 @@ class SystemConfig : public ConfigBase {
 
   uint32_t logNumZombieTasks() const;
 
-  uint64_t announcementMaxFrequencyMs() const;
+  uint64_t announcementMinFrequencyMs() const;
 
-  uint64_t heartbeatFrequencyMs() const;
+  uint64_t announcementMaxFrequencyMs() const;
 
   std::chrono::duration<double> exchangeMaxErrorDuration() const;
 
@@ -468,10 +455,7 @@ class NodeConfig : public ConfigBase {
  public:
   static constexpr std::string_view kNodeEnvironment{"node.environment"};
   static constexpr std::string_view kNodeId{"node.id"};
-  // "node.ip" is Legacy Config. It is replaced with "node.internal-address"
   static constexpr std::string_view kNodeIp{"node.ip"};
-  static constexpr std::string_view kNodeInternalAddress{
-      "node.internal-address"};
   static constexpr std::string_view kNodeLocation{"node.location"};
   static constexpr std::string_view kNodeMemoryGb{"node.memory_gb"};
 
@@ -483,7 +467,7 @@ class NodeConfig : public ConfigBase {
 
   std::string nodeId() const;
 
-  std::string nodeInternalAddress(
+  std::string nodeIp(
       const std::function<std::string()>& defaultIp = nullptr) const;
 
   std::string nodeLocation() const;

@@ -37,32 +37,19 @@ public class ColumnStatistics
 
     private final boolean hasNumberOfValues;
     private final long numberOfValues;
-    private final boolean hasRawSize;
-    private final long rawSize;
-    private final boolean hasStorageSize;
-    private final long storageSize;
     private final HiveBloomFilter bloomFilter;
 
-    public ColumnStatistics(Long numberOfValues, HiveBloomFilter bloomFilter)
+    public ColumnStatistics(Long numberOfValues)
     {
-        this(numberOfValues, bloomFilter, null, null);
+        this(numberOfValues, null);
     }
 
     public ColumnStatistics(
             Long numberOfValues,
-            HiveBloomFilter bloomFilter,
-            Long rawSize,
-            Long storageSize)
+            HiveBloomFilter bloomFilter)
     {
         this.hasNumberOfValues = numberOfValues != null;
         this.numberOfValues = hasNumberOfValues ? numberOfValues : 0;
-
-        this.hasRawSize = rawSize != null;
-        this.rawSize = hasRawSize ? rawSize : 0;
-
-        this.hasStorageSize = storageSize != null;
-        this.storageSize = hasStorageSize ? storageSize : 0;
-
         this.bloomFilter = bloomFilter;
     }
 
@@ -74,26 +61,6 @@ public class ColumnStatistics
     public long getNumberOfValues()
     {
         return hasNumberOfValues ? numberOfValues : 0;
-    }
-
-    public boolean hasRawSize()
-    {
-        return hasRawSize;
-    }
-
-    public long getRawSize()
-    {
-        return rawSize;
-    }
-
-    public boolean hasStorageSize()
-    {
-        return hasStorageSize;
-    }
-
-    public long getStorageSize()
-    {
-        return storageSize;
     }
 
     public boolean hasMinAverageValueSizeInBytes()
@@ -158,11 +125,7 @@ public class ColumnStatistics
 
     public ColumnStatistics withBloomFilter(HiveBloomFilter bloomFilter)
     {
-        return new ColumnStatistics(
-                getNumberOfValues(),
-                bloomFilter,
-                hasRawSize() ? getRawSize() : null,
-                hasStorageSize() ? getStorageSize() : null);
+        return new ColumnStatistics(getNumberOfValues(), bloomFilter);
     }
 
     protected final long getMembersSizeInBytes()
@@ -179,10 +142,6 @@ public class ColumnStatistics
     {
         return hasNumberOfValues == that.hasNumberOfValues &&
                 numberOfValues == that.numberOfValues &&
-                hasRawSize == that.hasRawSize &&
-                rawSize == that.rawSize &&
-                hasStorageSize == that.hasStorageSize &&
-                storageSize == that.storageSize &&
                 Objects.equals(getBloomFilter(), that.getBloomFilter());
     }
 
@@ -205,10 +164,6 @@ public class ColumnStatistics
         return Objects.hash(
                 hasNumberOfValues,
                 getNumberOfValues(),
-                hasRawSize(),
-                getRawSize(),
-                hasStorageSize(),
-                getStorageSize(),
                 getBloomFilter());
     }
 
@@ -217,8 +172,6 @@ public class ColumnStatistics
         return toStringHelper(this)
                 .omitNullValues()
                 .add("numberOfValues", getNumberOfValues())
-                .add("rawSize", getRawSize())
-                .add("storageSize", getStorageSize())
                 .add("bloomFilter", getBloomFilter());
     }
 
@@ -232,39 +185,21 @@ public class ColumnStatistics
     public void addHash(StatisticsHasher hasher)
     {
         hasher.putOptionalLong(hasNumberOfValues, numberOfValues)
-                .putOptionalLong(hasRawSize, rawSize)
-                .putOptionalLong(hasStorageSize, storageSize)
                 .putOptionalHashable(getBloomFilter());
     }
 
     public static ColumnStatistics mergeColumnStatistics(List<ColumnStatistics> stats)
     {
         if (stats.isEmpty()) {
-            return new ColumnStatistics(0L, null, null, null);
+            return new ColumnStatistics(0L, null);
         }
 
-        long numberOfRows = 0;
-        long rawSize = 0;
-        long storageSize = 0;
-        boolean hasRawSize = false;
-        boolean hasStorageSize = false;
-
-        for (ColumnStatistics stat : stats) {
-            numberOfRows += stat.getNumberOfValues();
-            if (stat.hasRawSize()) {
-                rawSize += stat.getRawSize();
-                hasRawSize = true;
-            }
-            if (stat.hasStorageSize()) {
-                storageSize += stat.getStorageSize();
-                hasStorageSize = true;
-            }
-        }
+        long numberOfRows = stats.stream()
+                .mapToLong(ColumnStatistics::getNumberOfValues)
+                .sum();
 
         return createColumnStatistics(
                 numberOfRows,
-                hasRawSize ? rawSize : null,
-                hasStorageSize ? storageSize : null,
                 mergeBooleanStatistics(stats).orElse(null),
                 mergeIntegerStatistics(stats).orElse(null),
                 mergeDoubleStatistics(stats).orElse(null),
@@ -278,8 +213,6 @@ public class ColumnStatistics
 
     public static ColumnStatistics createColumnStatistics(
             Long numberOfValues,
-            Long rawSize,
-            Long storageSize,
             BooleanStatistics booleanStatistics,
             IntegerStatistics integerStatistics,
             DoubleStatistics doubleStatistics,
@@ -322,6 +255,6 @@ public class ColumnStatistics
             return new MapColumnStatistics(numberOfValues, bloomFilter, mapStatistics);
         }
 
-        return new ColumnStatistics(numberOfValues, bloomFilter, rawSize, storageSize);
+        return new ColumnStatistics(numberOfValues, bloomFilter);
     }
 }

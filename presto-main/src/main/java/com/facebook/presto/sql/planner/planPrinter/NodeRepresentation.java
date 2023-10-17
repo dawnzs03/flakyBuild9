@@ -19,7 +19,6 @@ import com.facebook.presto.spi.SourceLocation;
 import com.facebook.presto.spi.plan.PlanNodeId;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.sql.planner.plan.PlanFragmentId;
-import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +40,6 @@ public class NodeRepresentation
     private final Optional<PlanNodeStats> stats;
     private final List<PlanNodeStatsEstimate> estimatedStats;
     private final List<PlanCostEstimate> estimatedCost;
-    private final List<PlanNodeId> planNodeIds;
 
     private final StringBuilder details = new StringBuilder();
 
@@ -56,8 +54,7 @@ public class NodeRepresentation
             List<PlanNodeStatsEstimate> estimatedStats,
             List<PlanCostEstimate> estimatedCost,
             List<PlanNodeId> children,
-            List<PlanFragmentId> remoteSources,
-            List<PlanNodeId> planNodeIds)
+            List<PlanFragmentId> remoteSources)
     {
         this.sourceLocation = sourceLocation;
         this.id = requireNonNull(id, "id is null");
@@ -70,7 +67,6 @@ public class NodeRepresentation
         this.estimatedCost = requireNonNull(estimatedCost, "estimatedCost is null");
         this.children = requireNonNull(children, "children is null");
         this.remoteSources = requireNonNull(remoteSources, "remoteSources is null");
-        this.planNodeIds = ImmutableList.copyOf(requireNonNull(planNodeIds, "planNodeIds is null"));
 
         checkArgument(estimatedCost.size() == estimatedStats.size(), "size of cost and stats list does not match");
     }
@@ -149,10 +145,5 @@ public class NodeRepresentation
     public List<PlanCostEstimate> getEstimatedCost()
     {
         return estimatedCost;
-    }
-
-    public List<PlanNodeId> getPlanNodeIds()
-    {
-        return planNodeIds;
     }
 }

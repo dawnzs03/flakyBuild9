@@ -69,7 +69,6 @@ public class MapColumnWriter
     private long columnStatisticsRetainedSizeInBytes;
 
     private int nonNullValueCount;
-    private long rawSize;
 
     private boolean closed;
 
@@ -159,9 +158,7 @@ public class MapColumnWriter
             childRawSize += valueWriter.writeBlock(columnarMap.getValuesBlock());
         }
         nonNullValueCount += blockNonNullValueCount;
-        long rawSize = (columnarMap.getPositionCount() - blockNonNullValueCount) * NULL_SIZE + childRawSize;
-        this.rawSize += rawSize;
-        return rawSize;
+        return (columnarMap.getPositionCount() - blockNonNullValueCount) * NULL_SIZE + childRawSize;
     }
 
     @Override
@@ -173,7 +170,6 @@ public class MapColumnWriter
         rowGroupColumnStatistics.add(statistics);
         columnStatisticsRetainedSizeInBytes += statistics.getRetainedSizeInBytes();
         nonNullValueCount = 0;
-        rawSize = 0;
 
         ImmutableMap.Builder<Integer, ColumnStatistics> columnStatistics = ImmutableMap.builder();
         columnStatistics.put(column, statistics);
@@ -256,6 +252,5 @@ public class MapColumnWriter
         rowGroupColumnStatistics.clear();
         columnStatisticsRetainedSizeInBytes = 0;
         nonNullValueCount = 0;
-        rawSize = 0;
     }
 }

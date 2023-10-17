@@ -23,8 +23,6 @@ public class IntegerStatisticsBuilder
         implements LongValueStatisticsBuilder
 {
     private long nonNullValueCount;
-    private long size;
-    private long rawSize;
     private long minimum = Long.MAX_VALUE;
     private long maximum = Long.MIN_VALUE;
     private long sum;
@@ -93,18 +91,6 @@ public class IntegerStatisticsBuilder
             return new IntegerColumnStatistics(nonNullValueCount, null, integerStatistics.get());
         }
         return new ColumnStatistics(nonNullValueCount, null);
-    }
-
-    @Override
-    public void incrementRawSize(long rawSize)
-    {
-        this.rawSize += rawSize;
-    }
-
-    @Override
-    public void incrementSize(long size)
-    {
-        this.size += size;
     }
 
     public static Optional<IntegerStatistics> mergeIntegerStatistics(List<ColumnStatistics> stats)

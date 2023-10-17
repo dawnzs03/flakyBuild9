@@ -607,8 +607,7 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitIsNullPredicate(IsNullPredicate node, StackableAstVisitorContext<Context> context)
         {
-            Context newContext = context.getContext().withUnusedExpressionsForAccessControl(ImmutableSet.of(NodeRef.of(node.getValue())));
-            process(node.getValue(), new StackableAstVisitorContext<>(newContext));
+            process(node.getValue(), context);
 
             return setExpressionType(node, BOOLEAN);
         }
@@ -616,8 +615,7 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitIsNotNullPredicate(IsNotNullPredicate node, StackableAstVisitorContext<Context> context)
         {
-            Context newContext = context.getContext().withUnusedExpressionsForAccessControl(ImmutableSet.of(NodeRef.of(node.getValue())));
-            process(node.getValue(), new StackableAstVisitorContext<>(newContext));
+            process(node.getValue(), context);
 
             return setExpressionType(node, BOOLEAN);
         }

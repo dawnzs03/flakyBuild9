@@ -63,7 +63,6 @@ public class StructColumnWriter
     private long columnStatisticsRetainedSizeInBytes;
 
     private int nonNullValueCount;
-    private long rawSize;
 
     private boolean closed;
 
@@ -149,9 +148,7 @@ public class StructColumnWriter
             }
         }
         nonNullValueCount += blockNonNullValueCount;
-        long rawSize = (columnarRow.getPositionCount() - blockNonNullValueCount) * NULL_SIZE + childRawSize;
-        this.rawSize += rawSize;
-        return rawSize;
+        return (columnarRow.getPositionCount() - blockNonNullValueCount) * NULL_SIZE + childRawSize;
     }
 
     @Override
@@ -162,7 +159,6 @@ public class StructColumnWriter
         rowGroupColumnStatistics.add(statistics);
         columnStatisticsRetainedSizeInBytes += statistics.getRetainedSizeInBytes();
         nonNullValueCount = 0;
-        rawSize = 0;
 
         ImmutableMap.Builder<Integer, ColumnStatistics> columnStatistics = ImmutableMap.builder();
         columnStatistics.put(column, statistics);
@@ -253,6 +249,5 @@ public class StructColumnWriter
         rowGroupColumnStatistics.clear();
         columnStatisticsRetainedSizeInBytes = 0;
         nonNullValueCount = 0;
-        rawSize = 0;
     }
 }

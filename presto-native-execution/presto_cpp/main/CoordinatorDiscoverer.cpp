@@ -14,6 +14,7 @@
 
 #include "presto_cpp/main/CoordinatorDiscoverer.h"
 #include <folly/Uri.h>
+#include <mutex>
 #include "presto_cpp/main/common/Configs.h"
 
 namespace facebook::presto {

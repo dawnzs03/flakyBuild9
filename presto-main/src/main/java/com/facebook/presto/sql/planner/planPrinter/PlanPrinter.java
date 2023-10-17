@@ -1344,8 +1344,7 @@ public class PlanPrinter
                     estimatedStats,
                     estimatedCosts,
                     childrenIds,
-                    remoteSources,
-                    allNodes);
+                    remoteSources);
 
             representation.addNode(nodeOutput);
             return nodeOutput;

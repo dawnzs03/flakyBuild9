@@ -26,8 +26,6 @@ public class DoubleStatisticsBuilder
         implements StatisticsBuilder
 {
     private long nonNullValueCount;
-    private long size;
-    private long rawSize;
     private boolean hasNan;
     private double minimum = Double.POSITIVE_INFINITY;
     private double maximum = Double.NEGATIVE_INFINITY;
@@ -87,18 +85,6 @@ public class DoubleStatisticsBuilder
             return new DoubleColumnStatistics(nonNullValueCount, null, doubleStatistics.get());
         }
         return new ColumnStatistics(nonNullValueCount, null);
-    }
-
-    @Override
-    public void incrementRawSize(long rawSize)
-    {
-        this.rawSize += rawSize;
-    }
-
-    @Override
-    public void incrementSize(long size)
-    {
-        this.size += size;
     }
 
     public static Optional<DoubleStatistics> mergeDoubleStatistics(List<ColumnStatistics> stats)

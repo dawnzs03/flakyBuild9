@@ -25,8 +25,6 @@ public class BooleanStatisticsBuilder
         implements StatisticsBuilder
 {
     private long nonNullValueCount;
-    private long size;
-    private long rawSize;
     private long trueValueCount;
 
     @Override
@@ -71,18 +69,6 @@ public class BooleanStatisticsBuilder
             return new BooleanColumnStatistics(nonNullValueCount, null, booleanStatistics.get());
         }
         return new ColumnStatistics(nonNullValueCount, null);
-    }
-
-    @Override
-    public void incrementRawSize(long rawSize)
-    {
-        this.rawSize += rawSize;
-    }
-
-    @Override
-    public void incrementSize(long size)
-    {
-        this.size += size;
     }
 
     public static Optional<BooleanStatistics> mergeBooleanStatistics(List<ColumnStatistics> stats)

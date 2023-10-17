@@ -431,9 +431,6 @@ public abstract class AbstractTestNativeGeneralQueries
                 "(DECIMAL'12345678920222426.1234'), (DECIMAL'12345678901214161830.1234567')) as l (c0)");
         assertQuery("SELECT CAST(c0 as REAL) FROM (VALUES (DECIMAL'1234567890121416182022.234'), (NULL), " +
                 "(DECIMAL'12345678920222426.1234'), (DECIMAL'12345678901214162830.1234567')) as l (c0)");
-
-        // Cast to ROW.
-        assertQuery("SELECT cast(row(orderkey, comment) as row(\"123\" varchar, \"456\" varchar)) FROM orders");
     }
 
     @Test
@@ -1330,13 +1327,6 @@ public abstract class AbstractTestNativeGeneralQueries
         // test nested lambda
         assertQuery("select transform(transform(x, i->i*z), i->i*y) from (select x, y*y as y, z*z as z from (values row(array[1], 2, 3)) t(x, y, z))");
         assertQuery("select transform(x, i->transform(i, j->j*y)) from (select x, y*y as y from (values row(array[array[1]], 2)) t(x, y))");
-    }
-
-    @Test
-    public void testMergeEmptyHll()
-    {
-        assertQuery("select cardinality(merge(empty_approx_set())) from orders");
-        assertQuery("select cardinality(merge(empty_approx_set(0.1))) from orders");
     }
 
     private void assertQueryResultCount(String sql, int expectedResultCount)

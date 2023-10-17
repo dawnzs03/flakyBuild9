@@ -207,14 +207,13 @@ void ConfigBase::checkRegisteredProperties(
   }
   auto str = supported.str();
   if (!str.empty()) {
-    PRESTO_STARTUP_LOG(INFO)
-        << "Registered properties from '" << filePath_ << "':\n"
-        << str;
+    PRESTO_STARTUP_LOG(INFO) << "Registered '" << filePath_ << "' properties:\n"
+                             << str;
   }
   str = unsupported.str();
   if (!str.empty()) {
     PRESTO_STARTUP_LOG(WARNING)
-        << "Unregistered properties from '" << filePath_ << "':\n"
+        << "Unregistered '" << filePath_ << "' properties:\n"
         << str;
   }
 }
@@ -255,7 +254,6 @@ SystemConfig::SystemConfig() {
           NUM_PROP(kMmapArenaCapacityRatio, 10),
           STR_PROP(kUseMmapAllocator, "true"),
           STR_PROP(kMemoryArbitratorKind, ""),
-          NUM_PROP(kQueryMemoryGb, 38),
           STR_PROP(kEnableVeloxTaskLogging, "false"),
           STR_PROP(kEnableVeloxExprSetLogging, "false"),
           NUM_PROP(kLocalShuffleMaxPartitionBytes, 268435456),
@@ -272,8 +270,8 @@ SystemConfig::SystemConfig() {
           STR_PROP(kSkipRuntimeStatsInRunningTaskInfo, "true"),
           STR_PROP(kLogZombieTaskInfo, "false"),
           NUM_PROP(kLogNumZombieTasks, 20),
-          NUM_PROP(kAnnouncementMaxFrequencyMs, 30'000), // 30s
-          NUM_PROP(kHeartbeatFrequencyMs, 0),
+          NUM_PROP(kAnnouncementMinFrequencyMs, 25'000), // 25s
+          NUM_PROP(kAnnouncementMaxFrequencyMs, 30'000), // 35s
           STR_PROP(kExchangeMaxErrorDuration, "30s"),
           STR_PROP(kExchangeRequestTimeout, "10s"),
           NUM_PROP(kTaskRunTimeSliceMicros, 50'000),
@@ -468,10 +466,6 @@ std::string SystemConfig::memoryArbitratorKind() const {
   return optionalProperty<std::string>(kMemoryArbitratorKind).value_or("");
 }
 
-int32_t SystemConfig::queryMemoryGb() const {
-  return optionalProperty<int32_t>(kQueryMemoryGb).value();
-}
-
 uint64_t SystemConfig::memoryPoolInitCapacity() const {
   static constexpr uint64_t kMemoryPoolInitCapacityDefault = 128 << 20;
   return optionalProperty<uint64_t>(kMemoryPoolInitCapacity)
@@ -531,12 +525,12 @@ uint32_t SystemConfig::logNumZombieTasks() const {
   return optionalProperty<uint32_t>(kLogNumZombieTasks).value();
 }
 
-uint64_t SystemConfig::announcementMaxFrequencyMs() const {
-  return optionalProperty<uint64_t>(kAnnouncementMaxFrequencyMs).value();
+uint64_t SystemConfig::announcementMinFrequencyMs() const {
+  return optionalProperty<uint64_t>(kAnnouncementMinFrequencyMs).value();
 }
 
-uint64_t SystemConfig::heartbeatFrequencyMs() const {
-  return optionalProperty<uint64_t>(kHeartbeatFrequencyMs).value();
+uint64_t SystemConfig::announcementMaxFrequencyMs() const {
+  return optionalProperty<uint64_t>(kAnnouncementMaxFrequencyMs).value();
 }
 
 std::chrono::duration<double> SystemConfig::exchangeMaxErrorDuration() const {
@@ -565,7 +559,6 @@ NodeConfig::NodeConfig() {
           NONE_PROP(kNodeEnvironment),
           NONE_PROP(kNodeId),
           NONE_PROP(kNodeIp),
-          NONE_PROP(kNodeInternalAddress),
           NONE_PROP(kNodeLocation),
           NONE_PROP(kNodeMemoryGb),
       };
@@ -588,21 +581,16 @@ std::string NodeConfig::nodeLocation() const {
   return requiredProperty(kNodeLocation);
 }
 
-std::string NodeConfig::nodeInternalAddress(
+std::string NodeConfig::nodeIp(
     const std::function<std::string()>& defaultIp) const {
-  auto resultOpt = optionalProperty(kNodeInternalAddress);
-  /// node.ip(kNodeIp) is legacy config replaced with node.internal-address, but
-  /// still valid config in Presto, so handling both.
-  if (!resultOpt.hasValue()) {
-    resultOpt = optionalProperty(kNodeIp);
-  }
+  auto resultOpt = optionalProperty(kNodeIp);
   if (resultOpt.has_value()) {
     return resultOpt.value();
   } else if (defaultIp != nullptr) {
     return defaultIp();
   } else {
     VELOX_FAIL(
-        "Node Internal Address or IP was not found in NodeConfigs. Default IP was not provided "
+        "Node IP was not found in NodeConfigs. Default IP was not provided "
         "either.");
   }
 }

@@ -16,8 +16,6 @@ package com.facebook.presto.orc.metadata.statistics;
 import com.facebook.presto.orc.metadata.statistics.StatisticsHasher.Hashable;
 import org.openjdk.jol.info.ClassLayout;
 
-import java.util.Objects;
-
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 public class BinaryStatistics
@@ -57,24 +55,5 @@ public class BinaryStatistics
     public void addHash(StatisticsHasher hasher)
     {
         hasher.putLong(sum);
-    }
-
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        BinaryStatistics that = (BinaryStatistics) o;
-        return sum == that.sum;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(sum);
     }
 }

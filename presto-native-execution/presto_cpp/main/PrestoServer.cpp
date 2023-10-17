@@ -47,6 +47,7 @@
 #include "velox/common/file/FileSystems.h"
 #include "velox/common/memory/MmapAllocator.h"
 #include "velox/connectors/Connector.h"
+#include "velox/connectors/hive/HiveConnector.h"
 #include "velox/core/Config.h"
 #include "velox/exec/PartitionedOutputBufferManager.h"
 #include "velox/functions/prestosql/aggregates/RegisterAggregateFunctions.h"
@@ -88,15 +89,6 @@ void enableChecksum() {
         return std::make_unique<
             serializer::presto::PrestoOutputStreamListener>();
       });
-}
-
-std::string stringifyConnectorConfig(
-    const std::unordered_map<std::string, std::string>& configs) {
-  std::stringstream out;
-  for (auto const& [key, value] : configs) {
-    out << "  " << key << "=" << value << "\n";
-  }
-  return out.str();
 }
 
 } // namespace
@@ -167,15 +159,15 @@ void PrestoServer::run() {
     httpExecThreads = systemConfig->httpExecThreads();
     environment_ = nodeConfig->nodeEnvironment();
     nodeId_ = nodeConfig->nodeId();
-    address_ = nodeConfig->nodeInternalAddress(
-        std::bind(&PrestoServer::getLocalIp, this));
+    address_ = nodeConfig->nodeIp(std::bind(&PrestoServer::getLocalIp, this));
     // Add [] to an ipv6 address.
     if (address_.find(':') != std::string::npos && address_.front() != '[') {
       address_ = fmt::format("[{}]", address_);
     }
     nodeLocation_ = nodeConfig->nodeLocation();
   } catch (const VeloxUserError& e) {
-    PRESTO_STARTUP_LOG(ERROR) << "Failed to start server due to " << e.what();
+    // VeloxUserError is always logged as an error.
+    // Avoid logging again.
     exit(EXIT_FAILURE);
   }
 
@@ -212,22 +204,11 @@ void PrestoServer::run() {
         nodeId_,
         nodeLocation_,
         catalogNames,
+        systemConfig->announcementMinFrequencyMs(),
         systemConfig->announcementMaxFrequencyMs(),
         clientCertAndKeyPath,
         ciphers);
     announcer_->start();
-    uint64_t heartbeatFrequencyMs = systemConfig->heartbeatFrequencyMs();
-    if (heartbeatFrequencyMs > 0) {
-      heartbeatManager_ = std::make_unique<PeriodicHeartbeatManager>(
-          address_,
-          httpsPort.has_value() ? httpsPort.value() : httpPort,
-          coordinatorDiscoverer_,
-          clientCertAndKeyPath,
-          ciphers,
-          [server = this]() { return server->fetchNodeStatus(); },
-          heartbeatFrequencyMs);
-      heartbeatManager_->start();
-    }
   }
 
   const bool reusePort = SystemConfig::instance()->httpServerReusePort();
@@ -413,12 +394,6 @@ void PrestoServer::run() {
     PRESTO_SHUTDOWN_LOG(INFO) << "Stopping announcer";
     announcer_->stop();
   }
-
-  if (heartbeatManager_ != nullptr) {
-    PRESTO_SHUTDOWN_LOG(INFO) << "Stopping Heartbeat manager";
-    heartbeatManager_->stop();
-  }
-
   PRESTO_SHUTDOWN_LOG(INFO) << "Stopping all periodic tasks...";
   periodicTaskManager_->stop();
 
@@ -499,8 +474,9 @@ void PrestoServer::yieldTasks() {
 }
 
 void PrestoServer::initializeVeloxMemory() {
-  auto* systemConfig = SystemConfig::instance();
-  const uint64_t memoryGb = systemConfig->systemMemoryGb();
+  auto nodeConfig = NodeConfig::instance();
+  auto systemConfig = SystemConfig::instance();
+  uint64_t memoryGb = systemConfig->systemMemoryGb();
   PRESTO_STARTUP_LOG(INFO) << "Starting with node memory " << memoryGb << "GB";
 
   const int64_t memoryBytes = memoryGb << 30;
@@ -556,12 +532,6 @@ void PrestoServer::initializeVeloxMemory() {
   options.checkUsageLeak = systemConfig->enableMemoryLeakCheck();
   if (!systemConfig->memoryArbitratorKind().empty()) {
     options.arbitratorKind = systemConfig->memoryArbitratorKind();
-    const uint64_t queryMemoryGb = systemConfig->queryMemoryGb();
-    VELOX_USER_CHECK_LE(
-        queryMemoryGb,
-        memoryGb,
-        "Query memory capacity must not be larger than system memory capacity");
-    options.queryMemoryCapacity = queryMemoryGb << 30;
     options.memoryPoolInitCapacity = systemConfig->memoryPoolInitCapacity();
     options.memoryPoolTransferCapacity =
         systemConfig->memoryPoolTransferCapacity();
@@ -683,10 +653,6 @@ std::vector<std::string> PrestoServer::registerConnectors(
           fileName.substr(0, fileName.size() - kPropertiesExtension.size());
 
       auto connectorConf = util::readConfig(entry.path());
-      PRESTO_STARTUP_LOG(INFO)
-          << "Registered properties from " << entry.path() << ":\n"
-          << stringifyConnectorConfig(connectorConf);
-
       std::shared_ptr<const velox::Config> properties =
           std::make_shared<const velox::core::MemConfig>(
               std::move(connectorConf));
@@ -891,10 +857,6 @@ void PrestoServer::reportServerInfo(proxygen::ResponseHandler* downstream) {
 }
 
 void PrestoServer::reportNodeStatus(proxygen::ResponseHandler* downstream) {
-  http::sendOkResponse(downstream, json(fetchNodeStatus()));
-}
-
-protocol::NodeStatus PrestoServer::fetchNodeStatus() {
   auto systemConfig = SystemConfig::instance();
   const int64_t nodeMemoryGb = systemConfig->systemMemoryGb();
 
@@ -915,11 +877,11 @@ protocol::NodeStatus PrestoServer::fetchNodeStatus() {
       (int)std::thread::hardware_concurrency(),
       cpuLoadPct,
       cpuLoadPct,
-      pool_ ? pool_->currentBytes() : 0,
+      pool_->currentBytes(),
       nodeMemoryGb * 1024 * 1024 * 1024,
       nonHeapUsed};
 
-  return nodeStatus;
+  http::sendOkResponse(downstream, json(nodeStatus));
 }
 
 } // namespace facebook::presto

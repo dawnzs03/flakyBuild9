@@ -150,10 +150,7 @@ public class SliceDirectColumnWriter
                 nonNullValueCount++;
             }
         }
-
-        long rawSize = (block.getPositionCount() - nonNullValueCount) * NULL_SIZE + elementSize;
-        statisticsBuilder.incrementRawSize(rawSize);
-        return rawSize;
+        return (block.getPositionCount() - nonNullValueCount) * NULL_SIZE + elementSize;
     }
 
     void writePresentValue(boolean value)

@@ -31,12 +31,12 @@ std::optional<std::string> getBroadcastInfo(folly::Uri& uri) {
 }
 } // namespace
 
-ContinueFuture BroadcastExchangeSource::request(uint32_t maxBytes) {
+void BroadcastExchangeSource::request() {
   std::vector<velox::ContinuePromise> promises;
   {
     std::lock_guard<std::mutex> l(queue_->mutex());
     if (atEnd_) {
-      return folly::makeFuture<folly::Unit>(folly::Unit());
+      return;
     }
 
     if (!reader_->hasNext()) {
@@ -54,8 +54,6 @@ ContinueFuture BroadcastExchangeSource::request(uint32_t maxBytes) {
   for (auto& promise : promises) {
     promise.setValue();
   }
-
-  return folly::makeFuture<folly::Unit>(folly::Unit());
 }
 
 folly::F14FastMap<std::string, int64_t> BroadcastExchangeSource::stats() const {

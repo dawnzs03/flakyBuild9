@@ -14,27 +14,20 @@
 
 package com.facebook.presto.type.setdigest;
 
-import com.facebook.presto.common.block.Block;
-import com.facebook.presto.common.block.SingleMapBlock;
-import com.facebook.presto.common.function.OperatorType;
-import com.facebook.presto.common.type.MapType;
+import com.facebook.airlift.json.JsonObjectMapperProvider;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
+import io.airlift.slice.Slice;
 import org.testng.annotations.Test;
 
-import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import static com.facebook.presto.common.block.MethodHandleUtil.compose;
-import static com.facebook.presto.common.block.MethodHandleUtil.nativeValueGetter;
-import static com.facebook.presto.common.type.BigintType.BIGINT;
-import static com.facebook.presto.common.type.SmallintType.SMALLINT;
-import static com.facebook.presto.testing.TestingEnvironment.getOperatorMethodHandle;
 import static com.facebook.presto.type.setdigest.SetDigest.DEFAULT_MAX_HASHES;
 import static com.facebook.presto.type.setdigest.SetDigest.NUMBER_OF_BUCKETS;
 import static com.facebook.presto.type.setdigest.SetDigestFunctions.hashCounts;
@@ -45,11 +38,6 @@ import static org.testng.Assert.assertTrue;
 
 public class TestSetDigest
 {
-    private static final MethodHandle KEY_NATIVE_EQUALS = getOperatorMethodHandle(OperatorType.EQUAL, BIGINT, BIGINT);
-    private static final MethodHandle KEY_BLOCK_EQUALS = compose(KEY_NATIVE_EQUALS, nativeValueGetter(BIGINT), nativeValueGetter(BIGINT));
-    private static final MethodHandle KEY_NATIVE_HASH_CODE = getOperatorMethodHandle(OperatorType.HASH_CODE, BIGINT);
-    private static final MethodHandle KEY_BLOCK_HASH_CODE = compose(KEY_NATIVE_HASH_CODE, nativeValueGetter(BIGINT));
-
     @Test
     public void testIntersectionCardinality()
             throws Exception
@@ -104,6 +92,7 @@ public class TestSetDigest
 
     @Test
     public void testHashCounts()
+            throws Exception
     {
         SetDigest digest1 = new SetDigest();
         digest1.add(0);
@@ -116,26 +105,18 @@ public class TestSetDigest
         digest2.add(2);
         digest2.add(2);
 
-        MapType mapType = new MapType(BIGINT, SMALLINT, KEY_BLOCK_EQUALS, KEY_BLOCK_HASH_CODE);
-        Block block = hashCounts(mapType, digest1.serialize());
-        assertTrue(block instanceof SingleMapBlock);
-        Set<Short> blockValues = new HashSet<>();
-        for (int i = 1; i < block.getPositionCount(); i += 2) {
-            blockValues.add(block.getShort(i));
-        }
+        ObjectMapper mapper = new JsonObjectMapperProvider().get();
 
+        Slice slice = hashCounts(digest1.serialize());
+        Map<Long, Short> counts = mapper.readValue(slice.toStringUtf8(), new TypeReference<Map<Long, Short>>() {});
         Set<Short> expected = ImmutableSet.of((short) 1, (short) 2);
-        assertEquals(blockValues, expected);
+        assertEquals(counts.values(), expected);
 
         digest1.mergeWith(digest2);
-        block = hashCounts(mapType, digest1.serialize());
-        assertTrue(block instanceof SingleMapBlock);
+        slice = hashCounts(digest1.serialize());
+        counts = mapper.readValue(slice.toStringUtf8(), new TypeReference<Map<Long, Short>>() {});
         expected = ImmutableSet.of((short) 1, (short) 2, (short) 4);
-        blockValues = new HashSet<>();
-        for (int i = 1; i < block.getPositionCount(); i += 2) {
-            blockValues.add(block.getShort(i));
-        }
-        assertEquals(blockValues, expected);
+        assertEquals(ImmutableSet.copyOf(counts.values()), expected);
     }
 
     @Test

@@ -37,7 +37,7 @@ class BroadcastExchangeSource : public velox::exec::ExchangeSource {
     return !atEnd_;
   }
 
-  ContinueFuture request(uint32_t maxBytes) override;
+  void request() override;
 
   void close() override {}
 

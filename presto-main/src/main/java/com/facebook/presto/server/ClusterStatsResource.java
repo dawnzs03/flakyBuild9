@@ -28,7 +28,6 @@ import com.facebook.presto.spi.NodeState;
 import com.facebook.presto.ttl.clusterttlprovidermanagers.ClusterTtlProviderManager;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.airlift.units.Duration;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -49,7 +48,6 @@ import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICATION_THRIFT_BINARY;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICATION_THRIFT_COMPACT;
@@ -57,10 +55,8 @@ import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICA
 import static com.facebook.presto.server.security.RoleType.ADMIN;
 import static com.facebook.presto.server.security.RoleType.USER;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 
@@ -76,7 +72,6 @@ public class ClusterStatsResource
     private final Optional<ResourceManagerProxy> proxyHelper;
     private final InternalResourceGroupManager internalResourceGroupManager;
     private final ClusterTtlProviderManager clusterTtlProviderManager;
-    private final Supplier<ClusterStats> clusterStatsSupplier;
 
     @Inject
     public ClusterStatsResource(
@@ -97,8 +92,6 @@ public class ClusterStatsResource
         this.proxyHelper = requireNonNull(proxyHelper, "internalNodeManager is null");
         this.internalResourceGroupManager = requireNonNull(internalResourceGroupManager, "internalResourceGroupManager is null");
         this.clusterTtlProviderManager = requireNonNull(clusterTtlProviderManager, "clusterTtlProvider is null");
-        Duration expirationDuration = requireNonNull(serverConfig, "serverConfig is null").getClusterStatsExpirationDuration();
-        this.clusterStatsSupplier = expirationDuration.getValue() > 0 ? memoizeWithExpiration(this::calculateClusterStats, expirationDuration.toMillis(), MILLISECONDS) : this::calculateClusterStats;
     }
 
     @GET
@@ -114,11 +107,7 @@ public class ClusterStatsResource
             proxyClusterStats(servletRequest, asyncResponse, xForwardedProto, uriInfo);
             return;
         }
-        asyncResponse.resume(Response.ok(clusterStatsSupplier.get()).build());
-    }
 
-    private ClusterStats calculateClusterStats()
-    {
         long runningQueries = 0;
         long blockedQueries = 0;
         long queuedQueries = 0;
@@ -160,7 +149,7 @@ public class ClusterStatsResource
             }
         }
 
-        return new ClusterStats(
+        asyncResponse.resume(Response.ok(new ClusterStats(
                 runningQueries,
                 blockedQueries,
                 queuedQueries,
@@ -171,7 +160,7 @@ public class ClusterStatsResource
                 totalInputRows,
                 totalInputBytes,
                 totalCpuTimeSecs,
-                internalResourceGroupManager.getQueriesQueuedOnInternal());
+                internalResourceGroupManager.getQueriesQueuedOnInternal())).build());
     }
 
     @GET

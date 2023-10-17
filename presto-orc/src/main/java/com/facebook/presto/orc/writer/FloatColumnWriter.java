@@ -121,10 +121,7 @@ public class FloatColumnWriter
                 nonNullValueCount++;
             }
         }
-
-        long rawSize = nonNullValueCount * TYPE_SIZE + (block.getPositionCount() - nonNullValueCount) * NULL_SIZE;
-        statisticsBuilder.incrementRawSize(rawSize);
-        return rawSize;
+        return nonNullValueCount * TYPE_SIZE + (block.getPositionCount() - nonNullValueCount) * NULL_SIZE;
     }
 
     @Override

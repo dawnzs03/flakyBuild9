@@ -102,16 +102,12 @@ class PeriodicTaskManager {
   void addHttpEndpointLatencyStatsTask();
   void printHttpEndpointLatencyStats();
 
-  void addArbitratorStatsTask();
-  void updateArbitratorStatsTask();
-
   folly::FunctionScheduler scheduler_;
   folly::CPUThreadPoolExecutor* const driverCPUExecutor_;
   folly::IOThreadPoolExecutor* const httpExecutor_;
   TaskManager* const taskManager_;
   const velox::memory::MemoryAllocator* const memoryAllocator_;
   const velox::cache::AsyncDataCache* const asyncDataCache_;
-  const velox::memory::MemoryArbitrator* const arbitrator_;
   const std::unordered_map<
       std::string,
       std::shared_ptr<velox::connector::Connector>>& connectors_;
@@ -133,7 +129,6 @@ class PeriodicTaskManager {
   int64_t lastVoluntaryContextSwitches_{0};
   int64_t lastForcedContextSwitches_{0};
   velox::exec::SpillStats lastSpillStats_;
-  velox::memory::MemoryArbitrator::Stats lastArbitratorStats_;
 };
 
 } // namespace facebook::presto

@@ -74,29 +74,4 @@ public abstract class AbstractTestNativeProbabilityFunctionQueries
         assertQuery("SELECT gamma_cdf(1.0, acctbal, 7.0) FROM supplier WHERE acctbal > 0.0 AND acctbal < 999.0");
         assertQuery("SELECT gamma_cdf(10.0, 2.0, acctbal) FROM supplier WHERE acctbal > 0.0 AND acctbal < 999.0");
     }
-
-    @Test
-    public void testInverseBetaCDF()
-    {
-        assertQuery("SELECT inverse_beta_cdf(nationKey, 13.5, 0.53) FROM nation WHERE nationKey > 0");
-        assertQuery("SELECT inverse_beta_cdf(14.0, nationKey, 0.99) FROM nation WHERE nationKey > 0");
-        assertQuery("SELECT inverse_beta_cdf(1.01, 22.0, nationKey) FROM nation WHERE nationKey >= 0 AND nationKey <= 1");
-    }
-
-    @Test
-    public void testNormalCDF()
-    {
-        assertQuery("SELECT normal_cdf(nationKey, 7.3, 10.5) FROM nation");
-        assertQuery("SELECT normal_cdf(9.15, nationKey, 5.3) FROM nation WHERE nationKey != 0");
-        assertQuery("SELECT normal_cdf(2.3, 11.2, nationKey) FROM nation");
-    }
-
-    @Test
-    public void testWilsonInterval()
-    {
-        assertQuery("SELECT wilson_interval_upper(3, 7, acctbal / 200) FROM supplier WHERE acctbal > 0.0 AND acctbal < 1000.0");
-        assertQuery("SELECT wilson_interval_lower(nationkey, nationkey + 10, 1.5) FROM nation WHERE nationkey > 0 AND nationkey < 1000");
-        assertQuery("SELECT wilson_interval_upper(suppkey, suppkey + 5, 0.8) FROM supplier WHERE suppkey > 0 AND suppkey < 1000");
-        assertQuery("SELECT wilson_interval_lower(10, 12, acctbal / 200) FROM supplier WHERE acctbal > 0.0 AND acctbal < 1000.0");
-    }
 }

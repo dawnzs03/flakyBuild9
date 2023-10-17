@@ -20,8 +20,6 @@ public class CountStatisticsBuilder
         implements StatisticsBuilder
 {
     private long nonNullValueCount;
-    private long size;
-    private long rawSize;
 
     @Override
     public void addBlock(Type type, Block block)
@@ -50,17 +48,5 @@ public class CountStatisticsBuilder
     public ColumnStatistics buildColumnStatistics()
     {
         return new ColumnStatistics(nonNullValueCount, null);
-    }
-
-    @Override
-    public void incrementRawSize(long rawSize)
-    {
-        this.rawSize += rawSize;
-    }
-
-    @Override
-    public void incrementSize(long size)
-    {
-        this.size += size;
     }
 }

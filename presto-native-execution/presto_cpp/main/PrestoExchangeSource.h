@@ -73,6 +73,10 @@ class PrestoExchangeSource : public velox::exec::ExchangeSource {
       const std::string& clientCertAndKeyPath_ = "",
       const std::string& ciphers_ = "");
 
+  bool supportsFlowControl() const override {
+    return true;
+  }
+
   /// Returns 'true' is there is no request in progress, this source is not at
   /// end and most recent request hasn't failed. Transitions into
   /// 'request-pending' state if not there already. The caller must follow up
@@ -106,21 +110,6 @@ class PrestoExchangeSource : public velox::exec::ExchangeSource {
 
   folly::F14FastMap<std::string, int64_t> stats() const override {
     return {{"prestoExchangeSource.numPages", numPages_}};
-  }
-
-  std::string toJsonString() override {
-    folly::dynamic obj = folly::dynamic::object;
-    obj["taskId"] = taskId_;
-    obj["destination"] = destination_;
-    obj["sequence"] = sequence_;
-    obj["requestPending"] = requestPending_.load();
-    obj["basePath"] = basePath_;
-    obj["host"] = host_;
-    obj["numPages"] = numPages_;
-    obj["closed"] = std::to_string(closed_);
-    obj["abortResultsSucceeded"] = std::to_string(abortResultsSucceeded_);
-    obj["atEnd"] = atEnd_;
-    return folly::toPrettyJson(obj);
   }
 
   int testingFailedAttempts() const {

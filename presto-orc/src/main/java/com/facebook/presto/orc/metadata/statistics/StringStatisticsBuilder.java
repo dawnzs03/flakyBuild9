@@ -32,8 +32,6 @@ public class StringStatisticsBuilder
     private final int stringStatisticsLimitInBytes;
 
     private long nonNullValueCount;
-    private long size;
-    private long rawSize;
     private Slice minimum;
     private Slice maximum;
     private long sum;
@@ -131,18 +129,6 @@ public class StringStatisticsBuilder
             return new StringColumnStatistics(nonNullValueCount, null, stringStatistics.get());
         }
         return new ColumnStatistics(nonNullValueCount, null);
-    }
-
-    @Override
-    public void incrementRawSize(long rawSize)
-    {
-        this.rawSize += rawSize;
-    }
-
-    @Override
-    public void incrementSize(long size)
-    {
-        this.size += size;
     }
 
     public static Optional<StringStatistics> mergeStringStatistics(List<ColumnStatistics> stats)

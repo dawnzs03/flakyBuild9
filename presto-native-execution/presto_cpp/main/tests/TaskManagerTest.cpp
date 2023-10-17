@@ -22,11 +22,11 @@
 #include "velox/common/base/Fs.h"
 #include "velox/common/base/tests/GTestUtils.h"
 #include "velox/common/file/FileSystems.h"
-#include "velox/connectors/hive/HiveConnector.h"
-#include "velox/dwio/common/FileSink.h"
-#include "velox/dwio/common/WriterFactory.h"
 #include "velox/dwio/common/tests/utils/BatchMaker.h"
+#include "velox/dwio/dwrf/reader/DwrfReader.h"
+#include "velox/dwio/dwrf/writer/Writer.h"
 #include "velox/exec/Exchange.h"
+#include "velox/exec/tests/utils/HiveConnectorTestBase.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/exec/tests/utils/QueryAssertions.h"
 #include "velox/exec/tests/utils/TempDirectoryPath.h"
@@ -39,8 +39,6 @@
 
 DECLARE_int32(old_task_ms);
 DECLARE_bool(velox_memory_leak_check_enabled);
-
-static const std::string kHiveConnectorId = "test-hive";
 
 using namespace facebook::velox;
 
@@ -160,7 +158,8 @@ class TaskManagerTest : public testing::Test {
     auto hiveConnector =
         connector::getConnectorFactory(
             connector::hive::HiveConnectorFactory::kHiveConnectorName)
-            ->newConnector(kHiveConnectorId, nullptr);
+            ->newConnector(
+                facebook::velox::exec::test::kHiveConnectorId, nullptr);
     connector::registerConnector(hiveConnector);
 
     rootPool_ =
@@ -192,7 +191,8 @@ class TaskManagerTest : public testing::Test {
     if (httpServerWrapper_) {
       httpServerWrapper_->stop();
     }
-    connector::unregisterConnector(kHiveConnectorId);
+    connector::unregisterConnector(
+        facebook::velox::exec::test::kHiveConnectorId);
   }
 
   std::vector<RowVectorPtr> makeVectors(int count, int rowsPerVector) {
@@ -213,18 +213,17 @@ class TaskManagerTest : public testing::Test {
   void writeToFile(
       const std::string& filePath,
       const std::vector<RowVectorPtr>& vectors) {
-    dwio::common::WriterOptions options;
+    dwrf::WriterOptions options;
+    options.config = std::make_shared<facebook::velox::dwrf::Config>();
     options.schema = rowType_;
-    options.memoryPool = rootPool_.get();
     auto sink = std::make_unique<dwio::common::LocalFileSink>(
-        filePath, dwio::common::FileSink::Options{});
-    auto writer = dwio::common::getWriterFactory(dwio::common::FileFormat::DWRF)
-                      ->createWriter(std::move(sink), options);
+        filePath, dwio::common::MetricsLog::voidLog());
+    dwrf::Writer writer{options, std::move(sink), *rootPool_};
 
     for (size_t i = 0; i < vectors.size(); ++i) {
-      writer->write(vectors[i]);
+      writer.write(vectors[i]);
     }
-    writer->close();
+    writer.close();
   }
 
   std::vector<std::shared_ptr<exec::test::TempFilePath>> makeFilePaths(
@@ -248,7 +247,7 @@ class TaskManagerTest : public testing::Test {
     hiveSplit->fileSplit.length = fs::file_size(filePath);
 
     protocol::ScheduledSplit split;
-    split.split.connectorId = kHiveConnectorId;
+    split.split.connectorId = facebook::velox::exec::test::kHiveConnectorId;
     split.split.connectorSplit = hiveSplit;
     split.sequenceId = sequenceId;
     return split;
@@ -532,7 +531,7 @@ class TaskManagerTest : public testing::Test {
     auto nodeConfigFile = fileSystem->openFileForWrite(nodeConfigFilePath);
     nodeConfigFile->append(fmt::format(
         "{}={}\n{}={}",
-        NodeConfig::kNodeInternalAddress,
+        NodeConfig::kNodeIp,
         "192.16.7.66",
         NodeConfig::kNodeId,
         "12"));

@@ -35,8 +35,6 @@ public class MapColumnStatisticsBuilder
     private final boolean collectKeyStats;
 
     private long nonNullValueCount;
-    private long size;
-    private long rawSize;
     private boolean hasEntries;
 
     /**
@@ -88,18 +86,6 @@ public class MapColumnStatisticsBuilder
             return new MapColumnStatistics(nonNullValueCount, null, mapStatistics);
         }
         return new ColumnStatistics(nonNullValueCount, null);
-    }
-
-    @Override
-    public void incrementRawSize(long rawSize)
-    {
-        this.rawSize += rawSize;
-    }
-
-    @Override
-    public void incrementSize(long size)
-    {
-        this.size += size;
     }
 
     public static Optional<MapStatistics> mergeMapStatistics(List<ColumnStatistics> stats)
