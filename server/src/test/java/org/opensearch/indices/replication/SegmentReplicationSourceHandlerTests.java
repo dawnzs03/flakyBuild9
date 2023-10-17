@@ -180,7 +180,6 @@ public class SegmentReplicationSourceHandlerTests extends IndexShardTestCase {
                 assertEquals(e.getClass(), OpenSearchException.class);
             }
         });
-        copyState.decRef();
     }
 
     public void testReplicationAlreadyRunning() throws IOException {

@@ -46,7 +46,6 @@ import org.opensearch.cluster.ClusterStateApplier;
 import org.opensearch.cluster.metadata.Metadata;
 import org.opensearch.cluster.service.ClusterManagerTaskThrottler;
 import org.opensearch.cluster.service.ClusterService;
-import org.opensearch.common.annotation.PublicApi;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Setting.Property;
@@ -76,9 +75,8 @@ import java.util.stream.Collectors;
 /**
  * Service for scripting
  *
- * @opensearch.api
+ * @opensearch.internal
  */
-@PublicApi(since = "1.0.0")
 public class ScriptService implements Closeable, ClusterStateApplier {
 
     private static final Logger logger = LogManager.getLogger(ScriptService.class);

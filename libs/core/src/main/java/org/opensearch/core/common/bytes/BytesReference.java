@@ -35,7 +35,6 @@ package org.opensearch.core.common.bytes;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
-import org.opensearch.common.annotation.PublicApi;
 import org.opensearch.core.common.io.stream.BytesStream;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.util.ByteArray;
@@ -51,9 +50,8 @@ import java.util.ArrayList;
 /**
  * A reference to bytes.
  *
- * @opensearch.api
+ * @opensearch.internal
  */
-@PublicApi(since = "1.0.0")
 public interface BytesReference extends Comparable<BytesReference>, ToXContentFragment {
 
     /**

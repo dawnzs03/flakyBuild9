@@ -9,10 +9,7 @@
 package org.opensearch.telemetry.tracing;
 
 import org.opensearch.common.settings.Settings;
-import org.opensearch.telemetry.TelemetrySettings;
 import org.opensearch.telemetry.tracing.exporter.OTelSpanExporterFactory;
-import org.opensearch.telemetry.tracing.sampler.ProbabilisticSampler;
-import org.opensearch.telemetry.tracing.sampler.RequestSampler;
 
 import java.util.concurrent.TimeUnit;
 
@@ -40,16 +37,15 @@ public final class OTelResourceProvider {
 
     /**
      * Creates OpenTelemetry instance with default configuration
-     * @param telemetrySettings telemetry settings
      * @param settings cluster settings
      * @return OpenTelemetry instance
      */
-    public static OpenTelemetry get(TelemetrySettings telemetrySettings, Settings settings) {
+    public static OpenTelemetry get(Settings settings) {
         return get(
             settings,
             OTelSpanExporterFactory.create(settings),
             ContextPropagators.create(W3CTraceContextPropagator.getInstance()),
-            Sampler.parentBased(new RequestSampler(new ProbabilisticSampler(telemetrySettings)))
+            Sampler.alwaysOn()
         );
     }
 

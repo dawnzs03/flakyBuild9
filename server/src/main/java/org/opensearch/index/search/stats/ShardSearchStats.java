@@ -91,9 +91,6 @@ public final class ShardSearchStats implements SearchOperationListener {
                 statsHolder.suggestCurrent.inc();
             } else {
                 statsHolder.queryCurrent.inc();
-                if (searchContext.shouldUseConcurrentSearch()) {
-                    statsHolder.concurrentQueryCurrent.inc();
-                }
             }
         });
     }
@@ -107,10 +104,6 @@ public final class ShardSearchStats implements SearchOperationListener {
             } else {
                 statsHolder.queryCurrent.dec();
                 assert statsHolder.queryCurrent.count() >= 0;
-                if (searchContext.shouldUseConcurrentSearch()) {
-                    statsHolder.concurrentQueryCurrent.dec();
-                    assert statsHolder.concurrentQueryCurrent.count() >= 0;
-                }
             }
         });
     }
@@ -126,11 +119,6 @@ public final class ShardSearchStats implements SearchOperationListener {
                 statsHolder.queryMetric.inc(tookInNanos);
                 statsHolder.queryCurrent.dec();
                 assert statsHolder.queryCurrent.count() >= 0;
-                if (searchContext.shouldUseConcurrentSearch()) {
-                    statsHolder.concurrentQueryMetric.inc(tookInNanos);
-                    statsHolder.concurrentQueryCurrent.dec();
-                    assert statsHolder.concurrentQueryCurrent.count() >= 0;
-                }
             }
         });
     }
@@ -218,7 +206,6 @@ public final class ShardSearchStats implements SearchOperationListener {
      */
     static final class StatsHolder {
         final MeanMetric queryMetric = new MeanMetric();
-        final MeanMetric concurrentQueryMetric = new MeanMetric();
         final MeanMetric fetchMetric = new MeanMetric();
         /* We store scroll statistics in microseconds because with nanoseconds we run the risk of overflowing the total stats if there are
          * many scrolls. For example, on a system with 2^24 scrolls that have been executed, each executing for 2^10 seconds, then using
@@ -231,7 +218,6 @@ public final class ShardSearchStats implements SearchOperationListener {
         final MeanMetric pitMetric = new MeanMetric();
         final MeanMetric suggestMetric = new MeanMetric();
         final CounterMetric queryCurrent = new CounterMetric();
-        final CounterMetric concurrentQueryCurrent = new CounterMetric();
         final CounterMetric fetchCurrent = new CounterMetric();
         final CounterMetric scrollCurrent = new CounterMetric();
         final CounterMetric pitCurrent = new CounterMetric();
@@ -242,9 +228,6 @@ public final class ShardSearchStats implements SearchOperationListener {
                 queryMetric.count(),
                 TimeUnit.NANOSECONDS.toMillis(queryMetric.sum()),
                 queryCurrent.count(),
-                concurrentQueryMetric.count(),
-                TimeUnit.NANOSECONDS.toMillis(concurrentQueryMetric.sum()),
-                concurrentQueryCurrent.count(),
                 fetchMetric.count(),
                 TimeUnit.NANOSECONDS.toMillis(fetchMetric.sum()),
                 fetchCurrent.count(),

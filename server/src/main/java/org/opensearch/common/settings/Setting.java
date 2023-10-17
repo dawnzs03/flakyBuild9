@@ -38,7 +38,6 @@ import org.opensearch.OpenSearchParseException;
 import org.opensearch.Version;
 import org.opensearch.common.Booleans;
 import org.opensearch.common.Nullable;
-import org.opensearch.common.annotation.PublicApi;
 import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.regex.Regex;
 import org.opensearch.common.unit.MemorySizeValue;
@@ -103,17 +102,15 @@ import java.util.stream.Stream;
  * }
  * </pre>
  *
- * @opensearch.api
+ * @opensearch.internal
  */
-@PublicApi(since = "1.0.0")
 public class Setting<T> implements ToXContentObject {
 
     /**
      * Property of the setting
      *
-     * @opensearch.api
+     * @opensearch.internal
      */
-    @PublicApi(since = "1.0.0")
     public enum Property {
         /**
          * should be filtered in some api (mask password/credentials)
@@ -638,9 +635,8 @@ public class Setting<T> implements ToXContentObject {
      * Allows a setting to declare a dependency on another setting being set. Optionally, a setting can validate the value of the dependent
      * setting.
      *
-     * @opensearch.api
+     * @opensearch.internal
      */
-    @PublicApi(since = "1.0.0")
     public interface SettingDependency {
 
         /**
@@ -788,9 +784,8 @@ public class Setting<T> implements ToXContentObject {
     /**
      * Allows an affix setting to declare a dependency on another affix setting.
      *
-     * @opensearch.api
+     * @opensearch.internal
      */
-    @PublicApi(since = "1.0.0")
     public interface AffixSettingDependency extends SettingDependency {
 
         @Override
@@ -801,9 +796,8 @@ public class Setting<T> implements ToXContentObject {
     /**
      * An affix setting
      *
-     * @opensearch.api
+     * @opensearch.internal
      */
-    @PublicApi(since = "1.0.0")
     public static class AffixSetting<T> extends Setting<T> {
         private final AffixKey key;
         private final BiFunction<String, String, Setting<T>> delegateFactory;
@@ -1032,10 +1026,9 @@ public class Setting<T> implements ToXContentObject {
      *
      * @param <T> the type of the {@link Setting}
      *
-     * @opensearch.api
+     * @opensearch.internal
      */
     @FunctionalInterface
-    @PublicApi(since = "1.0.0")
     public interface Validator<T> {
 
         /**
@@ -2841,9 +2834,8 @@ public class Setting<T> implements ToXContentObject {
     /**
      * Key for the setting
      *
-     * @opensearch.api
+     * @opensearch.internal
      */
-    @PublicApi(since = "1.0.0")
     public interface Key {
         boolean match(String key);
     }
@@ -2851,9 +2843,8 @@ public class Setting<T> implements ToXContentObject {
     /**
      * A simple key for a setting
      *
-     * @opensearch.api
+     * @opensearch.internal
      */
-    @PublicApi(since = "1.0.0")
     public static class SimpleKey implements Key {
         protected final String key;
 
@@ -2927,9 +2918,8 @@ public class Setting<T> implements ToXContentObject {
      * A key that allows for static pre and suffix. This is used for settings
      * that have dynamic namespaces like for different accounts etc.
      *
-     * @opensearch.api
+     * @opensearch.internal
      */
-    @PublicApi(since = "1.0.0")
     public static final class AffixKey implements Key {
         private final Pattern pattern;
         private final String prefix;

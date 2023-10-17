@@ -33,7 +33,6 @@
 package org.opensearch.env;
 
 import org.opensearch.common.SuppressForbidden;
-import org.opensearch.common.annotation.PublicApi;
 import org.opensearch.common.io.PathUtils;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Setting.Property;
@@ -57,9 +56,8 @@ import java.util.stream.Collectors;
 /**
  * The environment of where things exists.
  *
- * @opensearch.api
+ * @opensearch.internal
  */
-@PublicApi(since = "1.0.0")
 @SuppressForbidden(reason = "configures paths for the system")
 // TODO: move PathUtils to be package-private here instead of
 // public+forbidden api!

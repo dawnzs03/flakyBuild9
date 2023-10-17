@@ -24,22 +24,12 @@ import java.util.List;
 public class MockTracingTelemetry implements TracingTelemetry {
 
     private final SpanProcessor spanProcessor = new StrictCheckSpanProcessor();
-    private final Runnable onClose;
 
     /**
      * Base constructor.
      */
     public MockTracingTelemetry() {
-        this(() -> {});
-    }
 
-    /**
-     * Base constructor.
-     *
-     * @param onClose on close hook
-     */
-    public MockTracingTelemetry(final Runnable onClose) {
-        this.onClose = onClose;
     }
 
     @Override
@@ -56,9 +46,6 @@ public class MockTracingTelemetry implements TracingTelemetry {
 
     @Override
     public void close() {
-        // Run onClose hook
-        onClose.run();
-
         List<MockSpanData> spanData = ((StrictCheckSpanProcessor) spanProcessor).getFinishedSpanItems();
         if (spanData.size() != 0) {
             TelemetryValidators validators = new TelemetryValidators(

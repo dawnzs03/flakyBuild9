@@ -32,15 +32,13 @@
 
 package org.opensearch.common.lifecycle;
 
-import org.opensearch.common.annotation.PublicApi;
 import org.opensearch.common.lease.Releasable;
 
 /**
  * Base interface for a lifecycle component.
  *
- * @opensearch.api
+ * @opensearch.internal
  */
-@PublicApi(since = "1.0.0")
 public interface LifecycleComponent extends Releasable {
 
     Lifecycle.State lifecycleState();

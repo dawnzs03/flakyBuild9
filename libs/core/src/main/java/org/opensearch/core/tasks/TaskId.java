@@ -33,7 +33,6 @@
 package org.opensearch.core.tasks;
 
 import org.opensearch.OpenSearchParseException;
-import org.opensearch.common.annotation.PublicApi;
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
@@ -46,9 +45,8 @@ import java.io.IOException;
 /**
  * Task id that consists of node id and id of the task on the node
  *
- * @opensearch.api
+ * @opensearch.internal
  */
-@PublicApi(since = "1.0.0")
 public final class TaskId implements Writeable {
 
     public static final TaskId EMPTY_TASK_ID = new TaskId();

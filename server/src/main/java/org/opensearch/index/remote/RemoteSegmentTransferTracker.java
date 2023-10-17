@@ -194,7 +194,9 @@ public class RemoteSegmentTransferTracker {
     public RemoteSegmentTransferTracker(
         ShardId shardId,
         DirectoryFileTransferTracker directoryFileTransferTracker,
-        int movingAverageWindowSize
+        int uploadBytesMovingAverageWindowSize,
+        int uploadBytesPerSecMovingAverageWindowSize,
+        int uploadTimeMsMovingAverageWindowSize
     ) {
         logger = Loggers.getLogger(getClass(), shardId);
         this.shardId = shardId;
@@ -205,9 +207,9 @@ public class RemoteSegmentTransferTracker {
         remoteRefreshTimeMs = currentTimeMs;
         localRefreshClockTimeMs = currentClockTimeMs;
         remoteRefreshClockTimeMs = currentClockTimeMs;
-        uploadBytesMovingAverageReference = new AtomicReference<>(new MovingAverage(movingAverageWindowSize));
-        uploadBytesPerSecMovingAverageReference = new AtomicReference<>(new MovingAverage(movingAverageWindowSize));
-        uploadTimeMsMovingAverageReference = new AtomicReference<>(new MovingAverage(movingAverageWindowSize));
+        uploadBytesMovingAverageReference = new AtomicReference<>(new MovingAverage(uploadBytesMovingAverageWindowSize));
+        uploadBytesPerSecMovingAverageReference = new AtomicReference<>(new MovingAverage(uploadBytesPerSecMovingAverageWindowSize));
+        uploadTimeMsMovingAverageReference = new AtomicReference<>(new MovingAverage(uploadTimeMsMovingAverageWindowSize));
         this.directoryFileTransferTracker = directoryFileTransferTracker;
     }
 
@@ -468,21 +470,13 @@ public class RemoteSegmentTransferTracker {
     }
 
     /**
-     * Updates the window size for data collection. This also resets any data collected so far.
+     * Updates the window size for data collection of upload bytes. This also resets any data collected so far.
      *
      * @param updatedSize the updated size
      */
-    void updateMovingAverageWindowSize(int updatedSize) {
+    void updateUploadBytesMovingAverageWindowSize(int updatedSize) {
         synchronized (uploadBytesMutex) {
             this.uploadBytesMovingAverageReference.set(this.uploadBytesMovingAverageReference.get().copyWithSize(updatedSize));
-        }
-
-        synchronized (uploadBytesPerSecMutex) {
-            this.uploadBytesPerSecMovingAverageReference.set(this.uploadBytesPerSecMovingAverageReference.get().copyWithSize(updatedSize));
-        }
-
-        synchronized (uploadTimeMsMutex) {
-            this.uploadTimeMsMovingAverageReference.set(this.uploadTimeMsMovingAverageReference.get().copyWithSize(updatedSize));
         }
     }
 
@@ -500,6 +494,17 @@ public class RemoteSegmentTransferTracker {
         }
     }
 
+    /**
+     * Updates the window size for data collection of upload bytes per second. This also resets any data collected so far.
+     *
+     * @param updatedSize the updated size
+     */
+    void updateUploadBytesPerSecMovingAverageWindowSize(int updatedSize) {
+        synchronized (uploadBytesPerSecMutex) {
+            this.uploadBytesPerSecMovingAverageReference.set(this.uploadBytesPerSecMovingAverageReference.get().copyWithSize(updatedSize));
+        }
+    }
+
     boolean isUploadTimeMsAverageReady() {
         return uploadTimeMsMovingAverageReference.get().isReady();
     }
@@ -511,6 +516,17 @@ public class RemoteSegmentTransferTracker {
     public void addTimeForCompletedUploadSync(long timeMs) {
         synchronized (uploadTimeMsMutex) {
             this.uploadTimeMsMovingAverageReference.get().record(timeMs);
+        }
+    }
+
+    /**
+     * Updates the window size for data collection of upload time (ms). This also resets any data collected so far.
+     *
+     * @param updatedSize the updated size
+     */
+    void updateUploadTimeMsMovingAverageWindowSize(int updatedSize) {
+        synchronized (uploadTimeMsMutex) {
+            this.uploadTimeMsMovingAverageReference.set(this.uploadTimeMsMovingAverageReference.get().copyWithSize(updatedSize));
         }
     }
 

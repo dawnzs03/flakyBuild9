@@ -35,7 +35,6 @@ import org.opensearch.OpenSearchParseException;
 import org.opensearch.cluster.AbstractDiffable;
 import org.opensearch.cluster.Diff;
 import org.opensearch.common.Nullable;
-import org.opensearch.common.annotation.PublicApi;
 import org.opensearch.common.collect.MapBuilder;
 import org.opensearch.common.compress.CompressedXContent;
 import org.opensearch.common.logging.DeprecationLogger;
@@ -64,9 +63,8 @@ import java.util.Set;
 /**
  * Metadata for Index Templates
  *
- * @opensearch.api
+ * @opensearch.internal
  */
-@PublicApi(since = "1.0.0")
 public class IndexTemplateMetadata extends AbstractDiffable<IndexTemplateMetadata> {
 
     private static final DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(IndexTemplateMetadata.class);

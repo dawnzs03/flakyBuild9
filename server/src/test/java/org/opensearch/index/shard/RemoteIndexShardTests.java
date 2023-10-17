@@ -12,7 +12,6 @@ import org.apache.lucene.index.IndexFileNames;
 import org.apache.lucene.index.SegmentInfos;
 import org.apache.lucene.util.Version;
 import org.opensearch.cluster.metadata.IndexMetadata;
-import org.opensearch.common.concurrent.GatedCloseable;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.FeatureFlags;
 import org.opensearch.index.engine.DocIdSeqNoAndSource;
@@ -205,14 +204,11 @@ public class RemoteIndexShardTests extends SegmentReplicationIndexShardTests {
                 Set.of("segments_3"),
                 primary.remoteStore().readLastCommittedSegmentsInfo().files(true)
             );
-
-            try (final GatedCloseable<SegmentInfos> segmentInfosSnapshot = primaryEngine.getSegmentInfosSnapshot()) {
-                MatcherAssert.assertThat(
-                    "Segments are referenced in memory only",
-                    segmentInfosSnapshot.get().files(false),
-                    containsInAnyOrder("_0.cfe", "_0.si", "_0.cfs")
-                );
-            }
+            MatcherAssert.assertThat(
+                "Segments are referenced in memory only",
+                primaryEngine.getSegmentInfosSnapshot().get().files(false),
+                containsInAnyOrder("_0.cfe", "_0.si", "_0.cfs")
+            );
 
             final IndexShard replica = shards.addReplica(remotePath);
             replica.store().createEmpty(Version.LATEST);
@@ -242,15 +238,11 @@ public class RemoteIndexShardTests extends SegmentReplicationIndexShardTests {
                 latestReplicaCommit.files(true),
                 containsInAnyOrder("_0.cfe", "_0.si", "_0.cfs", "segments_6")
             );
-
-            try (final GatedCloseable<SegmentInfos> segmentInfosSnapshot = replicaEngine.getSegmentInfosSnapshot()) {
-                MatcherAssert.assertThat(
-                    "Segments are referenced in memory",
-                    segmentInfosSnapshot.get().files(false),
-                    containsInAnyOrder("_0.cfe", "_0.si", "_0.cfs")
-                );
-            }
-
+            MatcherAssert.assertThat(
+                "Segments are referenced in memory",
+                replicaEngine.getSegmentInfosSnapshot().get().files(false),
+                containsInAnyOrder("_0.cfe", "_0.si", "_0.cfs")
+            );
             final Store.RecoveryDiff recoveryDiff = Store.segmentReplicationDiff(
                 primary.getSegmentMetadataMap(),
                 replica.getSegmentMetadataMap()

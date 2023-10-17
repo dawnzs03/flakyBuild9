@@ -1862,13 +1862,6 @@ public class InternalEngine extends Engine {
                     try {
                         translogManager.rollTranslogGeneration();
                         logger.trace("starting commit for flush; commitTranslog=true");
-                        // with Segment Replication we need to hold the latest commit before a new one is created and ensure it is released
-                        // only after the active reader is updated. This ensures that a flush does not wipe out a required commit point file
-                        // while we are
-                        // in refresh listeners.
-                        final GatedCloseable<IndexCommit> latestCommit = engineConfig.getIndexSettings().isSegRepEnabled()
-                            ? acquireLastIndexCommit(false)
-                            : null;
                         commitIndexWriter(indexWriter, translogManager.getTranslogUUID());
                         logger.trace("finished commit for flush");
 
@@ -1882,11 +1875,6 @@ public class InternalEngine extends Engine {
 
                         // we need to refresh in order to clear older version values
                         refresh("version_table_flush", SearcherScope.INTERNAL, true);
-
-                        if (latestCommit != null) {
-                            latestCommit.close();
-                        }
-
                         translogManager.trimUnreferencedReaders();
                     } catch (AlreadyClosedException e) {
                         failOnTragicEvent(e);
@@ -2146,32 +2134,41 @@ public class InternalEngine extends Engine {
 
     @Override
     protected SegmentInfos getLatestSegmentInfos() {
-        try (final GatedCloseable<SegmentInfos> snapshot = getSegmentInfosSnapshot()) {
-            return snapshot.get();
+        OpenSearchDirectoryReader reader = null;
+        try {
+            reader = internalReaderManager.acquire();
+            return ((StandardDirectoryReader) reader.getDelegate()).getSegmentInfos();
         } catch (IOException e) {
             throw new EngineException(shardId, e.getMessage(), e);
+        } finally {
+            try {
+                internalReaderManager.release(reader);
+            } catch (IOException e) {
+                throw new EngineException(shardId, e.getMessage(), e);
+            }
         }
     }
 
     /**
-     * Fetch the latest {@link SegmentInfos} from the current ReaderManager's active DirectoryReader.
-     * This method will hold the reader reference until the returned {@link GatedCloseable} is closed.
+     * Fetch the latest {@link SegmentInfos} object via {@link #getLatestSegmentInfos()}
+     * but also increment the ref-count to ensure that these segment files are retained
+     * until the reference is closed. On close, the ref-count is decremented.
      */
     @Override
     public GatedCloseable<SegmentInfos> getSegmentInfosSnapshot() {
-        final OpenSearchDirectoryReader reader;
+        final SegmentInfos segmentInfos = getLatestSegmentInfos();
         try {
-            reader = internalReaderManager.acquire();
-            return new GatedCloseable<>(((StandardDirectoryReader) reader.getDelegate()).getSegmentInfos(), () -> {
-                try {
-                    internalReaderManager.release(reader);
-                } catch (AlreadyClosedException e) {
-                    logger.warn("Engine is already closed.", e);
-                }
-            });
+            indexWriter.incRefDeleter(segmentInfos);
         } catch (IOException e) {
             throw new EngineException(shardId, e.getMessage(), e);
         }
+        return new GatedCloseable<>(segmentInfos, () -> {
+            try {
+                indexWriter.decRefDeleter(segmentInfos);
+            } catch (AlreadyClosedException e) {
+                logger.warn("Engine is already closed.", e);
+            }
+        });
     }
 
     @Override

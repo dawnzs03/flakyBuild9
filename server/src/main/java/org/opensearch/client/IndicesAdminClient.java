@@ -129,7 +129,6 @@ import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.cluster.metadata.IndexMetadata.APIBlock;
 import org.opensearch.common.Nullable;
 import org.opensearch.common.action.ActionFuture;
-import org.opensearch.common.annotation.PublicApi;
 import org.opensearch.core.action.ActionListener;
 
 /**
@@ -137,9 +136,8 @@ import org.opensearch.core.action.ActionListener;
  *
  * @see AdminClient#indices()
  *
- * @opensearch.api
+ * @opensearch.internal
  */
-@PublicApi(since = "1.0.0")
 public interface IndicesAdminClient extends OpenSearchClient {
 
     /**
