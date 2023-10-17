@@ -11,6 +11,8 @@ package org.opensearch.index.shard;
 import org.apache.lucene.index.IndexFileNames;
 import org.apache.lucene.index.SegmentInfos;
 import org.apache.lucene.util.Version;
+import org.hamcrest.MatcherAssert;
+import org.junit.Before;
 import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.FeatureFlags;
@@ -21,8 +23,6 @@ import org.opensearch.index.engine.NRTReplicationEngineFactory;
 import org.opensearch.index.store.Store;
 import org.opensearch.index.store.StoreFileMetadata;
 import org.opensearch.indices.replication.common.ReplicationType;
-import org.hamcrest.MatcherAssert;
-import org.junit.Before;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -33,9 +33,9 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
-import static org.opensearch.index.engine.EngineTestCase.assertAtMostOneLuceneDocumentPerSequenceNumber;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.opensearch.index.engine.EngineTestCase.assertAtMostOneLuceneDocumentPerSequenceNumber;
 
 public class RemoteIndexShardTests extends SegmentReplicationIndexShardTests {
 

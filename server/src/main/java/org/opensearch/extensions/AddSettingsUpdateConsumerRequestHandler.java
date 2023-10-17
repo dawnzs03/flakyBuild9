@@ -8,6 +8,8 @@
 
 package org.opensearch.extensions;
 
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.cluster.service.ClusterService;
@@ -17,8 +19,6 @@ import org.opensearch.common.settings.SettingsModule;
 import org.opensearch.common.settings.WriteableSetting;
 import org.opensearch.core.transport.TransportResponse;
 import org.opensearch.transport.TransportService;
-
-import java.util.List;
 
 /**
  * Handles requests to add setting update consumers

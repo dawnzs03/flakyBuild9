@@ -8,6 +8,8 @@
 
 package org.opensearch.tasks;
 
+import org.junit.After;
+import org.junit.Before;
 import org.opensearch.action.admin.cluster.node.tasks.TransportTasksActionTests;
 import org.opensearch.action.search.SearchTask;
 import org.opensearch.common.settings.ClusterSettings;
@@ -18,8 +20,6 @@ import org.opensearch.core.tasks.resourcetracker.ThreadResourceInfo;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.threadpool.TestThreadPool;
 import org.opensearch.threadpool.ThreadPool;
-import org.junit.After;
-import org.junit.Before;
 
 import java.util.HashMap;
 import java.util.List;

@@ -33,9 +33,11 @@
 package org.opensearch.action.bulk;
 
 import org.apache.lucene.util.Constants;
-import org.opensearch.Version;
-import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionType;
+import org.opensearch.Version;
+import org.opensearch.core.action.ActionListener;
+import org.opensearch.action.ActionRequest;
+import org.opensearch.core.action.ActionResponse;
 import org.opensearch.action.IndicesRequest;
 import org.opensearch.action.admin.indices.create.CreateIndexResponse;
 import org.opensearch.action.support.ActionFilters;
@@ -49,8 +51,6 @@ import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.concurrent.AtomicArray;
 import org.opensearch.common.util.concurrent.ThreadContext;
-import org.opensearch.core.action.ActionListener;
-import org.opensearch.core.action.ActionResponse;
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.index.IndexNotFoundException;

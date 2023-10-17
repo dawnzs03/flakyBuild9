@@ -33,7 +33,6 @@
 package org.opensearch.cluster.node;
 
 import com.carrotsearch.randomizedtesting.generators.RandomPicks;
-
 import org.opensearch.LegacyESVersion;
 import org.opensearch.Version;
 import org.opensearch.common.settings.Setting;

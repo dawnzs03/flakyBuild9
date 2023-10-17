@@ -32,6 +32,7 @@
 
 package org.opensearch.action;
 
+import java.util.ArrayList;
 import org.opensearch.action.main.MainAction;
 import org.opensearch.action.main.TransportMainAction;
 import org.opensearch.action.support.ActionFilters;
@@ -51,6 +52,7 @@ import org.opensearch.extensions.ExtensionsManager;
 import org.opensearch.identity.IdentityService;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.ActionPlugin.ActionHandler;
+
 import org.opensearch.rest.RestChannel;
 import org.opensearch.rest.RestController;
 import org.opensearch.rest.RestHandler;
@@ -65,7 +67,6 @@ import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.usage.UsageService;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;

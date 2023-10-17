@@ -34,6 +34,7 @@ package org.opensearch.cluster.routing;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.CollectionUtil;
+import org.opensearch.core.Assertions;
 import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.cluster.metadata.Metadata;
@@ -43,7 +44,6 @@ import org.opensearch.cluster.routing.allocation.ExistingShardsAllocator;
 import org.opensearch.common.Nullable;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.collect.Tuple;
-import org.opensearch.core.Assertions;
 import org.opensearch.core.index.Index;
 import org.opensearch.core.index.shard.ShardId;
 

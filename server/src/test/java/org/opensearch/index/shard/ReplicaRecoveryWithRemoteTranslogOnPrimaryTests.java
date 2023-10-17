@@ -8,6 +8,8 @@
 
 package org.opensearch.index.shard;
 
+import org.junit.Assert;
+import org.junit.Before;
 import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.cluster.routing.RecoverySource;
 import org.opensearch.cluster.routing.ShardRouting;
@@ -24,8 +26,6 @@ import org.opensearch.index.seqno.SequenceNumbers;
 import org.opensearch.index.translog.WriteOnlyTranslogManager;
 import org.opensearch.indices.recovery.RecoveryTarget;
 import org.opensearch.indices.replication.common.ReplicationType;
-import org.junit.Assert;
-import org.junit.Before;
 
 import java.io.IOException;
 import java.nio.file.Path;

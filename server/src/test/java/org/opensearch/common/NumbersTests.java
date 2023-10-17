@@ -33,7 +33,6 @@
 package org.opensearch.common;
 
 import com.carrotsearch.randomizedtesting.annotations.Timeout;
-
 import org.opensearch.test.OpenSearchTestCase;
 
 import java.math.BigDecimal;
