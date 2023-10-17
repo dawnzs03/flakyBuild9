@@ -112,7 +112,7 @@ public class RemoteStoreBackpressureIT extends AbstractRemoteStoreMockRepository
         stats = stats();
         indexDocAndRefresh(initialSource, initialDocsToIndex);
         assertEquals(rejectionCount, stats.rejectionCount);
-        cleanupRepo();
+        deleteRepo();
     }
 
     private RemoteSegmentTransferTracker.Stats stats() {

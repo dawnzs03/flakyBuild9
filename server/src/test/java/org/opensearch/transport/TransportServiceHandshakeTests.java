@@ -85,8 +85,7 @@ public class TransportServiceHandshakeTests extends OpenSearchTestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService(),
-            NoopTracer.INSTANCE
+            new NoneCircuitBreakerService()
         );
         TransportService transportService = new MockTransportService(
             settings,

@@ -47,7 +47,6 @@ import org.opensearch.common.util.BigArrays;
 import org.opensearch.common.util.MockPageCacheRecycler;
 import org.opensearch.core.common.transport.TransportAddress;
 import org.opensearch.core.indices.breaker.NoneCircuitBreakerService;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.MockLogAppender;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.junit.annotations.TestLogging;
@@ -256,8 +255,7 @@ public class TcpTransportTests extends OpenSearchTestCase {
                 new MockPageCacheRecycler(settings),
                 new NoneCircuitBreakerService(),
                 writableRegistry(),
-                new NetworkService(Collections.emptyList()),
-                NoopTracer.INSTANCE
+                new NetworkService(Collections.emptyList())
             ) {
 
                 @Override

@@ -245,7 +245,7 @@ public class PeerRecoveryTargetService implements IndexEventListener {
                     indexShard.prepareForIndexRecovery();
                     final boolean hasRemoteSegmentStore = indexShard.indexSettings().isRemoteStoreEnabled();
                     if (hasRemoteSegmentStore) {
-                        indexShard.syncSegmentsFromRemoteSegmentStore(false, recoveryTarget::setLastAccessTime);
+                        indexShard.syncSegmentsFromRemoteSegmentStore(false);
                     }
                     final boolean hasRemoteTranslog = recoveryTarget.state().getPrimary() == false && indexShard.isRemoteTranslogEnabled();
                     final boolean hasNoTranslog = indexShard.indexSettings().isRemoteSnapshot();
@@ -264,7 +264,7 @@ public class PeerRecoveryTargetService implements IndexEventListener {
                     actionName = PeerRecoverySourceService.Actions.START_RECOVERY;
                 } catch (final Exception e) {
                     // this will be logged as warning later on...
-                    logger.debug("unexpected error while preparing shard for peer recovery, failing recovery", e);
+                    logger.trace("unexpected error while preparing shard for peer recovery, failing recovery", e);
                     onGoingRecoveries.fail(
                         recoveryId,
                         new RecoveryFailedException(recoveryTarget.state(), "failed to prepare shard for recovery", e),
@@ -272,12 +272,12 @@ public class PeerRecoveryTargetService implements IndexEventListener {
                     );
                     return;
                 }
-                logger.debug("{} starting recovery from {}", startRequest.shardId(), startRequest.sourceNode());
+                logger.trace("{} starting recovery from {}", startRequest.shardId(), startRequest.sourceNode());
             } else {
                 startRequest = preExistingRequest;
                 requestToSend = new ReestablishRecoveryRequest(recoveryId, startRequest.shardId(), startRequest.targetAllocationId());
                 actionName = PeerRecoverySourceService.Actions.REESTABLISH_RECOVERY;
-                logger.debug("{} reestablishing recovery from {}", startRequest.shardId(), startRequest.sourceNode());
+                logger.trace("{} reestablishing recovery from {}", startRequest.shardId(), startRequest.sourceNode());
             }
         }
         transportService.sendRequest(

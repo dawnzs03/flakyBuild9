@@ -34,7 +34,6 @@ package org.opensearch.index.query;
 
 import org.apache.lucene.queries.spans.FieldMaskingSpanQuery;
 import org.apache.lucene.queries.spans.SpanQuery;
-import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.Query;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.ParsingException;
@@ -207,11 +206,5 @@ public class FieldMaskingSpanQueryBuilder extends AbstractQueryBuilder<FieldMask
     @Override
     public String getWriteableName() {
         return SPAN_FIELD_MASKING_FIELD.getPreferredName();
-    }
-
-    @Override
-    public void visit(QueryBuilderVisitor visitor) {
-        visitor.accept(this);
-        visitor.getChildVisitor(BooleanClause.Occur.MUST).accept(queryBuilder);
     }
 }

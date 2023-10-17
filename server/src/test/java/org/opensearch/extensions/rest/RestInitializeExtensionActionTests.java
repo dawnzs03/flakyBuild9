@@ -19,10 +19,8 @@ import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.indices.breaker.NoneCircuitBreakerService;
 import org.opensearch.core.rest.RestStatus;
 import org.opensearch.core.xcontent.MediaTypeRegistry;
-import org.opensearch.extensions.DiscoveryExtensionNode;
 import org.opensearch.extensions.ExtensionsManager;
-import org.opensearch.extensions.ExtensionsSettings.Extension;
-import org.opensearch.identity.IdentityService;
+import org.opensearch.extensions.ExtensionsSettings;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.OpenSearchTestCase;
@@ -68,8 +66,7 @@ public class RestInitializeExtensionActionTests extends OpenSearchTestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService(),
-            NoopTracer.INSTANCE
+            new NoneCircuitBreakerService()
         );
         transportService = new MockTransportService(
             settings,
@@ -121,7 +118,7 @@ public class RestInitializeExtensionActionTests extends OpenSearchTestCase {
     }
 
     public void testRestInitializeExtensionActionFailure() throws Exception {
-        ExtensionsManager extensionsManager = new ExtensionsManager(Set.of(), new IdentityService(Settings.EMPTY, List.of()));
+        ExtensionsManager extensionsManager = new ExtensionsManager(Set.of());
         RestInitializeExtensionAction restInitializeExtensionAction = new RestInitializeExtensionAction(extensionsManager);
 
         final String content = "{\"name\":\"ad-extension\",\"uniqueId\":\"\",\"hostAddress\":\"127.0.0.1\","
@@ -154,16 +151,13 @@ public class RestInitializeExtensionActionTests extends OpenSearchTestCase {
             Function.identity(),
             Setting.Property.ExtensionScope
         );
-        ExtensionsManager extensionsManager = new ExtensionsManager(
-            Set.of(boolSetting, stringSetting, intSetting, listSetting),
-            new IdentityService(Settings.EMPTY, List.of())
-        );
+        ExtensionsManager extensionsManager = new ExtensionsManager(Set.of(boolSetting, stringSetting, intSetting, listSetting));
         ExtensionsManager spy = spy(extensionsManager);
 
         // optionally, you can stub out some methods:
         when(spy.getAdditionalSettings()).thenCallRealMethod();
-        Mockito.doCallRealMethod().when(spy).loadExtension(any(Extension.class));
-        Mockito.doNothing().when(spy).initializeExtensionNode(any(DiscoveryExtensionNode.class));
+        Mockito.doCallRealMethod().when(spy).loadExtension(any(ExtensionsSettings.Extension.class));
+        Mockito.doNothing().when(spy).initialize();
         RestInitializeExtensionAction restInitializeExtensionAction = new RestInitializeExtensionAction(spy);
         final String content = "{\"name\":\"ad-extension\",\"uniqueId\":\"ad-extension\",\"hostAddress\":\"127.0.0.1\","
             + "\"port\":\"4532\",\"version\":\"1.0\",\"opensearchVersion\":\""
@@ -179,10 +173,10 @@ public class RestInitializeExtensionActionTests extends OpenSearchTestCase {
         FakeRestChannel channel = new FakeRestChannel(request, false, 0);
         restInitializeExtensionAction.handleRequest(request, channel, null);
 
-        assertEquals(RestStatus.ACCEPTED, channel.capturedResponse().status());
+        assertEquals(channel.capturedResponse().status(), RestStatus.ACCEPTED);
         assertTrue(channel.capturedResponse().content().utf8ToString().contains("A request to initialize an extension has been sent."));
 
-        Optional<Extension> extension = spy.lookupExtensionSettingsById("ad-extension");
+        Optional<ExtensionsSettings.Extension> extension = spy.lookupExtensionSettingsById("ad-extension");
         assertTrue(extension.isPresent());
         assertEquals(true, extension.get().getAdditionalSettings().get(boolSetting));
         assertEquals("customSetting", extension.get().getAdditionalSettings().get(stringSetting));
@@ -204,16 +198,13 @@ public class RestInitializeExtensionActionTests extends OpenSearchTestCase {
             Function.identity(),
             Setting.Property.ExtensionScope
         );
-        ExtensionsManager extensionsManager = new ExtensionsManager(
-            Set.of(boolSetting, stringSetting, intSetting, listSetting),
-            new IdentityService(Settings.EMPTY, List.of())
-        );
+        ExtensionsManager extensionsManager = new ExtensionsManager(Set.of(boolSetting, stringSetting, intSetting, listSetting));
         ExtensionsManager spy = spy(extensionsManager);
 
         // optionally, you can stub out some methods:
         when(spy.getAdditionalSettings()).thenCallRealMethod();
-        Mockito.doCallRealMethod().when(spy).loadExtension(any(Extension.class));
-        Mockito.doNothing().when(spy).initializeExtensionNode(any(DiscoveryExtensionNode.class));
+        Mockito.doCallRealMethod().when(spy).loadExtension(any(ExtensionsSettings.Extension.class));
+        Mockito.doNothing().when(spy).initialize();
         RestInitializeExtensionAction restInitializeExtensionAction = new RestInitializeExtensionAction(spy);
         final String content = "{\"name\":\"ad-extension\",\"uniqueId\":\"ad-extension\",\"hostAddress\":\"127.0.0.1\","
             + "\"port\":\"4532\",\"version\":\"1.0\",\"opensearchVersion\":\""
@@ -229,10 +220,10 @@ public class RestInitializeExtensionActionTests extends OpenSearchTestCase {
         FakeRestChannel channel = new FakeRestChannel(request, false, 0);
         restInitializeExtensionAction.handleRequest(request, channel, null);
 
-        assertEquals(RestStatus.ACCEPTED, channel.capturedResponse().status());
+        assertEquals(channel.capturedResponse().status(), RestStatus.ACCEPTED);
         assertTrue(channel.capturedResponse().content().utf8ToString().contains("A request to initialize an extension has been sent."));
 
-        Optional<Extension> extension = spy.lookupExtensionSettingsById("ad-extension");
+        Optional<ExtensionsSettings.Extension> extension = spy.lookupExtensionSettingsById("ad-extension");
         assertTrue(extension.isPresent());
         assertEquals(false, extension.get().getAdditionalSettings().get(boolSetting));
         assertEquals("default", extension.get().getAdditionalSettings().get(stringSetting));

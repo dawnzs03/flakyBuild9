@@ -96,8 +96,7 @@ public class Netty4ModulePlugin extends Plugin implements NetworkPlugin {
         PageCacheRecycler pageCacheRecycler,
         CircuitBreakerService circuitBreakerService,
         NamedWriteableRegistry namedWriteableRegistry,
-        NetworkService networkService,
-        Tracer tracer
+        NetworkService networkService
     ) {
         return Collections.singletonMap(
             NETTY_TRANSPORT_NAME,
@@ -109,8 +108,7 @@ public class Netty4ModulePlugin extends Plugin implements NetworkPlugin {
                 pageCacheRecycler,
                 namedWriteableRegistry,
                 circuitBreakerService,
-                getSharedGroupFactory(settings),
-                tracer
+                getSharedGroupFactory(settings)
             )
         );
     }

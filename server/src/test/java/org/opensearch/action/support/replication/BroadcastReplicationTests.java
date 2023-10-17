@@ -116,8 +116,7 @@ public class BroadcastReplicationTests extends OpenSearchTestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            circuitBreakerService,
-            NoopTracer.INSTANCE
+            circuitBreakerService
         );
         clusterService = createClusterService(threadPool);
         transportService = new TransportService(

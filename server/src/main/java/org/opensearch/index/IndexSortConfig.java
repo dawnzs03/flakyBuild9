@@ -200,7 +200,6 @@ public final class IndexSortConfig {
      * or returns null if this index has no sort.
      */
     public Sort buildIndexSort(
-        boolean shouldWidenIndexSortType,
         Function<String, MappedFieldType> fieldTypeLookup,
         BiFunction<MappedFieldType, Supplier<SearchLookup>, IndexFieldData<?>> fieldDataLookup
     ) {
@@ -231,11 +230,7 @@ public final class IndexSortConfig {
             if (fieldData == null) {
                 throw new IllegalArgumentException("docvalues not found for index sort field:[" + sortSpec.field + "]");
             }
-            if (shouldWidenIndexSortType == true) {
-                sortFields[i] = fieldData.wideSortField(sortSpec.missingValue, mode, null, reverse);
-            } else {
-                sortFields[i] = fieldData.sortField(sortSpec.missingValue, mode, null, reverse);
-            }
+            sortFields[i] = fieldData.sortField(sortSpec.missingValue, mode, null, reverse);
             validateIndexSortField(sortFields[i]);
         }
         return new Sort(sortFields);

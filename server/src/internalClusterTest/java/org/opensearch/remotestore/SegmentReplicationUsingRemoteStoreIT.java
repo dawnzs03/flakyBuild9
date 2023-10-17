@@ -17,6 +17,7 @@ import org.junit.Before;
 import java.nio.file.Path;
 
 import static org.opensearch.remotestore.RemoteStoreBaseIntegTestCase.remoteStoreClusterSettings;
+import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertAcked;
 
 /**
  * This class runs Segment Replication Integ test suite with remote store enabled.
@@ -49,6 +50,6 @@ public class SegmentReplicationUsingRemoteStoreIT extends SegmentReplicationIT {
 
     @After
     public void teardown() {
-        clusterAdmin().prepareCleanupRepository(REPOSITORY_NAME).get();
+        assertAcked(clusterAdmin().prepareDeleteRepository(REPOSITORY_NAME));
     }
 }

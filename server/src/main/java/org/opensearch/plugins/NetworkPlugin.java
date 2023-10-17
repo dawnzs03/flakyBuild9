@@ -83,8 +83,7 @@ public interface NetworkPlugin {
         PageCacheRecycler pageCacheRecycler,
         CircuitBreakerService circuitBreakerService,
         NamedWriteableRegistry namedWriteableRegistry,
-        NetworkService networkService,
-        Tracer tracer
+        NetworkService networkService
     ) {
         return Collections.emptyMap();
     }

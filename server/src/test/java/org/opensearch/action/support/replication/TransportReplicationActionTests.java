@@ -1318,8 +1318,7 @@ public class TransportReplicationActionTests extends OpenSearchTestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             namedWriteableRegistry,
-            new NoneCircuitBreakerService(),
-            NoopTracer.INSTANCE
+            new NoneCircuitBreakerService()
         );
         transportService = new MockTransportService(
             Settings.EMPTY,

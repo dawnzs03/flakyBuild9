@@ -104,7 +104,6 @@ public abstract class CloseableRetryableRefreshListener implements ReferenceMana
     private void scheduleRetry(TimeValue interval, String retryThreadPoolName, boolean didRefresh) {
         // If the underlying listener has closed, then we do not allow even the retry to be scheduled
         if (closed.get() || isRetryEnabled() == false) {
-            getLogger().debug("skip retry on closed={} isRetryEnabled={}", closed.get(), isRetryEnabled());
             return;
         }
 
@@ -113,7 +112,6 @@ public abstract class CloseableRetryableRefreshListener implements ReferenceMana
         // If the retryScheduled is already true, then we return from here itself. If not, then we proceed with scheduling
         // the retry.
         if (retryScheduled.getAndSet(true)) {
-            getLogger().debug("skip retry on retryScheduled=true");
             return;
         }
 
@@ -190,7 +188,7 @@ public abstract class CloseableRetryableRefreshListener implements ReferenceMana
             if (semaphore.tryAcquire(TOTAL_PERMITS, 10, TimeUnit.MINUTES)) {
                 boolean result = closed.compareAndSet(false, true);
                 assert result && semaphore.availablePermits() == 0;
-                getLogger().info("All permits are acquired and refresh listener is closed");
+                getLogger().info("Closed");
             } else {
                 throw new TimeoutException("timeout while closing gated refresh listener");
             }
@@ -202,6 +200,7 @@ public abstract class CloseableRetryableRefreshListener implements ReferenceMana
     protected abstract Logger getLogger();
 
     // Visible for testing
+
     /**
      * Returns if the retry is scheduled or not.
      *

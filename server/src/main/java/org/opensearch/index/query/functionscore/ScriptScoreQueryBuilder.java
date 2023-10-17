@@ -32,7 +32,6 @@
 
 package org.opensearch.index.query.functionscore;
 
-import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.Query;
 import org.opensearch.OpenSearchException;
 import org.opensearch.common.lucene.search.function.ScriptScoreQuery;
@@ -46,7 +45,6 @@ import org.opensearch.index.query.AbstractQueryBuilder;
 import org.opensearch.index.query.InnerHitContextBuilder;
 import org.opensearch.index.query.MatchNoneQueryBuilder;
 import org.opensearch.index.query.QueryBuilder;
-import org.opensearch.index.query.QueryBuilderVisitor;
 import org.opensearch.index.query.QueryRewriteContext;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.script.ScoreScript;
@@ -226,12 +224,4 @@ public class ScriptScoreQueryBuilder extends AbstractQueryBuilder<ScriptScoreQue
         InnerHitContextBuilder.extractInnerHits(query(), innerHits);
     }
 
-    @Override
-    public void visit(QueryBuilderVisitor visitor) {
-        visitor.accept(this);
-        if (query != null) {
-            QueryBuilderVisitor subVisitor = visitor.getChildVisitor(BooleanClause.Occur.MUST);
-            subVisitor.accept(query);
-        }
-    }
 }

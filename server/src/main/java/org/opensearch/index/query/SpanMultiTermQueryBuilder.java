@@ -33,7 +33,6 @@ package org.opensearch.index.query;
 
 import org.apache.lucene.queries.SpanMatchNoDocsQuery;
 import org.apache.lucene.queries.spans.SpanMultiTermQueryWrapper;
-import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.ConstantScoreQuery;
 import org.apache.lucene.search.MatchNoDocsQuery;
@@ -213,13 +212,5 @@ public class SpanMultiTermQueryBuilder extends AbstractQueryBuilder<SpanMultiTer
     @Override
     public String getWriteableName() {
         return NAME;
-    }
-
-    @Override
-    public void visit(QueryBuilderVisitor visitor) {
-        visitor.accept(this);
-        if (multiTermQueryBuilder != null) {
-            visitor.getChildVisitor(BooleanClause.Occur.MUST).accept(multiTermQueryBuilder);
-        }
     }
 }

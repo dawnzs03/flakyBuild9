@@ -27,7 +27,8 @@ import org.opensearch.index.IndexModule;
 import org.opensearch.index.IndexSettings;
 import org.opensearch.index.mapper.MapperService;
 import org.opensearch.indices.replication.common.ReplicationType;
-import org.opensearch.repositories.RepositoriesService;
+import org.opensearch.node.Node;
+import org.opensearch.node.remotestore.RemoteStoreNodeAttribute;
 import org.opensearch.repositories.blobstore.BlobStoreRepository;
 import org.opensearch.repositories.fs.FsRepository;
 import org.opensearch.test.OpenSearchIntegTestCase;
@@ -51,6 +52,7 @@ import static org.opensearch.node.remotestore.RemoteStoreNodeAttribute.REMOTE_ST
 import static org.opensearch.node.remotestore.RemoteStoreNodeAttribute.REMOTE_STORE_REPOSITORY_TYPE_ATTRIBUTE_KEY_FORMAT;
 import static org.opensearch.node.remotestore.RemoteStoreNodeAttribute.REMOTE_STORE_SEGMENT_REPOSITORY_NAME_ATTRIBUTE_KEY;
 import static org.opensearch.node.remotestore.RemoteStoreNodeAttribute.REMOTE_STORE_TRANSLOG_REPOSITORY_NAME_ATTRIBUTE_KEY;
+import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertAcked;
 
 public class RemoteStoreBaseIntegTestCase extends OpenSearchIntegTestCase {
     protected static final String REPOSITORY_NAME = "test-remote-store-repo";
@@ -169,29 +171,6 @@ public class RemoteStoreBaseIntegTestCase extends OpenSearchIntegTestCase {
     public static Settings remoteStoreClusterSettings(
         String segmentRepoName,
         Path segmentRepoPath,
-        String segmentRepoType,
-        String translogRepoName,
-        Path translogRepoPath,
-        String translogRepoType
-    ) {
-        Settings.Builder settingsBuilder = Settings.builder();
-        settingsBuilder.put(
-            buildRemoteStoreNodeAttributes(
-                segmentRepoName,
-                segmentRepoPath,
-                segmentRepoType,
-                translogRepoName,
-                translogRepoPath,
-                translogRepoType,
-                false
-            )
-        );
-        return settingsBuilder.build();
-    }
-
-    public static Settings remoteStoreClusterSettings(
-        String segmentRepoName,
-        Path segmentRepoPath,
         String translogRepoName,
         Path translogRepoPath
     ) {
@@ -205,26 +184,6 @@ public class RemoteStoreBaseIntegTestCase extends OpenSearchIntegTestCase {
         Path segmentRepoPath,
         String translogRepoName,
         Path translogRepoPath,
-        boolean withRateLimiterAttributes
-    ) {
-        return buildRemoteStoreNodeAttributes(
-            segmentRepoName,
-            segmentRepoPath,
-            FsRepository.TYPE,
-            translogRepoName,
-            translogRepoPath,
-            FsRepository.TYPE,
-            withRateLimiterAttributes
-        );
-    }
-
-    public static Settings buildRemoteStoreNodeAttributes(
-        String segmentRepoName,
-        Path segmentRepoPath,
-        String segmentRepoType,
-        String translogRepoName,
-        Path translogRepoPath,
-        String translogRepoType,
         boolean withRateLimiterAttributes
     ) {
         String segmentRepoTypeAttributeKey = String.format(
@@ -260,13 +219,13 @@ public class RemoteStoreBaseIntegTestCase extends OpenSearchIntegTestCase {
 
         Settings.Builder settings = Settings.builder()
             .put("node.attr." + REMOTE_STORE_SEGMENT_REPOSITORY_NAME_ATTRIBUTE_KEY, segmentRepoName)
-            .put(segmentRepoTypeAttributeKey, segmentRepoType)
+            .put(segmentRepoTypeAttributeKey, FsRepository.TYPE)
             .put(segmentRepoSettingsAttributeKeyPrefix + "location", segmentRepoPath)
             .put("node.attr." + REMOTE_STORE_TRANSLOG_REPOSITORY_NAME_ATTRIBUTE_KEY, translogRepoName)
-            .put(translogRepoTypeAttributeKey, translogRepoType)
+            .put(translogRepoTypeAttributeKey, FsRepository.TYPE)
             .put(translogRepoSettingsAttributeKeyPrefix + "location", translogRepoPath)
             .put("node.attr." + REMOTE_STORE_CLUSTER_STATE_REPOSITORY_NAME_ATTRIBUTE_KEY, segmentRepoName)
-            .put(stateRepoTypeAttributeKey, segmentRepoType)
+            .put(stateRepoTypeAttributeKey, FsRepository.TYPE)
             .put(stateRepoSettingsAttributeKeyPrefix + "location", segmentRepoPath);
 
         if (withRateLimiterAttributes) {
@@ -314,8 +273,8 @@ public class RemoteStoreBaseIntegTestCase extends OpenSearchIntegTestCase {
         clusterSettingsSuppliedByTest = false;
         assertRemoteStoreRepositoryOnAllNodes(REPOSITORY_NAME);
         assertRemoteStoreRepositoryOnAllNodes(REPOSITORY_2_NAME);
-        clusterAdmin().prepareCleanupRepository(REPOSITORY_NAME).get();
-        clusterAdmin().prepareCleanupRepository(REPOSITORY_2_NAME).get();
+        assertAcked(clusterAdmin().prepareDeleteRepository(REPOSITORY_NAME));
+        assertAcked(clusterAdmin().prepareDeleteRepository(REPOSITORY_2_NAME));
     }
 
     public RepositoryMetadata buildRepositoryMetadata(DiscoveryNode node, String name) {
@@ -343,19 +302,52 @@ public class RemoteStoreBaseIntegTestCase extends OpenSearchIntegTestCase {
             .custom(RepositoriesMetadata.TYPE);
         RepositoryMetadata actualRepository = repositories.repository(repositoryName);
 
-        final RepositoriesService repositoriesService = internalCluster().getClusterManagerNodeInstance(RepositoriesService.class);
-        final BlobStoreRepository repository = (BlobStoreRepository) repositoriesService.repository(repositoryName);
-
         for (String nodeName : internalCluster().getNodeNames()) {
             ClusterService clusterService = internalCluster().getInstance(ClusterService.class, nodeName);
             DiscoveryNode node = clusterService.localNode();
             RepositoryMetadata expectedRepository = buildRepositoryMetadata(node, repositoryName);
-
-            // Validated that all the restricted settings are entact on all the nodes.
-            repository.getRestrictedSystemRepositorySettings()
-                .stream()
-                .forEach(setting -> assertEquals(setting.get(actualRepository.settings()), setting.get(expectedRepository.settings())));
+            assertTrue(actualRepository.equalsIgnoreGenerations(expectedRepository));
         }
+    }
+
+    public Settings buildClusterSettingsWith() {
+        String segmentRepoTypeAttributeKey = String.format(
+            Locale.getDefault(),
+            "node.attr." + REMOTE_STORE_REPOSITORY_TYPE_ATTRIBUTE_KEY_FORMAT,
+            REPOSITORY_NAME
+        );
+        String segmentRepoSettingsAttributeKeyPrefix = String.format(
+            Locale.getDefault(),
+            "node.attr." + REMOTE_STORE_REPOSITORY_SETTINGS_ATTRIBUTE_KEY_PREFIX,
+            REPOSITORY_NAME
+        );
+        String translogRepoTypeAttributeKey = String.format(
+            Locale.getDefault(),
+            "node.attr." + REMOTE_STORE_REPOSITORY_TYPE_ATTRIBUTE_KEY_FORMAT,
+            REPOSITORY_2_NAME
+        );
+        String translogRepoSettingsAttributeKeyPrefix = String.format(
+            Locale.getDefault(),
+            "node.attr." + REMOTE_STORE_REPOSITORY_SETTINGS_ATTRIBUTE_KEY_PREFIX,
+            REPOSITORY_2_NAME
+        );
+        return Settings.builder()
+            .put(
+                Node.NODE_ATTRIBUTES.getKey() + RemoteStoreNodeAttribute.REMOTE_STORE_SEGMENT_REPOSITORY_NAME_ATTRIBUTE_KEY,
+                REPOSITORY_NAME
+            )
+            .put(segmentRepoTypeAttributeKey, FsRepository.TYPE)
+            .put(segmentRepoSettingsAttributeKeyPrefix + "location", randomRepoPath())
+            .put(segmentRepoSettingsAttributeKeyPrefix + "compress", randomBoolean())
+            .put(segmentRepoSettingsAttributeKeyPrefix + "max_remote_download_bytes_per_sec", "2kb")
+            .put(segmentRepoSettingsAttributeKeyPrefix + "chunk_size", 200, ByteSizeUnit.BYTES)
+            .put(
+                Node.NODE_ATTRIBUTES.getKey() + RemoteStoreNodeAttribute.REMOTE_STORE_TRANSLOG_REPOSITORY_NAME_ATTRIBUTE_KEY,
+                REPOSITORY_2_NAME
+            )
+            .put(translogRepoTypeAttributeKey, FsRepository.TYPE)
+            .put(translogRepoSettingsAttributeKeyPrefix + "location", randomRepoPath())
+            .build();
     }
 
     public static int getFileCount(Path path) throws Exception {

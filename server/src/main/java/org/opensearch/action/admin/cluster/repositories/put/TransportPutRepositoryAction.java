@@ -100,7 +100,7 @@ public class TransportPutRepositoryAction extends TransportClusterManagerNodeAct
         ClusterState state,
         final ActionListener<AcknowledgedResponse> listener
     ) {
-        repositoriesService.registerOrUpdateRepository(
+        repositoriesService.registerRepository(
             request,
             ActionListener.delegateFailure(
                 listener,

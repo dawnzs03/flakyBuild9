@@ -159,7 +159,8 @@ public class RestInitializeExtensionAction extends BaseRestHandler {
             extAdditionalSettings
         );
         try {
-            extensionsManager.initializeExtension(extension);
+            extensionsManager.loadExtension(extension);
+            extensionsManager.initialize();
         } catch (CompletionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof TimeoutException) {

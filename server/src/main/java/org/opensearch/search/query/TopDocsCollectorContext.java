@@ -183,9 +183,7 @@ public abstract class TopDocsCollectorContext extends QueryCollectorContext {
                 );
             } else {
                 if (hitCount == -1) {
-                    if (trackTotalHitsUpTo == SearchContext.TRACK_TOTAL_HITS_ACCURATE) {
-                        manager = new TotalHitCountCollectorManager(sort);
-                    } else {
+                    if (trackTotalHitsUpTo != SearchContext.TRACK_TOTAL_HITS_ACCURATE) {
                         manager = new EarlyTerminatingCollectorManager<>(
                             new TotalHitCountCollectorManager(sort),
                             trackTotalHitsUpTo,

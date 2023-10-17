@@ -19,7 +19,7 @@ public class ListenerTestUtils {
      * CountingCompletionListener acts as a verification instance for wrapping listener based calls.
      * Keeps track of the last response, failure and count of response and failure invocations.
      */
-    public static class CountingCompletionListener<T> implements ActionListener<T> {
+    static class CountingCompletionListener<T> implements ActionListener<T> {
         private int responseCount;
         private int failureCount;
         private T response;

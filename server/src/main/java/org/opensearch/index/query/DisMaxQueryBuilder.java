@@ -32,7 +32,6 @@
 
 package org.opensearch.index.query;
 
-import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.DisjunctionMaxQuery;
 import org.apache.lucene.search.Query;
 import org.opensearch.common.lucene.search.Queries;
@@ -245,17 +244,6 @@ public class DisMaxQueryBuilder extends AbstractQueryBuilder<DisMaxQueryBuilder>
     protected void extractInnerHitBuilders(Map<String, InnerHitContextBuilder> innerHits) {
         for (QueryBuilder query : queries) {
             InnerHitContextBuilder.extractInnerHits(query, innerHits);
-        }
-    }
-
-    @Override
-    public void visit(QueryBuilderVisitor visitor) {
-        visitor.accept(this);
-        if (queries.isEmpty() == false) {
-            QueryBuilderVisitor subVisitor = visitor.getChildVisitor(BooleanClause.Occur.SHOULD);
-            for (QueryBuilder subQb : queries) {
-                subVisitor.accept(subQb);
-            }
         }
     }
 }

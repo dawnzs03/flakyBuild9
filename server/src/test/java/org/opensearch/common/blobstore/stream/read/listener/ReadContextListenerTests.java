@@ -29,9 +29,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.UnaryOperator;
 
 import static org.opensearch.common.blobstore.stream.read.listener.ListenerTestUtils.CountingCompletionListener;
 
@@ -48,7 +46,6 @@ public class ReadContextListenerTests extends OpenSearchTestCase {
     private static final int NUMBER_OF_PARTS = 5;
     private static final int PART_SIZE = 10;
     private static final String TEST_SEGMENT_FILE = "test_segment_file";
-    private static final int MAX_CONCURRENT_STREAMS = 10;
 
     @BeforeClass
     public static void setup() {
@@ -67,17 +64,10 @@ public class ReadContextListenerTests extends OpenSearchTestCase {
 
     public void testReadContextListener() throws InterruptedException, IOException {
         Path fileLocation = path.resolve(UUID.randomUUID().toString());
-        List<ReadContext.StreamPartCreator> blobPartStreams = initializeBlobPartStreams();
+        List<InputStreamContainer> blobPartStreams = initializeBlobPartStreams();
         CountDownLatch countDownLatch = new CountDownLatch(1);
         ActionListener<String> completionListener = new LatchedActionListener<>(new PlainActionFuture<>(), countDownLatch);
-        ReadContextListener readContextListener = new ReadContextListener(
-            TEST_SEGMENT_FILE,
-            fileLocation,
-            completionListener,
-            threadPool,
-            UnaryOperator.identity(),
-            MAX_CONCURRENT_STREAMS
-        );
+        ReadContextListener readContextListener = new ReadContextListener(TEST_SEGMENT_FILE, fileLocation, threadPool, completionListener);
         ReadContext readContext = new ReadContext((long) PART_SIZE * NUMBER_OF_PARTS, blobPartStreams, null);
         readContextListener.onResponse(readContext);
 
@@ -89,17 +79,10 @@ public class ReadContextListenerTests extends OpenSearchTestCase {
 
     public void testReadContextListenerFailure() throws Exception {
         Path fileLocation = path.resolve(UUID.randomUUID().toString());
-        List<ReadContext.StreamPartCreator> blobPartStreams = initializeBlobPartStreams();
+        List<InputStreamContainer> blobPartStreams = initializeBlobPartStreams();
         CountDownLatch countDownLatch = new CountDownLatch(1);
         ActionListener<String> completionListener = new LatchedActionListener<>(new PlainActionFuture<>(), countDownLatch);
-        ReadContextListener readContextListener = new ReadContextListener(
-            TEST_SEGMENT_FILE,
-            fileLocation,
-            completionListener,
-            threadPool,
-            UnaryOperator.identity(),
-            MAX_CONCURRENT_STREAMS
-        );
+        ReadContextListener readContextListener = new ReadContextListener(TEST_SEGMENT_FILE, fileLocation, threadPool, completionListener);
         InputStream badInputStream = new InputStream() {
 
             @Override
@@ -118,13 +101,7 @@ public class ReadContextListenerTests extends OpenSearchTestCase {
             }
         };
 
-        blobPartStreams.add(
-            NUMBER_OF_PARTS,
-            () -> CompletableFuture.supplyAsync(
-                () -> new InputStreamContainer(badInputStream, PART_SIZE, PART_SIZE * NUMBER_OF_PARTS),
-                threadPool.generic()
-            )
-        );
+        blobPartStreams.add(NUMBER_OF_PARTS, new InputStreamContainer(badInputStream, PART_SIZE, PART_SIZE * NUMBER_OF_PARTS));
         ReadContext readContext = new ReadContext((long) (PART_SIZE + 1) * NUMBER_OF_PARTS, blobPartStreams, null);
         readContextListener.onResponse(readContext);
 
@@ -135,31 +112,18 @@ public class ReadContextListenerTests extends OpenSearchTestCase {
     public void testReadContextListenerException() {
         Path fileLocation = path.resolve(UUID.randomUUID().toString());
         CountingCompletionListener<String> listener = new CountingCompletionListener<String>();
-        ReadContextListener readContextListener = new ReadContextListener(
-            TEST_SEGMENT_FILE,
-            fileLocation,
-            listener,
-            threadPool,
-            UnaryOperator.identity(),
-            MAX_CONCURRENT_STREAMS
-        );
+        ReadContextListener readContextListener = new ReadContextListener(TEST_SEGMENT_FILE, fileLocation, threadPool, listener);
         IOException exception = new IOException();
         readContextListener.onFailure(exception);
         assertEquals(1, listener.getFailureCount());
         assertEquals(exception, listener.getException());
     }
 
-    private List<ReadContext.StreamPartCreator> initializeBlobPartStreams() {
-        List<ReadContext.StreamPartCreator> blobPartStreams = new ArrayList<>();
+    private List<InputStreamContainer> initializeBlobPartStreams() {
+        List<InputStreamContainer> blobPartStreams = new ArrayList<>();
         for (int partNumber = 0; partNumber < NUMBER_OF_PARTS; partNumber++) {
             InputStream testStream = new ByteArrayInputStream(randomByteArrayOfLength(PART_SIZE));
-            int finalPartNumber = partNumber;
-            blobPartStreams.add(
-                () -> CompletableFuture.supplyAsync(
-                    () -> new InputStreamContainer(testStream, PART_SIZE, (long) finalPartNumber * PART_SIZE),
-                    threadPool.generic()
-                )
-            );
+            blobPartStreams.add(new InputStreamContainer(testStream, PART_SIZE, (long) partNumber * PART_SIZE));
         }
         return blobPartStreams;
     }

@@ -27,7 +27,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -125,11 +124,11 @@ public class MockFsAsyncBlobContainer extends FsBlobContainer implements AsyncMu
                 long contentLength = listBlobs().get(blobName).length();
                 long partSize = contentLength / 10;
                 int numberOfParts = (int) ((contentLength % partSize) == 0 ? contentLength / partSize : (contentLength / partSize) + 1);
-                List<ReadContext.StreamPartCreator> blobPartStreams = new ArrayList<>();
+                List<InputStreamContainer> blobPartStreams = new ArrayList<>();
                 for (int partNumber = 0; partNumber < numberOfParts; partNumber++) {
                     long offset = partNumber * partSize;
                     InputStreamContainer blobPartStream = new InputStreamContainer(readBlob(blobName, offset, partSize), partSize, offset);
-                    blobPartStreams.add(() -> CompletableFuture.completedFuture(blobPartStream));
+                    blobPartStreams.add(blobPartStream);
                 }
                 ReadContext blobReadContext = new ReadContext(contentLength, blobPartStreams, null);
                 listener.onResponse(blobReadContext);

@@ -89,7 +89,6 @@ import org.opensearch.index.shard.ShardNotFoundException;
 import org.opensearch.index.shard.ShardNotInPrimaryModeException;
 import org.opensearch.index.shard.ShardPath;
 import org.opensearch.index.similarity.SimilarityService;
-import org.opensearch.index.store.RemoteSegmentStoreDirectoryFactory;
 import org.opensearch.index.store.Store;
 import org.opensearch.index.translog.Translog;
 import org.opensearch.index.translog.TranslogFactory;
@@ -241,10 +240,8 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             if (indexSettings.getIndexSortConfig().hasIndexSort()) {
                 // we delay the actual creation of the sort order for this index because the mapping has not been merged yet.
                 // The sort order is validated right after the merge of the mapping later in the process.
-                boolean shouldWidenIndexSortType = this.indexSettings.shouldWidenIndexSortType();
                 this.indexSortSupplier = () -> indexSettings.getIndexSortConfig()
                     .buildIndexSort(
-                        shouldWidenIndexSortType,
                         mapperService::fieldType,
                         (fieldType, searchLookup) -> indexFieldData.getForField(fieldType, indexFieldData.index().getName(), searchLookup)
                     );
@@ -482,7 +479,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             Store remoteStore = null;
             if (this.indexSettings.isRemoteStoreEnabled()) {
                 Directory remoteDirectory = remoteDirectoryFactory.newDirectory(this.indexSettings, path);
-                remoteStore = new Store(shardId, this.indexSettings, remoteDirectory, lock, Store.OnClose.EMPTY, path);
+                remoteStore = new Store(shardId, this.indexSettings, remoteDirectory, lock, Store.OnClose.EMPTY);
             }
 
             Directory directory = directoryFactory.newDirectory(this.indexSettings, path);
@@ -491,8 +488,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                 this.indexSettings,
                 directory,
                 lock,
-                new StoreCloseListener(shardId, () -> eventListener.onStoreClosed(shardId)),
-                path
+                new StoreCloseListener(shardId, () -> eventListener.onStoreClosed(shardId))
             );
             eventListener.onStoreCreated(shardId);
             indexShard = new IndexShard(
@@ -520,9 +516,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                 this.indexSettings.isSegRepEnabled() ? checkpointPublisher : null,
                 remoteStore,
                 remoteStoreStatsTrackerFactory,
-                clusterRemoteTranslogBufferIntervalSupplier,
-                nodeEnv.nodeId(),
-                (RemoteSegmentStoreDirectoryFactory) remoteDirectoryFactory
+                clusterRemoteTranslogBufferIntervalSupplier
             );
             eventListener.indexShardStateChanged(indexShard, null, indexShard.state(), "shard created");
             eventListener.afterIndexShardCreated(indexShard);

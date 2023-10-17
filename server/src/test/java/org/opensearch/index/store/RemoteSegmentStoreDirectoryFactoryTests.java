@@ -20,7 +20,6 @@ import org.opensearch.core.action.ActionListener;
 import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.index.IndexSettings;
 import org.opensearch.index.shard.ShardPath;
-import org.opensearch.indices.recovery.DefaultRecoverySettings;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.repositories.RepositoryMissingException;
 import org.opensearch.repositories.blobstore.BlobStoreRepository;
@@ -36,7 +35,6 @@ import java.util.function.Supplier;
 
 import org.mockito.ArgumentCaptor;
 
-import static org.opensearch.index.store.RemoteSegmentStoreDirectory.METADATA_FILES_TO_FETCH;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -58,11 +56,7 @@ public class RemoteSegmentStoreDirectoryFactoryTests extends OpenSearchTestCase 
         repositoriesService = mock(RepositoriesService.class);
         threadPool = mock(ThreadPool.class);
         when(repositoriesServiceSupplier.get()).thenReturn(repositoriesService);
-        remoteSegmentStoreDirectoryFactory = new RemoteSegmentStoreDirectoryFactory(
-            repositoriesServiceSupplier,
-            threadPool,
-            DefaultRecoverySettings.INSTANCE
-        );
+        remoteSegmentStoreDirectoryFactory = new RemoteSegmentStoreDirectoryFactory(repositoriesServiceSupplier, threadPool);
     }
 
     public void testNewDirectory() throws IOException {
@@ -84,12 +78,7 @@ public class RemoteSegmentStoreDirectoryFactoryTests extends OpenSearchTestCase 
             latchedActionListener.onResponse(List.of());
             return null;
         }).when(blobContainer)
-            .listBlobsByPrefixInSortedOrder(
-                any(),
-                eq(METADATA_FILES_TO_FETCH),
-                eq(BlobContainer.BlobNameSortOrder.LEXICOGRAPHIC),
-                any(ActionListener.class)
-            );
+            .listBlobsByPrefixInSortedOrder(any(), eq(1), eq(BlobContainer.BlobNameSortOrder.LEXICOGRAPHIC), any(ActionListener.class));
 
         when(repositoriesService.repository("remote_store_repository")).thenReturn(repository);
 
@@ -104,7 +93,7 @@ public class RemoteSegmentStoreDirectoryFactoryTests extends OpenSearchTestCase 
 
             verify(blobContainer).listBlobsByPrefixInSortedOrder(
                 eq(RemoteSegmentStoreDirectory.MetadataFilenameUtils.METADATA_PREFIX),
-                eq(METADATA_FILES_TO_FETCH),
+                eq(1),
                 eq(BlobContainer.BlobNameSortOrder.LEXICOGRAPHIC),
                 any()
             );

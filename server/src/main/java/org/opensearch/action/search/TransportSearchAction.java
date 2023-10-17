@@ -67,7 +67,6 @@ import org.opensearch.core.common.Strings;
 import org.opensearch.core.common.breaker.CircuitBreaker;
 import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.common.io.stream.Writeable;
-import org.opensearch.core.common.util.CollectionUtils;
 import org.opensearch.core.index.Index;
 import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.core.indices.breaker.CircuitBreakerService;
@@ -146,14 +145,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         Setting.Property.NodeScope
     );
 
-    public static final String SEARCH_REQUEST_STATS_ENABLED_KEY = "search.request_stats_enabled";
-    public static final Setting<Boolean> SEARCH_REQUEST_STATS_ENABLED = Setting.boolSetting(
-        SEARCH_REQUEST_STATS_ENABLED_KEY,
-        false,
-        Property.Dynamic,
-        Property.NodeScope
-    );
-
     private final NodeClient client;
     private final ThreadPool threadPool;
     private final ClusterService clusterService;
@@ -165,10 +156,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
     private final NamedWriteableRegistry namedWriteableRegistry;
     private final CircuitBreaker circuitBreaker;
     private final SearchPipelineService searchPipelineService;
-
-    private volatile boolean isRequestStatsEnabled;
-
-    private final SearchRequestStats searchRequestStats;
 
     @Inject
     public TransportSearchAction(
@@ -183,8 +170,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         ActionFilters actionFilters,
         IndexNameExpressionResolver indexNameExpressionResolver,
         NamedWriteableRegistry namedWriteableRegistry,
-        SearchPipelineService searchPipelineService,
-        SearchRequestStats searchRequestStats
+        SearchPipelineService searchPipelineService
     ) {
         super(SearchAction.NAME, transportService, actionFilters, (Writeable.Reader<SearchRequest>) SearchRequest::new);
         this.client = client;
@@ -199,13 +185,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         this.indexNameExpressionResolver = indexNameExpressionResolver;
         this.namedWriteableRegistry = namedWriteableRegistry;
         this.searchPipelineService = searchPipelineService;
-        this.isRequestStatsEnabled = clusterService.getClusterSettings().get(SEARCH_REQUEST_STATS_ENABLED);
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(SEARCH_REQUEST_STATS_ENABLED, this::setIsRequestStatsEnabled);
-        this.searchRequestStats = searchRequestStats;
-    }
-
-    private void setIsRequestStatsEnabled(boolean isRequestStatsEnabled) {
-        this.isRequestStatsEnabled = isRequestStatsEnabled;
     }
 
     private Map<String, AliasFilter> buildPerIndexAliasFilter(
@@ -332,13 +311,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         SinglePhaseSearchAction phaseSearchAction,
         ActionListener<SearchResponse> listener
     ) {
-        final List<SearchRequestOperationsListener> searchListenersList = createSearchListenerList();
-        final SearchRequestOperationsListener searchRequestOperationsListener;
-        if (!CollectionUtils.isEmpty(searchListenersList)) {
-            searchRequestOperationsListener = new SearchRequestOperationsListener.CompositeListener(searchListenersList, logger);
-        } else {
-            searchRequestOperationsListener = null;
-        }
         executeRequest(task, searchRequest, new SearchAsyncActionProvider() {
             @Override
             public AbstractSearchAsyncAction<? extends SearchPhaseResult> asyncSearchAction(
@@ -374,8 +346,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     task,
                     new ArraySearchPhaseResults<>(shardsIts.size()),
                     searchRequest.getMaxConcurrentShardRequests(),
-                    clusters,
-                    searchRequestOperationsListener
+                    clusters
                 ) {
                     @Override
                     protected void executePhaseOnShard(
@@ -945,7 +916,9 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         @Nullable SearchContextId searchContext,
         SearchAsyncActionProvider searchAsyncActionProvider
     ) {
+
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.READ);
+
         // TODO: I think startTime() should become part of ActionRequest and that should be used both for index name
         // date math expressions and $now in scripts. This way all apis will deal with now in the same way instead
         // of just for the _search api
@@ -995,8 +968,11 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             indexRoutings = routingMap;
         }
         final GroupShardsIterator<SearchShardIterator> shardIterators = mergeShardsIterators(localShardIterators, remoteShardIterators);
+
         failIfOverShardCountLimit(clusterService, shardIterators.size());
+
         Map<String, Float> concreteIndexBoosts = resolveIndexBoosts(searchRequest, clusterState);
+
         // optimize search type for cases where there is only one shard group to search on
         if (shardIterators.size() == 1) {
             // if we only have one group, then we always want Q_T_F, no need for DFS, and no need to do THEN since we hit one shard
@@ -1131,14 +1107,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         );
     }
 
-    private List<SearchRequestOperationsListener> createSearchListenerList() {
-        final List<SearchRequestOperationsListener> searchListenersList = new ArrayList<>();
-        if (isRequestStatsEnabled) {
-            searchListenersList.add(searchRequestStats);
-        }
-        return searchListenersList;
-    }
-
     private AbstractSearchAsyncAction<? extends SearchPhaseResult> searchAsyncAction(
         SearchTask task,
         SearchRequest searchRequest,
@@ -1155,13 +1123,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         ThreadPool threadPool,
         SearchResponse.Clusters clusters
     ) {
-        final List<SearchRequestOperationsListener> searchListenersList = createSearchListenerList();
-        final SearchRequestOperationsListener searchRequestOperationsListener;
-        if (!CollectionUtils.isEmpty(searchListenersList)) {
-            searchRequestOperationsListener = new SearchRequestOperationsListener.CompositeListener(searchListenersList, logger);
-        } else {
-            searchRequestOperationsListener = null;
-        }
         if (preFilter) {
             return new CanMatchPreFilterSearchPhase(
                 logger,
@@ -1201,8 +1162,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         }
                     };
                 },
-                clusters,
-                searchRequestOperationsListener
+                clusters
             );
         } else {
             final QueryPhaseResultConsumer queryResultConsumer = searchPhaseController.newSearchPhaseResults(
@@ -1232,8 +1192,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         timeProvider,
                         clusterState,
                         task,
-                        clusters,
-                        searchRequestOperationsListener
+                        clusters
                     );
                     break;
                 case QUERY_THEN_FETCH:
@@ -1253,8 +1212,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         timeProvider,
                         clusterState,
                         task,
-                        clusters,
-                        searchRequestOperationsListener
+                        clusters
                     );
                     break;
                 default:

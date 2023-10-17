@@ -46,11 +46,6 @@ import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.transport.TransportAddress;
 import org.opensearch.core.transport.TransportResponse;
-import org.opensearch.telemetry.tracing.Span;
-import org.opensearch.telemetry.tracing.SpanBuilder;
-import org.opensearch.telemetry.tracing.SpanScope;
-import org.opensearch.telemetry.tracing.Tracer;
-import org.opensearch.telemetry.tracing.channels.TraceableTcpTransportChannel;
 import org.opensearch.threadpool.ThreadPool;
 
 import java.io.EOFException;
@@ -79,8 +74,6 @@ public class InboundHandler {
 
     private volatile long slowLogThresholdMs = Long.MAX_VALUE;
 
-    private final Tracer tracer;
-
     InboundHandler(
         ThreadPool threadPool,
         OutboundHandler outboundHandler,
@@ -88,8 +81,7 @@ public class InboundHandler {
         TransportHandshaker handshaker,
         TransportKeepAlive keepAlive,
         Transport.RequestHandlers requestHandlers,
-        Transport.ResponseHandlers responseHandlers,
-        Tracer tracer
+        Transport.ResponseHandlers responseHandlers
     ) {
         this.threadPool = threadPool;
         this.outboundHandler = outboundHandler;
@@ -98,7 +90,6 @@ public class InboundHandler {
         this.keepAlive = keepAlive;
         this.requestHandlers = requestHandlers;
         this.responseHandlers = responseHandlers;
-        this.tracer = tracer;
     }
 
     void setMessageListener(TransportMessageListener listener) {
@@ -117,6 +108,7 @@ public class InboundHandler {
         final long startTime = threadPool.relativeTimeInMillis();
         channel.getChannelStats().markAccessed(startTime);
         TransportLogger.logInboundMessage(channel, message);
+
         if (message.isPing()) {
             keepAlive.receiveKeepAlive(channel);
         } else {
@@ -131,6 +123,7 @@ public class InboundHandler {
         final InetSocketAddress remoteAddress = channel.getRemoteAddress();
         final Header header = message.getHeader();
         assert header.needsToReadVariableHeader() == false;
+
         ThreadContext threadContext = threadPool.getThreadContext();
         try (ThreadContext.StoredContext existing = threadContext.stashContext()) {
             // Place the context with the headers from the message
@@ -172,7 +165,6 @@ public class InboundHandler {
                         handleResponse(requestId, remoteAddress, EMPTY_STREAM_INPUT, handler);
                     }
                 }
-
             }
         } finally {
             final long took = threadPool.relativeTimeInMillis() - startTime;
@@ -192,89 +184,80 @@ public class InboundHandler {
         final String action = header.getActionName();
         final long requestId = header.getRequestId();
         final Version version = header.getVersion();
-        Span span = tracer.startSpan(SpanBuilder.from(action, channel));
-        try (SpanScope spanScope = tracer.withSpanInScope(span)) {
-            if (header.isHandshake()) {
-                messageListener.onRequestReceived(requestId, action);
-                // Cannot short circuit handshakes
-                assert message.isShortCircuit() == false;
-                final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
-                assertRemoteVersion(stream, header.getVersion());
-                final TcpTransportChannel transportChannel = new TcpTransportChannel(
-                    outboundHandler,
-                    channel,
-                    action,
-                    requestId,
-                    version,
-                    header.getFeatures(),
-                    header.isCompressed(),
-                    header.isHandshake(),
-                    message.takeBreakerReleaseControl()
-                );
-                TransportChannel traceableTransportChannel = TraceableTcpTransportChannel.create(transportChannel, span, tracer);
-                try {
-                    handshaker.handleHandshake(traceableTransportChannel, requestId, stream);
-                } catch (Exception e) {
-                    if (Version.CURRENT.isCompatible(header.getVersion())) {
-                        sendErrorResponse(action, traceableTransportChannel, e);
-                    } else {
-                        logger.warn(
-                            new ParameterizedMessage(
-                                "could not send error response to handshake received on [{}] using wire format version [{}], closing channel",
-                                channel,
-                                header.getVersion()
-                            ),
-                            e
-                        );
-                        channel.close();
-                    }
-                }
-            } else {
-                final TcpTransportChannel transportChannel = new TcpTransportChannel(
-                    outboundHandler,
-                    channel,
-                    action,
-                    requestId,
-                    version,
-                    header.getFeatures(),
-                    header.isCompressed(),
-                    header.isHandshake(),
-                    message.takeBreakerReleaseControl()
-                );
-                TransportChannel traceableTransportChannel = TraceableTcpTransportChannel.create(transportChannel, span, tracer);
-                try {
-                    messageListener.onRequestReceived(requestId, action);
-                    if (message.isShortCircuit()) {
-                        sendErrorResponse(action, traceableTransportChannel, message.getException());
-                    } else {
-                        final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
-                        assertRemoteVersion(stream, header.getVersion());
-                        final RequestHandlerRegistry<T> reg = requestHandlers.getHandler(action);
-                        assert reg != null;
-
-                        final T request = newRequest(requestId, action, stream, reg);
-                        request.remoteAddress(new TransportAddress(channel.getRemoteAddress()));
-                        checkStreamIsFullyConsumed(requestId, action, stream);
-
-                        final String executor = reg.getExecutor();
-                        if (ThreadPool.Names.SAME.equals(executor)) {
-                            try {
-                                reg.processMessageReceived(request, traceableTransportChannel);
-                            } catch (Exception e) {
-                                sendErrorResponse(reg.getAction(), traceableTransportChannel, e);
-                            }
-                        } else {
-                            threadPool.executor(executor).execute(new RequestHandler<>(reg, request, traceableTransportChannel));
-                        }
-                    }
-                } catch (Exception e) {
-                    sendErrorResponse(action, traceableTransportChannel, e);
+        if (header.isHandshake()) {
+            messageListener.onRequestReceived(requestId, action);
+            // Cannot short circuit handshakes
+            assert message.isShortCircuit() == false;
+            final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
+            assertRemoteVersion(stream, header.getVersion());
+            final TransportChannel transportChannel = new TcpTransportChannel(
+                outboundHandler,
+                channel,
+                action,
+                requestId,
+                version,
+                header.getFeatures(),
+                header.isCompressed(),
+                header.isHandshake(),
+                message.takeBreakerReleaseControl()
+            );
+            try {
+                handshaker.handleHandshake(transportChannel, requestId, stream);
+            } catch (Exception e) {
+                if (Version.CURRENT.isCompatible(header.getVersion())) {
+                    sendErrorResponse(action, transportChannel, e);
+                } else {
+                    logger.warn(
+                        new ParameterizedMessage(
+                            "could not send error response to handshake received on [{}] using wire format version [{}], closing channel",
+                            channel,
+                            header.getVersion()
+                        ),
+                        e
+                    );
+                    channel.close();
                 }
             }
-        } catch (Exception e) {
-            span.setError(e);
-            span.endSpan();
-            throw e;
+        } else {
+            final TransportChannel transportChannel = new TcpTransportChannel(
+                outboundHandler,
+                channel,
+                action,
+                requestId,
+                version,
+                header.getFeatures(),
+                header.isCompressed(),
+                header.isHandshake(),
+                message.takeBreakerReleaseControl()
+            );
+            try {
+                messageListener.onRequestReceived(requestId, action);
+                if (message.isShortCircuit()) {
+                    sendErrorResponse(action, transportChannel, message.getException());
+                } else {
+                    final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
+                    assertRemoteVersion(stream, header.getVersion());
+                    final RequestHandlerRegistry<T> reg = requestHandlers.getHandler(action);
+                    assert reg != null;
+
+                    final T request = newRequest(requestId, action, stream, reg);
+                    request.remoteAddress(new TransportAddress(channel.getRemoteAddress()));
+                    checkStreamIsFullyConsumed(requestId, action, stream);
+
+                    final String executor = reg.getExecutor();
+                    if (ThreadPool.Names.SAME.equals(executor)) {
+                        try {
+                            reg.processMessageReceived(request, transportChannel);
+                        } catch (Exception e) {
+                            sendErrorResponse(reg.getAction(), transportChannel, e);
+                        }
+                    } else {
+                        threadPool.executor(executor).execute(new RequestHandler<>(reg, request, transportChannel));
+                    }
+                }
+            } catch (Exception e) {
+                sendErrorResponse(action, transportChannel, e);
+            }
         }
     }
 

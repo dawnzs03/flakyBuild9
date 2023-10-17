@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -35,10 +36,9 @@ public class WrappedTracerTests extends OpenSearchTestCase {
         DefaultTracer mockDefaultTracer = mock(DefaultTracer.class);
 
         try (WrappedTracer wrappedTracer = new WrappedTracer(telemetrySettings, mockDefaultTracer)) {
-            SpanCreationContext spanCreationContext = SpanCreationContext.internal().name("foo");
-            wrappedTracer.startSpan(spanCreationContext);
+            wrappedTracer.startSpan("foo");
             assertTrue(wrappedTracer.getDelegateTracer() instanceof NoopTracer);
-            verify(mockDefaultTracer, never()).startSpan(SpanCreationContext.internal().name("foo"));
+            verify(mockDefaultTracer, never()).startSpan("foo");
         }
     }
 
@@ -48,11 +48,10 @@ public class WrappedTracerTests extends OpenSearchTestCase {
         DefaultTracer mockDefaultTracer = mock(DefaultTracer.class);
 
         try (WrappedTracer wrappedTracer = new WrappedTracer(telemetrySettings, mockDefaultTracer)) {
-            SpanCreationContext spanCreationContext = SpanCreationContext.internal().name("foo");
-            wrappedTracer.startSpan(spanCreationContext);
+            wrappedTracer.startSpan("foo");
 
             assertTrue(wrappedTracer.getDelegateTracer() instanceof DefaultTracer);
-            verify(mockDefaultTracer).startSpan(eq(spanCreationContext));
+            verify(mockDefaultTracer).startSpan(eq("foo"), eq((SpanContext) null), any(Attributes.class));
         }
     }
 
@@ -62,11 +61,10 @@ public class WrappedTracerTests extends OpenSearchTestCase {
         DefaultTracer mockDefaultTracer = mock(DefaultTracer.class);
         Attributes attributes = Attributes.create().addAttribute("key", "value");
         try (WrappedTracer wrappedTracer = new WrappedTracer(telemetrySettings, mockDefaultTracer)) {
-            SpanCreationContext spanCreationContext = SpanCreationContext.internal().name("foo");
-            wrappedTracer.startSpan(spanCreationContext);
+            wrappedTracer.startSpan("foo", attributes);
 
             assertTrue(wrappedTracer.getDelegateTracer() instanceof DefaultTracer);
-            verify(mockDefaultTracer).startSpan(spanCreationContext);
+            verify(mockDefaultTracer).startSpan("foo", (SpanContext) null, attributes);
         }
     }
 

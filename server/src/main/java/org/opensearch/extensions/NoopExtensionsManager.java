@@ -20,7 +20,6 @@ import org.opensearch.identity.IdentityService;
 import org.opensearch.transport.TransportService;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -32,7 +31,7 @@ import java.util.Set;
 public class NoopExtensionsManager extends ExtensionsManager {
 
     public NoopExtensionsManager() throws IOException {
-        super(Set.of(), new IdentityService(Settings.EMPTY, List.of()));
+        super(Set.of());
     }
 
     @Override

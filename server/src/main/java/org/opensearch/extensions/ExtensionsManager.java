@@ -41,7 +41,6 @@ import org.opensearch.extensions.rest.RestActionsRequestHandler;
 import org.opensearch.extensions.settings.CustomSettingsRequestHandler;
 import org.opensearch.extensions.settings.RegisterCustomSettingsRequest;
 import org.opensearch.identity.IdentityService;
-import org.opensearch.identity.tokens.AuthToken;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.ConnectTransportException;
 import org.opensearch.transport.TransportException;
@@ -102,7 +101,6 @@ public class ExtensionsManager {
     private Settings environmentSettings;
     private AddSettingsUpdateConsumerRequestHandler addSettingsUpdateConsumerRequestHandler;
     private NodeClient client;
-    private IdentityService identityService;
 
     /**
      * Instantiate a new ExtensionsManager object to handle requests and responses from extensions. This is called during Node bootstrap.
@@ -110,7 +108,7 @@ public class ExtensionsManager {
      * @param additionalSettings  Additional settings to read in from extension initialization request
      * @throws IOException  If the extensions discovery file is not properly retrieved.
      */
-    public ExtensionsManager(Set<Setting<?>> additionalSettings, IdentityService identityService) throws IOException {
+    public ExtensionsManager(Set<Setting<?>> additionalSettings) throws IOException {
         logger.info("ExtensionsManager initialized");
         this.initializedExtensions = new HashMap<String, DiscoveryExtensionNode>();
         this.extensionIdMap = new HashMap<String, DiscoveryExtensionNode>();
@@ -125,7 +123,6 @@ public class ExtensionsManager {
         }
         this.client = null;
         this.extensionTransportActionsHandler = null;
-        this.identityService = identityService;
     }
 
     /**
@@ -300,7 +297,7 @@ public class ExtensionsManager {
      * Loads a single extension
      * @param extension The extension to be loaded
      */
-    public DiscoveryExtensionNode loadExtension(Extension extension) throws IOException {
+    public void loadExtension(Extension extension) throws IOException {
         validateExtension(extension);
         DiscoveryExtensionNode discoveryExtensionNode = new DiscoveryExtensionNode(
             extension.getName(),
@@ -314,12 +311,6 @@ public class ExtensionsManager {
         extensionIdMap.put(extension.getUniqueId(), discoveryExtensionNode);
         extensionSettingsMap.put(extension.getUniqueId(), extension);
         logger.info("Loaded extension with uniqueId " + extension.getUniqueId() + ": " + extension);
-        return discoveryExtensionNode;
-    }
-
-    public void initializeExtension(Extension extension) throws IOException {
-        DiscoveryExtensionNode node = loadExtension(extension);
-        initializeExtensionNode(node);
     }
 
     private void validateField(String fieldName, String value) throws IOException {
@@ -346,11 +337,11 @@ public class ExtensionsManager {
      */
     public void initialize() {
         for (DiscoveryExtensionNode extension : extensionIdMap.values()) {
-            initializeExtensionNode(extension);
+            initializeExtension(extension);
         }
     }
 
-    public void initializeExtensionNode(DiscoveryExtensionNode extensionNode) {
+    private void initializeExtension(DiscoveryExtensionNode extension) {
 
         final CompletableFuture<InitializeExtensionResponse> inProgressFuture = new CompletableFuture<>();
         final TransportResponseHandler<InitializeExtensionResponse> initializeExtensionResponseHandler = new TransportResponseHandler<
@@ -390,8 +381,7 @@ public class ExtensionsManager {
         transportService.getThreadPool().generic().execute(new AbstractRunnable() {
             @Override
             public void onFailure(Exception e) {
-                logger.warn("Error registering extension: " + extensionNode.getId(), e);
-                extensionIdMap.remove(extensionNode.getId());
+                extensionIdMap.remove(extension.getId());
                 if (e.getCause() instanceof ConnectTransportException) {
                     logger.info("No response from extension to request.", e);
                     throw (ConnectTransportException) e.getCause();
@@ -406,11 +396,11 @@ public class ExtensionsManager {
 
             @Override
             protected void doRun() throws Exception {
-                transportService.connectToExtensionNode(extensionNode);
+                transportService.connectToExtensionNode(extension);
                 transportService.sendRequest(
-                    extensionNode,
+                    extension,
                     REQUEST_EXTENSION_ACTION_NAME,
-                    new InitializeExtensionRequest(transportService.getLocalNode(), extensionNode, issueServiceAccount(extensionNode)),
+                    new InitializeExtensionRequest(transportService.getLocalNode(), extension),
                     initializeExtensionResponseHandler
                 );
             }
@@ -451,15 +441,6 @@ public class ExtensionsManager {
             default:
                 throw new IllegalArgumentException("Handler not present for the provided request");
         }
-    }
-
-    /**
-     * A helper method called during initialization that issues a service accounts to extensions
-     * @param extension The extension to be issued a service account
-     */
-    private String issueServiceAccount(DiscoveryExtensionNode extension) {
-        AuthToken serviceAccountToken = identityService.getTokenManager().issueServiceAccountToken(extension.getId());
-        return serviceAccountToken.asAuthHeaderValue();
     }
 
     static String getRequestExtensionActionName() {

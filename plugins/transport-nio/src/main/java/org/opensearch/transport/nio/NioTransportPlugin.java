@@ -91,8 +91,7 @@ public class NioTransportPlugin extends Plugin implements NetworkPlugin {
         PageCacheRecycler pageCacheRecycler,
         CircuitBreakerService circuitBreakerService,
         NamedWriteableRegistry namedWriteableRegistry,
-        NetworkService networkService,
-        Tracer tracer
+        NetworkService networkService
     ) {
         return Collections.singletonMap(
             NIO_TRANSPORT_NAME,
@@ -104,8 +103,7 @@ public class NioTransportPlugin extends Plugin implements NetworkPlugin {
                 pageCacheRecycler,
                 namedWriteableRegistry,
                 circuitBreakerService,
-                getNioGroupFactory(settings),
-                tracer
+                getNioGroupFactory(settings)
             )
         );
     }

@@ -81,11 +81,10 @@ class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<SearchPh
         final TransportSearchAction.SearchTimeProvider timeProvider,
         ClusterState clusterState,
         SearchTask task,
-        SearchResponse.Clusters clusters,
-        SearchRequestOperationsListener searchRequestOperationsListener
+        SearchResponse.Clusters clusters
     ) {
         super(
-            SearchPhaseName.QUERY.getName(),
+            "query",
             logger,
             searchTransportService,
             nodeIdToConnection,
@@ -101,8 +100,7 @@ class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<SearchPh
             task,
             resultConsumer,
             request.getMaxConcurrentShardRequests(),
-            clusters,
-            searchRequestOperationsListener
+            clusters
         );
         this.topDocsSize = SearchPhaseController.getTopDocsSize(request);
         this.trackTotalHitsUpTo = request.resolveTrackTotalHitsUpTo();

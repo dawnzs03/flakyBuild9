@@ -15,6 +15,7 @@ import org.opensearch.telemetry.tracing.SpanContext;
 import org.opensearch.telemetry.tracing.SpanCreationContext;
 import org.opensearch.telemetry.tracing.SpanScope;
 import org.opensearch.telemetry.tracing.Tracer;
+import org.opensearch.telemetry.tracing.attributes.Attributes;
 
 import java.util.List;
 import java.util.Map;
@@ -40,12 +41,32 @@ public class NoopTracer implements Tracer {
     }
 
     @Override
+    public Span startSpan(String spanName) {
+        return NoopSpan.INSTANCE;
+    }
+
+    @Override
+    public Span startSpan(String spanName, Attributes attributes) {
+        return NoopSpan.INSTANCE;
+    }
+
+    @Override
+    public Span startSpan(String spanName, SpanContext parentSpan, Attributes attributes) {
+        return NoopSpan.INSTANCE;
+    }
+
+    @Override
     public SpanContext getCurrentSpan() {
         return new SpanContext(NoopSpan.INSTANCE);
     }
 
     @Override
     public ScopedSpan startScopedSpan(SpanCreationContext spanCreationContext) {
+        return ScopedSpan.NO_OP;
+    }
+
+    @Override
+    public ScopedSpan startScopedSpan(SpanCreationContext spanCreationContext, SpanContext parentSpan) {
         return ScopedSpan.NO_OP;
     }
 

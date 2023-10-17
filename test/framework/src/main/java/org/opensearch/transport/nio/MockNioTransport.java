@@ -65,7 +65,6 @@ import org.opensearch.nio.NioServerSocketChannel;
 import org.opensearch.nio.NioSocketChannel;
 import org.opensearch.nio.Page;
 import org.opensearch.nio.ServerChannelContext;
-import org.opensearch.telemetry.tracing.Tracer;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.ConnectionProfile;
 import org.opensearch.transport.InboundPipeline;
@@ -111,10 +110,9 @@ public class MockNioTransport extends TcpTransport {
         NetworkService networkService,
         PageCacheRecycler pageCacheRecycler,
         NamedWriteableRegistry namedWriteableRegistry,
-        CircuitBreakerService circuitBreakerService,
-        Tracer tracer
+        CircuitBreakerService circuitBreakerService
     ) {
-        super(settings, version, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService, tracer);
+        super(settings, version, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService);
         this.transportThreadWatchdog = new TransportThreadWatchdog(threadPool, settings);
     }
 

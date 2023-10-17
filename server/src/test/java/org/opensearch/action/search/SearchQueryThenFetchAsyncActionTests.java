@@ -214,8 +214,7 @@ public class SearchQueryThenFetchAsyncActionTests extends OpenSearchTestCase {
             timeProvider,
             null,
             task,
-            SearchResponse.Clusters.EMPTY,
-            null
+            SearchResponse.Clusters.EMPTY
         ) {
             @Override
             protected SearchPhase getNextPhase(SearchPhaseResults<SearchPhaseResult> results, SearchPhaseContext context) {
@@ -227,7 +226,6 @@ public class SearchQueryThenFetchAsyncActionTests extends OpenSearchTestCase {
                 };
             }
         };
-
         action.start();
         latch.await();
         assertThat(successfulOps.get(), equalTo(numShards));

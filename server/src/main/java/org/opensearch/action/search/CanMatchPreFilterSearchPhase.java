@@ -90,8 +90,7 @@ final class CanMatchPreFilterSearchPhase extends AbstractSearchAsyncAction<CanMa
         ClusterState clusterState,
         SearchTask task,
         Function<GroupShardsIterator<SearchShardIterator>, SearchPhase> phaseFactory,
-        SearchResponse.Clusters clusters,
-        SearchRequestOperationsListener searchRequestOperationsListener
+        SearchResponse.Clusters clusters
     ) {
         // We set max concurrent shard requests to the number of shards so no throttling happens for can_match requests
         super(
@@ -111,8 +110,7 @@ final class CanMatchPreFilterSearchPhase extends AbstractSearchAsyncAction<CanMa
             task,
             new CanMatchSearchPhaseResults(shardsIts.size()),
             shardsIts.size(),
-            clusters,
-            searchRequestOperationsListener
+            clusters
         );
         this.phaseFactory = phaseFactory;
         this.shardsIts = shardsIts;

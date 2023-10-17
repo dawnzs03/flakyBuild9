@@ -47,7 +47,6 @@ import org.opensearch.action.admin.indices.stats.CommonStatsFlags;
 import org.opensearch.action.admin.indices.stats.CommonStatsFlags.Flag;
 import org.opensearch.action.admin.indices.stats.IndexShardStats;
 import org.opensearch.action.admin.indices.stats.ShardStats;
-import org.opensearch.action.search.SearchRequestStats;
 import org.opensearch.action.search.SearchType;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.ClusterState;
@@ -133,7 +132,6 @@ import org.opensearch.index.shard.IndexShard;
 import org.opensearch.index.shard.IndexShardState;
 import org.opensearch.index.shard.IndexingOperationListener;
 import org.opensearch.index.shard.IndexingStats;
-import org.opensearch.index.shard.IndexingStats.Stats.DocStatusStats;
 import org.opensearch.index.store.remote.filecache.FileCacheCleaner;
 import org.opensearch.index.translog.InternalTranslogFactory;
 import org.opensearch.index.translog.RemoteBlobStoreInternalTranslogFactory;
@@ -287,18 +285,6 @@ public class IndicesService extends AbstractLifecycleComponent
     );
 
     /**
-     * This setting is used to restrict creation or updation of index where the `index.translog.durability` index setting
-     * is set as ASYNC if enabled. If disabled, any of the durability mode can be used and switched at any later time from
-     * one to another.
-     */
-    public static final Setting<Boolean> CLUSTER_REMOTE_INDEX_RESTRICT_ASYNC_DURABILITY_SETTING = Setting.boolSetting(
-        "cluster.remote_store.index.restrict.async-durability",
-        false,
-        Property.NodeScope,
-        Property.Final
-    );
-
-    /**
      * The node's settings.
      */
     private final Settings settings;
@@ -347,8 +333,6 @@ public class IndicesService extends AbstractLifecycleComponent
     private volatile TimeValue clusterRemoteTranslogBufferInterval;
     private final FileCacheCleaner fileCacheCleaner;
 
-    private final SearchRequestStats searchRequestStats;
-
     @Override
     protected void doStart() {
         // Start thread that will manage cleaning the field data cache periodically
@@ -379,7 +363,6 @@ public class IndicesService extends AbstractLifecycleComponent
         IndexStorePlugin.DirectoryFactory remoteDirectoryFactory,
         Supplier<RepositoriesService> repositoriesServiceSupplier,
         FileCacheCleaner fileCacheCleaner,
-        SearchRequestStats searchRequestStats,
         @Nullable RemoteStoreStatsTrackerFactory remoteStoreStatsTrackerFactory
     ) {
         this.settings = settings;
@@ -470,7 +453,6 @@ public class IndicesService extends AbstractLifecycleComponent
         clusterService.getClusterSettings().addSettingsUpdateConsumer(ALLOW_EXPENSIVE_QUERIES, this::setAllowExpensiveQueries);
         this.remoteDirectoryFactory = remoteDirectoryFactory;
         this.translogFactorySupplier = getTranslogFactorySupplier(repositoriesServiceSupplier, threadPool, remoteStoreStatsTrackerFactory);
-        this.searchRequestStats = searchRequestStats;
         this.clusterDefaultRefreshInterval = CLUSTER_DEFAULT_INDEX_REFRESH_INTERVAL_SETTING.get(clusterService.getSettings());
         clusterService.getClusterSettings()
             .addSettingsUpdateConsumer(CLUSTER_DEFAULT_INDEX_REFRESH_INTERVAL_SETTING, this::onRefreshIntervalUpdate);
@@ -594,7 +576,7 @@ public class IndicesService extends AbstractLifecycleComponent
             }
         }
 
-        return new NodeIndicesStats(commonStats, statsByShard(this, flags), searchRequestStats);
+        return new NodeIndicesStats(commonStats, statsByShard(this, flags));
     }
 
     Map<Index, List<IndexShardStats>> statsByShard(final IndicesService indicesService, final CommonStatsFlags flags) {
@@ -1057,15 +1039,6 @@ public class IndicesService extends AbstractLifecycleComponent
 
     public IndicesQueryCache getIndicesQueryCache() {
         return indicesQueryCache;
-    }
-
-    /**
-     * Accumulate stats from the passed Object
-     *
-     * @param stats Instance storing {@link DocStatusStats}
-     */
-    public void addDocStatusStats(final DocStatusStats stats) {
-        oldShardsStats.indexingStats.getTotal().getDocStatusStats().add(stats);
     }
 
     /**

@@ -66,7 +66,6 @@ import org.apache.lucene.util.BytesRefBuilder;
 import org.apache.lucene.util.Version;
 import org.opensearch.ExceptionsHelper;
 import org.opensearch.common.UUIDs;
-import org.opensearch.common.annotation.InternalApi;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.logging.Loggers;
 import org.opensearch.common.lucene.Lucene;
@@ -93,7 +92,6 @@ import org.opensearch.index.engine.Engine;
 import org.opensearch.index.seqno.SequenceNumbers;
 import org.opensearch.index.shard.AbstractIndexShardComponent;
 import org.opensearch.index.shard.IndexShard;
-import org.opensearch.index.shard.ShardPath;
 import org.opensearch.index.translog.Translog;
 
 import java.io.Closeable;
@@ -181,7 +179,6 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
     private final ReentrantReadWriteLock metadataLock = new ReentrantReadWriteLock();
     private final ShardLock shardLock;
     private final OnClose onClose;
-    private final ShardPath shardPath;
 
     // used to ref count files when a new Reader is opened for PIT/Scroll queries
     // prevents segment files deletion until the PIT/Scroll expires or is discarded
@@ -195,17 +192,10 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
     };
 
     public Store(ShardId shardId, IndexSettings indexSettings, Directory directory, ShardLock shardLock) {
-        this(shardId, indexSettings, directory, shardLock, OnClose.EMPTY, null);
+        this(shardId, indexSettings, directory, shardLock, OnClose.EMPTY);
     }
 
-    public Store(
-        ShardId shardId,
-        IndexSettings indexSettings,
-        Directory directory,
-        ShardLock shardLock,
-        OnClose onClose,
-        ShardPath shardPath
-    ) {
+    public Store(ShardId shardId, IndexSettings indexSettings, Directory directory, ShardLock shardLock, OnClose onClose) {
         super(shardId, indexSettings);
         final TimeValue refreshInterval = indexSettings.getValue(INDEX_STORE_STATS_REFRESH_INTERVAL_SETTING);
         logger.debug("store stats are refreshed with refresh_interval [{}]", refreshInterval);
@@ -213,7 +203,6 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
         this.directory = new StoreDirectory(sizeCachingDir, Loggers.getLogger("index.store.deletes", shardId));
         this.shardLock = shardLock;
         this.onClose = onClose;
-        this.shardPath = shardPath;
         assert onClose != null;
         assert shardLock != null;
         assert shardLock.getShardId().equals(shardId);
@@ -222,11 +211,6 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
     public Directory directory() {
         ensureOpen();
         return directory;
-    }
-
-    @InternalApi
-    public ShardPath shardPath() {
-        return shardPath;
     }
 
     /**

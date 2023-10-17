@@ -61,11 +61,6 @@ public final class AttributeNames {
     public static final String TRANSPORT_TARGET_HOST = "target_host";
 
     /**
-     * Transport Service send request local host.
-     */
-    public static final String TRANSPORT_HOST = "host";
-
-    /**
      * Action Name.
      */
     public static final String TRANSPORT_ACTION = "action";

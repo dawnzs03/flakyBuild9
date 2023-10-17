@@ -87,7 +87,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import static java.util.Collections.unmodifiableMap;
 
@@ -98,9 +97,6 @@ import static java.util.Collections.unmodifiableMap;
  */
 public class Analysis {
     private static final Logger LOGGER = LogManager.getLogger(Analysis.class);
-
-    // Regular expression to support hashtag tokenization
-    private static final Pattern HASH_TAG_RULE_PATTERN = Pattern.compile("^\\s*#\\s*=>");
 
     public static CharArraySet parseStemExclusion(Settings settings, CharArraySet defaultStemExclusion) {
         String value = settings.get("stem_exclusion");
@@ -226,6 +222,16 @@ public class Analysis {
         return parseWordList(env, settings, settingPrefix + "_path", settingPrefix, parser);
     }
 
+    public static <T> List<T> parseWordList(
+        Environment env,
+        Settings settings,
+        String settingPrefix,
+        CustomMappingRuleParser<T> parser,
+        boolean removeComments
+    ) {
+        return parseWordList(env, settings, settingPrefix + "_path", settingPrefix, parser, removeComments);
+    }
+
     /**
      * Parses a list of words from the specified settings or from a file, with the given parser.
      *
@@ -241,6 +247,17 @@ public class Analysis {
         String settingList,
         CustomMappingRuleParser<T> parser
     ) {
+        return parseWordList(env, settings, settingPath, settingList, parser, true);
+    }
+
+    public static <T> List<T> parseWordList(
+        Environment env,
+        Settings settings,
+        String settingPath,
+        String settingList,
+        CustomMappingRuleParser<T> parser,
+        boolean removeComments
+    ) {
         List<String> words = getWordList(env, settings, settingPath, settingList);
         if (words == null) {
             return null;
@@ -249,7 +266,7 @@ public class Analysis {
         int lineNum = 0;
         for (String word : words) {
             lineNum++;
-            if (word.startsWith("#") == false || HASH_TAG_RULE_PATTERN.matcher(word).find() == true) {
+            if (removeComments == false || word.startsWith("#") == false) {
                 try {
                     rules.add(parser.apply(word));
                 } catch (RuntimeException ex) {

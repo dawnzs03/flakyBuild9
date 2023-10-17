@@ -50,7 +50,6 @@ import org.opensearch.core.common.io.stream.InputStreamStreamInput;
 import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.tasks.TaskManager;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.MockLogAppender;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.VersionUtils;
@@ -118,8 +117,7 @@ public class InboundHandlerTests extends OpenSearchTestCase {
             handshaker,
             keepAlive,
             requestHandlers,
-            responseHandlers,
-            NoopTracer.INSTANCE
+            responseHandlers
         );
     }
 

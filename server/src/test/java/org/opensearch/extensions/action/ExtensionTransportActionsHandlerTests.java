@@ -68,8 +68,7 @@ public class ExtensionTransportActionsHandlerTests extends OpenSearchTestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService(),
-            NoopTracer.INSTANCE
+            new NoneCircuitBreakerService()
         );
         transportService = new MockTransportService(
             settings,

@@ -40,7 +40,6 @@ import org.opensearch.common.util.MockPageCacheRecycler;
 import org.opensearch.common.util.PageCacheRecycler;
 import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.indices.breaker.NoneCircuitBreakerService;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.threadpool.TestThreadPool;
 import org.opensearch.threadpool.ThreadPool;
@@ -142,8 +141,7 @@ public class NettyTransportMultiPortTests extends OpenSearchTestCase {
             recycler,
             new NamedWriteableRegistry(Collections.emptyList()),
             new NoneCircuitBreakerService(),
-            new SharedGroupFactory(settings),
-            NoopTracer.INSTANCE
+            new SharedGroupFactory(settings)
         );
         transport.start();
 

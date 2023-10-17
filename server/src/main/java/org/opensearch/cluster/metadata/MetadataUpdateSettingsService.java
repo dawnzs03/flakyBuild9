@@ -73,8 +73,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.opensearch.action.support.ContextPreservingActionListener.wrapPreservingContext;
-import static org.opensearch.cluster.metadata.MetadataCreateIndexService.validateRefreshIntervalSettings;
-import static org.opensearch.cluster.metadata.MetadataCreateIndexService.validateTranslogDurabilitySettings;
 import static org.opensearch.common.settings.AbstractScopedSettings.ARCHIVED_SETTINGS_PREFIX;
 import static org.opensearch.index.IndexSettings.same;
 
@@ -129,8 +127,7 @@ public class MetadataUpdateSettingsService {
             .normalizePrefix(IndexMetadata.INDEX_SETTING_PREFIX)
             .build();
 
-        validateRefreshIntervalSettings(normalizedSettings, clusterService.getClusterSettings());
-        validateTranslogDurabilitySettings(normalizedSettings, clusterService.getClusterSettings(), clusterService.getSettings());
+        MetadataCreateIndexService.validateRefreshIntervalSettings(normalizedSettings, clusterService.getClusterSettings());
 
         Settings.Builder settingsForClosedIndices = Settings.builder();
         Settings.Builder settingsForOpenIndices = Settings.builder();

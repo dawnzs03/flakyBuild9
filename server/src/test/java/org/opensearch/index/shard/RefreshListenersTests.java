@@ -133,8 +133,7 @@ public class RefreshListenersTests extends OpenSearchTestCase {
             shardId,
             createTempDir("translog"),
             indexSettings,
-            BigArrays.NON_RECYCLING_INSTANCE,
-            ""
+            BigArrays.NON_RECYCLING_INSTANCE
         );
         Engine.EventListener eventListener = new Engine.EventListener() {
             @Override

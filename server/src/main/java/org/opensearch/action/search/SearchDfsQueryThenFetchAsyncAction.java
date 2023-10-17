@@ -76,11 +76,10 @@ final class SearchDfsQueryThenFetchAsyncAction extends AbstractSearchAsyncAction
         final TransportSearchAction.SearchTimeProvider timeProvider,
         final ClusterState clusterState,
         final SearchTask task,
-        SearchResponse.Clusters clusters,
-        SearchRequestOperationsListener searchRequestOperationsListener
+        SearchResponse.Clusters clusters
     ) {
         super(
-            SearchPhaseName.DFS_PRE_QUERY.getName(),
+            "dfs",
             logger,
             searchTransportService,
             nodeIdToConnection,
@@ -96,8 +95,7 @@ final class SearchDfsQueryThenFetchAsyncAction extends AbstractSearchAsyncAction
             task,
             new ArraySearchPhaseResults<>(shardsIts.size()),
             request.getMaxConcurrentShardRequests(),
-            clusters,
-            searchRequestOperationsListener
+            clusters
         );
         this.queryPhaseResultConsumer = queryPhaseResultConsumer;
         this.searchPhaseController = searchPhaseController;

@@ -211,8 +211,7 @@ public abstract class TaskManagerTestCase extends OpenSearchTestCase {
                     new NetworkService(Collections.emptyList()),
                     PageCacheRecycler.NON_RECYCLING_INSTANCE,
                     new NamedWriteableRegistry(ClusterModule.getNamedWriteables()),
-                    new NoneCircuitBreakerService(),
-                    NoopTracer.INSTANCE
+                    new NoneCircuitBreakerService()
                 ),
                 threadPool,
                 TransportService.NOOP_TRANSPORT_INTERCEPTOR,

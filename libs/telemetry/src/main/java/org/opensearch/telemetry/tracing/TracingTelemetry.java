@@ -9,6 +9,7 @@
 package org.opensearch.telemetry.tracing;
 
 import org.opensearch.common.annotation.ExperimentalApi;
+import org.opensearch.telemetry.tracing.attributes.Attributes;
 
 import java.io.Closeable;
 
@@ -23,11 +24,12 @@ public interface TracingTelemetry extends Closeable {
     /**
      * Creates span with provided arguments
      *
-     * @param spanCreationContext span creation context.
-     * @param parentSpan parent span.
+     * @param spanName   name of the span
+     * @param parentSpan span's parent span
+     * @param attributes attributes to be added.
      * @return span instance
      */
-    Span createSpan(SpanCreationContext spanCreationContext, Span parentSpan);
+    Span createSpan(String spanName, Span parentSpan, Attributes attributes);
 
     /**
      * provides tracing context propagator

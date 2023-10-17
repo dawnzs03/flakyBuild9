@@ -92,8 +92,7 @@ public class Ec2DiscoveryTests extends AbstractEc2MockAPITestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             writableRegistry(),
-            new NoneCircuitBreakerService(),
-            NoopTracer.INSTANCE
+            new NoneCircuitBreakerService()
         ) {
             @Override
             public TransportAddress[] addressesFromString(String address) {
