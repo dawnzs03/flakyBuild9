@@ -524,8 +524,7 @@ public class AARCH64Frame extends Frame {
   }
 
   public BasicObjectLock interpreterFrameMonitorEnd() {
-    long n = addressOfStackSlot(INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET).getCIntegerAt(0, VM.getVM().getAddressSize(), false);
-    Address result = getFP().addOffsetTo(n * VM.getVM().getAddressSize());
+    Address result = addressOfStackSlot(INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET).getAddressAt(0);
     if (Assert.ASSERTS_ENABLED) {
       // make sure the pointer points inside the frame
       Assert.that(AddressOps.gt(getFP(), result), "result must <  than frame pointer");

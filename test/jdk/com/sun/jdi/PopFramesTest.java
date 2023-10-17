@@ -318,7 +318,8 @@ public class PopFramesTest extends TestScaffold {
              * works. So you have an unmounted virtual thread with no native frames, which
              * results in OpaqueFrameException being thrown.
              */
-            if (DebuggeeWrapper.isVirtual()) {
+            String mainWrapper = System.getProperty("main.wrapper");
+            if ("Virtual".equals(mainWrapper)) {
                 expected_exception = OpaqueFrameException.class;
             } else {
                 expected_exception = NativeMethodException.class;

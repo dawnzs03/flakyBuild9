@@ -186,7 +186,7 @@ public class PopAsynchronousTest extends TestScaffold {
         /*
          * start popping wildly away
          */
-        DebuggeeWrapper.newThread(new HarassThread()).start();
+        TestScaffold.newThread(new HarassThread()).start();
 
         /*
          * resume the target listening for events

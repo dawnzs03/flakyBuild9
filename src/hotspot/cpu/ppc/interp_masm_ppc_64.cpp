@@ -2217,9 +2217,7 @@ void InterpreterMacroAssembler::save_interpreter_state(Register scratch) {
   ld(scratch, 0, R1_SP);
   std(R15_esp, _ijava_state_neg(esp), scratch);
   std(R14_bcp, _ijava_state_neg(bcp), scratch);
-  subf(R0, scratch, R26_monitor);
-  sradi(R0, R0, Interpreter::logStackElementSize);
-  std(R0, _ijava_state_neg(monitors), scratch);
+  std(R26_monitor, _ijava_state_neg(monitors), scratch);
   if (ProfileInterpreter) { std(R28_mdx, _ijava_state_neg(mdx), scratch); }
   // Other entries should be unchanged.
 }
@@ -2250,9 +2248,6 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
     sldi(R18_locals, R18_locals, Interpreter::logStackElementSize);
     add(R18_locals, R18_locals, scratch);
     ld(R26_monitor, _ijava_state_neg(monitors), scratch);
-    // Derelativize monitors
-    sldi(R26_monitor, R26_monitor, Interpreter::logStackElementSize);
-    add(R26_monitor, R26_monitor, scratch);
   }
 #ifdef ASSERT
   {
