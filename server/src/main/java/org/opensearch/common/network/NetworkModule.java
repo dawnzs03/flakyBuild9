@@ -57,7 +57,6 @@ import org.opensearch.index.shard.PrimaryReplicaSyncer.ResyncTask;
 import org.opensearch.plugins.NetworkPlugin;
 import org.opensearch.tasks.RawTaskStatus;
 import org.opensearch.tasks.Task;
-import org.opensearch.telemetry.tracing.Tracer;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.Transport;
 import org.opensearch.transport.TransportInterceptor;
@@ -148,8 +147,7 @@ public final class NetworkModule {
         NamedXContentRegistry xContentRegistry,
         NetworkService networkService,
         HttpServerTransport.Dispatcher dispatcher,
-        ClusterSettings clusterSettings,
-        Tracer tracer
+        ClusterSettings clusterSettings
     ) {
         this.settings = settings;
         for (NetworkPlugin plugin : plugins) {
@@ -162,8 +160,7 @@ public final class NetworkModule {
                 xContentRegistry,
                 networkService,
                 dispatcher,
-                clusterSettings,
-                tracer
+                clusterSettings
             );
             for (Map.Entry<String, Supplier<HttpServerTransport>> entry : httpTransportFactory.entrySet()) {
                 registerHttpTransport(entry.getKey(), entry.getValue());

@@ -68,10 +68,6 @@ import static org.hamcrest.Matchers.notNullValue;
 
 public class SumIT extends AbstractNumericTestCase {
 
-    public SumIT(Settings dynamicSettings) {
-        super(dynamicSettings);
-    }
-
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
         return Collections.singleton(MetricAggScriptPlugin.class);
@@ -363,7 +359,6 @@ public class SumIT extends AbstractNumericTestCase {
                 .getMissCount(),
             equalTo(2L)
         );
-        internalCluster().wipeIndices("cache_test_idx");
     }
 
     public void testFieldAlias() {

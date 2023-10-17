@@ -10,7 +10,6 @@ package org.opensearch.geo.search.aggregations.bucket;
 
 import org.opensearch.action.index.IndexRequestBuilder;
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.common.settings.Settings;
 import org.opensearch.geo.GeoModulePluginIntegTestCase;
 import org.opensearch.geo.search.aggregations.bucket.geogrid.GeoGrid;
 import org.opensearch.geo.tests.common.AggregationBuilders;
@@ -34,10 +33,6 @@ import static org.hamcrest.Matchers.equalTo;
  */
 @OpenSearchIntegTestCase.SuiteScopeTestCase
 public class ShardReduceIT extends GeoModulePluginIntegTestCase {
-
-    public ShardReduceIT(Settings dynamicSettings) {
-        super(dynamicSettings);
-    }
 
     private IndexRequestBuilder indexDoc(String date, int value) throws Exception {
         return client().prepareIndex("idx")

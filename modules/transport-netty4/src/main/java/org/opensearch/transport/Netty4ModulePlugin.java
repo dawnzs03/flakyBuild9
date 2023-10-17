@@ -48,7 +48,6 @@ import org.opensearch.http.HttpServerTransport;
 import org.opensearch.http.netty4.Netty4HttpServerTransport;
 import org.opensearch.plugins.NetworkPlugin;
 import org.opensearch.plugins.Plugin;
-import org.opensearch.telemetry.tracing.Tracer;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.netty4.Netty4Transport;
 
@@ -123,8 +122,7 @@ public class Netty4ModulePlugin extends Plugin implements NetworkPlugin {
         NamedXContentRegistry xContentRegistry,
         NetworkService networkService,
         HttpServerTransport.Dispatcher dispatcher,
-        ClusterSettings clusterSettings,
-        Tracer tracer
+        ClusterSettings clusterSettings
     ) {
         return Collections.singletonMap(
             NETTY_HTTP_TRANSPORT_NAME,
@@ -136,8 +134,7 @@ public class Netty4ModulePlugin extends Plugin implements NetworkPlugin {
                 xContentRegistry,
                 dispatcher,
                 clusterSettings,
-                getSharedGroupFactory(settings),
-                tracer
+                getSharedGroupFactory(settings)
             )
         );
     }

@@ -10,7 +10,7 @@ package org.opensearch.telemetry.tracing.http;
 
 import org.opensearch.common.annotation.ExperimentalApi;
 import org.opensearch.telemetry.tracing.Span;
-import org.opensearch.telemetry.tracing.SpanCreationContext;
+import org.opensearch.telemetry.tracing.attributes.Attributes;
 
 import java.util.List;
 import java.util.Map;
@@ -28,9 +28,10 @@ public interface HttpTracer {
     /**
      * Start the span with propagating the tracing info from the HttpRequest header.
      *
-     * @param spanCreationContext span name.
+     * @param spanName span name.
      * @param header http request header.
+     * @param attributes span attributes.
      * @return span.
      */
-    Span startSpan(SpanCreationContext spanCreationContext, Map<String, List<String>> header);
+    Span startSpan(String spanName, Map<String, List<String>> header, Attributes attributes);
 }

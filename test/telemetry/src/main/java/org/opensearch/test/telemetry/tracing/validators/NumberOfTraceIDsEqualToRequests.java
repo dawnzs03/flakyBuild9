@@ -8,13 +8,11 @@
 
 package org.opensearch.test.telemetry.tracing.validators;
 
-import org.opensearch.telemetry.tracing.attributes.Attributes;
 import org.opensearch.test.telemetry.tracing.MockSpanData;
 import org.opensearch.test.telemetry.tracing.TracingValidator;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,16 +21,10 @@ import java.util.stream.Collectors;
  */
 public class NumberOfTraceIDsEqualToRequests implements TracingValidator {
 
-    private static final String FILTERING_ATTRIBUTE = "action";
-    private final Attributes attributes;
-
     /**
-     * Constructor.
-     * @param attributes attributes.
+     * Base Constructor
      */
-    public NumberOfTraceIDsEqualToRequests(Attributes attributes) {
-        this.attributes = attributes;
-    }
+    public NumberOfTraceIDsEqualToRequests() {}
 
     /**
      * validates if all spans emitted for a particular request have same traceID.
@@ -41,25 +33,11 @@ public class NumberOfTraceIDsEqualToRequests implements TracingValidator {
      */
     @Override
     public List<MockSpanData> validate(List<MockSpanData> spans, int requests) {
-        Set<String> totalTraceIDs = spans.stream()
-            .filter(span -> isMatchingSpan(span))
-            .map(MockSpanData::getTraceID)
-            .collect(Collectors.toSet());
+        Set<String> totalTraceIDs = spans.stream().map(MockSpanData::getTraceID).collect(Collectors.toSet());
         List<MockSpanData> problematicSpans = new ArrayList<>();
         if (totalTraceIDs.size() != requests) {
             problematicSpans.addAll(spans);
         }
         return problematicSpans;
-    }
-
-    private boolean isMatchingSpan(MockSpanData mockSpanData) {
-        if (attributes.getAttributesMap().isEmpty()) {
-            return true;
-        } else {
-            return Objects.equals(
-                mockSpanData.getAttributes().get(FILTERING_ATTRIBUTE),
-                attributes.getAttributesMap().get(FILTERING_ATTRIBUTE)
-            );
-        }
     }
 }

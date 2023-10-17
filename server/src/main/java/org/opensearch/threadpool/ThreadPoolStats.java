@@ -32,8 +32,6 @@
 
 package org.opensearch.threadpool;
 
-import org.opensearch.Version;
-import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.common.io.stream.Writeable;
@@ -67,9 +65,8 @@ public class ThreadPoolStats implements Writeable, ToXContentFragment, Iterable<
         private final long rejected;
         private final int largest;
         private final long completed;
-        private final long waitTimeNanos;
 
-        public Stats(String name, int threads, int queue, int active, long rejected, int largest, long completed, long waitTimeNanos) {
+        public Stats(String name, int threads, int queue, int active, long rejected, int largest, long completed) {
             this.name = name;
             this.threads = threads;
             this.queue = queue;
@@ -77,7 +74,6 @@ public class ThreadPoolStats implements Writeable, ToXContentFragment, Iterable<
             this.rejected = rejected;
             this.largest = largest;
             this.completed = completed;
-            this.waitTimeNanos = waitTimeNanos;
         }
 
         public Stats(StreamInput in) throws IOException {
@@ -88,7 +84,6 @@ public class ThreadPoolStats implements Writeable, ToXContentFragment, Iterable<
             rejected = in.readLong();
             largest = in.readInt();
             completed = in.readLong();
-            waitTimeNanos = in.getVersion().onOrAfter(Version.V_2_11_0) ? in.readLong() : -1;
         }
 
         @Override
@@ -100,9 +95,6 @@ public class ThreadPoolStats implements Writeable, ToXContentFragment, Iterable<
             out.writeLong(rejected);
             out.writeInt(largest);
             out.writeLong(completed);
-            if (out.getVersion().onOrAfter(Version.V_2_11_0)) {
-                out.writeLong(waitTimeNanos);
-            }
         }
 
         public String getName() {
@@ -133,14 +125,6 @@ public class ThreadPoolStats implements Writeable, ToXContentFragment, Iterable<
             return this.completed;
         }
 
-        public TimeValue getWaitTime() {
-            return TimeValue.timeValueNanos(waitTimeNanos);
-        }
-
-        public long getWaitTimeNanos() {
-            return waitTimeNanos;
-        }
-
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
             builder.startObject(name);
@@ -161,12 +145,6 @@ public class ThreadPoolStats implements Writeable, ToXContentFragment, Iterable<
             }
             if (completed != -1) {
                 builder.field(Fields.COMPLETED, completed);
-            }
-            if (waitTimeNanos != -1) {
-                if (builder.humanReadable()) {
-                    builder.field(Fields.WAIT_TIME, getWaitTime());
-                }
-                builder.field(Fields.WAIT_TIME_NANOS, getWaitTimeNanos());
             }
             builder.endObject();
             return builder;
@@ -219,8 +197,6 @@ public class ThreadPoolStats implements Writeable, ToXContentFragment, Iterable<
         static final String REJECTED = "rejected";
         static final String LARGEST = "largest";
         static final String COMPLETED = "completed";
-        static final String WAIT_TIME = "total_wait_time";
-        static final String WAIT_TIME_NANOS = "total_wait_time_in_nanos";
     }
 
     @Override

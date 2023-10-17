@@ -56,7 +56,6 @@ import org.opensearch.nio.NioSocketChannel;
 import org.opensearch.rest.BytesRestResponse;
 import org.opensearch.rest.RestChannel;
 import org.opensearch.rest.RestRequest;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.rest.FakeRestRequest;
 import org.opensearch.threadpool.TestThreadPool;
@@ -187,8 +186,7 @@ public class NioHttpServerTransportTests extends OpenSearchTestCase {
                 xContentRegistry(),
                 dispatcher,
                 new NioGroupFactory(settings, logger),
-                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
-                NoopTracer.INSTANCE
+                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS)
             )
         ) {
             transport.start();
@@ -238,8 +236,7 @@ public class NioHttpServerTransportTests extends OpenSearchTestCase {
                 xContentRegistry(),
                 new NullDispatcher(),
                 new NioGroupFactory(Settings.EMPTY, logger),
-                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
-                NoopTracer.INSTANCE
+                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS)
             )
         ) {
             transport.start();
@@ -258,8 +255,7 @@ public class NioHttpServerTransportTests extends OpenSearchTestCase {
                     xContentRegistry(),
                     new NullDispatcher(),
                     new NioGroupFactory(Settings.EMPTY, logger),
-                    new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
-                    NoopTracer.INSTANCE
+                    new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS)
                 )
             ) {
                 BindHttpException bindHttpException = expectThrows(BindHttpException.class, () -> otherTransport.start());
@@ -302,8 +298,7 @@ public class NioHttpServerTransportTests extends OpenSearchTestCase {
                 xContentRegistry(),
                 dispatcher,
                 new NioGroupFactory(settings, logger),
-                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
-                NoopTracer.INSTANCE
+                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS)
             )
         ) {
             transport.start();
@@ -377,8 +372,7 @@ public class NioHttpServerTransportTests extends OpenSearchTestCase {
                 xContentRegistry(),
                 dispatcher,
                 new NioGroupFactory(Settings.EMPTY, logger),
-                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
-                NoopTracer.INSTANCE
+                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS)
             )
         ) {
             transport.start();
@@ -444,8 +438,7 @@ public class NioHttpServerTransportTests extends OpenSearchTestCase {
                 xContentRegistry(),
                 dispatcher,
                 new NioGroupFactory(settings, logger),
-                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
-                NoopTracer.INSTANCE
+                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS)
             )
         ) {
             transport.start();
@@ -507,8 +500,7 @@ public class NioHttpServerTransportTests extends OpenSearchTestCase {
                 xContentRegistry(),
                 dispatcher,
                 new NioGroupFactory(settings, logger),
-                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
-                NoopTracer.INSTANCE
+                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS)
             )
         ) {
             transport.start();

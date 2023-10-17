@@ -50,7 +50,6 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.core.common.transport.BoundTransportAddress;
 import org.opensearch.core.common.transport.TransportAddress;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.MockLogAppender;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.junit.annotations.TestLogging;
@@ -553,8 +552,7 @@ public class NodeConnectionsServiceTests extends OpenSearchTestCase {
                 TransportService.NOOP_TRANSPORT_INTERCEPTOR,
                 boundAddress -> DiscoveryNode.createLocal(Settings.EMPTY, buildNewFakeTransportAddress(), UUIDs.randomBase64UUID()),
                 null,
-                emptySet(),
-                NoopTracer.INSTANCE
+                emptySet()
             );
         }
 

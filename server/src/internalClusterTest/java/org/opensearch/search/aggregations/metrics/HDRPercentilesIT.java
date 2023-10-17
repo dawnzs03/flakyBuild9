@@ -75,10 +75,6 @@ import static org.hamcrest.Matchers.sameInstance;
 
 public class HDRPercentilesIT extends AbstractNumericTestCase {
 
-    public HDRPercentilesIT(Settings dynamicSettings) {
-        super(dynamicSettings);
-    }
-
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
         return Collections.singleton(AggregationTestScriptsPlugin.class);
@@ -691,7 +687,6 @@ public class HDRPercentilesIT extends AbstractNumericTestCase {
                 .getMissCount(),
             equalTo(2L)
         );
-        internalCluster().wipeIndices("cache_test_idx");
     }
 
 }

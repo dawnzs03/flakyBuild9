@@ -46,7 +46,6 @@ import org.opensearch.core.transport.TransportResponse;
 import org.opensearch.core.transport.TransportResponse.Empty;
 import org.opensearch.monitor.NodeHealthService;
 import org.opensearch.monitor.StatusInfo;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.EqualsHashCodeTestUtils;
 import org.opensearch.test.EqualsHashCodeTestUtils.CopyFunction;
 import org.opensearch.test.OpenSearchTestCase;
@@ -124,8 +123,7 @@ public class FollowersCheckerTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             boundTransportAddress -> localNode,
             null,
-            emptySet(),
-            NoopTracer.INSTANCE
+            emptySet()
         );
         transportService.start();
         transportService.acceptIncomingRequests();
@@ -287,8 +285,7 @@ public class FollowersCheckerTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             boundTransportAddress -> localNode,
             null,
-            emptySet(),
-            NoopTracer.INSTANCE
+            emptySet()
         );
         transportService.start();
         transportService.acceptIncomingRequests();
@@ -374,8 +371,7 @@ public class FollowersCheckerTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             boundTransportAddress -> localNode,
             null,
-            emptySet(),
-            NoopTracer.INSTANCE
+            emptySet()
         );
         transportService.start();
         transportService.acceptIncomingRequests();
@@ -479,8 +475,7 @@ public class FollowersCheckerTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             boundTransportAddress -> follower,
             null,
-            emptySet(),
-            NoopTracer.INSTANCE
+            emptySet()
         );
         transportService.start();
         transportService.acceptIncomingRequests();
@@ -551,8 +546,7 @@ public class FollowersCheckerTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             boundTransportAddress -> follower,
             null,
-            emptySet(),
-            NoopTracer.INSTANCE
+            emptySet()
         );
         transportService.start();
         transportService.acceptIncomingRequests();
@@ -707,8 +701,7 @@ public class FollowersCheckerTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             x -> nodes.get(0),
             null,
-            emptySet(),
-            NoopTracer.INSTANCE
+            emptySet()
         );
         final FollowersChecker followersChecker = new FollowersChecker(
             Settings.EMPTY,

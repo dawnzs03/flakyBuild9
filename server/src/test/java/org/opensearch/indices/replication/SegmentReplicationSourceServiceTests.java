@@ -29,7 +29,6 @@ import org.opensearch.indices.recovery.RecoverySettings;
 import org.opensearch.indices.replication.checkpoint.ReplicationCheckpoint;
 import org.opensearch.indices.replication.common.CopyStateTests;
 import org.opensearch.indices.replication.common.ReplicationType;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.IndexSettingsModule;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.transport.CapturingTransport;
@@ -103,8 +102,7 @@ public class SegmentReplicationSourceServiceTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             boundAddress -> localNode,
             null,
-            Collections.emptySet(),
-            NoopTracer.INSTANCE
+            Collections.emptySet()
         );
         transportService.start();
         transportService.acceptIncomingRequests();

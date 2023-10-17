@@ -70,10 +70,6 @@ import static org.hamcrest.Matchers.sameInstance;
 
 public class ExtendedStatsIT extends AbstractNumericTestCase {
 
-    public ExtendedStatsIT(Settings dynamicSettings) {
-        super(dynamicSettings);
-    }
-
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
         return Collections.singleton(AggregationTestScriptsPlugin.class);
@@ -999,7 +995,6 @@ public class ExtendedStatsIT extends AbstractNumericTestCase {
                 .getMissCount(),
             equalTo(2L)
         );
-        internalCluster().wipeIndices("cache_test_idx");
     }
 
 }

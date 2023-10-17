@@ -47,8 +47,6 @@ import org.opensearch.http.HttpServerTransport;
 import org.opensearch.http.HttpStats;
 import org.opensearch.http.NullDispatcher;
 import org.opensearch.plugins.NetworkPlugin;
-import org.opensearch.telemetry.tracing.Tracer;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.threadpool.TestThreadPool;
 import org.opensearch.threadpool.ThreadPool;
@@ -145,8 +143,7 @@ public class NetworkModuleTests extends OpenSearchTestCase {
                 NamedXContentRegistry xContentRegistry,
                 NetworkService networkService,
                 HttpServerTransport.Dispatcher requestDispatcher,
-                ClusterSettings clusterSettings,
-                Tracer tracer
+                ClusterSettings clusterSettings
             ) {
                 return Collections.singletonMap("custom", custom);
             }
@@ -191,8 +188,7 @@ public class NetworkModuleTests extends OpenSearchTestCase {
                 NamedXContentRegistry xContentRegistry,
                 NetworkService networkService,
                 HttpServerTransport.Dispatcher requestDispatcher,
-                ClusterSettings clusterSettings,
-                Tracer tracer
+                ClusterSettings clusterSettings
             ) {
                 Map<String, Supplier<HttpServerTransport>> supplierMap = new HashMap<>();
                 supplierMap.put("custom", custom);
@@ -235,8 +231,7 @@ public class NetworkModuleTests extends OpenSearchTestCase {
                 NamedXContentRegistry xContentRegistry,
                 NetworkService networkService,
                 HttpServerTransport.Dispatcher requestDispatcher,
-                ClusterSettings clusterSettings,
-                Tracer tracer
+                ClusterSettings clusterSettings
             ) {
                 Map<String, Supplier<HttpServerTransport>> supplierMap = new HashMap<>();
                 supplierMap.put("custom", custom);
@@ -318,8 +313,7 @@ public class NetworkModuleTests extends OpenSearchTestCase {
             xContentRegistry(),
             null,
             new NullDispatcher(),
-            new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
-            NoopTracer.INSTANCE
+            new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS)
         );
     }
 }

@@ -74,10 +74,6 @@ import static org.hamcrest.Matchers.sameInstance;
 
 public class TDigestPercentilesIT extends AbstractNumericTestCase {
 
-    public TDigestPercentilesIT(Settings dynamicSettings) {
-        super(dynamicSettings);
-    }
-
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
         return Collections.singleton(AggregationTestScriptsPlugin.class);
@@ -601,6 +597,5 @@ public class TDigestPercentilesIT extends AbstractNumericTestCase {
                 .getMissCount(),
             equalTo(2L)
         );
-        internalCluster().wipeIndices("cache_test_idx");
     }
 }

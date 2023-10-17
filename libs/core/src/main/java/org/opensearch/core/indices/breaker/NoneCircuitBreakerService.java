@@ -36,9 +36,8 @@ import org.opensearch.core.common.breaker.CircuitBreaker;
 import org.opensearch.core.common.breaker.NoopCircuitBreaker;
 
 /**
- * Class that returns a breaker that use the NoopCircuitBreaker and never breaks
+ * Class that returns a breaker that never breaks
  *
- * @see org.opensearch.core.common.breaker.NoopCircuitBreaker
  * @opensearch.internal
  */
 public class NoneCircuitBreakerService extends CircuitBreakerService {
@@ -49,12 +48,6 @@ public class NoneCircuitBreakerService extends CircuitBreakerService {
         super();
     }
 
-    /**
-     * Returns a breaker that use the NoopCircuitBreaker and never breaks
-     *
-     * @param name name of the breaker (ignored)
-     * @return a NoopCircuitBreaker
-     */
     @Override
     public CircuitBreaker getBreaker(String name) {
         return breaker;
@@ -65,12 +58,6 @@ public class NoneCircuitBreakerService extends CircuitBreakerService {
         return new AllCircuitBreakerStats(new CircuitBreakerStats[] { stats(CircuitBreaker.FIELDDATA) });
     }
 
-    /**
-     * Always returns the same stats, a NoopCircuitBreaker never breaks and all operations are noops.
-     *
-     * @param name name of the breaker (ignored)
-     * @return always "fielddata", limit: -1, estimated: -1, overhead: 0, trippedCount: 0
-     */
     @Override
     public CircuitBreakerStats stats(String name) {
         return new CircuitBreakerStats(CircuitBreaker.FIELDDATA, -1, -1, 0, 0);

@@ -8,7 +8,6 @@
 
 package org.opensearch.common.blobstore.stream.read.listener;
 
-import org.apache.lucene.tests.util.LuceneTestCase.SuppressFileSystems;
 import org.opensearch.action.LatchedActionListener;
 import org.opensearch.action.support.PlainActionFuture;
 import org.opensearch.common.blobstore.stream.read.ReadContext;
@@ -33,12 +32,6 @@ import java.util.concurrent.CountDownLatch;
 
 import static org.opensearch.common.blobstore.stream.read.listener.ListenerTestUtils.CountingCompletionListener;
 
-/*
-    WindowsFS tries to simulate file handles in a best case simulation.
-    The deletion for the open file on an actual Windows system will be performed as soon as the last handle
-    is closed, which this simulation does not account for. Preventing use of WindowsFS for these tests.
- */
-@SuppressFileSystems("WindowsFS")
 public class ReadContextListenerTests extends OpenSearchTestCase {
 
     private Path path;
@@ -77,6 +70,7 @@ public class ReadContextListenerTests extends OpenSearchTestCase {
         assertEquals(NUMBER_OF_PARTS * PART_SIZE, Files.size(fileLocation));
     }
 
+    @AwaitsFix(bugUrl = "https://github.com/opensearch-project/OpenSearch/issues/9776")
     public void testReadContextListenerFailure() throws Exception {
         Path fileLocation = path.resolve(UUID.randomUUID().toString());
         List<InputStreamContainer> blobPartStreams = initializeBlobPartStreams();
@@ -106,7 +100,7 @@ public class ReadContextListenerTests extends OpenSearchTestCase {
         readContextListener.onResponse(readContext);
 
         countDownLatch.await();
-        assertFalse(Files.exists(fileLocation));
+        assertBusy(() -> { assertFalse(Files.exists(fileLocation)); });
     }
 
     public void testReadContextListenerException() {

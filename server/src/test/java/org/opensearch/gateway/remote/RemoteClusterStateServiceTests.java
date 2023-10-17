@@ -244,11 +244,7 @@ public class RemoteClusterStateServiceTests extends OpenSearchTestCase {
         assertEquals(writtenIndexMetadata.getIndex().getName(), "test-index");
         assertEquals(writtenIndexMetadata.getIndex().getUUID(), "index-uuid");
         long expectedChecksum = RemoteTransferContainer.checksumOfChecksum(new ByteArrayIndexInput("metadata-filename", writtenBytes), 8);
-        if (capturedWriteContext.doRemoteDataIntegrityCheck()) {
-            assertEquals(capturedWriteContext.getExpectedChecksum().longValue(), expectedChecksum);
-        } else {
-            assertEquals(capturedWriteContext.getExpectedChecksum(), null);
-        }
+        assertEquals(capturedWriteContext.getExpectedChecksum().longValue(), expectedChecksum);
 
     }
 

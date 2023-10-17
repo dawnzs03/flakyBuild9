@@ -32,7 +32,6 @@ import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.tasks.Task;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.transport.MockTransportService;
 import org.opensearch.threadpool.TestThreadPool;
@@ -181,7 +180,7 @@ public class CreatePitControllerTests extends OpenSearchTestCase {
                     Settings.EMPTY,
                     Version.CURRENT,
                     threadPool,
-                    NoopTracer.INSTANCE
+                    null
                 )
             ) {
                 transportService.start();
@@ -274,7 +273,7 @@ public class CreatePitControllerTests extends OpenSearchTestCase {
                     Settings.EMPTY,
                     Version.CURRENT,
                     threadPool,
-                    NoopTracer.INSTANCE
+                    null
                 )
             ) {
                 transportService.start();
@@ -367,7 +366,7 @@ public class CreatePitControllerTests extends OpenSearchTestCase {
                     Settings.EMPTY,
                     Version.CURRENT,
                     threadPool,
-                    NoopTracer.INSTANCE
+                    null
                 )
             ) {
                 transportService.start();
@@ -463,7 +462,7 @@ public class CreatePitControllerTests extends OpenSearchTestCase {
                     Settings.EMPTY,
                     Version.CURRENT,
                     threadPool,
-                    NoopTracer.INSTANCE
+                    null
                 )
             ) {
                 transportService.start();

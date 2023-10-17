@@ -60,7 +60,6 @@ import org.opensearch.search.MockSearchService;
 import org.opensearch.search.SearchService;
 import org.opensearch.search.fetch.FetchPhase;
 import org.opensearch.search.query.QueryPhase;
-import org.opensearch.telemetry.tracing.Tracer;
 import org.opensearch.test.MockHttpTransport;
 import org.opensearch.test.transport.MockTransportService;
 import org.opensearch.threadpool.ThreadPool;
@@ -200,35 +199,16 @@ public class MockNode extends Node {
         TransportInterceptor interceptor,
         Function<BoundTransportAddress, DiscoveryNode> localNodeFactory,
         ClusterSettings clusterSettings,
-        Set<String> taskHeaders,
-        Tracer tracer
+        Set<String> taskHeaders
     ) {
         // we use the MockTransportService.TestPlugin class as a marker to create a network
         // module with this MockNetworkService. NetworkService is such an integral part of the systme
         // we don't allow to plug it in from plugins or anything. this is a test-only override and
         // can't be done in a production env.
         if (getPluginsService().filterPlugins(MockTransportService.TestPlugin.class).isEmpty()) {
-            return super.newTransportService(
-                settings,
-                transport,
-                threadPool,
-                interceptor,
-                localNodeFactory,
-                clusterSettings,
-                taskHeaders,
-                tracer
-            );
+            return super.newTransportService(settings, transport, threadPool, interceptor, localNodeFactory, clusterSettings, taskHeaders);
         } else {
-            return new MockTransportService(
-                settings,
-                transport,
-                threadPool,
-                interceptor,
-                localNodeFactory,
-                clusterSettings,
-                taskHeaders,
-                tracer
-            );
+            return new MockTransportService(settings, transport, threadPool, interceptor, localNodeFactory, clusterSettings, taskHeaders);
         }
     }
 

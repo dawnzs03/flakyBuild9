@@ -62,7 +62,6 @@ import org.opensearch.indices.IndicesService;
 import org.opensearch.indices.replication.common.ReplicationType;
 import org.opensearch.tasks.Task;
 import org.opensearch.tasks.TaskManager;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.threadpool.TestThreadPool;
 import org.opensearch.threadpool.ThreadPool;
@@ -169,8 +168,7 @@ public class TransportMultiGetActionTests extends OpenSearchTestCase {
                 randomBase64UUID()
             ),
             null,
-            emptySet(),
-            NoopTracer.INSTANCE
+            emptySet()
         ) {
             @Override
             public TaskManager getTaskManager() {

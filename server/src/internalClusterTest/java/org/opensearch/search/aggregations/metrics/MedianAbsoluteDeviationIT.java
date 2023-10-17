@@ -91,10 +91,6 @@ public class MedianAbsoluteDeviationIT extends AbstractNumericTestCase {
     private static double singleValueExactMAD;
     private static double multiValueExactMAD;
 
-    public MedianAbsoluteDeviationIT(Settings dynamicSettings) {
-        super(dynamicSettings);
-    }
-
     @Override
     public void setupSuiteScopeCluster() throws Exception {
         final Settings settings = Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(SETTING_NUMBER_OF_REPLICAS, 0).build();
@@ -647,6 +643,5 @@ public class MedianAbsoluteDeviationIT extends AbstractNumericTestCase {
                 .getMissCount(),
             equalTo(2L)
         );
-        internalCluster().wipeIndices("cache_test_idx");
     }
 }

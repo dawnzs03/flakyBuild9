@@ -51,7 +51,6 @@ import org.opensearch.core.action.ActionListener;
 import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.tasks.Task;
 import org.opensearch.tasks.TaskManager;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.Transport;
@@ -88,8 +87,7 @@ public class TransportMultiSearchActionTests extends OpenSearchTestCase {
                 TransportService.NOOP_TRANSPORT_INTERCEPTOR,
                 boundAddress -> DiscoveryNode.createLocal(settings, boundAddress.publishAddress(), UUIDs.randomBase64UUID()),
                 null,
-                Collections.emptySet(),
-                NoopTracer.INSTANCE
+                Collections.emptySet()
             ) {
                 @Override
                 public TaskManager getTaskManager() {
@@ -153,8 +151,7 @@ public class TransportMultiSearchActionTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             boundAddress -> DiscoveryNode.createLocal(settings, boundAddress.publishAddress(), UUIDs.randomBase64UUID()),
             null,
-            Collections.emptySet(),
-            NoopTracer.INSTANCE
+            Collections.emptySet()
         ) {
             @Override
             public TaskManager getTaskManager() {

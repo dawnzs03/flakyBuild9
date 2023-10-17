@@ -14,7 +14,6 @@ import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.tasks.TaskId;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.transport.MockTransportService;
 import org.opensearch.threadpool.Scheduler;
@@ -48,7 +47,7 @@ public class TaskCancellationMonitoringServiceTests extends OpenSearchTestCase {
     @Before
     public void setup() {
         threadPool = new TestThreadPool(getClass().getName());
-        transportService = MockTransportService.createNewService(Settings.EMPTY, Version.CURRENT, threadPool, NoopTracer.INSTANCE);
+        transportService = MockTransportService.createNewService(Settings.EMPTY, Version.CURRENT, threadPool);
         transportService.start();
         transportService.acceptIncomingRequests();
         taskManager = transportService.getTaskManager();

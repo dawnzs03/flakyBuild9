@@ -65,7 +65,6 @@ import org.opensearch.index.translog.Translog;
 import org.opensearch.indices.IndicesService;
 import org.opensearch.indices.SystemIndices;
 import org.opensearch.node.NodeClosedException;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.ClusterServiceUtils;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.transport.CapturingTransport;
@@ -289,8 +288,7 @@ public class TransportWriteActionTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             x -> clusterService.localNode(),
             null,
-            Collections.emptySet(),
-            NoopTracer.INSTANCE
+            Collections.emptySet()
         );
         transportService.start();
         transportService.acceptIncomingRequests();
@@ -409,8 +407,7 @@ public class TransportWriteActionTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             x -> clusterService.localNode(),
             null,
-            Collections.emptySet(),
-            NoopTracer.INSTANCE
+            Collections.emptySet()
         );
         transportService.start();
         transportService.acceptIncomingRequests();
@@ -464,8 +461,7 @@ public class TransportWriteActionTests extends OpenSearchTestCase {
                     TransportService.NOOP_TRANSPORT_INTERCEPTOR,
                     x -> null,
                     null,
-                    Collections.emptySet(),
-                    NoopTracer.INSTANCE
+                    Collections.emptySet()
                 ),
                 TransportWriteActionTests.this.clusterService,
                 null,

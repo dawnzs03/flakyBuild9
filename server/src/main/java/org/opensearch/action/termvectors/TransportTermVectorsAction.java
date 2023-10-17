@@ -38,7 +38,6 @@ import org.opensearch.action.support.single.shard.TransportSingleShardAction;
 import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.routing.GroupShardsIterator;
-import org.opensearch.cluster.routing.Preference;
 import org.opensearch.cluster.routing.ShardIterator;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.inject.Inject;
@@ -88,24 +87,15 @@ public class TransportTermVectorsAction extends TransportSingleShardAction<TermV
 
     @Override
     protected ShardIterator shards(ClusterState state, InternalRequest request) {
-
-        String preference = request.request().preference;
-        // For a real time request on a seg rep index, use primary shard as the preferred query shard.
-        if (request.request().realtime()
-            && preference == null
-            && state.getMetadata().isSegmentReplicationEnabled(request.concreteIndex())) {
-            preference = Preference.PRIMARY.type();
-        }
-
         if (request.request().doc() != null && request.request().routing() == null) {
             // artificial document without routing specified, ignore its "id" and use either random shard or according to preference
             GroupShardsIterator<ShardIterator> groupShardsIter = clusterService.operationRouting()
-                .searchShards(state, new String[] { request.concreteIndex() }, null, preference);
+                .searchShards(state, new String[] { request.concreteIndex() }, null, request.request().preference());
             return groupShardsIter.iterator().next();
         }
 
         return clusterService.operationRouting()
-            .getShards(state, request.concreteIndex(), request.request().id(), request.request().routing(), preference);
+            .getShards(state, request.concreteIndex(), request.request().id(), request.request().routing(), request.request().preference());
     }
 
     @Override

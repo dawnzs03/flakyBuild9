@@ -9,7 +9,6 @@
 package org.opensearch.common.util.concurrent;
 
 import org.opensearch.common.ExponentiallyWeightedMovingAverage;
-import org.opensearch.common.metrics.CounterMetric;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +27,6 @@ public final class QueueResizableOpenSearchThreadPoolExecutor extends OpenSearch
     private final ResizableBlockingQueue<Runnable> workQueue;
     private final Function<Runnable, WrappedRunnable> runnableWrapper;
     private final ExponentiallyWeightedMovingAverage executionEWMA;
-    private final CounterMetric poolWaitTime;
 
     /**
      * Create new resizable at runtime thread pool executor
@@ -103,7 +101,6 @@ public final class QueueResizableOpenSearchThreadPoolExecutor extends OpenSearch
         this.workQueue = workQueue;
         this.runnableWrapper = runnableWrapper;
         this.executionEWMA = new ExponentiallyWeightedMovingAverage(ewmaAlpha, 0);
-        this.poolWaitTime = new CounterMetric();
     }
 
     @Override
@@ -159,7 +156,6 @@ public final class QueueResizableOpenSearchThreadPoolExecutor extends OpenSearch
             // taskExecutionNanos may be -1 if the task threw an exception
             executionEWMA.addValue(taskExecutionNanos);
         }
-        poolWaitTime.inc(timedRunnable.getWaitTimeNanos());
     }
 
     /**
@@ -176,10 +172,5 @@ public final class QueueResizableOpenSearchThreadPoolExecutor extends OpenSearch
             capacity,
             capacity
         );
-    }
-
-    @Override
-    public long getPoolWaitTimeNanos() {
-        return poolWaitTime.count();
     }
 }

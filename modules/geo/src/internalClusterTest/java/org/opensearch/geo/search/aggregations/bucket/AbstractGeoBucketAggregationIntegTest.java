@@ -67,10 +67,6 @@ public abstract class AbstractGeoBucketAggregationIntegTest extends GeoModulePlu
 
     protected final Version version = VersionUtils.randomIndexCompatibleVersion(random());
 
-    public AbstractGeoBucketAggregationIntegTest(Settings dynamicSettings) {
-        super(dynamicSettings);
-    }
-
     @Override
     protected boolean forbidPrivateIndexSettings() {
         return false;

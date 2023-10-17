@@ -52,7 +52,6 @@ import org.opensearch.rest.RestChannel;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.RestResponse;
 import org.opensearch.tasks.Task;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.MockLogAppender;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.junit.annotations.TestLogging;
@@ -174,8 +173,7 @@ public class AbstractHttpServerTransportTests extends OpenSearchTestCase {
                 threadPool,
                 xContentRegistry(),
                 dispatcher,
-                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
-                NoopTracer.INSTANCE
+                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS)
             ) {
 
                 @Override
@@ -240,8 +238,7 @@ public class AbstractHttpServerTransportTests extends OpenSearchTestCase {
                         channel.sendResponse(emptyResponse(RestStatus.BAD_REQUEST));
                     }
                 },
-                clusterSettings,
-                NoopTracer.INSTANCE
+                clusterSettings
             ) {
                 @Override
                 protected HttpServerChannel bind(InetSocketAddress hostAddress) {

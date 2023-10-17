@@ -222,7 +222,7 @@ public final class ChecksumBlobStoreFormat<T extends ToXContent> {
                     WritePriority.HIGH,
                     (size, position) -> new OffsetRangeIndexInputStream(input, size, position),
                     expectedChecksum,
-                    ((AsyncMultiStreamBlobContainer) blobContainer).remoteIntegrityCheckSupported()
+                    true
                 )
             ) {
                 ((AsyncMultiStreamBlobContainer) blobContainer).asyncBlobUpload(remoteTransferContainer.createWriteContext(), listener);

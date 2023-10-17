@@ -23,10 +23,7 @@ import java.util.Map.Entry;
  */
 public class CompressionProvider implements CompressorProvider {
 
-    /**
-     * Returns the concrete {@link Compressor}s provided by the compress library
-     * @return a list of {@link Compressor}s
-     * */
+    /** Returns the concrete {@link Compressor}s provided by the compress library */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public List<Entry<String, Compressor>> getCompressors() {

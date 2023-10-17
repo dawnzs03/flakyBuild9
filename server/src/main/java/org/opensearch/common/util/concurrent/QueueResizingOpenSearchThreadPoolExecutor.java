@@ -36,7 +36,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.opensearch.common.ExponentiallyWeightedMovingAverage;
-import org.opensearch.common.metrics.CounterMetric;
 import org.opensearch.common.unit.TimeValue;
 
 import java.util.Locale;
@@ -67,7 +66,6 @@ public final class QueueResizingOpenSearchThreadPoolExecutor extends OpenSearchT
     private final int maxQueueSize;
     private final long targetedResponseTimeNanos;
     private final ExponentiallyWeightedMovingAverage executionEWMA;
-    private final CounterMetric poolWaitTime;
 
     private final AtomicLong totalTaskNanos = new AtomicLong(0);
     private final AtomicInteger taskCount = new AtomicInteger(0);
@@ -99,7 +97,6 @@ public final class QueueResizingOpenSearchThreadPoolExecutor extends OpenSearchT
         this.maxQueueSize = maxQueueSize;
         this.targetedResponseTimeNanos = targetedResponseTime.getNanos();
         this.executionEWMA = new ExponentiallyWeightedMovingAverage(EWMA_ALPHA, 0);
-        this.poolWaitTime = new CounterMetric();
         logger.debug(
             "thread pool [{}] will adjust queue by [{}] when determining automatic queue size",
             getName(),
@@ -193,7 +190,6 @@ public final class QueueResizingOpenSearchThreadPoolExecutor extends OpenSearchT
             // taskExecutionNanos may be -1 if the task threw an exception
             executionEWMA.addValue(taskExecutionNanos);
         }
-        poolWaitTime.inc(timedRunnable.getWaitTimeNanos());
 
         if (taskCount.incrementAndGet() == this.tasksPerFrame) {
             final long endTimeNs = System.nanoTime();
@@ -294,8 +290,4 @@ public final class QueueResizingOpenSearchThreadPoolExecutor extends OpenSearchT
         sb.append("adjustment amount = ").append(QUEUE_ADJUSTMENT_AMOUNT).append(", ");
     }
 
-    @Override
-    public long getPoolWaitTimeNanos() {
-        return poolWaitTime.count();
-    }
 }

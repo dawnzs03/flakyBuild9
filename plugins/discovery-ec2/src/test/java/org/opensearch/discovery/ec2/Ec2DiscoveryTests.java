@@ -48,7 +48,6 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.PageCacheRecycler;
 import org.opensearch.core.common.transport.TransportAddress;
 import org.opensearch.core.indices.breaker.NoneCircuitBreakerService;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.transport.MockTransportService;
 import org.opensearch.transport.Transport;
 import org.opensearch.transport.TransportService;
@@ -100,14 +99,7 @@ public class Ec2DiscoveryTests extends AbstractEc2MockAPITestCase {
                 return new TransportAddress[] { poorMansDNS.getOrDefault(address, buildNewFakeTransportAddress()) };
             }
         };
-        return new MockTransportService(
-            Settings.EMPTY,
-            transport,
-            threadPool,
-            TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            null,
-            NoopTracer.INSTANCE
-        );
+        return new MockTransportService(Settings.EMPTY, transport, threadPool, TransportService.NOOP_TRANSPORT_INTERCEPTOR, null);
     }
 
     protected List<TransportAddress> buildDynamicHosts(Settings nodeSettings, int nodes) {

@@ -79,10 +79,6 @@ import static org.hamcrest.core.IsNull.notNullValue;
 @OpenSearchIntegTestCase.SuiteScopeTestCase
 public class StringTermsIT extends BaseStringTermsTestCase {
 
-    public StringTermsIT(Settings dynamicSettings) {
-        super(dynamicSettings);
-    }
-
     // the main purpose of this test is to make sure we're not allocating 2GB of memory per shard
     public void testSizeIsZero() {
         final int minDocCount = randomInt(1);
@@ -1131,7 +1127,6 @@ public class StringTermsIT extends BaseStringTermsTestCase {
                 .getMissCount(),
             equalTo(2L)
         );
-        internalCluster().wipeIndices("cache_test_idx");
     }
 
     public void testScriptWithValueType() throws Exception {

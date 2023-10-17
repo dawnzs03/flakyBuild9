@@ -32,7 +32,6 @@
 package org.opensearch.search.aggregations.bucket;
 
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.common.settings.Settings;
 import org.opensearch.search.aggregations.Aggregator.SubAggCollectionMode;
 import org.opensearch.search.aggregations.BucketOrder;
 import org.opensearch.search.aggregations.bucket.terms.Terms;
@@ -46,11 +45,6 @@ import static org.opensearch.search.aggregations.AggregationBuilders.terms;
 import static org.hamcrest.Matchers.equalTo;
 
 public class ShardSizeTermsIT extends ShardSizeTestCase {
-
-    public ShardSizeTermsIT(Settings dynamicSettings) {
-        super(dynamicSettings);
-    }
-
     public void testNoShardSizeString() throws Exception {
         createIdx("type=keyword");
 

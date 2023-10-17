@@ -50,7 +50,6 @@ import org.opensearch.core.transport.TransportResponse;
 import org.opensearch.monitor.StatusInfo;
 import org.opensearch.node.remotestore.RemoteStoreNodeService;
 import org.opensearch.repositories.RepositoriesService;
-import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.transport.CapturingTransport;
 import org.opensearch.test.transport.CapturingTransport.CapturedRequest;
@@ -97,8 +96,7 @@ public class JoinHelperTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             x -> localNode,
             null,
-            Collections.emptySet(),
-            NoopTracer.INSTANCE
+            Collections.emptySet()
         );
         JoinHelper joinHelper = new JoinHelper(
             Settings.EMPTY,
@@ -283,8 +281,7 @@ public class JoinHelperTests extends OpenSearchTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             x -> localNode,
             null,
-            Collections.emptySet(),
-            NoopTracer.INSTANCE
+            Collections.emptySet()
         );
         AtomicReference<StatusInfo> nodeHealthServiceStatus = new AtomicReference<>(new StatusInfo(UNHEALTHY, "unhealthy-info"));
         JoinHelper joinHelper = new JoinHelper(
@@ -475,8 +472,7 @@ public class JoinHelperTests extends OpenSearchTestCase {
                 TransportService.NOOP_TRANSPORT_INTERCEPTOR,
                 x -> localNode,
                 null,
-                Collections.emptySet(),
-                NoopTracer.INSTANCE
+                Collections.emptySet()
             );
         } else {
             transportService = mockTransport.createTransportService(
@@ -485,8 +481,7 @@ public class JoinHelperTests extends OpenSearchTestCase {
                 TransportService.NOOP_TRANSPORT_INTERCEPTOR,
                 x -> localNode,
                 null,
-                Collections.emptySet(),
-                NoopTracer.INSTANCE
+                Collections.emptySet()
             );
         }
         JoinHelper joinHelper = new JoinHelper(

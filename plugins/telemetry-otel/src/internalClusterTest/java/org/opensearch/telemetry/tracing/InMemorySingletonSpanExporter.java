@@ -11,9 +11,7 @@ package org.opensearch.telemetry.tracing;
 import org.opensearch.test.telemetry.tracing.MockSpanData;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.opentelemetry.sdk.common.CompletableResultCode;
@@ -23,7 +21,7 @@ import io.opentelemetry.sdk.trace.export.SpanExporter;
 
 public class InMemorySingletonSpanExporter implements SpanExporter {
 
-    public static final InMemorySingletonSpanExporter INSTANCE = new InMemorySingletonSpanExporter(InMemorySpanExporter.create());
+    private static final InMemorySingletonSpanExporter INSTANCE = new InMemorySingletonSpanExporter(InMemorySpanExporter.create());
 
     private static InMemorySpanExporter delegate;
 
@@ -64,30 +62,10 @@ public class InMemorySingletonSpanExporter implements SpanExporter {
                     spanData.getStartEpochNanos(),
                     spanData.getEndEpochNanos(),
                     spanData.hasEnded(),
-                    spanData.getName(),
-                    getAttributes(spanData)
+                    spanData.getName()
                 )
             )
             .collect(Collectors.toList());
         return mockSpanDataList;
-    }
-
-    private Map<String, Object> getAttributes(SpanData spanData) {
-        if (spanData.getAttributes() != null) {
-            return spanData.getAttributes()
-                .asMap()
-                .entrySet()
-                .stream()
-                .collect(Collectors.toMap(e -> e.getKey().getKey(), e -> e.getValue()));
-        } else {
-            return Collections.emptyMap();
-        }
-    }
-
-    /**
-     * Clears the state.
-     */
-    public void reset() {
-        delegate.reset();
     }
 }

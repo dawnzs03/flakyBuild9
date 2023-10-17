@@ -12,7 +12,6 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.common.geo.GeoBoundingBox;
 import org.opensearch.common.geo.GeoPoint;
 import org.opensearch.common.geo.GeoShapeDocValue;
-import org.opensearch.common.settings.Settings;
 import org.opensearch.geo.search.aggregations.bucket.geogrid.GeoGrid;
 import org.opensearch.geo.search.aggregations.bucket.geogrid.GeoGridAggregationBuilder;
 import org.opensearch.geo.search.aggregations.common.GeoBoundsHelper;
@@ -38,10 +37,6 @@ public class GeoTileGridIT extends AbstractGeoBucketAggregationIntegTest {
     private static final int GEOPOINT_MAX_PRECISION = 17;
 
     private static final String AGG_NAME = "geotilegrid";
-
-    public GeoTileGridIT(Settings dynamicSettings) {
-        super(dynamicSettings);
-    }
 
     @Override
     public void setupSuiteScopeCluster() throws Exception {
