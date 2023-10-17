@@ -23,7 +23,6 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,7 +34,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.pulsar.broker.service.Topic;
 import org.apache.pulsar.broker.service.persistent.PersistentTopic;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.ConsumerBuilder;
@@ -47,6 +45,7 @@ import org.apache.pulsar.client.api.ProducerConsumerBase;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SubscriptionType;
+import org.apache.pulsar.common.allocator.PulsarByteBufAllocator;
 import org.apache.pulsar.common.api.proto.MessageMetadata;
 import org.apache.pulsar.common.protocol.Commands;
 import org.awaitility.Awaitility;
@@ -218,7 +217,7 @@ public class MessageChunkingSharedTest extends ProducerConsumerBase {
         sendChunk(persistentTopic, producerName, sequenceId, null, null);
     }
 
-    protected static void sendChunk(final PersistentTopic persistentTopic,
+    private static void sendChunk(final PersistentTopic persistentTopic,
                                   final String producerName,
                                   final long sequenceId,
                                   final Integer chunkId,
@@ -234,33 +233,16 @@ public class MessageChunkingSharedTest extends ProducerConsumerBase {
             metadata.setTotalChunkMsgSize(numChunks);
         }
         final ByteBuf buf = Commands.serializeMetadataAndPayload(Commands.ChecksumType.Crc32c, metadata,
-                Unpooled.wrappedBuffer("a".getBytes()));
-        persistentTopic.publishMessage(buf, new Topic.PublishContext() {
-            @Override
-            public boolean isChunked() {
-                return chunkId != null;
+                PulsarByteBufAllocator.DEFAULT.buffer(1));
+        persistentTopic.publishMessage(buf, (e, ledgerId, entryId) -> {
+            String name = producerName + "-" + sequenceId;
+            if (chunkId != null) {
+                name += "-" + chunkId + "-" + numChunks;
             }
-
-            @Override
-            public String getProducerName() {
-                return producerName;
-            }
-
-            public long getSequenceId() {
-                return sequenceId;
-            }
-
-            @Override
-            public void completed(Exception e, long ledgerId, long entryId) {
-                String name = producerName + "-" + sequenceId;
-                if (chunkId != null) {
-                    name += "-" + chunkId + "-" + numChunks;
-                }
-                if (e == null) {
-                    log.info("Sent {} to ({}, {})", name, ledgerId, entryId);
-                } else {
-                    log.error("Failed to send {}: {}", name, e.getMessage());
-                }
+            if (e == null) {
+                log.info("Sent {} to ({}, {})", name, ledgerId, entryId);
+            } else {
+                log.error("Failed to send {}: {}", name, e.getMessage());
             }
         });
     }

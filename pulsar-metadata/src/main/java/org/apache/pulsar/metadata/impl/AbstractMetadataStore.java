@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.github.benmanes.caffeine.cache.AsyncCacheLoader;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.time.Instant;
@@ -175,7 +174,7 @@ public abstract class AbstractMetadataStore implements MetadataStoreExtended, Co
         return result;
     }
 
-    protected void registerSyncListener(Optional<MetadataEventSynchronizer> synchronizer) {
+    protected void registerSyncLister(Optional<MetadataEventSynchronizer> synchronizer) {
         synchronizer.ifPresent(s -> s.registerSyncListener(this::handleMetadataEvent));
     }
 
@@ -522,13 +521,6 @@ public abstract class AbstractMetadataStore implements MetadataStoreExtended, Co
     public void invalidateAll() {
         childrenCache.synchronous().invalidateAll();
         existsCache.synchronous().invalidateAll();
-    }
-
-    public void invalidateCaches(String...paths) {
-        LoadingCache<String, List<String>> loadingCache = childrenCache.synchronous();
-        for (String path : paths) {
-            loadingCache.invalidate(path);
-        }
     }
 
     /**

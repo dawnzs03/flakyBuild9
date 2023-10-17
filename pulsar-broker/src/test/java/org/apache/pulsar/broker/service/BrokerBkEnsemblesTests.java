@@ -21,8 +21,8 @@ package org.apache.pulsar.broker.service;
 import static org.apache.pulsar.broker.auth.MockedPulsarServiceBaseTest.retryStrategically;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.fail;
+
 import java.lang.reflect.Field;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
@@ -31,8 +31,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
 import com.google.common.collect.Sets;
 import lombok.Cleanup;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -45,7 +47,6 @@ import org.apache.bookkeeper.mledger.proto.MLDataFormats.ManagedLedgerInfo.Ledge
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.pulsar.broker.BrokerTestUtil;
 import org.apache.pulsar.broker.service.persistent.PersistentTopic;
-import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.Producer;
@@ -496,31 +497,10 @@ public class BrokerBkEnsemblesTests extends BkEnsemblesTestBase {
             // Expected
         }
 
-        assertThrows(PulsarAdminException.ServerSideErrorException.class, () -> admin.topics().delete(topic));
-    }
-
-    @Test
-    public void testDeleteTopicWithoutTopicLoaded() throws Exception {
-        String namespace = BrokerTestUtil.newUniqueName("prop/usc");
-        admin.namespaces().createNamespace(namespace);
-
-        String topic = BrokerTestUtil.newUniqueName(namespace + "/my-topic");
-
-        @Cleanup
-        PulsarClient client = PulsarClient.builder()
-                .serviceUrl(pulsar.getBrokerServiceUrl())
-                .statsInterval(0, TimeUnit.SECONDS)
-                .build();
-
-        @Cleanup
-        Producer<String> producer = client.newProducer(Schema.STRING)
-                .topic(topic)
-                .create();
-
-        producer.close();
-        admin.topics().unload(topic);
-
+        // Deletion must succeed
         admin.topics().delete(topic);
+
+        // Topic will not be there after
         assertEquals(pulsar.getBrokerService().getTopicIfExists(topic).join(), Optional.empty());
     }
 

@@ -137,14 +137,12 @@ class ContextImpl implements Context, SinkContext, SourceContext, AutoCloseable 
 
     private final Function.FunctionDetails.ComponentType componentType;
 
-    private final java.util.function.Consumer<Throwable> fatalHandler;
-
     public ContextImpl(InstanceConfig config, Logger logger, PulsarClient client,
                        SecretsProvider secretsProvider, FunctionCollectorRegistry collectorRegistry,
                        String[] metricsLabels,
                        Function.FunctionDetails.ComponentType componentType, ComponentStatsManager statsManager,
-                       StateManager stateManager, PulsarAdmin pulsarAdmin, ClientBuilder clientBuilder,
-                       java.util.function.Consumer<Throwable> fatalHandler) {
+                       StateManager stateManager, PulsarAdmin pulsarAdmin, ClientBuilder clientBuilder)
+            throws PulsarClientException {
         this.config = config;
         this.logger = logger;
         this.clientBuilder = clientBuilder;
@@ -152,7 +150,6 @@ class ContextImpl implements Context, SinkContext, SourceContext, AutoCloseable 
         this.pulsarAdmin = pulsarAdmin;
         this.topicSchema = new TopicSchema(client, Thread.currentThread().getContextClassLoader());
         this.statsManager = statsManager;
-        this.fatalHandler = fatalHandler;
 
         this.producerBuilder = (ProducerBuilderImpl<?>) client.newProducer().blockIfQueueFull(true).enableBatching(true)
                 .batchingMaxPublishDelay(1, TimeUnit.MILLISECONDS);
@@ -535,11 +532,6 @@ class ContextImpl implements Context, SinkContext, SourceContext, AutoCloseable 
     @Override
     public ClientBuilder getPulsarClientBuilder() {
         return clientBuilder;
-    }
-
-    @Override
-    public void fatal(Throwable t) {
-        fatalHandler.accept(t);
     }
 
     private <T> Producer<T> getProducer(String topicName, Schema<T> schema) throws PulsarClientException {

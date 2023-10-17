@@ -18,6 +18,7 @@
  */
 package org.apache.pulsar.io.kinesis;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.util.concurrent.Futures.addCallback;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -48,6 +49,7 @@ import org.apache.pulsar.client.api.schema.GenericObject;
 import org.apache.pulsar.functions.api.Record;
 import org.apache.pulsar.io.aws.AbstractAwsConnector;
 import org.apache.pulsar.io.aws.AwsCredentialProviderPlugin;
+import org.apache.pulsar.io.common.IOConfigUtils;
 import org.apache.pulsar.io.core.Sink;
 import org.apache.pulsar.io.core.SinkContext;
 import org.apache.pulsar.io.core.annotations.Connector;
@@ -153,16 +155,17 @@ public class KinesisSink extends AbstractAwsConnector implements Sink<GenericObj
     @Override
     public void open(Map<String, Object> config, SinkContext sinkContext) {
         scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-        kinesisSinkConfig = KinesisSinkConfig.load(config, sinkContext);
+        kinesisSinkConfig = IOConfigUtils.loadWithSecrets(config, KinesisSinkConfig.class, sinkContext);
         this.sinkContext = sinkContext;
 
+        checkArgument(isNotBlank(kinesisSinkConfig.getAwsKinesisStreamName()), "empty kinesis-stream name");
+        checkArgument(isNotBlank(kinesisSinkConfig.getAwsEndpoint())
+                        || isNotBlank(kinesisSinkConfig.getAwsRegion()),
+                      "Either the aws-end-point or aws-region must be set");
+        checkArgument(isNotBlank(kinesisSinkConfig.getAwsCredentialPluginParam()), "empty aws-credential param");
+
         KinesisProducerConfiguration kinesisConfig = new KinesisProducerConfiguration();
-        if (isNotBlank(kinesisSinkConfig.getAwsEndpoint())) {
-            kinesisConfig.setKinesisEndpoint(kinesisSinkConfig.getAwsEndpoint());
-        }
-        if (isNotBlank(kinesisSinkConfig.getCloudwatchEndpoint())) {
-            kinesisConfig.setCloudwatchEndpoint(kinesisSinkConfig.getCloudwatchEndpoint());
-        }
+        kinesisConfig.setKinesisEndpoint(kinesisSinkConfig.getAwsEndpoint());
         if (kinesisSinkConfig.getAwsEndpointPort() != null) {
             kinesisConfig.setKinesisPort(kinesisSinkConfig.getAwsEndpointPort());
         }

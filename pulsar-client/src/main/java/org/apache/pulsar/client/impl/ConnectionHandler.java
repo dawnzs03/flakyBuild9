@@ -43,7 +43,6 @@ public class ConnectionHandler {
     private volatile long epoch = -1L;
     protected volatile long lastConnectionClosedTimestamp = 0L;
     private final AtomicBoolean duringConnect = new AtomicBoolean(false);
-    protected final int randomKeyForSelectConnection;
 
     interface Connection {
 
@@ -59,7 +58,6 @@ public class ConnectionHandler {
 
     protected ConnectionHandler(HandlerState state, Backoff backoff, Connection connection) {
         this.state = state;
-        this.randomKeyForSelectConnection = state.client.getCnxPool().genRandomKeyToSelectCon();
         this.connection = connection;
         this.backoff = backoff;
         CLIENT_CNX_UPDATER.set(this, null);
@@ -90,11 +88,11 @@ public class ConnectionHandler {
             if (state.redirectedClusterURI != null) {
                 InetSocketAddress address = InetSocketAddress.createUnresolved(state.redirectedClusterURI.getHost(),
                         state.redirectedClusterURI.getPort());
-                cnxFuture = state.client.getConnection(address, address, randomKeyForSelectConnection);
+                cnxFuture = state.client.getConnection(address, address);
             } else if (state.topic == null) {
                 cnxFuture = state.client.getConnectionToServiceUrl();
             } else {
-                cnxFuture = state.client.getConnection(state.topic, randomKeyForSelectConnection);
+                cnxFuture = state.client.getConnection(state.topic); //
             }
             cnxFuture.thenCompose(cnx -> connection.connectionOpened(cnx))
                     .thenAccept(__ -> duringConnect.set(false))

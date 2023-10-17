@@ -634,7 +634,6 @@ public class NonPersistentTopic extends AbstractTopic implements Topic, TopicPol
 
         replicators.get(remoteCluster).disconnect().thenRun(() -> {
             log.info("[{}] Successfully removed replicator {}", name, remoteCluster);
-            replicators.remove(remoteCluster);
 
         }).exceptionally(e -> {
             log.error("[{}] Failed to close replication producer {} {}", topic, name, e.getMessage(), e);
@@ -960,29 +959,8 @@ public class NonPersistentTopic extends AbstractTopic implements Topic, TopicPol
                     consumer.topicMigrated(url);
                 });
             });
-            return disconnectReplicators().thenCompose(__ -> checkAndUnsubscribeSubscriptions());
         }
         return CompletableFuture.completedFuture(null);
-    }
-
-    private CompletableFuture<Void> checkAndUnsubscribeSubscriptions() {
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-        subscriptions.forEach((s, subscription) -> {
-            if (subscription.getConsumers().isEmpty()) {
-                futures.add(subscription.delete());
-            }
-        });
-
-        return FutureUtil.waitForAll(futures);
-    }
-
-    private CompletableFuture<Void> disconnectReplicators() {
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-        ConcurrentOpenHashMap<String, NonPersistentReplicator> replicators = getReplicators();
-        replicators.forEach((r, replicator) -> {
-            futures.add(replicator.disconnect());
-        });
-        return FutureUtil.waitForAll(futures);
     }
 
     @Override

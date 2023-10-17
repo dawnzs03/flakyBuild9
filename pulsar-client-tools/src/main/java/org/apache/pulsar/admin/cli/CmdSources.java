@@ -437,7 +437,7 @@ public class CmdSources extends CmdBase {
                 sourceConfig.setParallelism(parallelism);
             }
 
-            if (archive != null && (sourceType != null || sourceConfig.getSourceType() != null)) {
+            if (archive != null && sourceType != null) {
                 throw new ParameterException("Cannot specify both archive and source-type");
             }
 
@@ -447,8 +447,6 @@ public class CmdSources extends CmdBase {
 
             if (sourceType != null) {
                 sourceConfig.setArchive(validateSourceType(sourceType));
-            } else if (sourceConfig.getSourceType() != null) {
-                sourceConfig.setArchive(validateSourceType(sourceConfig.getSourceType()));
             }
 
             Resources resources = sourceConfig.getResources();

@@ -71,7 +71,7 @@ public class BrokerInterceptorUtilsTest {
     }
 
     @Test(expectedExceptions = IOException.class)
-    public void testLoadBrokerEventListenerWithBlankListenerClass() throws Exception {
+    public void testLoadBrokerEventListenerWithBlankListerClass() throws Exception {
         BrokerInterceptorDefinition def = new BrokerInterceptorDefinition();
         def.setDescription("test-broker-listener");
 
@@ -98,7 +98,7 @@ public class BrokerInterceptorUtilsTest {
     }
 
     @Test(expectedExceptions = IOException.class)
-    public void testLoadBrokerEventListenerWithWrongListenerClass() throws Exception {
+    public void testLoadBrokerEventListenerWithWrongListerClass() throws Exception {
         BrokerInterceptorDefinition def = new BrokerInterceptorDefinition();
         def.setInterceptorClass(Runnable.class.getName());
         def.setDescription("test-broker-listener");

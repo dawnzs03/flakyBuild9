@@ -65,8 +65,6 @@ public class AcknowledgementsGroupingTrackerTest {
                 ConcurrentOpenHashMap.<MessageIdAdv, MessageIdImpl[]>newBuilder().build();
         cnx = spy(new ClientCnxTest(new ClientConfigurationData(), eventLoopGroup));
         PulsarClientImpl client = mock(PulsarClientImpl.class);
-        ConnectionPool connectionPool = mock(ConnectionPool.class);
-        when(client.getCnxPool()).thenReturn(connectionPool);
         doReturn(client).when(consumer).getClient();
         doReturn(cnx).when(consumer).getClientCnx();
         doReturn(new ConsumerStatsRecorderImpl()).when(consumer).getStats();

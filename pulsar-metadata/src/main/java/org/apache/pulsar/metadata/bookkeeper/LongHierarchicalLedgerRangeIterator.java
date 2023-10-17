@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.util.StringUtils;
@@ -59,9 +57,8 @@ class LongHierarchicalLedgerRangeIterator implements LedgerManager.LedgerRangeIt
      */
     List<String> getChildrenAt(String path) throws IOException {
         try {
-            return store.getChildren(path)
-                    .get(AbstractMetadataDriver.BLOCKING_CALL_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (ExecutionException | TimeoutException e) {
+            return store.getChildren(path).get();
+        } catch (ExecutionException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Failed to get children at {}", path);
             }

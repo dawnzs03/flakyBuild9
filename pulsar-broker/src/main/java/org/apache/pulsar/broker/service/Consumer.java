@@ -507,16 +507,16 @@ public class Consumer {
                                 .syncBatchPositionBitSetForPendingAck(position);
                     }
                 }
-                addAndGetUnAckedMsgs(ackOwnerConsumer, -(int) ackedCount);
             } else {
                 position = PositionImpl.get(msgId.getLedgerId(), msgId.getEntryId());
                 ackedCount = getAckedCountForMsgIdNoAckSets(batchSize, position, ackOwnerConsumer);
-                if (checkCanRemovePendingAcksAndHandle(position, msgId)) {
-                    addAndGetUnAckedMsgs(ackOwnerConsumer, -(int) ackedCount);
-                }
             }
 
+            addAndGetUnAckedMsgs(ackOwnerConsumer, -(int) ackedCount);
+
             positionsAcked.add(position);
+
+            checkCanRemovePendingAcksAndHandle(position, msgId);
 
             checkAckValidationError(ack, position);
 
@@ -679,11 +679,10 @@ public class Consumer {
         }
     }
 
-    private boolean checkCanRemovePendingAcksAndHandle(PositionImpl position, MessageIdData msgId) {
+    private void checkCanRemovePendingAcksAndHandle(PositionImpl position, MessageIdData msgId) {
         if (Subscription.isIndividualAckMode(subType) && msgId.getAckSetsCount() == 0) {
-            return removePendingAcks(position);
+            removePendingAcks(position);
         }
-        return false;
     }
 
     private Consumer getAckOwnerConsumer(long ledgerId, long entryId) {
@@ -964,7 +963,7 @@ public class Consumer {
      *
      * @param position
      */
-    private boolean removePendingAcks(PositionImpl position) {
+    private void removePendingAcks(PositionImpl position) {
         Consumer ackOwnedConsumer = null;
         if (pendingAcks.get(position.getLedgerId(), position.getEntryId()) == null) {
             for (Consumer consumer : subscription.getConsumers()) {
@@ -985,7 +984,7 @@ public class Consumer {
         if (ackedPosition != null) {
             if (!ackOwnedConsumer.getPendingAcks().remove(position.getLedgerId(), position.getEntryId())) {
                 // Message was already removed by the other consumer
-                return false;
+                return;
             }
             if (log.isDebugEnabled()) {
                 log.debug("[{}-{}] consumer {} received ack {}", topicName, subscription, consumerId, position);
@@ -999,9 +998,7 @@ public class Consumer {
                 ackOwnedConsumer.blockedConsumerOnUnackedMsgs = false;
                 flowConsumerBlockedPermits(ackOwnedConsumer);
             }
-            return true;
         }
-        return false;
     }
 
     public ConcurrentLongLongPairHashMap getPendingAcks() {

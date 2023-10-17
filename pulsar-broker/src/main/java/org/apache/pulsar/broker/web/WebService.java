@@ -213,7 +213,8 @@ public class WebService implements AutoCloseable {
                         new RateLimitingFilter(config.getHttpRequestsMaxPerSecond())));
             }
 
-            boolean brokerInterceptorEnabled = pulsarService.getBrokerInterceptor() != null;
+            boolean brokerInterceptorEnabled =
+                    pulsarService.getBrokerInterceptor() != null && !config.isDisableBrokerInterceptors();
             if (brokerInterceptorEnabled) {
                 ExceptionHandler handler = new ExceptionHandler();
                 // Enable PreInterceptFilter only when interceptors are enabled

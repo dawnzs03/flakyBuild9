@@ -165,18 +165,8 @@ public class ConnectionPool implements AutoCloseable {
 
     private static final Random random = new Random();
 
-    public int genRandomKeyToSelectCon() {
-        if (maxConnectionsPerHosts == 0) {
-            return -1;
-        }
-        return signSafeMod(random.nextInt(), maxConnectionsPerHosts);
-    }
-
     public CompletableFuture<ClientCnx> getConnection(final InetSocketAddress address) {
-        if (maxConnectionsPerHosts == 0) {
-            return getConnection(address, address, -1);
-        }
-        return getConnection(address, address, signSafeMod(random.nextInt(), maxConnectionsPerHosts));
+        return getConnection(address, address);
     }
 
     void closeAllConnections() {
@@ -214,11 +204,13 @@ public class ConnectionPool implements AutoCloseable {
      * @return a future that will produce the ClientCnx object
      */
     public CompletableFuture<ClientCnx> getConnection(InetSocketAddress logicalAddress,
-            InetSocketAddress physicalAddress, final int randomKey) {
+            InetSocketAddress physicalAddress) {
         if (maxConnectionsPerHosts == 0) {
             // Disable pooling
             return createConnection(logicalAddress, physicalAddress, -1);
         }
+
+        final int randomKey = signSafeMod(random.nextInt(), maxConnectionsPerHosts);
 
         final ConcurrentMap<Integer, CompletableFuture<ClientCnx>> innerPool =
                 pool.computeIfAbsent(logicalAddress, a -> new ConcurrentHashMap<>());

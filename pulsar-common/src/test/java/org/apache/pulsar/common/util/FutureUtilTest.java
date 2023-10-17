@@ -181,6 +181,7 @@ public class FutureUtilTest {
         }
     }
 
+    @Test
     public void testSequencer() {
         int concurrentNum = 1000;
         final ScheduledExecutorService executor = Executors.newScheduledThreadPool(concurrentNum);

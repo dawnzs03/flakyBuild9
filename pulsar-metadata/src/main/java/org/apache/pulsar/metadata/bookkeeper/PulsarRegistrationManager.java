@@ -19,12 +19,10 @@
 package org.apache.pulsar.metadata.bookkeeper;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.INSTANCEID;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
-import static org.apache.pulsar.metadata.bookkeeper.AbstractMetadataDriver.BLOCKING_CALL_TIMEOUT;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,8 +32,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import lombok.Cleanup;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -87,11 +85,12 @@ public class PulsarRegistrationManager implements RegistrationManager {
     }
 
     @Override
+    @SneakyThrows
     public void close() {
         for (ResourceLock<BookieServiceInfo> rwBookie : bookieRegistration.values()) {
             try {
-                rwBookie.release().get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
-            } catch (ExecutionException | TimeoutException ignore) {
+                rwBookie.release().get();
+            } catch (ExecutionException ignore) {
                 log.error("Cannot release correctly {}", rwBookie, ignore.getCause());
             } catch (InterruptedException ignore) {
                 log.error("Cannot release correctly {}", rwBookie, ignore);
@@ -101,30 +100,26 @@ public class PulsarRegistrationManager implements RegistrationManager {
 
         for (ResourceLock<BookieServiceInfo> roBookie : bookieRegistrationReadOnly.values()) {
             try {
-                roBookie.release().get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
-            } catch (ExecutionException | TimeoutException ignore) {
+                roBookie.release().get();
+            } catch (ExecutionException ignore) {
                 log.error("Cannot release correctly {}", roBookie, ignore.getCause());
             } catch (InterruptedException ignore) {
                 log.error("Cannot release correctly {}", roBookie, ignore);
                 Thread.currentThread().interrupt();
             }
         }
-        try {
-            coordinationService.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        coordinationService.close();
     }
 
     @Override
     public String getClusterInstanceId() throws BookieException {
         try {
             return store.get(ledgersRootPath + "/" + INSTANCEID)
-                    .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS)
+                    .get()
                     .map(res -> new String(res.getValue(), UTF_8))
                     .orElseThrow(
                             () -> new BookieException.MetadataStoreException("BookKeeper cluster not initialized"));
-        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+        } catch (ExecutionException | InterruptedException e) {
             throw new BookieException.MetadataStoreException("Failed to get cluster instance id", e);
         }
     }
@@ -141,24 +136,22 @@ public class PulsarRegistrationManager implements RegistrationManager {
                 ResourceLock<BookieServiceInfo> rwRegistration = bookieRegistration.remove(bookieId);
                 if (rwRegistration != null) {
                     log.info("Bookie {} was already registered as writable, unregistering", bookieId);
-                    rwRegistration.release().get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+                    rwRegistration.release().get();
                 }
 
                 bookieRegistrationReadOnly.put(bookieId,
-                        lockManager.acquireLock(regPathReadOnly, bookieServiceInfo)
-                                .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS));
+                        lockManager.acquireLock(regPathReadOnly, bookieServiceInfo).get());
             } else {
                 ResourceLock<BookieServiceInfo> roRegistration = bookieRegistrationReadOnly.remove(bookieId);
                 if (roRegistration != null) {
                     log.info("Bookie {} was already registered as read-only, unregistering", bookieId);
-                    roRegistration.release().get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+                    roRegistration.release().get();
                 }
 
                 bookieRegistration.put(bookieId,
-                        lockManager.acquireLock(regPath, bookieServiceInfo)
-                                .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS));
+                        lockManager.acquireLock(regPath, bookieServiceInfo).get());
             }
-        } catch (ExecutionException | TimeoutException ee) {
+        } catch (ExecutionException ee) {
             log.error("Exception registering ephemeral node for Bookie!", ee);
             // Throw an IOException back up. This will cause the Bookie
             // constructor to error out. Alternatively, we could do a System
@@ -180,18 +173,18 @@ public class PulsarRegistrationManager implements RegistrationManager {
             if (readOnly) {
                 ResourceLock<BookieServiceInfo> roRegistration = bookieRegistrationReadOnly.get(bookieId);
                 if (roRegistration != null) {
-                    roRegistration.release().get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+                    roRegistration.release().get();
                 }
             } else {
                 ResourceLock<BookieServiceInfo> rwRegistration = bookieRegistration.get(bookieId);
                 if (rwRegistration != null) {
-                    rwRegistration.release().get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+                    rwRegistration.release().get();
                 }
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new BookieException.MetadataStoreException(ie);
-        } catch (ExecutionException | TimeoutException e) {
+        } catch (ExecutionException e) {
             throw new BookieException.MetadataStoreException(e);
         }
     }
@@ -202,9 +195,8 @@ public class PulsarRegistrationManager implements RegistrationManager {
         String readonlyRegPath = bookieReadonlyRegistrationPath + "/" + bookieId;
 
         try {
-            return (store.exists(regPath).get(BLOCKING_CALL_TIMEOUT, MILLISECONDS)
-                    || store.exists(readonlyRegPath).get(BLOCKING_CALL_TIMEOUT, MILLISECONDS));
-        } catch (ExecutionException | TimeoutException e) {
+            return (store.exists(regPath).get() || store.exists(readonlyRegPath).get());
+        } catch (ExecutionException e) {
             log.error("Exception while checking registration ephemeral nodes for BookieId: {}", bookieId, e);
             throw new BookieException.MetadataStoreException(e);
         } catch (InterruptedException e) {
@@ -230,8 +222,7 @@ public class PulsarRegistrationManager implements RegistrationManager {
                 version = ((LongVersion) cookieData.getVersion()).getLongVersion();
             }
 
-            store.put(path, cookieData.getValue(), Optional.of(version))
-                    .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+            store.put(path, cookieData.getValue(), Optional.of(version)).get();
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new BookieException.MetadataStoreException("Interrupted writing cookie for bookie " + bookieId, ie);
@@ -241,8 +232,6 @@ public class PulsarRegistrationManager implements RegistrationManager {
             } else {
                 throw new BookieException.MetadataStoreException("Failed to write cookie for bookie " + bookieId);
             }
-        } catch (TimeoutException ex) {
-            throw new BookieException.MetadataStoreException("Failed to write cookie for bookie " + bookieId, ex);
         }
     }
 
@@ -250,7 +239,7 @@ public class PulsarRegistrationManager implements RegistrationManager {
     public Versioned<byte[]> readCookie(BookieId bookieId) throws BookieException {
         String path = this.cookiePath + "/" + bookieId;
         try {
-            Optional<GetResult> res = store.get(path).get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+            Optional<GetResult> res = store.get(path).get();
             if (!res.isPresent()) {
                 throw new BookieException.CookieNotFoundException(bookieId.toString());
             }
@@ -261,7 +250,7 @@ public class PulsarRegistrationManager implements RegistrationManager {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new BookieException.MetadataStoreException(ie);
-        } catch (ExecutionException | TimeoutException e) {
+        } catch (ExecutionException e) {
             throw new BookieException.MetadataStoreException(e);
         }
     }
@@ -270,8 +259,7 @@ public class PulsarRegistrationManager implements RegistrationManager {
     public void removeCookie(BookieId bookieId, Version version) throws BookieException {
         String path = this.cookiePath + "/" + bookieId;
         try {
-            store.delete(path, Optional.of(((LongVersion) version).getLongVersion()))
-                    .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+            store.delete(path, Optional.of(((LongVersion) version).getLongVersion())).get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new BookieException.MetadataStoreException("Interrupted deleting cookie for bookie " + bookieId, e);
@@ -281,8 +269,6 @@ public class PulsarRegistrationManager implements RegistrationManager {
             } else {
                 throw new BookieException.MetadataStoreException("Failed to delete cookie for bookie " + bookieId);
             }
-        } catch (TimeoutException ex) {
-            throw new BookieException.MetadataStoreException("Failed to delete cookie for bookie " + bookieId);
         }
 
         log.info("Removed cookie from {} for bookie {}.", cookiePath, bookieId);
@@ -290,23 +276,20 @@ public class PulsarRegistrationManager implements RegistrationManager {
 
     @Override
     public boolean prepareFormat() throws Exception {
-        boolean ledgerRootExists = store.exists(ledgersRootPath).get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
-        boolean availableNodeExists = store.exists(bookieRegistrationPath).get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+        boolean ledgerRootExists = store.exists(ledgersRootPath).get();
+        boolean availableNodeExists = store.exists(bookieRegistrationPath).get();
         // Create ledgers root node if not exists
         if (!ledgerRootExists) {
-            store.put(ledgersRootPath, new byte[0], Optional.empty())
-                    .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+            store.put(ledgersRootPath, new byte[0], Optional.empty()).get();
         }
         // create available bookies node if not exists
         if (!availableNodeExists) {
-            store.put(bookieRegistrationPath, new byte[0], Optional.empty())
-                    .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+            store.put(bookieRegistrationPath, new byte[0], Optional.empty()).get();
         }
 
         // create readonly bookies node if not exists
-        if (!store.exists(bookieReadonlyRegistrationPath).get(BLOCKING_CALL_TIMEOUT, MILLISECONDS)) {
-            store.put(bookieReadonlyRegistrationPath, new byte[0], Optional.empty())
-                    .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+        if (!store.exists(bookieReadonlyRegistrationPath).get()) {
+            store.put(bookieReadonlyRegistrationPath, new byte[0], Optional.empty()).get();
         }
 
         return ledgerRootExists;
@@ -318,18 +301,16 @@ public class PulsarRegistrationManager implements RegistrationManager {
         log.info("Initializing metadata for new cluster, ledger root path: {}",
                 ledgersRootPath);
 
-        if (store.exists(instanceIdPath).get(BLOCKING_CALL_TIMEOUT, MILLISECONDS)) {
+        if (store.exists(instanceIdPath).get()) {
             log.error("Ledger root path: {} already exists", ledgersRootPath);
             return false;
         }
 
-        store.put(ledgersRootPath, new byte[0], Optional.empty())
-                .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+        store.put(ledgersRootPath, new byte[0], Optional.empty()).get();
 
         // create INSTANCEID
         String instanceId = UUID.randomUUID().toString();
-        store.put(instanceIdPath, instanceId.getBytes(UTF_8), Optional.of(-1L))
-                .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+        store.put(instanceIdPath, instanceId.getBytes(UTF_8), Optional.of(-1L)).join();
 
         log.info("Successfully initiated cluster. ledger root path: {} instanceId: {}",
                 ledgersRootPath, instanceId);
@@ -340,28 +321,23 @@ public class PulsarRegistrationManager implements RegistrationManager {
     public boolean format() throws Exception {
         // Clear underreplicated ledgers
         store.deleteRecursive(PulsarLedgerUnderreplicationManager.getBasePath(ledgersRootPath)
-                              + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH)
-                .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+                + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH).get();
 
         // Clear underreplicatedledger locks
-        store.deleteRecursive(PulsarLedgerUnderreplicationManager.getUrLockPath(ledgersRootPath))
-                .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+        store.deleteRecursive(PulsarLedgerUnderreplicationManager.getUrLockPath(ledgersRootPath)).get();
 
         // Clear the cookies
-        store.deleteRecursive(cookiePath).get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+        store.deleteRecursive(cookiePath).get();
 
         // Clear the INSTANCEID
-        if (store.exists(ledgersRootPath + "/" + BookKeeperConstants.INSTANCEID)
-                .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS)) {
-            store.delete(ledgersRootPath + "/" + BookKeeperConstants.INSTANCEID, Optional.empty())
-                    .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+        if (store.exists(ledgersRootPath + "/" + BookKeeperConstants.INSTANCEID).get()) {
+            store.delete(ledgersRootPath + "/" + BookKeeperConstants.INSTANCEID, Optional.empty()).get();
         }
 
         // create INSTANCEID
         String instanceId = UUID.randomUUID().toString();
         store.put(ledgersRootPath + "/" + BookKeeperConstants.INSTANCEID,
-                instanceId.getBytes(StandardCharsets.UTF_8), Optional.of(-1L))
-                .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+                instanceId.getBytes(StandardCharsets.UTF_8), Optional.of(-1L)).get();
 
         log.info("Successfully formatted BookKeeper metadata");
         return true;
@@ -371,7 +347,7 @@ public class PulsarRegistrationManager implements RegistrationManager {
     public boolean nukeExistingCluster() throws Exception {
         log.info("Nuking metadata of existing cluster, ledger root path: {}", ledgersRootPath);
 
-        if (!store.exists(ledgersRootPath + "/" + INSTANCEID).get(BLOCKING_CALL_TIMEOUT, MILLISECONDS)) {
+        if (!store.exists(ledgersRootPath + "/" + INSTANCEID).join()) {
             log.info("There is no existing cluster with ledgersRootPath: {}, so exiting nuke operation",
                     ledgersRootPath);
             return true;
@@ -380,19 +356,17 @@ public class PulsarRegistrationManager implements RegistrationManager {
         @Cleanup
         RegistrationClient registrationClient = new PulsarRegistrationClient(store, ledgersRootPath);
 
-        Collection<BookieId> rwBookies = registrationClient.getWritableBookies()
-                .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS).getValue();
+        Collection<BookieId> rwBookies = registrationClient.getWritableBookies().join().getValue();
         if (rwBookies != null && !rwBookies.isEmpty()) {
             log.error("Bookies are still up and connected to this cluster, "
-                      + "stop all bookies before nuking the cluster");
+                    + "stop all bookies before nuking the cluster");
             return false;
         }
 
-        Collection<BookieId> roBookies = registrationClient.getReadOnlyBookies()
-                .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS).getValue();
+        Collection<BookieId> roBookies = registrationClient.getReadOnlyBookies().join().getValue();
         if (roBookies != null && !roBookies.isEmpty()) {
             log.error("Readonly Bookies are still up and connected to this cluster, "
-                      + "stop all bookies before nuking the cluster");
+                    + "stop all bookies before nuking the cluster");
             return false;
         }
 

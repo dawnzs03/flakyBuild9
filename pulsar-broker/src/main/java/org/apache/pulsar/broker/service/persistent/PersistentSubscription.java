@@ -849,12 +849,6 @@ public class PersistentSubscription extends AbstractSubscription implements Subs
             public void readEntryComplete(Entry entry, Object ctx) {
                 future.complete(entry);
             }
-
-            @Override
-            public String toString() {
-                return String.format("Subscription [{}-{}] async replay entries", PersistentSubscription.this.topicName,
-                        PersistentSubscription.this.subName);
-            }
         }, null);
 
         return future;
@@ -1166,20 +1160,16 @@ public class PersistentSubscription extends AbstractSubscription implements Subs
         } else {
             subStats.backlogSize = -1;
         }
-        if (getEarliestTimeInBacklog) {
-            if (subStats.msgBacklog > 0) {
-                ManagedLedgerImpl managedLedger = ((ManagedLedgerImpl) cursor.getManagedLedger());
-                PositionImpl markDeletedPosition = (PositionImpl) cursor.getMarkDeletedPosition();
-                long result = 0;
-                try {
-                    result = managedLedger.getEarliestMessagePublishTimeOfPos(markDeletedPosition).get();
-                } catch (InterruptedException | ExecutionException e) {
-                    result = -1;
-                }
-                subStats.earliestMsgPublishTimeInBacklog = result;
-            } else {
-                subStats.earliestMsgPublishTimeInBacklog = -1;
+        if (getEarliestTimeInBacklog && subStats.msgBacklog > 0) {
+            ManagedLedgerImpl managedLedger = ((ManagedLedgerImpl) cursor.getManagedLedger());
+            PositionImpl markDeletedPosition = (PositionImpl) cursor.getMarkDeletedPosition();
+            long result = 0;
+            try {
+                result = managedLedger.getEarliestMessagePublishTimeOfPos(markDeletedPosition).get();
+            } catch (InterruptedException | ExecutionException e) {
+                result = -1;
             }
+            subStats.earliestMsgPublishTimeInBacklog = result;
         }
         subStats.msgBacklogNoDelayed = subStats.msgBacklog - subStats.msgDelayed;
         subStats.msgRateExpired = expiryMonitor.getMessageExpiryRate();

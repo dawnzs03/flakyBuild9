@@ -206,11 +206,10 @@ abstract class AbstractHierarchicalLedgerManager {
                             mcb = new BookkeeperInternalCallbacks.MultiCallback(activeLedgers.size(), finalCb, ctx,
                             successRc, failureRc);
                     // start loop over all ledgers
-                    scheduler.submit(() -> {
-                        for (Long ledger : activeLedgers) {
-                            processor.process(ledger, mcb);
-                        }
-                    });
+                    for (Long ledger : activeLedgers) {
+                        processor.process(ledger, mcb);
+                    }
+
                 }).exceptionally(ex -> {
                     finalCb.processResult(failureRc, null, ctx);
                     return null;

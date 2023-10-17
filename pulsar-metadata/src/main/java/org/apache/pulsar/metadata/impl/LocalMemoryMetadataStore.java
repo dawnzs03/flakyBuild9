@@ -83,7 +83,7 @@ public class LocalMemoryMetadataStore extends AbstractMetadataStore implements M
         // Local means a private data set
         // update synchronizer and register sync listener
         synchronizer = metadataStoreConfig.getSynchronizer();
-        registerSyncListener(Optional.ofNullable(synchronizer));
+        registerSyncLister(Optional.ofNullable(synchronizer));
         if ("local".equals(name)) {
             map = new TreeMap<>();
             sequentialIdGenerator = new AtomicLong();

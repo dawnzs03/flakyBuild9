@@ -19,7 +19,6 @@
 package org.apache.pulsar.client.impl;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
@@ -123,7 +122,7 @@ public class PulsarClientImplTest {
         when(cnx.ctx()).thenReturn(ctx);
         when(cnx.sendRequestWithId(any(ByteBuf.class), anyLong()))
                 .thenReturn(CompletableFuture.completedFuture(mock(ProducerResponse.class)));
-        when(pool.getConnection(any(InetSocketAddress.class), any(InetSocketAddress.class), anyInt()))
+        when(pool.getConnection(any(InetSocketAddress.class), any(InetSocketAddress.class)))
                 .thenReturn(CompletableFuture.completedFuture(cnx));
 
         ClientConfigurationData conf = new ClientConfigurationData();

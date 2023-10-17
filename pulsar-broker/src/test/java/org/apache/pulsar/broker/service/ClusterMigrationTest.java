@@ -28,7 +28,6 @@ import static org.testng.Assert.assertTrue;
 
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.pulsar.broker.BrokerTestUtil;
@@ -44,7 +43,6 @@ import org.apache.pulsar.client.api.SubscriptionType;
 import org.apache.pulsar.common.policies.data.ClusterData;
 import org.apache.pulsar.common.policies.data.ClusterData.ClusterUrl;
 import org.apache.pulsar.common.policies.data.TenantInfoImpl;
-import org.apache.pulsar.common.util.collections.ConcurrentOpenHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterMethod;
@@ -314,14 +312,6 @@ public class ClusterMigrationTest {
         retryStrategically((test) -> !topic2.getSubscriptions().isEmpty(), 10, 500);
         assertFalse(topic2.getSubscriptions().isEmpty());
 
-        topic1.checkClusterMigration().get();
-        ConcurrentOpenHashMap<String, ? extends Replicator> replicators = topic1.getReplicators();
-        replicators.forEach((r, replicator) -> {
-            assertFalse(replicator.isConnected());
-        });
-
-        assertTrue(topic1.getSubscriptions().isEmpty());
-
         // not also create a new consumer which should also reconnect to cluster-2
         Consumer<byte[]> consumer2 = client1.newConsumer().topic(topicName).subscriptionType(subType)
                 .subscriptionName("s2").subscribe();
@@ -507,14 +497,6 @@ public class ClusterMigrationTest {
         protected void setup() throws Exception {
             super.setupWithClusterName(clusterName);
         }
-
-        @Override
-        protected void doInitConf() throws Exception {
-            super.doInitConf();
-            this.conf.setWebServicePortTls(Optional.of(0));
-            this.conf.setBrokerServicePortTls(Optional.of(0));
-        }
-
 
         public PulsarService getPulsarService() {
             return pulsar;

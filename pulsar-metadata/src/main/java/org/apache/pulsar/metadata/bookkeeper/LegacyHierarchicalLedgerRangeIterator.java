@@ -18,20 +18,16 @@
  */
 package org.apache.pulsar.metadata.bookkeeper;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.apache.pulsar.metadata.bookkeeper.AbstractMetadataDriver.BLOCKING_CALL_TIMEOUT;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.pulsar.metadata.api.MetadataStore;
-
 
 /**
  * Hierarchical Ledger Manager which manages ledger meta in zookeeper using 2-level hierarchical znodes.
@@ -71,7 +67,7 @@ public class LegacyHierarchicalLedgerRangeIterator implements LedgerManager.Ledg
      * @return false if have visited all level1 nodes
      * @throws InterruptedException/KeeperException if error occurs reading zookeeper children
      */
-    private boolean nextL1Node() throws ExecutionException, InterruptedException, TimeoutException {
+    private boolean nextL1Node() throws ExecutionException, InterruptedException {
         l2NodesIter = null;
         while (l2NodesIter == null) {
             if (l1NodesIter.hasNext()) {
@@ -83,8 +79,7 @@ public class LegacyHierarchicalLedgerRangeIterator implements LedgerManager.Ledg
             if (!isLedgerParentNode(curL1Nodes)) {
                 continue;
             }
-            List<String> l2Nodes = store.getChildren(ledgersRoot + "/" + curL1Nodes)
-                    .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+            List<String> l2Nodes = store.getChildren(ledgersRoot + "/" + curL1Nodes).get();
             l2NodesIter = l2Nodes.iterator();
             if (!l2NodesIter.hasNext()) {
                 l2NodesIter = null;
@@ -99,8 +94,7 @@ public class LegacyHierarchicalLedgerRangeIterator implements LedgerManager.Ledg
             boolean hasMoreElements = false;
             try {
                 if (l1NodesIter == null) {
-                    List<String> l1Nodes = store.getChildren(ledgersRoot)
-                            .get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
+                    List<String> l1Nodes = store.getChildren(ledgersRoot).get();
                     l1NodesIter = l1Nodes.iterator();
                     hasMoreElements = nextL1Node();
                 } else if (l2NodesIter == null || !l2NodesIter.hasNext()) {
@@ -108,7 +102,7 @@ public class LegacyHierarchicalLedgerRangeIterator implements LedgerManager.Ledg
                 } else {
                     hasMoreElements = true;
                 }
-            } catch (ExecutionException | TimeoutException ke) {
+            } catch (ExecutionException ke) {
                 throw new IOException("Error preloading next range", ke);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
@@ -162,8 +156,8 @@ public class LegacyHierarchicalLedgerRangeIterator implements LedgerManager.Ledg
         String nodePath = nodeBuilder.toString();
         List<String> ledgerNodes = null;
         try {
-            ledgerNodes = store.getChildren(nodePath).get(BLOCKING_CALL_TIMEOUT, MILLISECONDS);
-        } catch (ExecutionException | TimeoutException e) {
+            ledgerNodes = store.getChildren(nodePath).get();
+        } catch (ExecutionException e) {
             throw new IOException("Error when get child nodes from zk", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

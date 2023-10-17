@@ -138,12 +138,8 @@ public class NonDurableCursorImpl extends ManagedCursorImpl {
 
     @Override
     public synchronized String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("ledger", ledger.getName())
-                .add("cursor", getName())
-                .add("ackPos", markDeletePosition)
-                .add("readPos", readPosition)
-                .toString();
+        return MoreObjects.toStringHelper(this).add("ledger", ledger.getName()).add("ackPos", markDeletePosition)
+                .add("readPos", readPosition).toString();
     }
 
     private static final Logger log = LoggerFactory.getLogger(NonDurableCursorImpl.class);

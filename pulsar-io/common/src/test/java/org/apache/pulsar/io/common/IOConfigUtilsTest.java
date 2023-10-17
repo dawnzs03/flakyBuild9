@@ -259,12 +259,12 @@ public class IOConfigUtilsTest {
         public CompletableFuture<ByteBuffer> getStateAsync(String key) {
             return null;
         }
-
+        
         @Override
         public void deleteState(String key) {
-
+        	
         }
-
+        
         @Override
         public CompletableFuture<Void> deleteStateAsync(String key) {
         	return null;
@@ -283,11 +283,6 @@ public class IOConfigUtilsTest {
         @Override
         public PulsarClient getPulsarClient() {
             return null;
-        }
-
-        @Override
-        public void fatal(Throwable t) {
-
         }
     }
 
@@ -454,12 +449,12 @@ public class IOConfigUtilsTest {
         public CompletableFuture<ByteBuffer> getStateAsync(String key) {
             return null;
         }
-
+        
         @Override
         public void deleteState(String key) {
-
+        	
         }
-
+        
         @Override
         public CompletableFuture<Void> deleteStateAsync(String key) {
         	return null;
@@ -468,11 +463,6 @@ public class IOConfigUtilsTest {
         @Override
         public PulsarClient getPulsarClient() {
             return null;
-        }
-
-        @Override
-        public void fatal(Throwable t) {
-
         }
     }
 

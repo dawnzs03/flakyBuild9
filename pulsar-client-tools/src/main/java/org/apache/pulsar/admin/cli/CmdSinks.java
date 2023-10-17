@@ -524,7 +524,7 @@ public class CmdSinks extends CmdBase {
                 sinkConfig.setParallelism(parallelism);
             }
 
-            if (archive != null && (sinkType != null || sinkConfig.getSinkType() != null)) {
+            if (archive != null && sinkType != null) {
                 throw new ParameterException("Cannot specify both archive and sink-type");
             }
 

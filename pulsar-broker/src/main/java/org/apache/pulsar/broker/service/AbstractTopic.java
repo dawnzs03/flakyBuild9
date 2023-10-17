@@ -58,6 +58,7 @@ import org.apache.pulsar.broker.service.BrokerServiceException.ProducerFencedExc
 import org.apache.pulsar.broker.service.BrokerServiceException.TopicMigratedException;
 import org.apache.pulsar.broker.service.BrokerServiceException.TopicTerminatedException;
 import org.apache.pulsar.broker.service.plugin.EntryFilter;
+import org.apache.pulsar.broker.service.schema.BookkeeperSchemaStorage;
 import org.apache.pulsar.broker.service.schema.SchemaRegistryService;
 import org.apache.pulsar.broker.service.schema.exceptions.IncompatibleSchemaException;
 import org.apache.pulsar.broker.stats.prometheus.metrics.Summary;
@@ -673,7 +674,21 @@ public abstract class AbstractTopic implements Topic, TopicPolicyListener<TopicP
 
     @Override
     public CompletableFuture<SchemaVersion> deleteSchema() {
-        return brokerService.deleteSchema(TopicName.get(getName()));
+        String id = getSchemaId();
+        SchemaRegistryService schemaRegistryService = brokerService.pulsar().getSchemaRegistryService();
+        return BookkeeperSchemaStorage.ignoreUnrecoverableBKException(schemaRegistryService.getSchema(id))
+                .thenCompose(schema -> {
+                    if (schema != null) {
+                        // It's different from `SchemasResource.deleteSchema`
+                        // because when we delete a topic, the schema
+                        // history is meaningless. But when we delete a schema of a topic, a new schema could be
+                        // registered in the future.
+                        log.info("Delete schema storage of id: {}", id);
+                        return schemaRegistryService.deleteSchemaStorage(id);
+                    } else {
+                        return CompletableFuture.completedFuture(null);
+                    }
+                });
     }
 
     @Override
@@ -982,7 +997,8 @@ public abstract class AbstractTopic implements Topic, TopicPolicyListener<TopicP
 
     private void tryOverwriteOldProducer(Producer oldProducer, Producer newProducer)
             throws BrokerServiceException {
-        if (newProducer.isSuccessorTo(oldProducer)) {
+        if (newProducer.isSuccessorTo(oldProducer) && !isUserProvidedProducerName(oldProducer)
+                && !isUserProvidedProducerName(newProducer)) {
             oldProducer.close(false);
             if (!producers.replace(newProducer.getProducerName(), oldProducer, newProducer)) {
                 // Met concurrent update, throw exception here so that client can try reconnect later.
@@ -992,11 +1008,6 @@ public abstract class AbstractTopic implements Topic, TopicPolicyListener<TopicP
                 handleProducerRemoved(oldProducer);
             }
         } else {
-            // If a producer with the same name tries to use a new connection, async check the old connection is
-            // available. The producers related the connection that not available are automatically cleaned up.
-            if (!Objects.equals(oldProducer.getCnx(), newProducer.getCnx())) {
-                oldProducer.getCnx().checkConnectionLiveness();
-            }
             throw new BrokerServiceException.NamingException(
                     "Producer with name '" + newProducer.getProducerName() + "' is already connected to topic");
         }

@@ -18,6 +18,7 @@
  */
 package org.apache.pulsar.compaction;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.time.Duration;
 import java.util.Iterator;
@@ -62,17 +63,37 @@ import org.slf4j.LoggerFactory;
 public class StrategicTwoPhaseCompactor extends TwoPhaseCompactor {
     private static final Logger log = LoggerFactory.getLogger(StrategicTwoPhaseCompactor.class);
     private static final int MAX_OUTSTANDING = 500;
+    private static final int MAX_NUM_MESSAGES_IN_BATCH = 1000;
+    private static final int MAX_BYTES_IN_BATCH = 128 * 1024;
     private static final int MAX_READER_RECONNECT_WAITING_TIME_IN_MILLIS = 20 * 1000;
     private final Duration phaseOneLoopReadTimeout;
     private final RawBatchMessageContainerImpl batchMessageContainer;
+
+    @VisibleForTesting
+    public StrategicTwoPhaseCompactor(ServiceConfiguration conf,
+                                      PulsarClient pulsar,
+                                      BookKeeper bk,
+                                      ScheduledExecutorService scheduler,
+                                      int maxNumMessagesInBatch) {
+        this(conf, pulsar, bk, scheduler, maxNumMessagesInBatch, MAX_BYTES_IN_BATCH);
+    }
+
+    private StrategicTwoPhaseCompactor(ServiceConfiguration conf,
+                                      PulsarClient pulsar,
+                                      BookKeeper bk,
+                                      ScheduledExecutorService scheduler,
+                                      int maxNumMessagesInBatch,
+                                      int maxBytesInBatch) {
+        super(conf, pulsar, bk, scheduler);
+        batchMessageContainer = new RawBatchMessageContainerImpl(maxNumMessagesInBatch, maxBytesInBatch);
+        phaseOneLoopReadTimeout = Duration.ofSeconds(conf.getBrokerServiceCompactionPhaseOneLoopTimeInSeconds());
+    }
 
     public StrategicTwoPhaseCompactor(ServiceConfiguration conf,
                                       PulsarClient pulsar,
                                       BookKeeper bk,
                                       ScheduledExecutorService scheduler) {
-        super(conf, pulsar, bk, scheduler);
-        batchMessageContainer = new RawBatchMessageContainerImpl();
-        phaseOneLoopReadTimeout = Duration.ofSeconds(conf.getBrokerServiceCompactionPhaseOneLoopTimeInSeconds());
+        this(conf, pulsar, bk, scheduler, MAX_NUM_MESSAGES_IN_BATCH, MAX_BYTES_IN_BATCH);
     }
 
     public CompletableFuture<Long> compact(String topic) {
@@ -397,6 +418,7 @@ public class StrategicTwoPhaseCompactor extends TwoPhaseCompactor {
                                 .whenComplete((res, exception2) -> {
                                     if (exception2 != null) {
                                         promise.completeExceptionally(exception2);
+                                        return;
                                     }
                                 });
                         phaseTwoLoop(topic, reader, lh, outstanding, promise);
@@ -421,45 +443,35 @@ public class StrategicTwoPhaseCompactor extends TwoPhaseCompactor {
 
     <T> CompletableFuture<Boolean> addToCompactedLedger(
             LedgerHandle lh, Message<T> m, String topic, Semaphore outstanding) {
-        if (m == null) {
-            return flushBatchMessage(lh, topic, outstanding);
-        }
-        if (batchMessageContainer.haveEnoughSpace((MessageImpl<?>) m)) {
-            batchMessageContainer.add((MessageImpl<?>) m, null);
-            return CompletableFuture.completedFuture(false);
-        }
-        CompletableFuture<Boolean> f = flushBatchMessage(lh, topic, outstanding);
-        batchMessageContainer.add((MessageImpl<?>) m, null);
-        return f;
-    }
-
-    private CompletableFuture<Boolean> flushBatchMessage(LedgerHandle lh, String topic,
-                                                         Semaphore outstanding) {
-        if (batchMessageContainer.getNumMessagesInBatch() <= 0) {
-            return CompletableFuture.completedFuture(false);
-        }
         CompletableFuture<Boolean> bkf = new CompletableFuture<>();
-        try {
-            ByteBuf serialized = batchMessageContainer.toByteBuf();
-            outstanding.acquire();
-            mxBean.addCompactionWriteOp(topic, serialized.readableBytes());
-            long start = System.nanoTime();
-            lh.asyncAddEntry(serialized,
-                    (rc, ledger, eid, ctx) -> {
-                        outstanding.release();
-                        mxBean.addCompactionLatencyOp(topic, System.nanoTime() - start, TimeUnit.NANOSECONDS);
-                        if (rc != BKException.Code.OK) {
-                            bkf.completeExceptionally(BKException.create(rc));
-                        } else {
-                            bkf.complete(true);
-                        }
-                    }, null);
+        if (m == null || batchMessageContainer.add((MessageImpl<?>) m, null)) {
+            if (batchMessageContainer.getNumMessagesInBatch() > 0) {
+                try {
+                    ByteBuf serialized = batchMessageContainer.toByteBuf();
+                    outstanding.acquire();
+                    mxBean.addCompactionWriteOp(topic, serialized.readableBytes());
+                    long start = System.nanoTime();
+                    lh.asyncAddEntry(serialized,
+                            (rc, ledger, eid, ctx) -> {
+                                outstanding.release();
+                                mxBean.addCompactionLatencyOp(topic, System.nanoTime() - start, TimeUnit.NANOSECONDS);
+                                if (rc != BKException.Code.OK) {
+                                    bkf.completeExceptionally(BKException.create(rc));
+                                } else {
+                                    bkf.complete(true);
+                                }
+                            }, null);
 
-        } catch (Throwable t) {
-            log.error("Failed to add entry", t);
-            batchMessageContainer.discard((Exception) t);
-            bkf.completeExceptionally(t);
-            return bkf;
+                } catch (Throwable t) {
+                    log.error("Failed to add entry", t);
+                    batchMessageContainer.discard((Exception) t);
+                    return FutureUtil.failedFuture(t);
+                }
+            } else {
+                bkf.complete(false);
+            }
+        } else {
+            bkf.complete(false);
         }
         return bkf;
     }

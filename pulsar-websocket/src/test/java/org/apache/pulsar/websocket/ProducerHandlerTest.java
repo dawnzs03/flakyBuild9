@@ -23,7 +23,6 @@ import org.apache.pulsar.client.api.ProducerBuilder;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.TypedMessageBuilder;
 import org.apache.pulsar.client.impl.MessageIdImpl;
-import org.apache.pulsar.client.impl.TypedMessageBuilderImpl;
 import org.apache.pulsar.common.util.ObjectMapperFactory;
 import org.apache.pulsar.websocket.data.ProducerMessage;
 import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
@@ -54,7 +53,7 @@ public class ProducerHandlerTest {
         PulsarClient pulsarClient = mock(PulsarClient.class);
         ProducerBuilder producerBuilder = mock(ProducerBuilder.class);
         Producer producer = mock(Producer.class);
-        TypedMessageBuilder messageBuilder = mock(TypedMessageBuilderImpl.class);
+        TypedMessageBuilder messageBuilder = mock(TypedMessageBuilder.class);
         ProducerMessage produceRequest = new ProducerMessage();
 
         produceRequest.setDeliverAfterMs(11111);

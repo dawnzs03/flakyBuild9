@@ -24,7 +24,6 @@ import org.apache.pulsar.broker.namespace.NamespaceEphemeralData;
 import org.apache.pulsar.broker.namespace.NamespaceService;
 import org.apache.pulsar.broker.transaction.buffer.impl.TransactionBufferHandlerImpl;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -32,8 +31,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.impl.ClientCnx;
-import org.apache.pulsar.client.impl.ConnectionPool;
 import org.apache.pulsar.client.impl.PulsarClientImpl;
 import org.apache.pulsar.common.api.proto.TxnAction;
 import org.apache.pulsar.common.naming.NamespaceBundle;
@@ -47,9 +46,7 @@ public class TransactionBufferHandlerImplTest {
 
     @Test
     public void testRequestCredits() throws PulsarServerException {
-        PulsarClientImpl pulsarClient = mock(PulsarClientImpl.class);
-        ConnectionPool connectionPool = mock(ConnectionPool.class);
-        when(pulsarClient.getCnxPool()).thenReturn(connectionPool);
+        PulsarClient pulsarClient = mock(PulsarClientImpl.class);
         PulsarService pulsarService = mock(PulsarService.class);
         NamespaceService namespaceService = mock(NamespaceService.class);
         when(pulsarService.getNamespaceService()).thenReturn(namespaceService);
@@ -57,10 +54,7 @@ public class TransactionBufferHandlerImplTest {
         when(namespaceService.getBundleAsync(any())).thenReturn(CompletableFuture.completedFuture(mock(NamespaceBundle.class)));
         Optional<NamespaceEphemeralData> opData = Optional.empty();
         when(namespaceService.getOwnerAsync(any())).thenReturn(CompletableFuture.completedFuture(opData));
-        when(((PulsarClientImpl)pulsarClient).getConnection(anyString(), anyInt()))
-                .thenReturn(CompletableFuture.completedFuture(mock(ClientCnx.class)));
-        when(((PulsarClientImpl)pulsarClient).getConnection(anyString()))
-                .thenReturn(CompletableFuture.completedFuture(mock(ClientCnx.class)));
+        when(((PulsarClientImpl)pulsarClient).getConnection(anyString())).thenReturn(CompletableFuture.completedFuture(mock(ClientCnx.class)));
         TransactionBufferHandlerImpl handler = spy(new TransactionBufferHandlerImpl(pulsarService, null, 1000, 3000));
         doNothing().when(handler).endTxn(any());
         doReturn(CompletableFuture.completedFuture(mock(ClientCnx.class))).when(handler).getClientCnx(anyString());
@@ -81,9 +75,7 @@ public class TransactionBufferHandlerImplTest {
 
     @Test
     public void testMinRequestCredits() throws PulsarServerException {
-        ConnectionPool connectionPool = mock(ConnectionPool.class);
-        PulsarClientImpl pulsarClient = mock(PulsarClientImpl.class);
-        when(pulsarClient.getCnxPool()).thenReturn(connectionPool);
+        PulsarClient pulsarClient = mock(PulsarClientImpl.class);
         PulsarService pulsarService = mock(PulsarService.class);
         when(pulsarService.getClient()).thenReturn(pulsarClient);
         TransactionBufferHandlerImpl handler = spy(new TransactionBufferHandlerImpl(pulsarService, null, 50, 3000));

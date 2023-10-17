@@ -21,6 +21,7 @@ package org.apache.pulsar.io.kinesis;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -29,6 +30,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.pulsar.io.common.IOConfigUtils;
 import org.apache.pulsar.io.core.SourceContext;
 import org.mockito.Mockito;
 import org.testng.annotations.Test;
@@ -53,6 +55,30 @@ public class KinesisSourceConfigTests {
     }
 
     @Test
+    public final void loadFromYamlFileTest() throws IOException {
+        File yamlFile = getFile("sourceConfig.yaml");
+        KinesisSourceConfig config = KinesisSourceConfig.load(yamlFile.getAbsolutePath());
+        assertNotNull(config);
+        assertEquals(config.getAwsEndpoint(), "https://some.endpoint.aws");
+        assertEquals(config.getAwsRegion(), "us-east-1");
+        assertEquals(config.getAwsKinesisStreamName(), "my-stream");
+        assertEquals(config.getAwsCredentialPluginParam(),
+                "{\"accessKey\":\"myKey\",\"secretKey\":\"my-Secret\"}");
+        assertEquals(config.getApplicationName(), "My test application");
+        assertEquals(config.getCheckpointInterval(), 30000);
+        assertEquals(config.getBackoffTime(), 4000);
+        assertEquals(config.getNumRetries(), 3);
+        assertEquals(config.getReceiveQueueSize(), 2000);
+        assertEquals(config.getInitialPositionInStream(), InitialPositionInStream.TRIM_HORIZON);
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(config.getStartAtTime());
+        ZonedDateTime actual = ZonedDateTime.ofInstant(cal.toInstant(), ZoneOffset.UTC);
+        ZonedDateTime expected = ZonedDateTime.ofInstant(DAY.toInstant(), ZoneOffset.UTC);
+        assertEquals(actual, expected);
+    }
+
+    @Test
     public final void loadFromMapTest() throws IOException {
         Map<String, Object> map = new HashMap<String, Object> ();
         map.put("awsEndpoint", "https://some.endpoint.aws");
@@ -63,11 +89,12 @@ public class KinesisSourceConfigTests {
         map.put("backoffTime", "4000");
         map.put("numRetries", "3");
         map.put("receiveQueueSize", 2000);
+        map.put("applicationName", "My test application");
         map.put("initialPositionInStream", InitialPositionInStream.TRIM_HORIZON);
         map.put("startAtTime", DAY);
 
         SourceContext sourceContext = Mockito.mock(SourceContext.class);
-        KinesisSourceConfig config = KinesisSourceConfig.load(map, sourceContext);
+        KinesisSourceConfig config = IOConfigUtils.loadWithSecrets(map, KinesisSourceConfig.class, sourceContext);
 
         assertNotNull(config);
         assertEquals(config.getAwsEndpoint(), "https://some.endpoint.aws");
@@ -75,7 +102,7 @@ public class KinesisSourceConfigTests {
         assertEquals(config.getAwsKinesisStreamName(), "my-stream");
         assertEquals(config.getAwsCredentialPluginParam(),
                 "{\"accessKey\":\"myKey\",\"secretKey\":\"my-Secret\"}");
-        assertEquals(config.getApplicationName(), "pulsar-kinesis");
+        assertEquals(config.getApplicationName(), "My test application");
         assertEquals(config.getCheckpointInterval(), 30000);
         assertEquals(config.getBackoffTime(), 4000);
         assertEquals(config.getNumRetries(), 3);
@@ -106,7 +133,7 @@ public class KinesisSourceConfigTests {
         SourceContext sourceContext = Mockito.mock(SourceContext.class);
         Mockito.when(sourceContext.getSecret("awsCredentialPluginParam"))
                 .thenReturn("{\"accessKey\":\"myKey\",\"secretKey\":\"my-Secret\"}");
-        KinesisSourceConfig config = KinesisSourceConfig.load(map, sourceContext);
+        KinesisSourceConfig config = IOConfigUtils.loadWithSecrets(map, KinesisSourceConfig.class, sourceContext);
 
         assertNotNull(config);
         assertEquals(config.getAwsEndpoint(), "https://some.endpoint.aws");
@@ -129,17 +156,19 @@ public class KinesisSourceConfigTests {
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = "awsCredentialPluginParam cannot be null")
+            expectedExceptionsMessageRegExp = "empty aws-credential param")
     public final void missingCredentialsTest() throws Exception {
         Map<String, Object> map = new HashMap<String, Object> ();
         map.put("awsEndpoint", "https://some.endpoint.aws");
         map.put("awsRegion", "us-east-1");
         map.put("awsKinesisStreamName", "my-stream");
-        KinesisSourceConfig.load(map, Mockito.mock(SourceContext.class));
+
+        KinesisSource source = new KinesisSource();
+        source.open(map, null);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = "When initialPositionInStream is AT_TIMESTAMP, startAtTime must be specified")
+            expectedExceptionsMessageRegExp = "Timestamp must be specified")
     public final void missingStartTimeTest() throws Exception {
         Map<String, Object> map = new HashMap<String, Object> ();
         map.put("awsEndpoint", "https://some.endpoint.aws");
@@ -148,16 +177,13 @@ public class KinesisSourceConfigTests {
         map.put("awsCredentialPluginParam",
                 "{\"accessKey\":\"myKey\",\"secretKey\":\"my-Secret\"}");
         map.put("initialPositionInStream", InitialPositionInStream.AT_TIMESTAMP);
-        KinesisSourceConfig.load(map, Mockito.mock(SourceContext.class));
+
+        KinesisSource source = new KinesisSource();
+        source.open(map, null);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public final void missCloudWatchEndpointTest() {
-        Map<String, Object> map = new HashMap<String, Object> ();
-        map.put("awsEndpoint", "https://some.endpoint.aws");
-        map.put("awsKinesisStreamName", "my-stream");
-        map.put("awsCredentialPluginParam",
-                "{\"accessKey\":\"myKey\",\"secretKey\":\"my-Secret\"}");
-        KinesisSourceConfig.load(map, Mockito.mock(SourceContext.class));
+    private File getFile(String name) {
+        ClassLoader classLoader = getClass().getClassLoader();
+        return new File(classLoader.getResource(name).getFile());
     }
 }

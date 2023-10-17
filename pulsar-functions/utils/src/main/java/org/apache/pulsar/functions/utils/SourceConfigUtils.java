@@ -448,9 +448,6 @@ public class SourceConfigUtils {
             validateBatchSourceConfigUpdate(existingConfig.getBatchSourceConfig(), newConfig.getBatchSourceConfig());
             mergedConfig.setBatchSourceConfig(newConfig.getBatchSourceConfig());
         }
-        if (newConfig.getProducerConfig() != null) {
-            mergedConfig.setProducerConfig(newConfig.getProducerConfig());
-        }
         return mergedConfig;
     }
 

@@ -34,7 +34,7 @@ public class StrategicCompactionRetentionTest extends CompactionRetentionTest {
     @Override
     public void setup() throws Exception {
         super.setup();
-        compactor = new StrategicTwoPhaseCompactor(conf, pulsarClient, bk, compactionScheduler);
+        compactor = new StrategicTwoPhaseCompactor(conf, pulsarClient, bk, compactionScheduler, 1);
         strategy = new TopicCompactionStrategyTest.DummyTopicCompactionStrategy();
     }
 

@@ -61,8 +61,6 @@ public class TransactionBufferHandlerImpl implements TransactionBufferHandler {
     private final PulsarService pulsarService;
     private final PulsarClientImpl pulsarClient;
 
-    private final int randomKeyForSelectConnection;
-
     private static final AtomicIntegerFieldUpdater<TransactionBufferHandlerImpl> REQUEST_CREDITS_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(TransactionBufferHandlerImpl.class, "requestCredits");
     private volatile int requestCredits;
@@ -76,7 +74,6 @@ public class TransactionBufferHandlerImpl implements TransactionBufferHandler {
         this.operationTimeoutInMills = operationTimeoutInMills;
         this.timer = timer;
         this.requestCredits = Math.max(100, maxConcurrentRequests);
-        this.randomKeyForSelectConnection = pulsarClient.getCnxPool().genRandomKeyToSelectCon();
     }
 
     @Override
@@ -299,7 +296,7 @@ public class TransactionBufferHandlerImpl implements TransactionBufferHandler {
     }
 
     public CompletableFuture<ClientCnx> getClientCnxWithLookup(String topic) {
-        return pulsarClient.getConnection(topic, randomKeyForSelectConnection);
+        return pulsarClient.getConnection(topic);
     }
 
     public CompletableFuture<ClientCnx> getClientCnx(String topic) {
@@ -320,8 +317,7 @@ public class TransactionBufferHandlerImpl implements TransactionBufferHandler {
                                 }
                                 InetSocketAddress brokerAddress =
                                         InetSocketAddress.createUnresolved(uri.getHost(), uri.getPort());
-                                return pulsarClient.getConnection(brokerAddress, brokerAddress,
-                                        randomKeyForSelectConnection);
+                                return pulsarClient.getConnection(brokerAddress, brokerAddress);
                             } else {
                                 // Bundle is unloading, lookup topic
                                 return getClientCnxWithLookup(topic);

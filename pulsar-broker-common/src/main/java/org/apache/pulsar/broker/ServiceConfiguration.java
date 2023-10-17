@@ -1355,6 +1355,12 @@ public class ServiceConfiguration implements PulsarConfiguration {
     private Set<String> brokerInterceptors = new TreeSet<>();
 
     @FieldContext(
+        category = CATEGORY_SERVER,
+        doc = "Enable or disable the broker interceptor, which is only used for testing for now"
+    )
+    private boolean disableBrokerInterceptors = true;
+
+    @FieldContext(
             category = CATEGORY_SERVER,
             doc = "List of interceptors for payload processing.")
     private Set<String> brokerEntryPayloadProcessors = new LinkedHashSet<>();
@@ -2419,10 +2425,9 @@ public class ServiceConfiguration implements PulsarConfiguration {
     @FieldContext(
             dynamic = true,
             category = CATEGORY_LOAD_BALANCER,
-            doc = "Direct Memory Resource Usage Weight. Direct memory usage cannot accurately reflect the "
-                    + "machine's load, and it is not recommended to use it to score the machine's load."
+            doc = "Direct Memory Resource Usage Weight"
     )
-    private double loadBalancerDirectMemoryResourceWeight = 0;
+    private double loadBalancerDirectMemoryResourceWeight = 1.0;
 
     @FieldContext(
             dynamic = true,

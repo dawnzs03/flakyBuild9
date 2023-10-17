@@ -31,7 +31,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @Test(groups = "broker-impl")
 public class ControlledClusterFailoverTest {
@@ -89,8 +88,6 @@ public class ControlledClusterFailoverTest {
 
         ControlledClusterFailover controlledClusterFailover = Mockito.spy((ControlledClusterFailover) provider);
         PulsarClientImpl pulsarClient = mock(PulsarClientImpl.class);
-        ConnectionPool connectionPool = mock(ConnectionPool.class);
-        when(pulsarClient.getCnxPool()).thenReturn(connectionPool);
 
         controlledClusterFailover.initialize(pulsarClient);
 

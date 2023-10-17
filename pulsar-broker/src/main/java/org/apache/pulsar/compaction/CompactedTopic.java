@@ -38,8 +38,7 @@ public interface CompactedTopic {
      */
     @Deprecated
     void asyncReadEntriesOrWait(ManagedCursor cursor,
-                                int maxEntries,
-                                long bytesToRead,
+                                int numberOfEntriesToRead,
                                 boolean isFirstRead,
                                 ReadEntriesCallback callback,
                                 Consumer consumer);
