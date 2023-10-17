@@ -30,17 +30,10 @@ import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertAcked;
 public class SegmentReplicationUsingRemoteStoreIT extends SegmentReplicationIT {
 
     private static final String REPOSITORY_NAME = "test-remote-store-repo";
-    protected Path absolutePath;
 
     @Override
     protected Settings nodeSettings(int nodeOrdinal) {
-        if (absolutePath == null) {
-            absolutePath = randomRepoPath().toAbsolutePath();
-        }
-        return Settings.builder()
-            .put(super.nodeSettings(nodeOrdinal))
-            .put(remoteStoreClusterSettings(REPOSITORY_NAME, absolutePath))
-            .build();
+        return Settings.builder().put(super.nodeSettings(nodeOrdinal)).put(remoteStoreClusterSettings(REPOSITORY_NAME)).build();
     }
 
     protected boolean segmentReplicationWithRemoteEnabled() {
@@ -59,6 +52,10 @@ public class SegmentReplicationUsingRemoteStoreIT extends SegmentReplicationIT {
     @Before
     public void setup() {
         internalCluster().startClusterManagerOnlyNode();
+        Path absolutePath = randomRepoPath().toAbsolutePath();
+        assertAcked(
+            clusterAdmin().preparePutRepository(REPOSITORY_NAME).setType("fs").setSettings(Settings.builder().put("location", absolutePath))
+        );
     }
 
     @After

@@ -8,7 +8,6 @@
 
 package org.opensearch.common.crypto;
 
-import org.opensearch.common.annotation.ExperimentalApi;
 import org.opensearch.common.io.InputStreamContainer;
 
 import java.io.IOException;
@@ -21,7 +20,6 @@ import java.io.InputStream;
  * T - Encryption Metadata / CryptoContext
  * U - Parsed Encryption Metadata / CryptoContext
  */
-@ExperimentalApi
 public interface CryptoHandler<T, U> {
 
     /**

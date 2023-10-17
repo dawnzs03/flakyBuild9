@@ -146,7 +146,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -1559,29 +1558,17 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                     canMatch = aliasFilterCanMatch;
                 }
                 final FieldDoc searchAfterFieldDoc = getSearchAfterFieldDoc(request, context);
-                final Integer trackTotalHitsUpto = request.source() == null ? null : request.source().trackTotalHitsUpTo();
-                canMatch = canMatch && canMatchSearchAfter(searchAfterFieldDoc, minMax, sortBuilder, trackTotalHitsUpto);
+                canMatch = canMatch && canMatchSearchAfter(searchAfterFieldDoc, minMax, sortBuilder);
 
                 return new CanMatchResponse(canMatch || hasRefreshPending, minMax);
             }
         }
     }
 
-    public static boolean canMatchSearchAfter(
-        FieldDoc searchAfter,
-        MinAndMax<?> minMax,
-        FieldSortBuilder primarySortField,
-        Integer trackTotalHitsUpto
-    ) {
+    public static boolean canMatchSearchAfter(FieldDoc searchAfter, MinAndMax<?> minMax, FieldSortBuilder primarySortField) {
         // Check for sort.missing == null, since in case of missing values sort queries, if segment/shard's min/max
         // is out of search_after range, it still should be printed and hence we should not skip segment/shard.
-        // Skipping search on shard/segment entirely can cause mismatch on total_tracking_hits, hence skip only if
-        // track_total_hits is false.
-        if (searchAfter != null
-            && minMax != null
-            && primarySortField != null
-            && primarySortField.missing() == null
-            && Objects.equals(trackTotalHitsUpto, SearchContext.TRACK_TOTAL_HITS_DISABLED)) {
+        if (searchAfter != null && minMax != null && primarySortField != null && primarySortField.missing() == null) {
             final Object searchAfterPrimary = searchAfter.fields[0];
             if (primarySortField.order() == SortOrder.DESC) {
                 if (minMax.compareMin(searchAfterPrimary) > 0) {

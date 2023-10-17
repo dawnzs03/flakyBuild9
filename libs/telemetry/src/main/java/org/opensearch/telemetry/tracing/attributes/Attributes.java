@@ -8,8 +8,6 @@
 
 package org.opensearch.telemetry.tracing.attributes;
 
-import org.opensearch.common.annotation.ExperimentalApi;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,10 +15,7 @@ import java.util.Objects;
 
 /**
  * Class to create attributes for a span.
- *
- * @opensearch.experimental
  */
-@ExperimentalApi
 public class Attributes {
     private final Map<String, Object> attributesMap;
     /**

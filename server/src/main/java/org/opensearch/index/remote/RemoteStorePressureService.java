@@ -133,18 +133,18 @@ public class RemoteStorePressureService {
             if (pressureTracker.getRefreshSeqNoLag() <= 1) {
                 return true;
             }
-            if (pressureTracker.isUploadBytesMovingAverageReady() == false) {
+            if (pressureTracker.isUploadBytesAverageReady() == false) {
                 logger.trace("upload bytes moving average is not ready");
                 return true;
             }
-            double dynamicBytesLagThreshold = pressureTracker.getUploadBytesMovingAverage() * pressureSettings.getBytesLagVarianceFactor();
+            double dynamicBytesLagThreshold = pressureTracker.getUploadBytesAverage() * pressureSettings.getBytesLagVarianceFactor();
             long bytesLag = pressureTracker.getBytesLag();
             return bytesLag <= dynamicBytesLagThreshold;
         }
 
         @Override
         public String rejectionMessage(RemoteSegmentTransferTracker pressureTracker, ShardId shardId) {
-            double dynamicBytesLagThreshold = pressureTracker.getUploadBytesMovingAverage() * pressureSettings.getBytesLagVarianceFactor();
+            double dynamicBytesLagThreshold = pressureTracker.getUploadBytesAverage() * pressureSettings.getBytesLagVarianceFactor();
             return String.format(
                 Locale.ROOT,
                 "rejected execution on primary shard:%s due to remote segments lagging behind local segments."
@@ -179,20 +179,18 @@ public class RemoteStorePressureService {
             if (pressureTracker.getRefreshSeqNoLag() <= 1) {
                 return true;
             }
-            if (pressureTracker.isUploadTimeMovingAverageReady() == false) {
+            if (pressureTracker.isUploadTimeMsAverageReady() == false) {
                 logger.trace("upload time moving average is not ready");
                 return true;
             }
             long timeLag = pressureTracker.getTimeMsLag();
-            double dynamicTimeLagThreshold = pressureTracker.getUploadTimeMovingAverage() * pressureSettings
-                .getUploadTimeLagVarianceFactor();
+            double dynamicTimeLagThreshold = pressureTracker.getUploadTimeMsAverage() * pressureSettings.getUploadTimeLagVarianceFactor();
             return timeLag <= dynamicTimeLagThreshold;
         }
 
         @Override
         public String rejectionMessage(RemoteSegmentTransferTracker pressureTracker, ShardId shardId) {
-            double dynamicTimeLagThreshold = pressureTracker.getUploadTimeMovingAverage() * pressureSettings
-                .getUploadTimeLagVarianceFactor();
+            double dynamicTimeLagThreshold = pressureTracker.getUploadTimeMsAverage() * pressureSettings.getUploadTimeLagVarianceFactor();
             return String.format(
                 Locale.ROOT,
                 "rejected execution on primary shard:%s due to remote segments lagging behind local segments."

@@ -7,6 +7,6 @@
  */
 
 /**
- * Contains attributes management
+ * Contains No-op implementations
  */
 package org.opensearch.telemetry.tracing.attributes;

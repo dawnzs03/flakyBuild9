@@ -8,16 +8,12 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.ExperimentalApi;
 import org.opensearch.telemetry.tracing.noop.NoopScopedSpan;
 
 /**
  * An auto-closeable that represents scoped span.
  * It provides interface for all the span operations.
- *
- * @opensearch.experimental
  */
-@ExperimentalApi
 public interface ScopedSpan extends AutoCloseable {
     /**
      * No-op Scope implementation

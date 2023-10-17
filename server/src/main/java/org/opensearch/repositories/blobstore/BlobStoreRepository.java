@@ -72,7 +72,6 @@ import org.opensearch.common.blobstore.BlobMetadata;
 import org.opensearch.common.blobstore.BlobPath;
 import org.opensearch.common.blobstore.BlobStore;
 import org.opensearch.common.blobstore.DeleteResult;
-import org.opensearch.common.blobstore.EncryptedBlobStore;
 import org.opensearch.common.blobstore.fs.FsBlobContainer;
 import org.opensearch.common.blobstore.transfer.stream.OffsetRangeInputStream;
 import org.opensearch.common.blobstore.transfer.stream.RateLimitingOffsetRangeInputStream;
@@ -286,15 +285,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
      */
     public static final Setting<Boolean> READONLY_SETTING = Setting.boolSetting("readonly", false, Setting.Property.NodeScope);
 
-    /***
-     * Setting to set repository as system repository
-     */
-    public static final Setting<Boolean> SYSTEM_REPOSITORY_SETTING = Setting.boolSetting(
-        "system_repository",
-        false,
-        Setting.Property.NodeScope
-    );
-
     protected final boolean supportURLRepo;
 
     private final int maxShardBlobDeleteBatch;
@@ -355,8 +345,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     );
 
     private final boolean readOnly;
-
-    private final boolean isSystemRepository;
 
     private final Object lock = new Object();
 
@@ -423,7 +411,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         remoteUploadRateLimiter = getRateLimiter(metadata.settings(), "max_remote_upload_bytes_per_sec", ByteSizeValue.ZERO);
         remoteDownloadRateLimiter = getRateLimiter(metadata.settings(), "max_remote_download_bytes_per_sec", ByteSizeValue.ZERO);
         readOnly = READONLY_SETTING.get(metadata.settings());
-        isSystemRepository = SYSTEM_REPOSITORY_SETTING.get(metadata.settings());
         cacheRepositoryData = CACHE_REPOSITORY_DATA.get(metadata.settings());
         bufferSize = Math.toIntExact(BUFFER_SIZE_SETTING.get(metadata.settings()).getBytes());
         maxShardBlobDeleteBatch = MAX_SNAPSHOT_SHARD_BLOB_DELETE_BATCH_SIZE.get(metadata.settings());
@@ -767,9 +754,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     }
                     try {
                         store = createBlobStore();
-                        if (metadata.cryptoMetadata() != null) {
-                            store = new EncryptedBlobStore(store, metadata.cryptoMetadata());
-                        }
                     } catch (RepositoryException e) {
                         throw e;
                     } catch (Exception e) {
@@ -815,10 +799,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     @Override
     public RepositoryMetadata getMetadata() {
         return metadata;
-    }
-
-    public NamedXContentRegistry getNamedXContentRegistry() {
-        return namedXContentRegistry;
     }
 
     public Compressor getCompressor() {
@@ -1843,10 +1823,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 byte[] testBytes = Strings.toUTF8Bytes(seed);
                 BlobContainer testContainer = blobStore().blobContainer(basePath().add(testBlobPrefix(seed)));
                 BytesArray bytes = new BytesArray(testBytes);
-                if (isSystemRepository == false) {
-                    try (InputStream stream = bytes.streamInput()) {
-                        testContainer.writeBlobAtomic("master.dat", stream, bytes.length(), true);
-                    }
+                try (InputStream stream = bytes.streamInput()) {
+                    testContainer.writeBlobAtomic("master.dat", stream, bytes.length(), true);
                 }
                 return seed;
             }
@@ -2153,11 +2131,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     @Override
     public boolean isReadOnly() {
         return readOnly;
-    }
-
-    @Override
-    public boolean isSystemRepository() {
-        return isSystemRepository;
     }
 
     /**
@@ -3150,9 +3123,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     public void verify(String seed, DiscoveryNode localNode) {
-        if (isSystemRepository == false) {
-            assertSnapshotOrGenericThread();
-        }
+        assertSnapshotOrGenericThread();
         if (isReadOnly()) {
             try {
                 latestIndexBlobId();
@@ -3177,33 +3148,30 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     exp
                 );
             }
-
-            if (isSystemRepository == false) {
-                try (InputStream masterDat = testBlobContainer.readBlob("master.dat")) {
-                    final String seedRead = Streams.readFully(masterDat).utf8ToString();
-                    if (seedRead.equals(seed) == false) {
-                        throw new RepositoryVerificationException(
-                            metadata.name(),
-                            "Seed read from master.dat was [" + seedRead + "] but expected seed [" + seed + "]"
-                        );
-                    }
-                } catch (NoSuchFileException e) {
+            try (InputStream masterDat = testBlobContainer.readBlob("master.dat")) {
+                final String seedRead = Streams.readFully(masterDat).utf8ToString();
+                if (seedRead.equals(seed) == false) {
                     throw new RepositoryVerificationException(
                         metadata.name(),
-                        "a file written by cluster-manager to the store ["
-                            + blobStore()
-                            + "] cannot be accessed on the node ["
-                            + localNode
-                            + "]. "
-                            + "This might indicate that the store ["
-                            + blobStore()
-                            + "] is not shared between this node and the cluster-manager node or "
-                            + "that permissions on the store don't allow reading files written by the cluster-manager node",
-                        e
+                        "Seed read from master.dat was [" + seedRead + "] but expected seed [" + seed + "]"
                     );
-                } catch (Exception e) {
-                    throw new RepositoryVerificationException(metadata.name(), "Failed to verify repository", e);
                 }
+            } catch (NoSuchFileException e) {
+                throw new RepositoryVerificationException(
+                    metadata.name(),
+                    "a file written by cluster-manager to the store ["
+                        + blobStore()
+                        + "] cannot be accessed on the node ["
+                        + localNode
+                        + "]. "
+                        + "This might indicate that the store ["
+                        + blobStore()
+                        + "] is not shared between this node and the cluster-manager node or "
+                        + "that permissions on the store don't allow reading files written by the cluster-manager node",
+                    e
+                );
+            } catch (Exception e) {
+                throw new RepositoryVerificationException(metadata.name(), "Failed to verify repository", e);
             }
         }
     }

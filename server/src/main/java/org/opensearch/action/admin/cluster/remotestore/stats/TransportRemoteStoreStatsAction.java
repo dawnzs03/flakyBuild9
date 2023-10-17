@@ -25,7 +25,6 @@ import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.index.IndexService;
 import org.opensearch.index.remote.RemoteSegmentTransferTracker;
 import org.opensearch.index.remote.RemoteStoreStatsTrackerFactory;
-import org.opensearch.index.remote.RemoteTranslogTransferTracker;
 import org.opensearch.index.shard.IndexShard;
 import org.opensearch.index.shard.ShardNotFoundException;
 import org.opensearch.indices.IndicesService;
@@ -158,11 +157,6 @@ public class TransportRemoteStoreStatsAction extends TransportBroadcastByNodeAct
             indexShard.shardId()
         );
         assert Objects.nonNull(remoteSegmentTransferTracker);
-        RemoteTranslogTransferTracker remoteTranslogTransferTracker = remoteStoreStatsTrackerFactory.getRemoteTranslogTransferTracker(
-            indexShard.shardId()
-        );
-        assert Objects.nonNull(remoteTranslogTransferTracker);
-
-        return new RemoteStoreStats(remoteSegmentTransferTracker.stats(), remoteTranslogTransferTracker.stats(), indexShard.routingEntry());
+        return new RemoteStoreStats(remoteSegmentTransferTracker.stats(), indexShard.routingEntry());
     }
 }

@@ -8,16 +8,12 @@
 
 package org.opensearch.telemetry.tracing.noop;
 
-import org.opensearch.common.annotation.InternalApi;
 import org.opensearch.telemetry.tracing.Span;
 import org.opensearch.telemetry.tracing.SpanScope;
 
 /**
  * No-op implementation of {@link SpanScope}
- *
- * @opensearch.internal
  */
-@InternalApi
 public class NoopSpanScope implements SpanScope {
     /**
      * Constructor.

@@ -16,13 +16,12 @@ import org.apache.lucene.store.OutputStreamIndexOutput;
 import org.apache.lucene.util.Version;
 import org.opensearch.common.UUIDs;
 import org.opensearch.common.io.stream.BytesStreamOutput;
+import org.opensearch.common.lucene.store.ByteArrayIndexInput;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.index.store.remote.metadata.RemoteSegmentMetadata;
 import org.opensearch.indices.replication.checkpoint.ReplicationCheckpoint;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,7 +43,7 @@ public final class RemoteStoreTestUtils {
      * @return ByteArrayIndexInput: metadata file bytes with header and footer
      * @throws IOException IOException
      */
-    public static InputStream createMetadataFileBytes(
+    public static ByteArrayIndexInput createMetadataFileBytes(
         Map<String, String> segmentFilesMap,
         ReplicationCheckpoint replicationCheckpoint,
         SegmentInfos segmentInfos
@@ -62,7 +61,7 @@ public final class RemoteStoreTestUtils {
         indexOutput.writeBytes(byteArray, byteArray.length);
         CodecUtil.writeFooter(indexOutput);
         indexOutput.close();
-        return new ByteArrayInputStream(BytesReference.toBytes(output.bytes()));
+        return new ByteArrayIndexInput("segment metadata", BytesReference.toBytes(output.bytes()));
     }
 
     public static Map<String, String> getDummyMetadata(String prefix, int commitGeneration) {

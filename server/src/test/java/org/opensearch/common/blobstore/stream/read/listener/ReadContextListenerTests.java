@@ -70,7 +70,7 @@ public class ReadContextListenerTests extends OpenSearchTestCase {
         assertEquals(NUMBER_OF_PARTS * PART_SIZE, Files.size(fileLocation));
     }
 
-    public void testReadContextListenerFailure() throws Exception {
+    public void testReadContextListenerFailure() throws InterruptedException {
         Path fileLocation = path.resolve(UUID.randomUUID().toString());
         List<InputStreamContainer> blobPartStreams = initializeBlobPartStreams();
         CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -99,7 +99,8 @@ public class ReadContextListenerTests extends OpenSearchTestCase {
         readContextListener.onResponse(readContext);
 
         countDownLatch.await();
-        assertBusy(() -> { assertFalse(Files.exists(fileLocation)); });
+
+        assertFalse(Files.exists(fileLocation));
     }
 
     public void testReadContextListenerException() {

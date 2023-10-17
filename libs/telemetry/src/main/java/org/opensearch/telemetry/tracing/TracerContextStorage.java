@@ -8,8 +8,6 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.InternalApi;
-
 /**
  * Storage interface used for storing tracing context
  * @param <K> key type
@@ -17,7 +15,6 @@ import org.opensearch.common.annotation.InternalApi;
  *
  * @opensearch.internal
  */
-@InternalApi
 public interface TracerContextStorage<K, V> {
     /**
      * Key for storing current span

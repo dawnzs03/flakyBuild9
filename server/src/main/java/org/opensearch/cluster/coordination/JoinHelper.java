@@ -61,7 +61,6 @@ import org.opensearch.core.transport.TransportResponse;
 import org.opensearch.core.transport.TransportResponse.Empty;
 import org.opensearch.monitor.NodeHealthService;
 import org.opensearch.monitor.StatusInfo;
-import org.opensearch.node.remotestore.RemoteStoreNodeService;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.threadpool.ThreadPool.Names;
 import org.opensearch.transport.BytesTransportRequest;
@@ -136,7 +135,6 @@ public class JoinHelper {
         AllocationService allocationService,
         ClusterManagerService clusterManagerService,
         TransportService transportService,
-        RemoteStoreNodeService remoteStoreNodeService,
         LongSupplier currentTermSupplier,
         Supplier<ClusterState> currentStateSupplier,
         BiConsumer<JoinRequest, JoinCallback> joinHandler,
@@ -154,13 +152,7 @@ public class JoinHelper {
         this.nodeCommissioned = nodeCommissioned;
         this.namedWriteableRegistry = namedWriteableRegistry;
 
-        this.joinTaskExecutorGenerator = () -> new JoinTaskExecutor(
-            settings,
-            allocationService,
-            logger,
-            rerouteService,
-            remoteStoreNodeService
-        ) {
+        this.joinTaskExecutorGenerator = () -> new JoinTaskExecutor(settings, allocationService, logger, rerouteService) {
 
             private final long term = currentTermSupplier.getAsLong();
 

@@ -8,16 +8,14 @@
 
 package org.opensearch.telemetry;
 
-import org.opensearch.common.annotation.ExperimentalApi;
 import org.opensearch.telemetry.metrics.MetricsTelemetry;
 import org.opensearch.telemetry.tracing.TracingTelemetry;
 
 /**
  * Interface defining telemetry
  *
- * @opensearch.experimental
+ * @opensearch.internal
  */
-@ExperimentalApi
 public interface Telemetry {
 
     /**

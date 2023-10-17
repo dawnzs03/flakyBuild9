@@ -8,7 +8,6 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.InternalApi;
 import org.opensearch.telemetry.TelemetrySettings;
 import org.opensearch.telemetry.tracing.attributes.Attributes;
 import org.opensearch.telemetry.tracing.noop.NoopTracer;
@@ -22,7 +21,6 @@ import java.util.Map;
  *
  * @opensearch.internal
  */
-@InternalApi
 final class WrappedTracer implements Tracer {
 
     private final Tracer defaultTracer;

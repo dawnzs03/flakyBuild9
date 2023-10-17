@@ -8,7 +8,6 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.InternalApi;
 import org.opensearch.common.util.concurrent.ThreadContext;
 import org.opensearch.common.util.concurrent.ThreadContextStatePropagator;
 
@@ -22,7 +21,6 @@ import java.util.Optional;
  *
  * @opensearch.internal
  */
-@InternalApi
 public class ThreadContextBasedTracerContextStorage implements TracerContextStorage<String, Span>, ThreadContextStatePropagator {
 
     private final ThreadContext threadContext;

@@ -8,15 +8,11 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.ExperimentalApi;
 import org.opensearch.telemetry.tracing.attributes.Attributes;
 
 /**
  * Context for span details.
- *
- * @opensearch.experimental
  */
-@ExperimentalApi
 public final class SpanCreationContext {
     private final String spanName;
     private final Attributes attributes;

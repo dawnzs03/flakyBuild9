@@ -37,7 +37,6 @@ import org.apache.logging.log4j.Logger;
 import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.coordination.Coordinator;
 import org.opensearch.cluster.coordination.ElectionStrategy;
-import org.opensearch.cluster.coordination.PersistedStateRegistry;
 import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.cluster.routing.RerouteService;
 import org.opensearch.cluster.routing.allocation.AllocationService;
@@ -53,7 +52,6 @@ import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.common.transport.TransportAddress;
 import org.opensearch.gateway.GatewayMetaState;
 import org.opensearch.monitor.NodeHealthService;
-import org.opensearch.node.remotestore.RemoteStoreNodeService;
 import org.opensearch.plugins.DiscoveryPlugin;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportService;
@@ -131,9 +129,7 @@ public class DiscoveryModule {
         Path configFile,
         GatewayMetaState gatewayMetaState,
         RerouteService rerouteService,
-        NodeHealthService nodeHealthService,
-        PersistedStateRegistry persistedStateRegistry,
-        RemoteStoreNodeService remoteStoreNodeService
+        NodeHealthService nodeHealthService
     ) {
         final Collection<BiConsumer<DiscoveryNode, ClusterState>> joinValidators = new ArrayList<>();
         final Map<String, Supplier<SeedHostsProvider>> hostProviders = new HashMap<>();
@@ -209,9 +205,7 @@ public class DiscoveryModule {
                 new Random(Randomness.get().nextLong()),
                 rerouteService,
                 electionStrategy,
-                nodeHealthService,
-                persistedStateRegistry,
-                remoteStoreNodeService
+                nodeHealthService
             );
         } else {
             throw new IllegalArgumentException("Unknown discovery type [" + discoveryType + "]");

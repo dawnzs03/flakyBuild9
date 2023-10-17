@@ -42,8 +42,6 @@ import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.coordination.CoordinationMetadata;
 import org.opensearch.cluster.coordination.CoordinationMetadata.VotingConfigExclusion;
 import org.opensearch.cluster.coordination.CoordinationState;
-import org.opensearch.cluster.coordination.PersistedStateRegistry;
-import org.opensearch.cluster.coordination.PersistedStateRegistry.PersistedStateType;
 import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.cluster.metadata.Manifest;
 import org.opensearch.cluster.metadata.Metadata;
@@ -66,7 +64,6 @@ import org.opensearch.gateway.GatewayMetaState.RemotePersistedState;
 import org.opensearch.gateway.remote.ClusterMetadataManifest;
 import org.opensearch.gateway.remote.RemoteClusterStateService;
 import org.opensearch.node.Node;
-import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.threadpool.TestThreadPool;
 import org.opensearch.threadpool.ThreadPool;
@@ -81,7 +78,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 import org.mockito.Mockito;
 
@@ -95,7 +91,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 public class GatewayMetaStatePersistedStateTests extends OpenSearchTestCase {
-
     private NodeEnvironment nodeEnvironment;
     private ClusterName clusterName;
     private Settings settings;
@@ -126,15 +121,9 @@ public class GatewayMetaStatePersistedStateTests extends OpenSearchTestCase {
 
     private CoordinationState.PersistedState newGatewayPersistedState() {
         final MockGatewayMetaState gateway = new MockGatewayMetaState(localNode, bigArrays);
-        final PersistedStateRegistry persistedStateRegistry = persistedStateRegistry();
-        gateway.start(settings, nodeEnvironment, xContentRegistry(), persistedStateRegistry);
+        gateway.start(settings, nodeEnvironment, xContentRegistry());
         final CoordinationState.PersistedState persistedState = gateway.getPersistedState();
         assertThat(persistedState, instanceOf(GatewayMetaState.LucenePersistedState.class));
-        assertThat(
-            persistedStateRegistry.getPersistedState(PersistedStateType.LOCAL),
-            instanceOf(GatewayMetaState.LucenePersistedState.class)
-        );
-        assertThat(persistedStateRegistry.getPersistedState(PersistedStateType.REMOTE), nullValue());
         return persistedState;
     }
 
@@ -444,26 +433,6 @@ public class GatewayMetaStatePersistedStateTests extends OpenSearchTestCase {
                 new ClusterSettings(settings, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
                 () -> 0L
             );
-            Supplier<RemoteClusterStateService> remoteClusterStateServiceSupplier = () -> {
-                if (RemoteClusterStateService.REMOTE_CLUSTER_STATE_ENABLED_SETTING.get(settings) == true) {
-                    return new RemoteClusterStateService(
-                        nodeEnvironment.nodeId(),
-                        () -> new RepositoriesService(
-                            settings,
-                            clusterService,
-                            transportService,
-                            Collections.emptyMap(),
-                            Collections.emptyMap(),
-                            transportService.getThreadPool()
-                        ),
-                        settings,
-                        new ClusterSettings(settings, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
-                        () -> 0L
-                    );
-                } else {
-                    return null;
-                }
-            };
             gateway.start(
                 settings,
                 transportService,
@@ -471,9 +440,7 @@ public class GatewayMetaStatePersistedStateTests extends OpenSearchTestCase {
                 new MetaStateService(nodeEnvironment, xContentRegistry()),
                 null,
                 null,
-                persistedClusterStateService,
-                remoteClusterStateServiceSupplier.get(),
-                new PersistedStateRegistry()
+                persistedClusterStateService
             );
             final CoordinationState.PersistedState persistedState = gateway.getPersistedState();
             assertThat(persistedState, instanceOf(GatewayMetaState.AsyncLucenePersistedState.class));
@@ -750,31 +717,6 @@ public class GatewayMetaStatePersistedStateTests extends OpenSearchTestCase {
         );
 
         assertThrows(OpenSearchException.class, () -> remotePersistedState.setLastAcceptedState(secondClusterState));
-    }
-
-    public void testGatewayForRemoteState() throws IOException {
-        MockGatewayMetaState gateway = null;
-        try {
-            gateway = new MockGatewayMetaState(localNode, bigArrays);
-            final PersistedStateRegistry persistedStateRegistry = persistedStateRegistry();
-            final Settings settingWithRemoteStateEnabled = Settings.builder()
-                .put(settings)
-                .put(RemoteClusterStateService.REMOTE_CLUSTER_STATE_ENABLED_SETTING.getKey(), true)
-                .build();
-            gateway.start(settingWithRemoteStateEnabled, nodeEnvironment, xContentRegistry(), persistedStateRegistry);
-            final CoordinationState.PersistedState persistedState = gateway.getPersistedState();
-            assertThat(persistedState, instanceOf(GatewayMetaState.LucenePersistedState.class));
-            assertThat(
-                persistedStateRegistry.getPersistedState(PersistedStateType.LOCAL),
-                instanceOf(GatewayMetaState.LucenePersistedState.class)
-            );
-            assertThat(
-                persistedStateRegistry.getPersistedState(PersistedStateType.REMOTE),
-                instanceOf(GatewayMetaState.RemotePersistedState.class)
-            );
-        } finally {
-            IOUtils.close(gateway);
-        }
     }
 
     private static BigArrays getBigArrays() {

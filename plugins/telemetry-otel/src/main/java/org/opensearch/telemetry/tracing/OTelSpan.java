@@ -21,9 +21,9 @@ class OTelSpan extends AbstractSpan {
 
     /**
      * Constructor
-     * @param spanName span name
-     * @param span the delegate span
-     * @param parentSpan the parent span
+     * @param spanName
+     * @param span
+     * @param parentSpan
      */
     public OTelSpan(String spanName, Span span, org.opensearch.telemetry.tracing.Span parentSpan) {
         super(spanName, parentSpan);

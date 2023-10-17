@@ -27,9 +27,7 @@ import org.opensearch.plugins.Plugin;
 import org.opensearch.test.OpenSearchIntegTestCase;
 import org.opensearch.test.disruption.NetworkDisruption;
 import org.opensearch.test.transport.MockTransportService;
-import org.junit.Before;
 
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -37,26 +35,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertAcked;
 import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertHitCount;
 import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertNoFailures;
 import static org.hamcrest.Matchers.equalTo;
 
 @OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.TEST, numDataNodes = 0)
+
 public class PrimaryTermValidationIT extends RemoteStoreBaseIntegTestCase {
 
     private static final String INDEX_NAME = "remote-store-test-idx-1";
-    protected Path absolutePath;
-    protected Path absolutePath2;
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
         return Arrays.asList(MockTransportService.TestPlugin.class);
-    }
-
-    @Before
-    public void setup() {
-        absolutePath = randomRepoPath().toAbsolutePath();
-        absolutePath2 = randomRepoPath().toAbsolutePath();
     }
 
     public void testPrimaryTermValidation() throws Exception {
@@ -69,12 +61,20 @@ public class PrimaryTermValidationIT extends RemoteStoreBaseIntegTestCase {
             .put(FollowersChecker.FOLLOWER_CHECK_TIMEOUT_SETTING.getKey(), "1s")
             .put(FollowersChecker.FOLLOWER_CHECK_INTERVAL_SETTING.getKey(), "1s")
             .put(FollowersChecker.FOLLOWER_CHECK_RETRY_COUNT_SETTING.getKey(), 1)
-            .put(remoteStoreClusterSettings(REPOSITORY_NAME, absolutePath, REPOSITORY_2_NAME, absolutePath2))
+            .put(remoteStoreClusterSettings(REPOSITORY_NAME, REPOSITORY_2_NAME, true))
             .build();
         internalCluster().startClusterManagerOnlyNode(clusterSettings);
-        internalCluster().startDataOnlyNodes(2, clusterSettings);
 
-        // Create index
+        // Create repository
+        absolutePath = randomRepoPath().toAbsolutePath();
+        assertAcked(
+            clusterAdmin().preparePutRepository(REPOSITORY_NAME).setType("fs").setSettings(Settings.builder().put("location", absolutePath))
+        );
+        absolutePath2 = randomRepoPath().toAbsolutePath();
+        putRepository(absolutePath2, REPOSITORY_2_NAME);
+
+        // Start data nodes and create index
+        internalCluster().startDataOnlyNodes(2, clusterSettings);
         createIndex(INDEX_NAME, remoteStoreIndexSettings(1));
         ensureYellowAndNoInitializingShards(INDEX_NAME);
         ensureGreen(INDEX_NAME);
@@ -156,7 +156,6 @@ public class PrimaryTermValidationIT extends RemoteStoreBaseIntegTestCase {
         // received the following exception.
         ShardNotFoundException exception = assertThrows(ShardNotFoundException.class, () -> indexSameDoc(primaryNode, INDEX_NAME));
         assertTrue(exception.getMessage().contains("no such shard"));
-        internalCluster().clearDisruptionScheme();
         ensureStableCluster(3);
         ensureGreen(INDEX_NAME);
     }

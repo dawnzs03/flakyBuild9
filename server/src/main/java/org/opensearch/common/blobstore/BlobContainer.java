@@ -231,19 +231,11 @@ public interface BlobContainer {
             throw new IllegalArgumentException("limit should not be a negative value");
         }
         try {
-            listener.onResponse(listBlobsByPrefixInSortedOrder(blobNamePrefix, limit, blobNameSortOrder));
+            List<BlobMetadata> blobNames = new ArrayList<>(listBlobsByPrefix(blobNamePrefix).values());
+            blobNames.sort(blobNameSortOrder.comparator());
+            listener.onResponse(blobNames.subList(0, Math.min(blobNames.size(), limit)));
         } catch (Exception e) {
             listener.onFailure(e);
         }
-    }
-
-    default List<BlobMetadata> listBlobsByPrefixInSortedOrder(String blobNamePrefix, int limit, BlobNameSortOrder blobNameSortOrder)
-        throws IOException {
-        if (limit < 0) {
-            throw new IllegalArgumentException("limit should not be a negative value");
-        }
-        List<BlobMetadata> blobNames = new ArrayList<>(listBlobsByPrefix(blobNamePrefix).values());
-        blobNames.sort(blobNameSortOrder.comparator());
-        return blobNames.subList(0, Math.min(blobNames.size(), limit));
     }
 }

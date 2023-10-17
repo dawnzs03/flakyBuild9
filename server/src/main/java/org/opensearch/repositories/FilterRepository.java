@@ -168,11 +168,6 @@ public class FilterRepository implements Repository {
     }
 
     @Override
-    public boolean isSystemRepository() {
-        return in.isSystemRepository();
-    }
-
-    @Override
     public void snapshotShard(
         Store store,
         MapperService mapperService,

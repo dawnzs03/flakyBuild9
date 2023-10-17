@@ -8,8 +8,6 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.ExperimentalApi;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,9 +16,8 @@ import java.util.function.BiConsumer;
 /**
  * Interface defining the tracing related context propagation
  *
- * @opensearch.experimental
+ * @opensearch.internal
  */
-@ExperimentalApi
 public interface TracingContextPropagator {
 
     /**

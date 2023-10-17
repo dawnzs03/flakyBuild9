@@ -8,7 +8,6 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.InternalApi;
 import org.opensearch.telemetry.tracing.noop.NoopTracer;
 
 import java.util.Optional;
@@ -18,7 +17,6 @@ import java.util.Optional;
  *
  * @opensearch.internal
  */
-@InternalApi
 public class NoopTracerFactory extends TracerFactory {
     public NoopTracerFactory() {
         super(null, Optional.empty(), null);

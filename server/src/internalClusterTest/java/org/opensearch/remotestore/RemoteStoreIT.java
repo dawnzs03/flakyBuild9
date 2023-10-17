@@ -29,6 +29,7 @@ import org.opensearch.plugins.Plugin;
 import org.opensearch.test.OpenSearchIntegTestCase;
 import org.opensearch.test.transport.MockTransportService;
 import org.hamcrest.MatcherAssert;
+import org.junit.Before;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -46,7 +47,7 @@ import static org.hamcrest.Matchers.comparesEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.oneOf;
 
-@OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.TEST, numDataNodes = 0)
+@OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE, numDataNodes = 0)
 public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
 
     protected final String INDEX_NAME = "remote-store-test-idx-1";
@@ -56,13 +57,18 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
         return Arrays.asList(MockTransportService.TestPlugin.class);
     }
 
+    @Before
+    public void setup() {
+        setupRepo();
+    }
+
     @Override
     public Settings indexSettings() {
         return remoteStoreIndexSettings(0);
     }
 
     private void testPeerRecovery(int numberOfIterations, boolean invokeFlush) throws Exception {
-        internalCluster().startNodes(3);
+        internalCluster().startDataOnlyNodes(3);
         createIndex(INDEX_NAME, remoteStoreIndexSettings(0));
         ensureYellowAndNoInitializingShards(INDEX_NAME);
         ensureGreen(INDEX_NAME);
@@ -123,7 +129,7 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
     }
 
     private void verifyRemoteStoreCleanup() throws Exception {
-        internalCluster().startNodes(3);
+        internalCluster().startDataOnlyNodes(3);
         createIndex(INDEX_NAME, remoteStoreIndexSettings(1));
 
         indexData(5, randomBoolean(), INDEX_NAME);
@@ -132,7 +138,7 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
             .prepareGetSettings(INDEX_NAME)
             .get()
             .getSetting(INDEX_NAME, IndexMetadata.SETTING_INDEX_UUID);
-        Path indexPath = Path.of(String.valueOf(segmentRepoPath), indexUUID);
+        Path indexPath = Path.of(String.valueOf(absolutePath), indexUUID);
         assertTrue(getFileCount(indexPath) > 0);
         assertAcked(client().admin().indices().delete(new DeleteIndexRequest(INDEX_NAME)).get());
         // Delete is async. Give time for it
@@ -149,7 +155,7 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
     }
 
     public void testStaleCommitDeletionWithInvokeFlush() throws Exception {
-        internalCluster().startNode();
+        internalCluster().startDataOnlyNodes(1);
         createIndex(INDEX_NAME, remoteStoreIndexSettings(1, 10000l, -1));
         int numberOfIterations = randomIntBetween(5, 15);
         indexData(numberOfIterations, true, INDEX_NAME);
@@ -158,7 +164,7 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
             .prepareGetSettings(INDEX_NAME)
             .get()
             .getSetting(INDEX_NAME, IndexMetadata.SETTING_INDEX_UUID);
-        Path indexPath = Path.of(String.valueOf(segmentRepoPath), indexUUID, "/0/segments/metadata");
+        Path indexPath = Path.of(String.valueOf(absolutePath), indexUUID, "/0/segments/metadata");
         // Delete is async.
         assertBusy(() -> {
             int actualFileCount = getFileCount(indexPath);
@@ -176,7 +182,7 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
     }
 
     public void testStaleCommitDeletionWithoutInvokeFlush() throws Exception {
-        internalCluster().startNode();
+        internalCluster().startDataOnlyNodes(1);
         createIndex(INDEX_NAME, remoteStoreIndexSettings(1, 10000l, -1));
         int numberOfIterations = randomIntBetween(5, 15);
         indexData(numberOfIterations, false, INDEX_NAME);
@@ -185,7 +191,7 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
             .prepareGetSettings(INDEX_NAME)
             .get()
             .getSetting(INDEX_NAME, IndexMetadata.SETTING_INDEX_UUID);
-        Path indexPath = Path.of(String.valueOf(segmentRepoPath), indexUUID, "/0/segments/metadata");
+        Path indexPath = Path.of(String.valueOf(absolutePath), indexUUID, "/0/segments/metadata");
         int actualFileCount = getFileCount(indexPath);
         // We also allow (numberOfIterations + 1) as index creation also triggers refresh.
         MatcherAssert.assertThat(actualFileCount, is(oneOf(numberOfIterations - 1, numberOfIterations, numberOfIterations + 1)));
@@ -196,7 +202,7 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
      * default.
      */
     public void testDefaultBufferInterval() throws ExecutionException, InterruptedException {
-        internalCluster().startClusterManagerOnlyNode();
+        setupRepo();
         String clusterManagerName = internalCluster().getClusterManagerName();
         String dataNode = internalCluster().startDataOnlyNodes(1).get(0);
         createIndex(INDEX_NAME);
@@ -224,7 +230,7 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
      * with and without cluster default.
      */
     public void testOverriddenBufferInterval() throws ExecutionException, InterruptedException {
-        internalCluster().startClusterManagerOnlyNode();
+        setupRepo();
         String clusterManagerName = internalCluster().getClusterManagerName();
         String dataNode = internalCluster().startDataOnlyNodes(1).get(0);
 
@@ -281,7 +287,7 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
      * This tests validation which kicks in during index creation failing creation if the value is less than minimum allowed value.
      */
     public void testOverriddenBufferIntervalValidation() {
-        internalCluster().startClusterManagerOnlyNode();
+        setupRepo();
         TimeValue bufferInterval = TimeValue.timeValueSeconds(-1);
         Settings indexSettings = Settings.builder()
             .put(indexSettings())
@@ -302,6 +308,7 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
      */
     public void testClusterBufferIntervalValidation() {
         String clusterManagerName = internalCluster().startClusterManagerOnlyNode();
+        setupRepo(false);
         IllegalArgumentException exception = assertThrows(
             IllegalArgumentException.class,
             () -> client(clusterManagerName).admin()

@@ -8,15 +8,11 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.ExperimentalApi;
 import org.opensearch.telemetry.tracing.noop.NoopSpanScope;
 
 /**
  * An auto-closeable that represents scope of the span.
- *
- * @opensearch.experimental
  */
-@ExperimentalApi
 public interface SpanScope extends AutoCloseable {
 
     /**

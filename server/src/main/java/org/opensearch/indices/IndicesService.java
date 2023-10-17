@@ -244,6 +244,36 @@ public class IndicesService extends AbstractLifecycleComponent
     );
 
     /**
+     * Used to specify if all indexes are to create with remote store enabled by default
+     */
+    public static final Setting<Boolean> CLUSTER_REMOTE_STORE_ENABLED_SETTING = Setting.boolSetting(
+        "cluster.remote_store.enabled",
+        false,
+        Property.NodeScope,
+        Property.Final
+    );
+
+    /**
+     * Used to specify default repo to use for segment upload for remote store backed indices
+     */
+    public static final Setting<String> CLUSTER_REMOTE_SEGMENT_STORE_REPOSITORY_SETTING = Setting.simpleString(
+        "cluster.remote_store.segment.repository",
+        "",
+        Property.NodeScope,
+        Property.Final
+    );
+
+    /**
+     * Used to specify default repo to use for translog upload for remote store backed indices
+     */
+    public static final Setting<String> CLUSTER_REMOTE_TRANSLOG_REPOSITORY_SETTING = Setting.simpleString(
+        "cluster.remote_store.translog.repository",
+        "",
+        Property.NodeScope,
+        Property.Final
+    );
+
+    /**
      * Used to specify the default translog buffer interval for remote store backed indexes.
      */
     public static final Setting<TimeValue> CLUSTER_REMOTE_TRANSLOG_BUFFER_INTERVAL_SETTING = Setting.timeSetting(
@@ -363,8 +393,7 @@ public class IndicesService extends AbstractLifecycleComponent
         Map<String, IndexStorePlugin.RecoveryStateFactory> recoveryStateFactories,
         IndexStorePlugin.DirectoryFactory remoteDirectoryFactory,
         Supplier<RepositoriesService> repositoriesServiceSupplier,
-        FileCacheCleaner fileCacheCleaner,
-        @Nullable RemoteStoreStatsTrackerFactory remoteStoreStatsTrackerFactory
+        FileCacheCleaner fileCacheCleaner
     ) {
         this.settings = settings;
         this.threadPool = threadPool;
@@ -453,7 +482,7 @@ public class IndicesService extends AbstractLifecycleComponent
         this.allowExpensiveQueries = ALLOW_EXPENSIVE_QUERIES.get(clusterService.getSettings());
         clusterService.getClusterSettings().addSettingsUpdateConsumer(ALLOW_EXPENSIVE_QUERIES, this::setAllowExpensiveQueries);
         this.remoteDirectoryFactory = remoteDirectoryFactory;
-        this.translogFactorySupplier = getTranslogFactorySupplier(repositoriesServiceSupplier, threadPool, remoteStoreStatsTrackerFactory);
+        this.translogFactorySupplier = getTranslogFactorySupplier(repositoriesServiceSupplier, threadPool);
         this.clusterDefaultRefreshInterval = CLUSTER_DEFAULT_INDEX_REFRESH_INTERVAL_SETTING.get(clusterService.getSettings());
         clusterService.getClusterSettings()
             .addSettingsUpdateConsumer(CLUSTER_DEFAULT_INDEX_REFRESH_INTERVAL_SETTING, this::onRefreshIntervalUpdate);
@@ -483,16 +512,14 @@ public class IndicesService extends AbstractLifecycleComponent
 
     private static BiFunction<IndexSettings, ShardRouting, TranslogFactory> getTranslogFactorySupplier(
         Supplier<RepositoriesService> repositoriesServiceSupplier,
-        ThreadPool threadPool,
-        RemoteStoreStatsTrackerFactory remoteStoreStatsTrackerFactory
+        ThreadPool threadPool
     ) {
         return (indexSettings, shardRouting) -> {
             if (indexSettings.isRemoteTranslogStoreEnabled() && shardRouting.primary()) {
                 return new RemoteBlobStoreInternalTranslogFactory(
                     repositoriesServiceSupplier,
                     threadPool,
-                    indexSettings.getRemoteStoreTranslogRepository(),
-                    remoteStoreStatsTrackerFactory.getRemoteTranslogTransferTracker(shardRouting.shardId())
+                    indexSettings.getRemoteStoreTranslogRepository()
                 );
             }
             return new InternalTranslogFactory();

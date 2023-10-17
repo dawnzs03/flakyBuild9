@@ -8,8 +8,6 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.InternalApi;
-
 import java.util.Objects;
 
 /**
@@ -17,7 +15,6 @@ import java.util.Objects;
  *
  * @opensearch.internal
  */
-@InternalApi
 final class DefaultScopedSpan implements ScopedSpan {
 
     private final Span span;
@@ -76,7 +73,7 @@ final class DefaultScopedSpan implements ScopedSpan {
 
     /**
      * Returns span.
-     * @return the span associated with this scope
+     * @return
      */
     Span getSpan() {
         return span;

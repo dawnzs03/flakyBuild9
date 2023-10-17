@@ -31,19 +31,11 @@ public class RemoteIndexRecoveryIT extends IndexRecoveryIT {
 
     protected static final String REPOSITORY_NAME = "test-remote-store-repo";
 
-    protected Path repositoryPath;
-
-    @Before
-    public void setup() {
-        repositoryPath = randomRepoPath().toAbsolutePath();
-    }
+    protected Path absolutePath;
 
     @Override
     protected Settings nodeSettings(int nodeOrdinal) {
-        return Settings.builder()
-            .put(super.nodeSettings(nodeOrdinal))
-            .put(remoteStoreClusterSettings(REPOSITORY_NAME, repositoryPath))
-            .build();
+        return Settings.builder().put(super.nodeSettings(nodeOrdinal)).put(remoteStoreClusterSettings(REPOSITORY_NAME)).build();
     }
 
     @Override
@@ -53,6 +45,17 @@ public class RemoteIndexRecoveryIT extends IndexRecoveryIT {
             .put(FeatureFlags.REMOTE_STORE, "true")
             .put(FeatureFlags.SEGMENT_REPLICATION_EXPERIMENTAL, "true")
             .build();
+    }
+
+    @Before
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        internalCluster().startClusterManagerOnlyNode();
+        absolutePath = randomRepoPath().toAbsolutePath();
+        assertAcked(
+            clusterAdmin().preparePutRepository(REPOSITORY_NAME).setType("fs").setSettings(Settings.builder().put("location", absolutePath))
+        );
     }
 
     @Override

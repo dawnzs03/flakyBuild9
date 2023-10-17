@@ -8,14 +8,9 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.ExperimentalApi;
-
 /**
- * Hold the Attribute names to avoid the duplication and consistency.
- *
- * @opensearch.experimental
+ * Hold the Attribute names to avoid the duplication and consistensy.
  */
-@ExperimentalApi
 public final class AttributeNames {
 
     /**

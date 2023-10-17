@@ -8,7 +8,6 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.InternalApi;
 import org.opensearch.core.common.Strings;
 import org.opensearch.http.HttpRequest;
 import org.opensearch.rest.RestRequest;
@@ -20,10 +19,7 @@ import java.util.List;
 
 /**
  * Utility class, helps in creating the {@link SpanCreationContext} for span.
- *
- * @opensearch.internal
  */
-@InternalApi
 public final class SpanBuilder {
 
     private static final List<String> HEADERS_TO_BE_ADDED_AS_ATTRIBUTES = Arrays.asList(AttributeNames.TRACE);

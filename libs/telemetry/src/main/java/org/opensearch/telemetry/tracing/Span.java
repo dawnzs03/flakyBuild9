@@ -8,16 +8,13 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.common.annotation.ExperimentalApi;
-
 /**
  * An interface that represents a tracing span.
  * Spans are created by the Tracer.startSpan method.
  * Span must be ended by calling SpanScope.close which internally calls Span's endSpan.
  *
- * @opensearch.experimental
+ * @opensearch.internal
  */
-@ExperimentalApi
 public interface Span {
 
     /**

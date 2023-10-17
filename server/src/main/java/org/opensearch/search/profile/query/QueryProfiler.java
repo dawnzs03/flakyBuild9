@@ -59,7 +59,7 @@ public final class QueryProfiler extends AbstractProfiler<ContextualProfileBreak
     private InternalProfileComponent collector;
 
     public QueryProfiler(boolean concurrent) {
-        super(concurrent ? new ConcurrentQueryProfileTree() : new InternalQueryProfileTree());
+        super(new InternalQueryProfileTree(concurrent));
     }
 
     /** Set the collector that is associated with this profiler. */
@@ -75,7 +75,7 @@ public final class QueryProfiler extends AbstractProfiler<ContextualProfileBreak
      * single metric
      */
     public void startRewriteTime() {
-        ((AbstractQueryProfileTree) profileTree).startRewriteTime();
+        ((InternalQueryProfileTree) profileTree).startRewriteTime();
     }
 
     /**
@@ -85,14 +85,14 @@ public final class QueryProfiler extends AbstractProfiler<ContextualProfileBreak
      * @return cumulative rewrite time
      */
     public long stopAndAddRewriteTime() {
-        return ((AbstractQueryProfileTree) profileTree).stopAndAddRewriteTime();
+        return ((InternalQueryProfileTree) profileTree).stopAndAddRewriteTime();
     }
 
     /**
      * @return total time taken to rewrite all queries in this profile
      */
     public long getRewriteTime() {
-        return ((AbstractQueryProfileTree) profileTree).getRewriteTime();
+        return ((InternalQueryProfileTree) profileTree).getRewriteTime();
     }
 
     /**

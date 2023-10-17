@@ -91,7 +91,6 @@ import org.opensearch.cluster.routing.allocation.decider.SameShardAllocationDeci
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.CheckedFunction;
 import org.opensearch.common.Priority;
-import org.opensearch.common.SetOnce;
 import org.opensearch.common.UUIDs;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.IndexScopedSettings;
@@ -108,8 +107,6 @@ import org.opensearch.index.shard.IndexEventListener;
 import org.opensearch.indices.IndicesService;
 import org.opensearch.indices.ShardLimitValidator;
 import org.opensearch.indices.SystemIndices;
-import org.opensearch.node.remotestore.RemoteStoreNodeService;
-import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.snapshots.EmptySnapshotsInfoService;
 import org.opensearch.test.gateway.TestGatewayAllocator;
 import org.opensearch.threadpool.ThreadPool;
@@ -153,8 +150,6 @@ public class ClusterStateChanges {
     private final TransportUpdateSettingsAction transportUpdateSettingsAction;
     private final TransportClusterRerouteAction transportClusterRerouteAction;
     private final TransportCreateIndexAction transportCreateIndexAction;
-    private final RepositoriesService repositoriesService;
-    private final RemoteStoreNodeService remoteStoreNodeService;
 
     private final NodeRemovalClusterStateTaskExecutor nodeRemovalExecutor;
     private final JoinTaskExecutor joinTaskExecutor;
@@ -367,19 +362,8 @@ public class ClusterStateChanges {
             indexNameExpressionResolver
         );
 
-        repositoriesService = new RepositoriesService(
-            Settings.EMPTY,
-            clusterService,
-            transportService,
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            threadPool
-        );
-
-        remoteStoreNodeService = new RemoteStoreNodeService(new SetOnce<>(repositoriesService)::get, threadPool);
-
         nodeRemovalExecutor = new NodeRemovalClusterStateTaskExecutor(allocationService, logger);
-        joinTaskExecutor = new JoinTaskExecutor(Settings.EMPTY, allocationService, logger, (s, p, r) -> {}, remoteStoreNodeService);
+        joinTaskExecutor = new JoinTaskExecutor(Settings.EMPTY, allocationService, logger, (s, p, r) -> {});
     }
 
     public ClusterState createIndex(ClusterState state, CreateIndexRequest request) {
