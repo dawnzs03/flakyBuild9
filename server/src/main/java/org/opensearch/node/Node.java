@@ -870,8 +870,7 @@ public class Node implements Closeable {
                 transportService,
                 clusterService,
                 environment.settings(),
-                client,
-                identityService
+                client
             );
             final GatewayMetaState gatewayMetaState = new GatewayMetaState();
             final ResponseCollectorService responseCollectorService = new ResponseCollectorService(clusterService);

@@ -21,7 +21,6 @@ import org.opensearch.common.settings.SettingsModule;
 import org.opensearch.extensions.action.ExtensionActionRequest;
 import org.opensearch.extensions.action.ExtensionActionResponse;
 import org.opensearch.extensions.action.RemoteExtensionActionResponse;
-import org.opensearch.identity.IdentityService;
 import org.opensearch.transport.TransportService;
 
 /**
@@ -42,8 +41,7 @@ public class NoopExtensionsManager extends ExtensionsManager {
         TransportService transportService,
         ClusterService clusterService,
         Settings initialEnvironmentSettings,
-        NodeClient client,
-        IdentityService identityService
+        NodeClient client
     ) {
         // no-op
     }

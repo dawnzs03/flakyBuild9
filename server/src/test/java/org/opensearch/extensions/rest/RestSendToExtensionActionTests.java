@@ -10,14 +10,20 @@ package org.opensearch.extensions.rest;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.Map;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
+import static org.mockito.Mockito.mock;
+
 import org.junit.After;
 import org.junit.Before;
 import org.opensearch.Version;
@@ -51,10 +57,6 @@ import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportService;
 import org.opensearch.transport.nio.MockNioTransport;
 import org.opensearch.usage.UsageService;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
-import static org.mockito.Mockito.mock;
 
 public class RestSendToExtensionActionTests extends OpenSearchTestCase {
 
@@ -63,7 +65,6 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
     private DiscoveryExtensionNode discoveryExtensionNode;
     private ActionModule actionModule;
     private DynamicActionRegistry dynamicActionRegistry;
-    private IdentityService identityService;
     private final ThreadPool threadPool = new TestThreadPool(RestSendToExtensionActionTests.class.getSimpleName());
 
     @Before
@@ -120,7 +121,6 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
             new IdentityService(Settings.EMPTY, new ArrayList<>()),
             new ExtensionsManager(Set.of())
         );
-        identityService = new IdentityService(Settings.EMPTY, new ArrayList<>());
         dynamicActionRegistry = actionModule.getDynamicActionRegistry();
     }
 
@@ -142,8 +142,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
             registerRestActionRequest,
             discoveryExtensionNode,
             transportService,
-            dynamicActionRegistry,
-            identityService
+            dynamicActionRegistry
         );
 
         assertEquals("send_to_extension_action", restSendToExtensionAction.getName());
@@ -175,8 +174,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
             registerRestActionRequest,
             discoveryExtensionNode,
             transportService,
-            dynamicActionRegistry,
-            identityService
+            dynamicActionRegistry
         );
 
         assertEquals("send_to_extension_action", restSendToExtensionAction.getName());
@@ -221,8 +219,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
             registerRestActionRequest,
             discoveryExtensionNode,
             transportService,
-            dynamicActionRegistry,
-            identityService
+            dynamicActionRegistry
         );
 
         assertEquals("send_to_extension_action", restSendToExtensionAction.getName());
@@ -274,13 +271,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
         );
         expectThrows(
             IllegalArgumentException.class,
-            () -> new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            )
+            () -> new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry)
         );
     }
 
@@ -292,13 +283,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
         );
         expectThrows(
             IllegalArgumentException.class,
-            () -> new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            )
+            () -> new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry)
         );
     }
 
@@ -310,13 +295,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
         );
         expectThrows(
             IllegalArgumentException.class,
-            () -> new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            )
+            () -> new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry)
         );
     }
 
@@ -328,13 +307,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
         );
         expectThrows(
             IllegalArgumentException.class,
-            () -> new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            )
+            () -> new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry)
         );
     }
 
@@ -346,13 +319,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
         );
         expectThrows(
             IllegalArgumentException.class,
-            () -> new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            )
+            () -> new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry)
         );
     }
 
@@ -364,13 +331,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
         );
 
         try {
-            new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            );
+            new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry);
         } catch (IllegalArgumentException e) {
             fail("IllegalArgumentException should not be thrown for different paths");
         }
@@ -392,13 +353,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
 
         expectThrows(
             IllegalArgumentException.class,
-            () -> new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            )
+            () -> new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry)
         );
     }
 
@@ -412,13 +367,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
         );
         expectThrows(
             IllegalArgumentException.class,
-            () -> new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            )
+            () -> new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry)
         );
     }
 
@@ -432,8 +381,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
             registerRestActionRequest,
             discoveryExtensionNode,
             transportService,
-            dynamicActionRegistry,
-            identityService
+            dynamicActionRegistry
         );
 
         Map<String, List<String>> headers = new HashMap<>();
@@ -459,13 +407,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
         );
         expectThrows(
             IllegalArgumentException.class,
-            () -> new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            )
+            () -> new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry)
         );
     }
 
@@ -477,13 +419,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
         );
         expectThrows(
             IllegalArgumentException.class,
-            () -> new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            )
+            () -> new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry)
         );
     }
 
@@ -495,13 +431,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
         );
         expectThrows(
             IllegalArgumentException.class,
-            () -> new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            )
+            () -> new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry)
         );
     }
 
@@ -513,13 +443,7 @@ public class RestSendToExtensionActionTests extends OpenSearchTestCase {
         );
         expectThrows(
             IllegalArgumentException.class,
-            () -> new RestSendToExtensionAction(
-                registerRestActionRequest,
-                discoveryExtensionNode,
-                transportService,
-                dynamicActionRegistry,
-                identityService
-            )
+            () -> new RestSendToExtensionAction(registerRestActionRequest, discoveryExtensionNode, transportService, dynamicActionRegistry)
         );
     }
 }

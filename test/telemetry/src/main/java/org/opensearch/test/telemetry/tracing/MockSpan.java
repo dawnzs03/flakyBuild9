@@ -15,7 +15,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 import org.opensearch.telemetry.tracing.AbstractSpan;
 import org.opensearch.telemetry.tracing.Span;
-import org.opensearch.telemetry.tracing.attributes.Attributes;
 
 /**
  * MockSpan for testing and strict check validations. Not to be used for production cases.
@@ -38,24 +37,6 @@ public class MockSpan extends AbstractSpan {
      * @param spanName span name
      * @param parentSpan parent span
      * @param spanProcessor span processor
-     * @param attributes attributes
-     */
-    public MockSpan(String spanName, Span parentSpan, SpanProcessor spanProcessor, Attributes attributes) {
-        this(
-            spanName,
-            parentSpan,
-            parentSpan != null ? parentSpan.getTraceId() : IdGenerator.generateTraceId(),
-            IdGenerator.generateSpanId(),
-            spanProcessor,
-            attributes
-        );
-    }
-
-    /**
-     * Constructor.
-     * @param spanName span name.
-     * @param parentSpan parent span name
-     * @param spanProcessor span processor.
      */
     public MockSpan(String spanName, Span parentSpan, SpanProcessor spanProcessor) {
         this(
@@ -63,8 +44,7 @@ public class MockSpan extends AbstractSpan {
             parentSpan,
             parentSpan != null ? parentSpan.getTraceId() : IdGenerator.generateTraceId(),
             IdGenerator.generateSpanId(),
-            spanProcessor,
-            Attributes.EMPTY
+            spanProcessor
         );
     }
 
@@ -75,18 +55,14 @@ public class MockSpan extends AbstractSpan {
      * @param traceId  Trace ID
      * @param spanId  Span ID
      * @param spanProcessor  Span Processor
-     * @param attributes attributes
      */
-    public MockSpan(String spanName, Span parentSpan, String traceId, String spanId, SpanProcessor spanProcessor, Attributes attributes) {
+    public MockSpan(String spanName, Span parentSpan, String traceId, String spanId, SpanProcessor spanProcessor) {
         super(spanName, parentSpan);
         this.spanProcessor = spanProcessor;
         this.metadata = new HashMap<>();
         this.traceId = traceId;
         this.spanId = spanId;
         this.startTime = System.nanoTime();
-        if (attributes != null) {
-            this.metadata.putAll(attributes.getAttributesMap());
-        }
     }
 
     @Override
@@ -183,14 +159,5 @@ public class MockSpan extends AbstractSpan {
             return Long.toHexString(result);
         }
 
-    }
-
-    /**
-     * Returns attribute.
-     * @param key key
-     * @return value
-     */
-    public Object getAttribute(String key) {
-        return metadata.get(key);
     }
 }

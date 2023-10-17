@@ -32,8 +32,6 @@
 
 package org.opensearch.action.admin.cluster.node.stats;
 
-import org.opensearch.action.admin.indices.stats.CommonStats;
-import org.opensearch.action.admin.indices.stats.CommonStatsFlags;
 import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.cluster.routing.WeightedRoutingStats;
 import org.opensearch.cluster.service.ClusterManagerThrottlingStats;
@@ -46,8 +44,6 @@ import org.opensearch.cluster.coordination.PublishClusterStateStats;
 import org.opensearch.http.HttpStats;
 import org.opensearch.core.indices.breaker.AllCircuitBreakerStats;
 import org.opensearch.core.indices.breaker.CircuitBreakerStats;
-import org.opensearch.index.remote.RemoteSegmentStats;
-import org.opensearch.indices.NodeIndicesStats;
 import org.opensearch.ingest.IngestStats;
 import org.opensearch.monitor.fs.FsInfo;
 import org.opensearch.monitor.jvm.JvmStats;
@@ -80,7 +76,7 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 public class NodeStatsTests extends OpenSearchTestCase {
     public void testSerialization() throws IOException {
-        NodeStats nodeStats = createNodeStats(true);
+        NodeStats nodeStats = createNodeStats();
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             nodeStats.writeTo(out);
             try (StreamInput in = out.bytes().streamInput()) {
@@ -440,35 +436,11 @@ public class NodeStatsTests extends OpenSearchTestCase {
                     assertEquals(weightedRoutingStats.getFailOpenCount(), deserializedWeightedRoutingStats.getFailOpenCount());
 
                 }
-
-                NodeIndicesStats nodeIndicesStats = nodeStats.getIndices();
-                NodeIndicesStats deserializedNodeIndicesStats = deserializedNodeStats.getIndices();
-                if (nodeIndicesStats == null) {
-                    assertNull(deserializedNodeIndicesStats);
-                } else {
-                    RemoteSegmentStats remoteSegmentStats = nodeIndicesStats.getSegments().getRemoteSegmentStats();
-                    RemoteSegmentStats deserializedRemoteSegmentStats = deserializedNodeIndicesStats.getSegments().getRemoteSegmentStats();
-                    assertEquals(remoteSegmentStats.getDownloadBytesStarted(), deserializedRemoteSegmentStats.getDownloadBytesStarted());
-                    assertEquals(
-                        remoteSegmentStats.getDownloadBytesSucceeded(),
-                        deserializedRemoteSegmentStats.getDownloadBytesSucceeded()
-                    );
-                    assertEquals(remoteSegmentStats.getDownloadBytesFailed(), deserializedRemoteSegmentStats.getDownloadBytesFailed());
-                    assertEquals(remoteSegmentStats.getUploadBytesStarted(), deserializedRemoteSegmentStats.getUploadBytesStarted());
-                    assertEquals(remoteSegmentStats.getUploadBytesSucceeded(), deserializedRemoteSegmentStats.getUploadBytesSucceeded());
-                    assertEquals(remoteSegmentStats.getUploadBytesFailed(), deserializedRemoteSegmentStats.getUploadBytesFailed());
-                    assertEquals(remoteSegmentStats.getMaxRefreshTimeLag(), deserializedRemoteSegmentStats.getMaxRefreshTimeLag());
-                    assertEquals(remoteSegmentStats.getMaxRefreshBytesLag(), deserializedRemoteSegmentStats.getMaxRefreshBytesLag());
-                }
             }
         }
     }
 
     public static NodeStats createNodeStats() {
-        return createNodeStats(false);
-    }
-
-    public static NodeStats createNodeStats(boolean remoteStoreStats) {
         DiscoveryNode node = new DiscoveryNode(
             "test_node",
             buildNewFakeTransportAddress(),
@@ -746,14 +718,11 @@ public class NodeStatsTests extends OpenSearchTestCase {
         weightedRoutingStats = WeightedRoutingStats.getInstance();
         weightedRoutingStats.updateFailOpenCount();
 
-        NodeIndicesStats indicesStats = getNodeIndicesStats(remoteStoreStats);
-
-        // TODO: Only remote_store based aspects of NodeIndicesStats are being tested here.
-        // It is possible to test other metrics in NodeIndicesStats as well since it extends Writeable now
+        // TODO NodeIndicesStats are not tested here, way too complicated to create, also they need to be migrated to Writeable yet
         return new NodeStats(
             node,
             randomNonNegativeLong(),
-            indicesStats,
+            null,
             osStats,
             processStats,
             jvmStats,
@@ -776,23 +745,6 @@ public class NodeStatsTests extends OpenSearchTestCase {
             null,
             null
         );
-    }
-
-    private static NodeIndicesStats getNodeIndicesStats(boolean remoteStoreStats) {
-        NodeIndicesStats indicesStats = null;
-        if (remoteStoreStats) {
-            indicesStats = new NodeIndicesStats(new CommonStats(CommonStatsFlags.ALL), new HashMap<>());
-            RemoteSegmentStats remoteSegmentStats = indicesStats.getSegments().getRemoteSegmentStats();
-            remoteSegmentStats.addUploadBytesStarted(10L);
-            remoteSegmentStats.addUploadBytesSucceeded(10L);
-            remoteSegmentStats.addUploadBytesFailed(1L);
-            remoteSegmentStats.addDownloadBytesStarted(10L);
-            remoteSegmentStats.addDownloadBytesSucceeded(10L);
-            remoteSegmentStats.addDownloadBytesFailed(1L);
-            remoteSegmentStats.setMaxRefreshBytesLag(5L);
-            remoteSegmentStats.setMaxRefreshTimeLag(2L);
-        }
-        return indicesStats;
     }
 
     private OperationStats getPipelineStats(List<IngestStats.PipelineStat> pipelineStats, String id) {
