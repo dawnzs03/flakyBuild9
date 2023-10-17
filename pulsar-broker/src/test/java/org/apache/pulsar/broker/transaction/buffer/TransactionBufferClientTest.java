@@ -155,13 +155,11 @@ public class TransactionBufferClientTest extends TransactionTestBase {
                 break;
             }
         }
-        @Cleanup
-        PulsarClient localPulsarClient = PulsarClient.builder()
-                .serviceUrl(pulsarServiceList.get(0).getBrokerServiceUrl())
+        pulsarClient = PulsarClient.builder().serviceUrl(pulsarServiceList.get(0).getBrokerServiceUrl())
                 .enableTransaction(true).build();
         @Cleanup
-        Producer<byte[]> producer = localPulsarClient.newProducer(Schema.BYTES).topic(topic1).create();
-        Transaction transaction = localPulsarClient.newTransaction()
+        Producer<byte[]> producer = pulsarClient.newProducer(Schema.BYTES).topic(topic1).create();
+        Transaction transaction = pulsarClient.newTransaction()
                 .withTransactionTimeout(5, TimeUnit.HOURS)
                 .build().get();
         producer.newMessage(transaction).send();

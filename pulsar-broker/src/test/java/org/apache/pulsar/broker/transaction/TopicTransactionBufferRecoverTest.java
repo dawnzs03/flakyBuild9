@@ -510,7 +510,6 @@ public class TopicTransactionBufferRecoverTest extends TransactionTestBase {
         getPulsarServiceList().get(0).getConfig().setTransactionBufferSegmentedSnapshotEnabled(enableSnapshotSegment);
         String topic = NAMESPACE1 + "/tb-snapshot-delete-" + RandomUtils.nextInt();
 
-        @Cleanup
         Producer<byte[]> producer = pulsarClient
                 .newProducer()
                 .topic(topic)
@@ -560,7 +559,6 @@ public class TopicTransactionBufferRecoverTest extends TransactionTestBase {
         CompletableFuture<Long> compactionFuture = (CompletableFuture<Long>) field.get(persistentTopic);
         Awaitility.await().untilAsserted(() -> assertTrue(compactionFuture.isDone()));
 
-        @Cleanup
         Reader<GenericRecord> reader = pulsarClient.newReader(Schema.AUTO_CONSUME())
                 .readCompacted(true)
                 .startMessageId(MessageId.earliest)
@@ -855,13 +853,11 @@ public class TopicTransactionBufferRecoverTest extends TransactionTestBase {
         this.getPulsarServiceList().get(0).getConfig()
                 .setTransactionBufferSnapshotMaxTransactionCount(theCountOfSnapshotMaxTxnCount);
         // 1. Build producer and consumer
-        @Cleanup
         Producer<Integer> producer = pulsarClient.newProducer(Schema.INT32)
                 .topic(topic)
                 .enableBatching(false)
                 .create();
 
-        @Cleanup
         Consumer<Integer> consumer = pulsarClient.newConsumer(Schema.INT32)
                 .topic(topic)
                 .subscriptionName(subName)
