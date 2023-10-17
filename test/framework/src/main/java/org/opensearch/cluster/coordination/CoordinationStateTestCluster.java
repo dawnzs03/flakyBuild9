@@ -48,7 +48,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.carrotsearch.randomizedtesting.RandomizedTest.rarely;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.lucene.tests.util.LuceneTestCase.random;
 import static org.opensearch.test.OpenSearchTestCase.randomBoolean;
 import static org.opensearch.test.OpenSearchTestCase.randomFrom;
 import static org.opensearch.test.OpenSearchTestCase.randomIntBetween;
@@ -56,8 +58,6 @@ import static org.opensearch.test.OpenSearchTestCase.randomLong;
 import static org.opensearch.test.OpenSearchTestCase.randomLongBetween;
 import static org.opensearch.test.OpenSearchTestCase.randomSubsetOf;
 import static org.hamcrest.Matchers.hasSize;
-import static com.carrotsearch.randomizedtesting.RandomizedTest.rarely;
-import static org.apache.lucene.tests.util.LuceneTestCase.random;
 import static org.junit.Assert.assertThat;
 
 public class CoordinationStateTestCluster {

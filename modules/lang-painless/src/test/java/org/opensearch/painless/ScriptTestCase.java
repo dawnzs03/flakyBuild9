@@ -32,6 +32,8 @@
 
 package org.opensearch.painless;
 
+import junit.framework.AssertionFailedError;
+
 import org.opensearch.common.settings.Settings;
 import org.opensearch.painless.antlr.Walker;
 import org.opensearch.painless.spi.Allowlist;
@@ -46,10 +48,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.AssertionFailedError;
-
-import static org.opensearch.painless.action.PainlessExecuteAction.PainlessTestScript;
 import static org.hamcrest.Matchers.hasSize;
+import static org.opensearch.painless.action.PainlessExecuteAction.PainlessTestScript;
 
 /**
  * Base test case for scripting unit tests.

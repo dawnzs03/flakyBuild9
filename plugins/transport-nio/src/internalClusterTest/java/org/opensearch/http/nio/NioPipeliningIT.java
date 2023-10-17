@@ -32,6 +32,7 @@
 
 package org.opensearch.http.nio;
 
+import io.netty.handler.codec.http.FullHttpResponse;
 import org.opensearch.NioIntegTestCase;
 import org.opensearch.core.common.transport.TransportAddress;
 import org.opensearch.http.HttpServerTransport;
@@ -40,8 +41,6 @@ import org.opensearch.test.OpenSearchIntegTestCase.Scope;
 
 import java.util.Collection;
 import java.util.Locale;
-
-import io.netty.handler.codec.http.FullHttpResponse;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;

@@ -33,6 +33,7 @@
 package org.opensearch.index.reindex;
 
 import org.apache.logging.log4j.Logger;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
@@ -41,7 +42,6 @@ import org.opensearch.client.ParentTaskAssigningClient;
 import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.inject.Inject;
-import org.opensearch.core.action.ActionListener;
 import org.opensearch.core.common.io.stream.Writeable;
 import org.opensearch.index.mapper.IdFieldMapper;
 import org.opensearch.index.mapper.IndexFieldMapper;

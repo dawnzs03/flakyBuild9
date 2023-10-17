@@ -33,7 +33,6 @@
 package org.opensearch.client;
 
 import com.carrotsearch.randomizedtesting.generators.RandomPicks;
-
 import org.opensearch.action.bulk.BulkItemResponse;
 import org.opensearch.action.bulk.BulkProcessor;
 import org.opensearch.action.bulk.BulkRequest;

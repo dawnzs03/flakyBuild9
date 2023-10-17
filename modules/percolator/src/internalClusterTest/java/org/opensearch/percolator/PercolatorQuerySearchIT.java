@@ -55,7 +55,6 @@ import org.opensearch.plugins.Plugin;
 import org.opensearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.opensearch.search.sort.SortOrder;
 import org.opensearch.test.OpenSearchIntegTestCase;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;

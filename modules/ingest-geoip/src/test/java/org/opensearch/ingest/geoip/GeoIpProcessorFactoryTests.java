@@ -33,7 +33,6 @@
 package org.opensearch.ingest.geoip;
 
 import com.carrotsearch.randomizedtesting.generators.RandomPicks;
-
 import org.opensearch.OpenSearchParseException;
 import org.opensearch.common.Randomness;
 import org.opensearch.index.VersionType;

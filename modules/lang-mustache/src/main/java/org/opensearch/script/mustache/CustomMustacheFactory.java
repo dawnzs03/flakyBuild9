@@ -33,7 +33,6 @@
 package org.opensearch.script.mustache;
 
 import com.fasterxml.jackson.core.io.JsonStringEncoder;
-
 import com.github.mustachejava.Code;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.DefaultMustacheVisitor;

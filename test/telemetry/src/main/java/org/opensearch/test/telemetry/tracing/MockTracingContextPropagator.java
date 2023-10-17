@@ -8,13 +8,12 @@
 
 package org.opensearch.test.telemetry.tracing;
 
-import org.opensearch.telemetry.tracing.Span;
-import org.opensearch.telemetry.tracing.TracingContextPropagator;
-import org.opensearch.telemetry.tracing.attributes.Attributes;
-
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import org.opensearch.telemetry.tracing.Span;
+import org.opensearch.telemetry.tracing.TracingContextPropagator;
+import org.opensearch.telemetry.tracing.attributes.Attributes;
 
 /**
  * Mock {@link TracingContextPropagator} to persist the span for internode communication.

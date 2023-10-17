@@ -8,8 +8,8 @@
 
 package org.opensearch.plugin.correlation;
 
-import org.opensearch.test.OpenSearchTestCase;
 import org.junit.Assert;
+import org.opensearch.test.OpenSearchTestCase;
 
 public class EventsCorrelationPluginTests extends OpenSearchTestCase {
 

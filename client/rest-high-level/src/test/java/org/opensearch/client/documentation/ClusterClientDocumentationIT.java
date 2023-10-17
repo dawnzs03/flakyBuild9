@@ -32,6 +32,7 @@
 
 package org.opensearch.client.documentation;
 
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.LatchedActionListener;
 import org.opensearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.opensearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -62,12 +63,11 @@ import org.opensearch.cluster.routing.allocation.decider.EnableAllocationDecider
 import org.opensearch.common.Priority;
 import org.opensearch.common.compress.CompressedXContent;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.common.unit.TimeValue;
-import org.opensearch.core.action.ActionListener;
 import org.opensearch.core.common.unit.ByteSizeUnit;
-import org.opensearch.core.rest.RestStatus;
+import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.indices.recovery.RecoverySettings;
+import org.opensearch.core.rest.RestStatus;
 
 import java.io.IOException;
 import java.util.HashMap;

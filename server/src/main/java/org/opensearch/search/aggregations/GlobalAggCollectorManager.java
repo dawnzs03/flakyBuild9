@@ -23,12 +23,10 @@ import java.util.Objects;
 public class GlobalAggCollectorManager extends AggregationCollectorManager {
 
     private Collector collector;
-    private final String collectorName;
 
     public GlobalAggCollectorManager(SearchContext context) throws IOException {
         super(context, context.aggregations().factories()::createTopLevelGlobalAggregators, CollectorResult.REASON_AGGREGATION_GLOBAL);
         collector = Objects.requireNonNull(super.newCollector(), "collector instance is null");
-        collectorName = collector.toString();
     }
 
     @Override
@@ -49,10 +47,5 @@ public class GlobalAggCollectorManager extends AggregationCollectorManager {
         return new AggregationReduceableSearchResult(
             InternalAggregations.reduce(Collections.singletonList(internalAggregations), context.partialOnShard())
         );
-    }
-
-    @Override
-    public String getCollectorName() {
-        return collectorName;
     }
 }

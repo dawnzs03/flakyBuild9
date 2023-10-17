@@ -19,6 +19,8 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.index.RandomIndexWriter;
+import org.hamcrest.MatcherAssert;
+import org.junit.Assert;
 import org.opensearch.common.geo.GeoBoundingBox;
 import org.opensearch.common.geo.GeoPoint;
 import org.opensearch.common.geo.GeoShapeUtils;
@@ -37,8 +39,6 @@ import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.plugins.SearchPlugin;
 import org.opensearch.search.aggregations.AggregatorTestCase;
 import org.opensearch.test.OpenSearchTestCase;
-import org.hamcrest.MatcherAssert;
-import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.Collections;

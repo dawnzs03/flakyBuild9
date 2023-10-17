@@ -8,9 +8,8 @@
 
 package org.opensearch.repositories.s3.utils;
 
-import software.amazon.awssdk.core.exception.SdkException;
-
 import org.opensearch.common.collect.Tuple;
+import software.amazon.awssdk.core.exception.SdkException;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

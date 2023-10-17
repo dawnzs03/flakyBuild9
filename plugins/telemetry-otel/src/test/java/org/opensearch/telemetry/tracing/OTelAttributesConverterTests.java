@@ -8,13 +8,11 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.telemetry.tracing.attributes.Attributes;
-import org.opensearch.test.OpenSearchTestCase;
-
-import java.util.Map;
-
 import io.opentelemetry.api.common.AttributeType;
 import io.opentelemetry.api.internal.InternalAttributeKeyImpl;
+import java.util.Map;
+import org.opensearch.telemetry.tracing.attributes.Attributes;
+import org.opensearch.test.OpenSearchTestCase;
 
 public class OTelAttributesConverterTests extends OpenSearchTestCase {
 
