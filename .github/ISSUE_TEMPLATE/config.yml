@@ -1,8 +1,14 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
 contact_links:
-  - name: Stack Overflow Community
-    url: https://stackoverflow.com/questions/tagged/questdb
-    about: Ask Stack Overflow community or search for popular solutions.
-  - name: Community on Slack
-    url: https://slack.questdb.io
-    about: Ask generic questions or meet other developers who are building with QuestDB.
+  - name: Question
+    url: https://stackoverflow.com/questions/ask?tags=quarkus
+    about: I have a question about how to use Quarkus.
+  - name: Discussions
+    url: https://github.com/quarkusio/quarkus/discussions
+    about: Open Community discussions related to Quarkus. 
+  - name: Quarkus Zulip chat
+    url: https://quarkusio.zulipchat.com/
+    about: If you prefer live chat with the developers, we have a Zulip chat where we all hang out.
+  - name: Quarkus Development mailing list 
+    url: https://groups.google.com/forum/#!forum/quarkus-dev
+    about: You can also ask questions on our mailing list.
