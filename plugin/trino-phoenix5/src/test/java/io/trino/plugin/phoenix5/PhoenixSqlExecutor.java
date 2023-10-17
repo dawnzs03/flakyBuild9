@@ -42,12 +42,6 @@ public class PhoenixSqlExecutor
     }
 
     @Override
-    public boolean supportsMultiRowInsert()
-    {
-        return false;
-    }
-
-    @Override
     public void execute(String sql)
     {
         sql = sql.replaceFirst("INSERT", "UPSERT");

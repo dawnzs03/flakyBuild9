@@ -25,6 +25,7 @@ import io.trino.spi.type.SqlVarbinary;
 import io.trino.spi.type.StandardTypes;
 import io.trino.sql.analyzer.TypeSignatureProvider;
 import io.trino.sql.query.QueryAssertions;
+import io.trino.sql.tree.QualifiedName;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -65,7 +66,7 @@ public class TestQuantileDigestAggregationFunction
 {
     private static final Joiner ARRAY_JOINER = Joiner.on(",");
     private static final TestingFunctionResolution FUNCTION_RESOLUTION = new TestingFunctionResolution();
-    private static final String NAME = "qdigest_agg";
+    private static final QualifiedName NAME = QualifiedName.of("qdigest_agg");
 
     private QueryAssertions assertions;
 

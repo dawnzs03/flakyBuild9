@@ -18,22 +18,17 @@ import io.trino.plugin.exchange.filesystem.containers.MinioStorage;
 import io.trino.plugin.hive.HiveQueryRunner;
 import io.trino.testing.AbstractTestFaultTolerantExecutionAggregations;
 import io.trino.testing.QueryRunner;
-import io.trino.testng.services.ManageTestResources;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
 
 import java.util.Map;
 
 import static io.trino.plugin.exchange.filesystem.containers.MinioStorage.getExchangeManagerProperties;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.tpch.TpchTable.getTables;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 public class TestHiveFaultTolerantExecutionAggregations
         extends AbstractTestFaultTolerantExecutionAggregations
 {
-    @ManageTestResources.Suppress(because = "Not a TestNG test class")
     private MinioStorage minioStorage;
 
     @Override
@@ -53,7 +48,7 @@ public class TestHiveFaultTolerantExecutionAggregations
                 .build();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void destroy()
             throws Exception
     {

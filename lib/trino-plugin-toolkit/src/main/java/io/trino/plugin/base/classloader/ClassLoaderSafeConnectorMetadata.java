@@ -49,8 +49,6 @@ import io.trino.spi.connector.JoinType;
 import io.trino.spi.connector.LimitApplicationResult;
 import io.trino.spi.connector.MaterializedViewFreshness;
 import io.trino.spi.connector.ProjectionApplicationResult;
-import io.trino.spi.connector.RelationColumnsMetadata;
-import io.trino.spi.connector.RelationCommentMetadata;
 import io.trino.spi.connector.RetryMode;
 import io.trino.spi.connector.RowChangeParadigm;
 import io.trino.spi.connector.SampleApplicationResult;
@@ -63,9 +61,7 @@ import io.trino.spi.connector.TableColumnsMetadata;
 import io.trino.spi.connector.TableFunctionApplicationResult;
 import io.trino.spi.connector.TableScanRedirectApplicationResult;
 import io.trino.spi.connector.TopNApplicationResult;
-import io.trino.spi.connector.WriterScalingOptions;
 import io.trino.spi.expression.ConnectorExpression;
-import io.trino.spi.expression.Constant;
 import io.trino.spi.function.AggregationFunctionMetadata;
 import io.trino.spi.function.BoundSignature;
 import io.trino.spi.function.FunctionDependencyDeclaration;
@@ -91,7 +87,6 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.UnaryOperator;
 
 import static java.util.Objects.requireNonNull;
 
@@ -129,14 +124,6 @@ public class ClassLoaderSafeConnectorMetadata
     {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
             return delegate.getNewTableLayout(session, tableMetadata);
-        }
-    }
-
-    @Override
-    public Optional<Type> getSupportedType(ConnectorSession session, Map<String, Object> tableProperties, Type type)
-    {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            return delegate.getSupportedType(session, tableProperties, type);
         }
     }
 
@@ -325,25 +312,6 @@ public class ClassLoaderSafeConnectorMetadata
     }
 
     @Override
-    public ClassLoaderSafeIterator<RelationColumnsMetadata> streamRelationColumns(
-            ConnectorSession session,
-            Optional<String> schemaName,
-            UnaryOperator<Set<SchemaTableName>> relationFilter)
-    {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            return new ClassLoaderSafeIterator<>(delegate.streamRelationColumns(session, schemaName, relationFilter), classLoader);
-        }
-    }
-
-    @Override
-    public ClassLoaderSafeIterator<RelationCommentMetadata> streamRelationComments(ConnectorSession session, Optional<String> schemaName, UnaryOperator<Set<SchemaTableName>> relationFilter)
-    {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            return new ClassLoaderSafeIterator<>(delegate.streamRelationComments(session, schemaName, relationFilter), classLoader);
-        }
-    }
-
-    @Override
     public TableStatistics getTableStatistics(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
@@ -376,14 +344,6 @@ public class ClassLoaderSafeConnectorMetadata
     }
 
     @Override
-    public void setFieldType(ConnectorSession session, ConnectorTableHandle tableHandle, List<String> fieldPath, Type type)
-    {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            delegate.setFieldType(session, tableHandle, fieldPath, type);
-        }
-    }
-
-    @Override
     public void setTableAuthorization(ConnectorSession session, SchemaTableName table, TrinoPrincipal principal)
     {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
@@ -404,6 +364,14 @@ public class ClassLoaderSafeConnectorMetadata
     {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
             delegate.dropSchema(session, schemaName, cascade);
+        }
+    }
+
+    @Override
+    public void dropSchema(ConnectorSession session, String schemaName)
+    {
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+            delegate.dropSchema(session, schemaName);
         }
     }
 
@@ -452,14 +420,6 @@ public class ClassLoaderSafeConnectorMetadata
     {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
             delegate.renameColumn(session, tableHandle, source, target);
-        }
-    }
-
-    @Override
-    public void renameField(ConnectorSession session, ConnectorTableHandle tableHandle, List<String> fieldPath, String target)
-    {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            delegate.renameField(session, tableHandle, fieldPath, target);
         }
     }
 
@@ -516,14 +476,6 @@ public class ClassLoaderSafeConnectorMetadata
     {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
             delegate.setViewColumnComment(session, viewName, columnName, comment);
-        }
-    }
-
-    @Override
-    public void setMaterializedViewColumnComment(ConnectorSession session, SchemaTableName viewName, String columnName, Optional<String> comment)
-    {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            delegate.setMaterializedViewColumnComment(session, viewName, columnName, comment);
         }
     }
 
@@ -695,22 +647,6 @@ public class ClassLoaderSafeConnectorMetadata
     public Optional<TrinoPrincipal> getSchemaOwner(ConnectorSession session, String schemaName)
     {
         return delegate.getSchemaOwner(session, schemaName);
-    }
-
-    @Override
-    public Optional<ConnectorTableHandle> applyUpdate(ConnectorSession session, ConnectorTableHandle handle, Map<ColumnHandle, Constant> assignments)
-    {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            return delegate.applyUpdate(session, handle, assignments);
-        }
-    }
-
-    @Override
-    public OptionalLong executeUpdate(ConnectorSession session, ConnectorTableHandle handle)
-    {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            return delegate.executeUpdate(session, handle);
-        }
     }
 
     @Override
@@ -1148,26 +1084,26 @@ public class ClassLoaderSafeConnectorMetadata
     }
 
     @Override
+    public boolean supportsReportingWrittenBytes(ConnectorSession session, SchemaTableName schemaTableName, Map<String, Object> tableProperties)
+    {
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+            return delegate.supportsReportingWrittenBytes(session, schemaTableName, tableProperties);
+        }
+    }
+
+    @Override
+    public boolean supportsReportingWrittenBytes(ConnectorSession session, ConnectorTableHandle connectorTableHandle)
+    {
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+            return delegate.supportsReportingWrittenBytes(session, connectorTableHandle);
+        }
+    }
+
+    @Override
     public OptionalInt getMaxWriterTasks(ConnectorSession session)
     {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
             return delegate.getMaxWriterTasks(session);
-        }
-    }
-
-    @Override
-    public WriterScalingOptions getNewTableWriterScalingOptions(ConnectorSession session, SchemaTableName tableName, Map<String, Object> tableProperties)
-    {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            return delegate.getNewTableWriterScalingOptions(session, tableName, tableProperties);
-        }
-    }
-
-    @Override
-    public WriterScalingOptions getInsertWriterScalingOptions(ConnectorSession session, ConnectorTableHandle tableHandle)
-    {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            return delegate.getInsertWriterScalingOptions(session, tableHandle);
         }
     }
 }

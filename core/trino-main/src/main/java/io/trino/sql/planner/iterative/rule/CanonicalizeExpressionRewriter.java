@@ -15,7 +15,6 @@ package io.trino.sql.planner.iterative.rule;
 
 import com.google.common.collect.ImmutableList;
 import io.trino.Session;
-import io.trino.spi.function.CatalogSchemaFunctionName;
 import io.trino.spi.type.DateType;
 import io.trino.spi.type.TimestampType;
 import io.trino.spi.type.TimestampWithTimeZoneType;
@@ -43,7 +42,6 @@ import io.trino.sql.tree.WhenClause;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.trino.metadata.GlobalFunctionCatalog.builtinFunctionName;
 import static io.trino.metadata.ResolvedFunction.extractFunctionName;
 import static io.trino.sql.ExpressionUtils.isEffectivelyLiteral;
 import static io.trino.sql.analyzer.TypeSignatureTranslator.toSqlType;
@@ -134,8 +132,8 @@ public final class CanonicalizeExpressionRewriter
         @Override
         public Expression rewriteFunctionCall(FunctionCall node, Void context, ExpressionTreeRewriter<Void> treeRewriter)
         {
-            CatalogSchemaFunctionName functionName = extractFunctionName(node.getName());
-            if (functionName.equals(builtinFunctionName("date")) && node.getArguments().size() == 1) {
+            String functionName = extractFunctionName(node.getName());
+            if (functionName.equals("date") && node.getArguments().size() == 1) {
                 Expression argument = node.getArguments().get(0);
                 Type argumentType = expressionTypes.get(NodeRef.of(argument));
                 if (argumentType instanceof TimestampType

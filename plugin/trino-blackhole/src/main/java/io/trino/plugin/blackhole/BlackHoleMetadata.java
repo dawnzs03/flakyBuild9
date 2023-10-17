@@ -147,7 +147,6 @@ public class BlackHoleMetadata
                         .map(BlackHoleTableHandle::toSchemaTableName)
                         .collect(toList()))
                 .addAll(listViews(session, schemaName))
-                .addAll(listMaterializedViews(session, schemaName))
                 .build().asList();
     }
 
@@ -392,20 +391,6 @@ public class BlackHoleMetadata
         if (!schemas.contains(schemaName)) {
             throw new SchemaNotFoundException(schemaName);
         }
-    }
-
-    @Override
-    public void setViewComment(ConnectorSession session, SchemaTableName viewName, Optional<String> comment)
-    {
-        ConnectorViewDefinition view = getView(session, viewName).orElseThrow(() -> new ViewNotFoundException(viewName));
-        views.put(viewName, new ConnectorViewDefinition(
-                view.getOriginalSql(),
-                view.getCatalog(),
-                view.getSchema(),
-                view.getColumns(),
-                comment,
-                view.getOwner(),
-                view.isRunAsInvoker()));
     }
 
     @Override

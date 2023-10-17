@@ -68,8 +68,8 @@ public class FunctionId
         return id;
     }
 
-    public static FunctionId toFunctionId(String canonicalName, Signature signature)
+    public static FunctionId toFunctionId(Signature signature)
     {
-        return new FunctionId((canonicalName + signature).toLowerCase(Locale.US));
+        return new FunctionId(signature.toString().toLowerCase(Locale.US));
     }
 }

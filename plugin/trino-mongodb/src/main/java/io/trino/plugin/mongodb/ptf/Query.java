@@ -21,7 +21,6 @@ import com.google.inject.Provider;
 import io.airlift.slice.Slice;
 import io.trino.plugin.mongodb.MongoColumnHandle;
 import io.trino.plugin.mongodb.MongoMetadata;
-import io.trino.plugin.mongodb.MongoMetadataFactory;
 import io.trino.plugin.mongodb.MongoSession;
 import io.trino.plugin.mongodb.MongoTableHandle;
 import io.trino.plugin.mongodb.RemoteTableName;
@@ -66,10 +65,10 @@ public class Query
     private final MongoSession session;
 
     @Inject
-    public Query(MongoMetadataFactory mongoMetadataFactory, MongoSession session)
+    public Query(MongoSession session)
     {
         requireNonNull(session, "session is null");
-        this.metadata = mongoMetadataFactory.create();
+        this.metadata = new MongoMetadata(session);
         this.session = session;
     }
 

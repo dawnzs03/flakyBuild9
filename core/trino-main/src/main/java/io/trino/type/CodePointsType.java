@@ -54,16 +54,14 @@ public class CodePointsType
 
         Slice slice = block.getSlice(position, 0, block.getSliceLength(position));
         int[] codePoints = new int[slice.length() / Integer.BYTES];
-        slice.getInts(0, codePoints);
+        slice.getBytes(0, Slices.wrappedIntArray(codePoints));
         return codePoints;
     }
 
     @Override
     public void writeObject(BlockBuilder blockBuilder, Object value)
     {
-        int[] codePoints = (int[]) value;
-        Slice slice = Slices.allocate(codePoints.length * Integer.BYTES);
-        slice.setInts(0, codePoints);
+        Slice slice = Slices.wrappedIntArray((int[]) value);
         ((VariableWidthBlockBuilder) blockBuilder).writeEntry(slice);
     }
 }

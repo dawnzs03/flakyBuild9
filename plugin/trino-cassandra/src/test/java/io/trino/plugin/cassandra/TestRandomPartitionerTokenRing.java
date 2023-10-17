@@ -14,7 +14,7 @@
 package io.trino.plugin.cassandra;
 
 import com.datastax.oss.driver.internal.core.metadata.token.RandomToken;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.math.BigInteger;
 

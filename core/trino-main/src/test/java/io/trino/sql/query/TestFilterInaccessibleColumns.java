@@ -22,10 +22,10 @@ import io.trino.spi.security.Identity;
 import io.trino.spi.security.ViewExpression;
 import io.trino.testing.LocalQueryRunner;
 import io.trino.testing.TestingAccessControlManager;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.Optional;
 
@@ -36,9 +36,8 @@ import static io.trino.testing.TestingHandles.TEST_CATALOG_NAME;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
+@Test(singleThreaded = true) // shared access control
 public class TestFilterInaccessibleColumns
 {
     private static final String USER = "user";
@@ -54,7 +53,7 @@ public class TestFilterInaccessibleColumns
     private QueryAssertions assertions;
     private TestingAccessControlManager accessControl;
 
-    @BeforeAll
+    @BeforeClass
     public void init()
     {
         LocalQueryRunner runner = LocalQueryRunner.builder(SESSION)
@@ -66,18 +65,22 @@ public class TestFilterInaccessibleColumns
         accessControl = assertions.getQueryRunner().getAccessControl();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void teardown()
     {
         assertions.close();
         assertions = null;
     }
 
+    @BeforeMethod
+    public void beforeMethod()
+    {
+        accessControl.reset();
+    }
+
     @Test
     public void testSelectBaseline()
     {
-        accessControl.reset();
-
         // No filtering baseline
         assertThat(assertions.query("SELECT * FROM nation WHERE name = 'FRANCE'"))
                 .matches("VALUES (BIGINT '6', CAST('FRANCE' AS VARCHAR(25)), BIGINT '3', CAST('refully final requests. regular, ironi' AS VARCHAR(152)))");
@@ -86,8 +89,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testSimpleTableSchemaFilter()
     {
-        accessControl.reset();
-
         accessControl.deny(privilege(USER, "nation.comment", SELECT_COLUMN));
         assertThat(assertions.query("SELECT * FROM nation WHERE name = 'FRANCE'"))
                 .matches("VALUES (BIGINT '6', CAST('FRANCE' AS VARCHAR(25)), BIGINT '3')");
@@ -96,8 +97,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testDescribeBaseline()
     {
-        accessControl.reset();
-
         assertThat(assertions.query("DESCRIBE nation"))
                 .matches(materializedRows -> materializedRows
                         .getMaterializedRows().stream()
@@ -107,8 +106,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testDescribe()
     {
-        accessControl.reset();
-
         accessControl.deny(privilege(USER, "nation.comment", SELECT_COLUMN));
         assertThat(assertions.query("DESCRIBE nation"))
                 .matches(materializedRows -> materializedRows
@@ -119,8 +116,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testShowColumnsBaseline()
     {
-        accessControl.reset();
-
         assertThat(assertions.query("SHOW COLUMNS FROM nation"))
                 .matches(materializedRows -> materializedRows
                         .getMaterializedRows().stream()
@@ -130,8 +125,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testShowColumns()
     {
-        accessControl.reset();
-
         accessControl.deny(privilege("nation.comment", SELECT_COLUMN));
         assertThat(assertions.query("SHOW COLUMNS FROM nation"))
                 .matches(materializedRows -> materializedRows
@@ -145,8 +138,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testFilterExplicitSelect()
     {
-        accessControl.reset();
-
         // Select the columns that are available to us explicitly
         accessControl.deny(privilege(USER, "nation.comment", SELECT_COLUMN));
         assertThat(assertions.query("SELECT nationkey, name, regionkey FROM nation WHERE name = 'FRANCE'"))
@@ -160,8 +151,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testRowFilterWithAccessToInaccessibleColumn()
     {
-        accessControl.reset();
-
         accessControl.rowFilter(new QualifiedObjectName(TEST_CATALOG_NAME, TINY_SCHEMA_NAME, "nation"),
                 USER,
                 new ViewExpression(Optional.of(ADMIN), Optional.of(TEST_CATALOG_NAME), Optional.of(TINY_SCHEMA_NAME), "comment IS NOT null"));
@@ -173,8 +162,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testRowFilterWithoutAccessToInaccessibleColumn()
     {
-        accessControl.reset();
-
         accessControl.rowFilter(new QualifiedObjectName(TEST_CATALOG_NAME, TINY_SCHEMA_NAME, "nation"),
                 USER,
                 new ViewExpression(Optional.of(USER), Optional.of(TEST_CATALOG_NAME), Optional.of(TINY_SCHEMA_NAME), "comment IS NOT null"));
@@ -186,8 +173,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testRowFilterAsSessionUserOnInaccessibleColumn()
     {
-        accessControl.reset();
-
         accessControl.deny(privilege(USER, "nation.comment", SELECT_COLUMN));
         QualifiedObjectName table = new QualifiedObjectName(TEST_CATALOG_NAME, TINY_SCHEMA_NAME, "nation");
         ViewExpression filter = new ViewExpression(Optional.empty(), Optional.of(TEST_CATALOG_NAME), Optional.of(TINY_SCHEMA_NAME), "comment IS NOT null");
@@ -203,8 +188,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testMaskingOnAccessibleColumn()
     {
-        accessControl.reset();
-
         accessControl.columnMask(new QualifiedObjectName(TEST_CATALOG_NAME, TINY_SCHEMA_NAME, "nation"),
                 "nationkey",
                 USER,
@@ -216,8 +199,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testMaskingWithoutAccessToInaccessibleColumn()
     {
-        accessControl.reset();
-
         accessControl.deny(privilege(USER, "nation.nationkey", SELECT_COLUMN));
         accessControl.columnMask(new QualifiedObjectName(TEST_CATALOG_NAME, TINY_SCHEMA_NAME, "nation"),
                 "comment",
@@ -231,8 +212,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testMaskingWithAccessToInaccessibleColumn()
     {
-        accessControl.reset();
-
         accessControl.deny(privilege(USER, "nation.nationkey", SELECT_COLUMN));
         accessControl.columnMask(new QualifiedObjectName(TEST_CATALOG_NAME, TINY_SCHEMA_NAME, "nation"),
                 "comment",
@@ -249,8 +228,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testMaskingAsSessionUserWithCaseOnInaccessibleColumn()
     {
-        accessControl.reset();
-
         accessControl.deny(privilege(USER, "nation.nationkey", SELECT_COLUMN));
         QualifiedObjectName table = new QualifiedObjectName(TEST_CATALOG_NAME, TINY_SCHEMA_NAME, "nation");
         ViewExpression mask = new ViewExpression(Optional.empty(), Optional.of(TEST_CATALOG_NAME), Optional.of(TINY_SCHEMA_NAME), "CASE nationkey WHEN 3 THEN 'masked-comment' ELSE comment END");
@@ -266,8 +243,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testPredicateOnInaccessibleColumn()
     {
-        accessControl.reset();
-
         // Hide name but use it in the query predicate
         accessControl.deny(privilege(USER, "nation.name", SELECT_COLUMN));
         assertThatThrownBy(() -> assertions.query("SELECT * FROM nation WHERE name = 'FRANCE'"))
@@ -277,8 +252,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testJoinBaseline()
     {
-        accessControl.reset();
-
         assertThat(assertions.query("SELECT * FROM nation,customer WHERE customer.nationkey = nation.nationkey AND nation.name = 'FRANCE' AND customer.name='Customer#000001477'"))
                 .matches(materializedRows ->
                     materializedRows.getMaterializedRows().get(0).getField(11).equals("ites nag blithely alongside of the ironic accounts. accounts use. carefully silent deposits"));
@@ -287,8 +260,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testJoin()
     {
-        accessControl.reset();
-
         accessControl.deny(privilege(USER, "nation.comment", SELECT_COLUMN));
         assertThat(assertions.query("SELECT * FROM nation,customer WHERE customer.nationkey = nation.nationkey AND nation.name = 'FRANCE' AND customer.name='Customer#000001477'"))
                 .matches(materializedRows ->
@@ -298,8 +269,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testConstantFields()
     {
-        accessControl.reset();
-
         assertThat(assertions.query("SELECT * FROM (SELECT 'test')"))
                 .matches("VALUES ('test')");
     }
@@ -307,8 +276,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testFunctionFields()
     {
-        accessControl.reset();
-
         assertThat(assertions.query("SELECT * FROM (SELECT concat(name,'-test') FROM nation WHERE name = 'FRANCE')"))
                 .matches("VALUES (CAST('FRANCE-test' AS VARCHAR))");
     }
@@ -316,8 +283,6 @@ public class TestFilterInaccessibleColumns
     @Test
     public void testFunctionOnInaccessibleColumn()
     {
-        accessControl.reset();
-
         accessControl.deny(privilege(USER, "nation.name", SELECT_COLUMN));
         assertThatThrownBy(() -> assertions.query("SELECT * FROM (SELECT concat(name,'-test') FROM nation WHERE name = 'FRANCE')"))
                 .hasMessage("Access Denied: Cannot select from columns [name] in table or view test-catalog.tiny.nation");

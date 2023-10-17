@@ -147,9 +147,9 @@ public class MongoMetadata
     }
 
     @Override
-    public void dropSchema(ConnectorSession session, String schemaName, boolean cascade)
+    public void dropSchema(ConnectorSession session, String schemaName)
     {
-        mongoSession.dropSchema(schemaName, cascade);
+        mongoSession.dropSchema(schemaName);
     }
 
     @Override

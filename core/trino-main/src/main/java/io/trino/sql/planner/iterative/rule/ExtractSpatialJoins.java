@@ -27,7 +27,6 @@ import io.trino.matching.Captures;
 import io.trino.matching.Pattern;
 import io.trino.metadata.Metadata;
 import io.trino.metadata.QualifiedObjectName;
-import io.trino.metadata.ResolvedFunction;
 import io.trino.metadata.Split;
 import io.trino.metadata.TableHandle;
 import io.trino.spi.Page;
@@ -44,8 +43,7 @@ import io.trino.split.SplitManager;
 import io.trino.split.SplitSource;
 import io.trino.split.SplitSource.SplitBatch;
 import io.trino.sql.PlannerContext;
-import io.trino.sql.planner.BuiltinFunctionCallBuilder;
-import io.trino.sql.planner.ResolvedFunctionCallBuilder;
+import io.trino.sql.planner.FunctionCallBuilder;
 import io.trino.sql.planner.Symbol;
 import io.trino.sql.planner.TypeAnalyzer;
 import io.trino.sql.planner.iterative.Rule;
@@ -63,6 +61,7 @@ import io.trino.sql.tree.Cast;
 import io.trino.sql.tree.ComparisonExpression;
 import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.FunctionCall;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.StringLiteral;
 import io.trino.sql.tree.SymbolReference;
 
@@ -434,12 +433,10 @@ public class ExtractSpatialJoins
             }
         }
 
-        ResolvedFunction resolvedFunction = plannerContext.getFunctionDecoder()
-                .fromQualifiedName(spatialFunction.getName())
-                .orElseThrow(() -> new IllegalArgumentException("function call not resolved"));
-        Expression newSpatialFunction = ResolvedFunctionCallBuilder.builder(resolvedFunction)
-                .addArgument(newFirstArgument)
-                .addArgument(newSecondArgument)
+        Expression newSpatialFunction = FunctionCallBuilder.resolve(context.getSession(), plannerContext.getMetadata())
+                .setName(spatialFunction.getName())
+                .addArgument(GEOMETRY_TYPE_SIGNATURE, newFirstArgument)
+                .addArgument(GEOMETRY_TYPE_SIGNATURE, newSecondArgument)
                 .build();
         Expression newFilter = replaceExpression(filter, ImmutableMap.of(spatialFunction, newSpatialFunction));
 
@@ -597,8 +594,8 @@ public class ExtractSpatialJoins
         }
 
         TypeSignature typeSignature = new TypeSignature(KDB_TREE_TYPENAME);
-        BuiltinFunctionCallBuilder spatialPartitionsCall = BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                .setName("spatial_partitions")
+        FunctionCallBuilder spatialPartitionsCall = FunctionCallBuilder.resolve(context.getSession(), plannerContext.getMetadata())
+                .setName(QualifiedName.of("spatial_partitions"))
                 .addArgument(typeSignature, new Cast(new StringLiteral(KdbTreeUtils.toJson(kdbTree)), toSqlType(plannerContext.getTypeManager().getType(typeSignature))))
                 .addArgument(GEOMETRY_TYPE_SIGNATURE, geometry);
         radius.ifPresent(value -> spatialPartitionsCall.addArgument(DOUBLE, value));

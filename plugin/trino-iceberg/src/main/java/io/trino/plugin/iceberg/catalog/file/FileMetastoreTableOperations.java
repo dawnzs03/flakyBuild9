@@ -32,6 +32,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_CONCURRENT_MODIFICATION_DETECTED;
 import static io.trino.plugin.hive.metastore.PrincipalPrivileges.NO_PRIVILEGES;
 import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_PROP;
+import static org.apache.iceberg.BaseMetastoreTableOperations.PREVIOUS_METADATA_LOCATION_PROP;
 
 @NotThreadSafe
 public class FileMetastoreTableOperations
@@ -64,7 +65,10 @@ public class FileMetastoreTableOperations
         String newMetadataLocation = writeNewMetadata(metadata, version.orElseThrow() + 1);
 
         Table table = Table.builder(currentTable)
-                .apply(builder -> updateMetastoreTable(builder, metadata, newMetadataLocation, Optional.of(currentMetadataLocation)))
+                .setDataColumns(toHiveColumns(metadata.schema().columns()))
+                .withStorage(storage -> storage.setLocation(metadata.location()))
+                .setParameter(METADATA_LOCATION_PROP, newMetadataLocation)
+                .setParameter(PREVIOUS_METADATA_LOCATION_PROP, currentMetadataLocation)
                 .build();
 
         // todo privileges should not be replaced for an alter

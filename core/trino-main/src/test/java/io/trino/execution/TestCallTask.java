@@ -37,10 +37,10 @@ import io.trino.sql.tree.QualifiedName;
 import io.trino.testing.LocalQueryRunner;
 import io.trino.testing.TestingAccessControlManager;
 import io.trino.transaction.TransactionManager;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.net.URI;
@@ -61,16 +61,16 @@ import static io.trino.util.Reflection.methodHandle;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
+@Test(singleThreaded = true)
 public class TestCallTask
 {
-    private static final MethodHandle PROCEDURE_METHOD_HANDLE = methodHandle(TestingProcedure.class, "testingMethod", Target.class, ConnectorAccessControl.class);
     private ExecutorService executor;
+
+    private static boolean invoked;
     private LocalQueryRunner queryRunner;
 
-    @BeforeAll
+    @BeforeClass
     public void init()
     {
         queryRunner = LocalQueryRunner.builder(TEST_SESSION).build();
@@ -78,7 +78,7 @@ public class TestCallTask
         executor = newCachedThreadPool(daemonThreadsNamed("call-task-test-%s"));
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void close()
     {
         if (queryRunner != null) {
@@ -89,23 +89,28 @@ public class TestCallTask
         executor = null;
     }
 
+    @BeforeMethod
+    public void cleanup()
+    {
+        invoked = false;
+    }
+
     @Test
     public void testExecute()
     {
-        Target target = new Target();
-        executeCallTask(PROCEDURE_METHOD_HANDLE.bindTo(target), transactionManager -> new AllowAllAccessControl());
-        assertThat(target.invoked).isTrue();
+        executeCallTask(methodHandle(TestCallTask.class, "testingMethod"), transactionManager -> new AllowAllAccessControl());
+        assertThat(invoked).isTrue();
     }
 
     @Test
     public void testExecuteNoPermission()
     {
-        Target target = new Target();
         assertThatThrownBy(
-                () -> executeCallTask(PROCEDURE_METHOD_HANDLE.bindTo(target), transactionManager -> new DenyAllAccessControl()))
+                () -> executeCallTask(methodHandle(TestCallTask.class, "testingMethod"), transactionManager -> new DenyAllAccessControl()))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot execute procedure test-catalog.test.testing_procedure");
-        assertThat(target.invoked).isFalse();
+
+        assertThat(invoked).isFalse();
     }
 
     @Test
@@ -113,7 +118,7 @@ public class TestCallTask
     {
         assertThatThrownBy(
                 () -> executeCallTask(
-                        PROCEDURE_METHOD_HANDLE.bindTo(new Target()),
+                        methodHandle(TestingProcedure.class, "testingMethod", ConnectorAccessControl.class),
                         transactionManager -> {
                             TestingAccessControlManager accessControl = new TestingAccessControlManager(transactionManager, emptyEventListenerManager());
                             accessControl.loadSystemAccessControl(AllowAllSystemAccessControl.NAME, ImmutableMap.of());
@@ -171,16 +176,15 @@ public class TestCallTask
                 new NodeVersion("test"));
     }
 
-    private static class Target
+    public static void testingMethod()
     {
-        public boolean invoked;
+        invoked = true;
     }
 
     public static class TestingProcedure
     {
-        public static void testingMethod(Target target, ConnectorAccessControl connectorAccessControl)
+        public static void testingMethod(ConnectorAccessControl connectorAccessControl)
         {
-            target.invoked = true;
             connectorAccessControl.checkCanInsertIntoTable(null, new SchemaTableName("test", "testing_table"));
         }
     }

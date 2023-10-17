@@ -20,7 +20,8 @@ import io.trino.metadata.TypeRegistry;
 import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeOperators;
-import org.junit.jupiter.api.Test;
+import io.trino.sql.tree.QualifiedName;
+import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,7 +50,7 @@ public class TestArbitraryAggregation
     {
         Collection<Type> standardTypes = new TypeRegistry(new TypeOperators(), new FeaturesConfig()).getTypes();
         for (Type valueType : standardTypes) {
-            assertNotNull(FUNCTION_RESOLUTION.getAggregateFunction("arbitrary", fromTypes(valueType)));
+            assertNotNull(FUNCTION_RESOLUTION.getAggregateFunction(QualifiedName.of("arbitrary"), fromTypes(valueType)));
         }
     }
 
@@ -58,7 +59,7 @@ public class TestArbitraryAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "arbitrary",
+                QualifiedName.of("arbitrary"),
                 fromTypes(BOOLEAN),
                 null,
                 createBooleansBlock((Boolean) null));
@@ -69,7 +70,7 @@ public class TestArbitraryAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "arbitrary",
+                QualifiedName.of("arbitrary"),
                 fromTypes(BOOLEAN),
                 true,
                 createBooleansBlock(true, true));
@@ -80,7 +81,7 @@ public class TestArbitraryAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "arbitrary",
+                QualifiedName.of("arbitrary"),
                 fromTypes(BIGINT),
                 null,
                 createLongsBlock(null, null));
@@ -91,7 +92,7 @@ public class TestArbitraryAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "arbitrary",
+                QualifiedName.of("arbitrary"),
                 fromTypes(BIGINT),
                 1L,
                 createLongsBlock(1L, null));
@@ -102,7 +103,7 @@ public class TestArbitraryAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "arbitrary",
+                QualifiedName.of("arbitrary"),
                 fromTypes(DOUBLE),
                 null,
                 createDoublesBlock(null, null));
@@ -113,7 +114,7 @@ public class TestArbitraryAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "arbitrary",
+                QualifiedName.of("arbitrary"),
                 fromTypes(DOUBLE),
                 2.0,
                 createDoublesBlock(null, 2.0));
@@ -124,7 +125,7 @@ public class TestArbitraryAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "arbitrary",
+                QualifiedName.of("arbitrary"),
                 fromTypes(VARCHAR),
                 null,
                 createStringsBlock(null, null));
@@ -135,7 +136,7 @@ public class TestArbitraryAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "arbitrary",
+                QualifiedName.of("arbitrary"),
                 fromTypes(VARCHAR),
                 "a",
                 createStringsBlock("a", "a"));
@@ -146,7 +147,7 @@ public class TestArbitraryAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "arbitrary",
+                QualifiedName.of("arbitrary"),
                 fromTypes(new ArrayType(BIGINT)),
                 null,
                 createArrayBigintBlock(Arrays.asList(null, null, null, null)));
@@ -157,7 +158,7 @@ public class TestArbitraryAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "arbitrary",
+                QualifiedName.of("arbitrary"),
                 fromTypes(new ArrayType(BIGINT)),
                 ImmutableList.of(23L, 45L),
                 createArrayBigintBlock(ImmutableList.of(ImmutableList.of(23L, 45L), ImmutableList.of(23L, 45L), ImmutableList.of(23L, 45L), ImmutableList.of(23L, 45L))));
@@ -168,7 +169,7 @@ public class TestArbitraryAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "arbitrary",
+                QualifiedName.of("arbitrary"),
                 fromTypes(INTEGER),
                 3,
                 createIntsBlock(3, 3, null));

@@ -63,8 +63,9 @@ public final class ZipFunction
 
     private ZipFunction(List<String> typeParameters)
     {
-        super(FunctionMetadata.scalarBuilder("zip")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("zip")
                         .typeVariableConstraints(typeParameters.stream().map(TypeVariableConstraint::typeVariable).collect(toImmutableList()))
                         .returnType(arrayType(rowType(typeParameters.stream()
                                 .map(TypeSignature::new)

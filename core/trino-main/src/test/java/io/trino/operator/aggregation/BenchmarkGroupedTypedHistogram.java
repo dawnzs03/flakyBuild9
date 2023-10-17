@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 import io.trino.metadata.TestingFunctionResolution;
 import io.trino.spi.Page;
 import io.trino.spi.block.Block;
-import org.junit.jupiter.api.Test;
+import io.trino.sql.tree.QualifiedName;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
@@ -136,15 +136,7 @@ public class BenchmarkGroupedTypedHistogram
     private static TestingAggregationFunction getInternalAggregationFunctionVarChar()
     {
         TestingFunctionResolution functionResolution = new TestingFunctionResolution();
-        return functionResolution.getAggregateFunction("histogram", fromTypes(VARCHAR));
-    }
-
-    @Test
-    public void test()
-    {
-        Data data = new Data();
-        data.setUp();
-        testSharedGroupWithLargeBlocksRunner(data);
+        return functionResolution.getAggregateFunction(QualifiedName.of("histogram"), fromTypes(VARCHAR));
     }
 
     public static void main(String[] args)

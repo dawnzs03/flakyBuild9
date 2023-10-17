@@ -60,7 +60,6 @@ public class TopNProcessor
                     new SimplePageWithPositionComparator(types, sortChannels, sortOrders, typeOperators),
                     n,
                     false,
-                    new int[0],
                     new NoChannelGroupByHash());
         }
     }

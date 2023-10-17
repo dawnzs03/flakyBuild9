@@ -59,7 +59,7 @@ public final class MemorySplitManager
 
         List<MemoryDataFragment> dataFragments = metadata.getDataFragments(table.getId());
 
-        long totalRows = 0;
+        int totalRows = 0;
 
         ImmutableList.Builder<ConnectorSplit> splits = ImmutableList.builder();
 

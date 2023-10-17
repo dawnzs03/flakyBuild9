@@ -14,8 +14,6 @@
 package io.trino.plugin.oracle;
 
 import io.airlift.units.Duration;
-import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.instrumentation.jdbc.datasource.OpenTelemetryDataSource;
 import io.trino.plugin.jdbc.ConnectionFactory;
 import io.trino.plugin.jdbc.credential.CredentialProvider;
 import io.trino.spi.connector.ConnectorSession;
@@ -34,7 +32,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class OraclePoolConnectionFactory
         implements ConnectionFactory
 {
-    private final OpenTelemetryDataSource dataSource;
+    private final PoolDataSource dataSource;
 
     public OraclePoolConnectionFactory(
             String connectionUrl,
@@ -42,23 +40,22 @@ public class OraclePoolConnectionFactory
             CredentialProvider credentialProvider,
             int connectionPoolMinSize,
             int connectionPoolMaxSize,
-            Duration inactiveConnectionTimeout,
-            OpenTelemetry openTelemetry)
+            Duration inactiveConnectionTimeout)
             throws SQLException
     {
-        PoolDataSource dataSource = PoolDataSourceFactory.getPoolDataSource();
+        this.dataSource = PoolDataSourceFactory.getPoolDataSource();
 
         //Setting connection properties of the data source
-        dataSource.setConnectionFactoryClassName(OracleDataSource.class.getName());
-        dataSource.setURL(connectionUrl);
+        this.dataSource.setConnectionFactoryClassName(OracleDataSource.class.getName());
+        this.dataSource.setURL(connectionUrl);
 
         //Setting pool properties
-        dataSource.setInitialPoolSize(connectionPoolMinSize);
-        dataSource.setMinPoolSize(connectionPoolMinSize);
-        dataSource.setMaxPoolSize(connectionPoolMaxSize);
-        dataSource.setValidateConnectionOnBorrow(true);
-        dataSource.setConnectionProperties(connectionProperties);
-        dataSource.setInactiveConnectionTimeout(toIntExact(inactiveConnectionTimeout.roundTo(SECONDS)));
+        this.dataSource.setInitialPoolSize(connectionPoolMinSize);
+        this.dataSource.setMinPoolSize(connectionPoolMinSize);
+        this.dataSource.setMaxPoolSize(connectionPoolMaxSize);
+        this.dataSource.setValidateConnectionOnBorrow(true);
+        this.dataSource.setConnectionProperties(connectionProperties);
+        this.dataSource.setInactiveConnectionTimeout(toIntExact(inactiveConnectionTimeout.roundTo(SECONDS)));
         credentialProvider.getConnectionUser(Optional.empty())
                 .ifPresent(user -> {
                     try {
@@ -77,7 +74,6 @@ public class OraclePoolConnectionFactory
                         throw new RuntimeException(e);
                     }
                 });
-        this.dataSource = new OpenTelemetryDataSource(dataSource, openTelemetry);
     }
 
     @Override

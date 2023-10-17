@@ -18,7 +18,7 @@ import io.airlift.bootstrap.ApplicationConfigurationException;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.testing.TestingConnectorContext;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.io.File;
 import java.nio.file.Files;

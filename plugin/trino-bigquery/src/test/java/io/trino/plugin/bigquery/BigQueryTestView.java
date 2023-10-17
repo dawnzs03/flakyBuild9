@@ -14,24 +14,32 @@
 package io.trino.plugin.bigquery;
 
 import io.trino.testing.sql.SqlExecutor;
-import io.trino.testing.sql.TemporaryRelation;
+import io.trino.testing.sql.TestTable;
+
+import java.util.List;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public class BigQueryTestView
-        implements TemporaryRelation
+        extends TestTable
 {
-    private final SqlExecutor sqlExecutor;
-    private final TemporaryRelation relation;
+    private final TestTable table;
     private final String viewName;
 
-    public BigQueryTestView(SqlExecutor sqlExecutor, TemporaryRelation relation)
+    public BigQueryTestView(SqlExecutor sqlExecutor, TestTable table)
     {
-        this.sqlExecutor = requireNonNull(sqlExecutor, "sqlExecutor is null");
-        this.relation = requireNonNull(relation, "relation is null");
-        this.viewName = relation.getName() + "_view";
-        sqlExecutor.execute(format("CREATE VIEW %s AS SELECT * FROM %s", viewName, relation.getName()));
+        super(sqlExecutor, table.getName(), null);
+        this.table = requireNonNull(table, "table is null");
+        this.viewName = table.getName() + "_view";
+    }
+
+    @Override
+    public void createAndInsert(List<String> rowsToInsert) {}
+
+    public void createView()
+    {
+        sqlExecutor.execute(format("CREATE VIEW %s AS SELECT * FROM %s", viewName, table.getName()));
     }
 
     @Override
@@ -43,8 +51,7 @@ public class BigQueryTestView
     @Override
     public void close()
     {
-        try (relation) {
-            sqlExecutor.execute("DROP VIEW " + viewName);
-        }
+        sqlExecutor.execute("DROP TABLE " + table.getName());
+        sqlExecutor.execute("DROP VIEW " + viewName);
     }
 }

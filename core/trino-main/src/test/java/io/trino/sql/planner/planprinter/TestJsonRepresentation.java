@@ -209,14 +209,14 @@ public class TestJsonRepresentation
                         ImmutableList.of(new JoinNode.EquiJoinClause(pb.symbol("a", BIGINT), pb.symbol("d", BIGINT))),
                         ImmutableList.of(pb.symbol("b", BIGINT)),
                         ImmutableList.of(),
-                        Optional.of(expression("a < c")),
+                        Optional.empty(),
                         Optional.empty(),
                         Optional.empty(),
                         ImmutableMap.of(new DynamicFilterId("DF"), pb.symbol("d", BIGINT))),
                 new JsonRenderedNode(
                         "2",
                         "InnerJoin",
-                        ImmutableMap.of("criteria", "(\"a\" = \"d\")", "filter", "(\"a\" < \"c\")", "hash", "[]"),
+                        ImmutableMap.of("criteria", "(\"a\" = \"d\")", "hash", "[]"),
                         ImmutableList.of(typedSymbol("b", "bigint")),
                         ImmutableList.of("dynamicFilterAssignments = {d -> #DF}"),
                         ImmutableList.of(),
@@ -261,7 +261,7 @@ public class TestJsonRepresentation
 
     private void assertJsonRepresentation(Function<PlanBuilder, PlanNode> sourceNodeSupplier, JsonRenderedNode expectedRepresentation)
     {
-        PlanBuilder planBuilder = new PlanBuilder(new PlanNodeIdAllocator(), queryRunner.getPlannerContext(), queryRunner.getDefaultSession());
+        PlanBuilder planBuilder = new PlanBuilder(new PlanNodeIdAllocator(), queryRunner.getMetadata(), queryRunner.getDefaultSession());
         ValuePrinter valuePrinter = new ValuePrinter(queryRunner.getMetadata(), queryRunner.getFunctionManager(), queryRunner.getDefaultSession());
         String jsonRenderedNode = new PlanPrinter(
                 sourceNodeSupplier.apply(planBuilder),

@@ -203,10 +203,17 @@ public class SlicePositionsAppender
     {
         ensureExtraBytesCapacity(newByteCount);
 
-        byte[] base = rawSlice.byteArray();
-        int byteArrayOffset = rawSlice.byteArrayOffset();
-        for (int i = 0; i < count; i++) {
-            System.arraycopy(base, byteArrayOffset + sourceOffsets[i], bytes, offsets[positionCount + i], lengths[i]);
+        if (rawSlice.hasByteArray()) {
+            byte[] base = rawSlice.byteArray();
+            int byteArrayOffset = rawSlice.byteArrayOffset();
+            for (int i = 0; i < count; i++) {
+                System.arraycopy(base, byteArrayOffset + sourceOffsets[i], bytes, offsets[positionCount + i], lengths[i]);
+            }
+        }
+        else {
+            for (int i = 0; i < count; i++) {
+                rawSlice.getBytes(sourceOffsets[i], bytes, offsets[positionCount + i], lengths[i]);
+            }
         }
 
         positionCount += count;

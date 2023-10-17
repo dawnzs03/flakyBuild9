@@ -32,7 +32,7 @@ import io.trino.testing.QueryRunner;
 import io.trino.tpch.TpchEntity;
 import io.trino.tpch.TpchTable;
 import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -48,6 +48,7 @@ import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.write;
 import static java.util.Objects.requireNonNull;
 
+@Test(singleThreaded = true) // tests use shared invocation counter map
 public class TestDeltaLakePerTransactionMetastoreCache
 {
     private CountingAccessHiveMetastore metastore;
@@ -79,7 +80,7 @@ public class TestDeltaLakePerTransactionMetastoreCache
 
             for (TpchTable<? extends TpchEntity> table : List.of(TpchTable.NATION, TpchTable.REGION)) {
                 String tableName = table.getTableName();
-                String resourcePath = "io/trino/plugin/deltalake/testing/resources/databricks73/" + tableName + "/";
+                String resourcePath = "io/trino/plugin/deltalake/testing/resources/databricks/" + tableName + "/";
                 Path tableDirectory = queryRunner.getCoordinator().getBaseDataDir().resolve("%s-%s".formatted(tableName, randomNameSuffix()));
 
                 for (ClassPath.ResourceInfo resourceInfo : ClassPath.from(getClass().getClassLoader()).getResources()) {

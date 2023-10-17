@@ -14,53 +14,28 @@
 package io.trino.operator.aggregation.arrayagg;
 
 import io.trino.spi.function.AccumulatorStateFactory;
-import io.trino.spi.function.Convention;
-import io.trino.spi.function.OperatorDependency;
-import io.trino.spi.function.OperatorType;
 import io.trino.spi.function.TypeParameter;
 import io.trino.spi.type.Type;
-
-import java.lang.invoke.MethodHandle;
-
-import static io.trino.spi.function.InvocationConvention.InvocationArgumentConvention.BLOCK_POSITION_NOT_NULL;
-import static io.trino.spi.function.InvocationConvention.InvocationArgumentConvention.FLAT;
-import static io.trino.spi.function.InvocationConvention.InvocationReturnConvention.BLOCK_BUILDER;
-import static io.trino.spi.function.InvocationConvention.InvocationReturnConvention.FLAT_RETURN;
 
 public class ArrayAggregationStateFactory
         implements AccumulatorStateFactory<ArrayAggregationState>
 {
     private final Type type;
-    private final MethodHandle readFlat;
-    private final MethodHandle writeFlat;
 
-    public ArrayAggregationStateFactory(
-            @OperatorDependency(
-                    operator = OperatorType.READ_VALUE,
-                    argumentTypes = "T",
-                    convention = @Convention(arguments = FLAT, result = BLOCK_BUILDER))
-            MethodHandle readFlat,
-            @OperatorDependency(
-                    operator = OperatorType.READ_VALUE,
-                    argumentTypes = "T",
-                    convention = @Convention(arguments = BLOCK_POSITION_NOT_NULL, result = FLAT_RETURN))
-            MethodHandle writeFlat,
-            @TypeParameter("T") Type type)
+    public ArrayAggregationStateFactory(@TypeParameter("T") Type type)
     {
         this.type = type;
-        this.readFlat = readFlat;
-        this.writeFlat = writeFlat;
     }
 
     @Override
     public ArrayAggregationState createSingleState()
     {
-        return new SingleArrayAggregationState(type, readFlat, writeFlat);
+        return new SingleArrayAggregationState(type);
     }
 
     @Override
     public ArrayAggregationState createGroupedState()
     {
-        return new GroupArrayAggregationState(type, readFlat, writeFlat);
+        return new GroupArrayAggregationState(type);
     }
 }

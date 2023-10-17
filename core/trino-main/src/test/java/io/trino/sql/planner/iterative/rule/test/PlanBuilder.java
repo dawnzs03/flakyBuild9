@@ -21,8 +21,8 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import io.trino.Session;
 import io.trino.cost.PlanNodeStatsEstimate;
-import io.trino.metadata.FunctionResolver;
 import io.trino.metadata.IndexHandle;
+import io.trino.metadata.Metadata;
 import io.trino.metadata.OutputTableHandle;
 import io.trino.metadata.ResolvedFunction;
 import io.trino.metadata.TableExecuteHandle;
@@ -33,13 +33,12 @@ import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.SortOrder;
-import io.trino.spi.connector.WriterScalingOptions;
 import io.trino.spi.function.table.ConnectorTableFunctionHandle;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.Type;
 import io.trino.sql.ExpressionUtils;
-import io.trino.sql.PlannerContext;
 import io.trino.sql.analyzer.TypeSignatureProvider;
+import io.trino.sql.parser.ParsingOptions;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.planner.OrderingScheme;
 import io.trino.sql.planner.Partitioning;
@@ -72,7 +71,6 @@ import io.trino.sql.planner.plan.IntersectNode;
 import io.trino.sql.planner.plan.JoinNode;
 import io.trino.sql.planner.plan.LimitNode;
 import io.trino.sql.planner.plan.MarkDistinctNode;
-import io.trino.sql.planner.plan.MergeProcessorNode;
 import io.trino.sql.planner.plan.MergeWriterNode;
 import io.trino.sql.planner.plan.OffsetNode;
 import io.trino.sql.planner.plan.OutputNode;
@@ -153,15 +151,15 @@ import static java.util.function.Function.identity;
 public class PlanBuilder
 {
     private final PlanNodeIdAllocator idAllocator;
+    private final Metadata metadata;
     private final Session session;
     private final Map<Symbol, Type> symbols = new HashMap<>();
-    private final FunctionResolver functionResolver;
 
-    public PlanBuilder(PlanNodeIdAllocator idAllocator, PlannerContext plannerContext, Session session)
+    public PlanBuilder(PlanNodeIdAllocator idAllocator, Metadata metadata, Session session)
     {
         this.idAllocator = idAllocator;
+        this.metadata = metadata;
         this.session = session;
-        functionResolver = plannerContext.getFunctionResolver();
     }
 
     public OutputNode output(List<String> columnNames, List<Symbol> outputs, PlanNode source)
@@ -438,7 +436,7 @@ public class PlanBuilder
         {
             checkArgument(expression instanceof FunctionCall);
             FunctionCall aggregation = (FunctionCall) expression;
-            ResolvedFunction resolvedFunction = functionResolver.resolveFunction(session, aggregation.getName(), TypeSignatureProvider.fromTypes(inputTypes));
+            ResolvedFunction resolvedFunction = metadata.resolveFunction(session, aggregation.getName(), TypeSignatureProvider.fromTypes(inputTypes));
             return addAggregation(output, new Aggregation(
                     resolvedFunction,
                     aggregation.getArguments(),
@@ -718,7 +716,7 @@ public class PlanBuilder
                 rowCountSymbol);
     }
 
-    public CreateTarget createTarget(CatalogHandle catalogHandle, SchemaTableName schemaTableName, boolean multipleWritersPerPartitionSupported, OptionalInt maxWriterTasks, WriterScalingOptions writerScalingOptions)
+    public CreateTarget createTarget(CatalogHandle catalogHandle, SchemaTableName schemaTableName, boolean multipleWritersPerPartitionSupported, OptionalInt maxWriterTasks)
     {
         OutputTableHandle tableHandle = new OutputTableHandle(
                 catalogHandle,
@@ -729,50 +727,26 @@ public class PlanBuilder
                 tableHandle,
                 schemaTableName,
                 multipleWritersPerPartitionSupported,
-                maxWriterTasks,
-                writerScalingOptions);
+                maxWriterTasks);
     }
 
-    public CreateTarget createTarget(CatalogHandle catalogHandle, SchemaTableName schemaTableName, boolean multipleWritersPerPartitionSupported, WriterScalingOptions writerScalingOptions)
+    public CreateTarget createTarget(CatalogHandle catalogHandle, SchemaTableName schemaTableName, boolean multipleWritersPerPartitionSupported)
     {
-        return createTarget(catalogHandle, schemaTableName, multipleWritersPerPartitionSupported, OptionalInt.empty(), writerScalingOptions);
+        return createTarget(catalogHandle, schemaTableName, multipleWritersPerPartitionSupported, OptionalInt.empty());
     }
 
     public MergeWriterNode merge(SchemaTableName schemaTableName, PlanNode mergeSource, Symbol mergeRow, Symbol rowId, List<Symbol> outputs)
     {
-        return merge(mergeSource, mergeTarget(schemaTableName), mergeRow, rowId, outputs);
-    }
-
-    public MergeWriterNode merge(PlanNode mergeSource, MergeTarget target, Symbol mergeRow, Symbol rowId, List<Symbol> outputs)
-    {
         return new MergeWriterNode(
                 idAllocator.getNextId(),
                 mergeSource,
-                target,
+                mergeTarget(schemaTableName),
                 ImmutableList.of(mergeRow, rowId),
                 Optional.empty(),
                 outputs);
     }
 
-    public MergeProcessorNode mergeProcessor(SchemaTableName schemaTableName, PlanNode source, Symbol mergeRow, Symbol rowId, List<Symbol> dataColumnSymbols, List<Symbol> redistributionColumnSymbols, List<Symbol> outputs)
-    {
-        return new MergeProcessorNode(
-                idAllocator.getNextId(),
-                source,
-                mergeTarget(schemaTableName),
-                rowId,
-                mergeRow,
-                dataColumnSymbols,
-                redistributionColumnSymbols,
-                outputs);
-    }
-
-    public MergeTarget mergeTarget(SchemaTableName schemaTableName)
-    {
-        return mergeTarget(schemaTableName, new MergeParadigmAndTypes(Optional.of(DELETE_ROW_AND_INSERT_ROW), ImmutableList.of(), ImmutableList.of(), INTEGER));
-    }
-
-    public MergeTarget mergeTarget(SchemaTableName schemaTableName, MergeParadigmAndTypes mergeParadigmAndTypes)
+    private MergeTarget mergeTarget(SchemaTableName schemaTableName)
     {
         return new MergeTarget(
                 new TableHandle(
@@ -781,7 +755,7 @@ public class PlanBuilder
                         TestingTransactionHandle.create()),
                 Optional.empty(),
                 schemaTableName,
-                mergeParadigmAndTypes);
+                new MergeParadigmAndTypes(Optional.of(DELETE_ROW_AND_INSERT_ROW), ImmutableList.of(), ImmutableList.of(), INTEGER));
     }
 
     public ExchangeNode gatheringExchange(ExchangeNode.Scope scope, PlanNode child)
@@ -1232,8 +1206,7 @@ public class PlanBuilder
                                 TestingTransactionHandle.create(),
                                 new TestingTableExecuteHandle()),
                         Optional.empty(),
-                        new SchemaTableName("schemaName", "tableName"),
-                        WriterScalingOptions.DISABLED),
+                        new SchemaTableName("schemaName", "tableName")),
                 symbol("partialrows", BIGINT),
                 symbol("fragment", VARBINARY),
                 columns,
@@ -1286,7 +1259,7 @@ public class PlanBuilder
     {
         checkArgument(expression instanceof FunctionCall);
         FunctionCall aggregation = (FunctionCall) expression;
-        ResolvedFunction resolvedFunction = functionResolver.resolveFunction(session, aggregation.getName(), TypeSignatureProvider.fromTypes(inputTypes));
+        ResolvedFunction resolvedFunction = metadata.resolveFunction(session, aggregation.getName(), TypeSignatureProvider.fromTypes(inputTypes));
         return new Aggregation(
                 resolvedFunction,
                 aggregation.getArguments(),
@@ -1407,7 +1380,7 @@ public class PlanBuilder
 
     public static Expression expression(@Language("SQL") String sql)
     {
-        return ExpressionUtils.rewriteIdentifiersToSymbolReferences(new SqlParser().createExpression(sql));
+        return ExpressionUtils.rewriteIdentifiersToSymbolReferences(new SqlParser().createExpression(sql, new ParsingOptions()));
     }
 
     public static List<Expression> expressions(@Language("SQL") String... expressions)

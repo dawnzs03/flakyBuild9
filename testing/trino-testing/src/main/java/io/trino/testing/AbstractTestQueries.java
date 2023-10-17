@@ -19,7 +19,8 @@ import io.trino.metadata.FunctionBundle;
 import io.trino.metadata.InternalFunctionBundle;
 import io.trino.tpch.TpchTable;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Set;
@@ -243,38 +244,47 @@ public abstract class AbstractTestQueries
         assertQuery("SELECT orderkey FROM orders WHERE totalprice IN (1, 2, 3)");
     }
 
-    @Test
-    public void testLargeIn()
+    @Test(dataProvider = "largeInValuesCount")
+    public void testLargeIn(int valuesCount)
     {
-        for (int count : largeInValuesCountData()) {
-            String longValues = range(0, count)
-                    .mapToObj(Integer::toString)
-                    .collect(joining(", "));
-            assertQuery("SELECT orderkey FROM orders WHERE orderkey IN (" + longValues + ")");
-            assertQuery("SELECT orderkey FROM orders WHERE orderkey NOT IN (" + longValues + ")");
+        String longValues = range(0, valuesCount)
+                .mapToObj(Integer::toString)
+                .collect(joining(", "));
+        assertQuery("SELECT orderkey FROM orders WHERE orderkey IN (" + longValues + ")");
+        assertQuery("SELECT orderkey FROM orders WHERE orderkey NOT IN (" + longValues + ")");
 
-            assertQuery("SELECT orderkey FROM orders WHERE orderkey IN (mod(1000, orderkey), " + longValues + ")");
-            assertQuery("SELECT orderkey FROM orders WHERE orderkey NOT IN (mod(1000, orderkey), " + longValues + ")");
-        }
+        assertQuery("SELECT orderkey FROM orders WHERE orderkey IN (mod(1000, orderkey), " + longValues + ")");
+        assertQuery("SELECT orderkey FROM orders WHERE orderkey NOT IN (mod(1000, orderkey), " + longValues + ")");
     }
 
-    protected List<Integer> largeInValuesCountData()
+    @DataProvider
+    public Object[][] largeInValuesCount()
     {
-        return ImmutableList.of(200, 500, 1000, 5000);
+        return largeInValuesCountData();
+    }
+
+    protected Object[][] largeInValuesCountData()
+    {
+        return new Object[][] {
+                {200},
+                {500},
+                {1000},
+                {5000}
+        };
     }
 
     @Test
     public void testShowSchemas()
     {
         MaterializedResult result = computeActual("SHOW SCHEMAS");
-        assertThat(result.getOnlyColumnAsSet()).contains(getSession().getSchema().get(), INFORMATION_SCHEMA);
+        assertTrue(result.getOnlyColumnAsSet().containsAll(ImmutableSet.of(getSession().getSchema().get(), INFORMATION_SCHEMA)));
     }
 
     @Test
     public void testShowSchemasFrom()
     {
         MaterializedResult result = computeActual(format("SHOW SCHEMAS FROM %s", getSession().getCatalog().get()));
-        assertThat(result.getOnlyColumnAsSet()).contains(getSession().getSchema().get(), INFORMATION_SCHEMA);
+        assertTrue(result.getOnlyColumnAsSet().containsAll(ImmutableSet.of(getSession().getSchema().get(), INFORMATION_SCHEMA)));
     }
 
     @Test

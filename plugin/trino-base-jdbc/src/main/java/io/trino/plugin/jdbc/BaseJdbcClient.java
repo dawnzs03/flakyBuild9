@@ -250,8 +250,7 @@ public abstract class BaseJdbcClient
                     // The query is opaque, so we don't know referenced tables
                     Optional.empty(),
                     0,
-                    Optional.empty(),
-                    ImmutableList.of());
+                    Optional.empty());
         }
         catch (SQLException e) {
             throw new TrinoException(JDBC_ERROR, "Failed to get table handle for prepared query. " + firstNonNull(e.getMessage(), e), e);
@@ -1160,27 +1159,23 @@ public abstract class BaseJdbcClient
     }
 
     @Override
-    public void dropSchema(ConnectorSession session, String schemaName, boolean cascade)
+    public void dropSchema(ConnectorSession session, String schemaName)
     {
         ConnectorIdentity identity = session.getIdentity();
         try (Connection connection = connectionFactory.openConnection(session)) {
             verify(connection.getAutoCommit());
             schemaName = identifierMapping.toRemoteSchemaName(getRemoteIdentifiers(connection), identity, schemaName);
-            dropSchema(session, connection, schemaName, cascade);
+            dropSchema(session, connection, schemaName);
         }
         catch (SQLException e) {
             throw new TrinoException(JDBC_ERROR, e);
         }
     }
 
-    protected void dropSchema(ConnectorSession session, Connection connection, String remoteSchemaName, boolean cascade)
+    protected void dropSchema(ConnectorSession session, Connection connection, String remoteSchemaName)
             throws SQLException
     {
-        String dropSchema = "DROP SCHEMA " + quoted(remoteSchemaName);
-        if (cascade) {
-            dropSchema += " CASCADE";
-        }
-        execute(session, connection, dropSchema);
+        execute(session, connection, "DROP SCHEMA " + quoted(remoteSchemaName));
     }
 
     @Override
@@ -1329,7 +1324,6 @@ public abstract class BaseJdbcClient
         checkArgument(handle.isNamedRelation(), "Unable to delete from synthetic table: %s", handle);
         checkArgument(handle.getLimit().isEmpty(), "Unable to delete when limit is set: %s", handle);
         checkArgument(handle.getSortOrder().isEmpty(), "Unable to delete when sort order is set: %s", handle);
-        checkArgument(handle.getUpdateAssignments().isEmpty(), "Unable to delete when update assignments are set: %s", handle);
         verify(handle.getAuthorization().isEmpty(), "Unexpected authorization is required for table: %s".formatted(handle));
         try (Connection connection = connectionFactory.openConnection(session)) {
             verify(connection.getAutoCommit());
@@ -1340,33 +1334,6 @@ public abstract class BaseJdbcClient
                     handle.getRequiredNamedRelation(),
                     handle.getConstraint(),
                     getAdditionalPredicate(handle.getConstraintExpressions(), Optional.empty()));
-            try (PreparedStatement preparedStatement = queryBuilder.prepareStatement(this, session, connection, preparedQuery, Optional.empty())) {
-                return OptionalLong.of(preparedStatement.executeUpdate());
-            }
-        }
-        catch (SQLException e) {
-            throw new TrinoException(JDBC_ERROR, e);
-        }
-    }
-
-    @Override
-    public OptionalLong update(ConnectorSession session, JdbcTableHandle handle)
-    {
-        checkArgument(handle.isNamedRelation(), "Unable to update from synthetic table: %s", handle);
-        checkArgument(handle.getLimit().isEmpty(), "Unable to update when limit is set: %s", handle);
-        checkArgument(handle.getSortOrder().isEmpty(), "Unable to update when sort order is set: %s", handle);
-        checkArgument(!handle.getUpdateAssignments().isEmpty(), "Unable to update when update assignments are not set: %s", handle);
-        verify(handle.getAuthorization().isEmpty(), "Unexpected authorization is required for table: %s".formatted(handle));
-        try (Connection connection = connectionFactory.openConnection(session)) {
-            verify(connection.getAutoCommit());
-            PreparedQuery preparedQuery = queryBuilder.prepareUpdateQuery(
-                    this,
-                    session,
-                    connection,
-                    handle.getRequiredNamedRelation(),
-                    handle.getConstraint(),
-                    getAdditionalPredicate(handle.getConstraintExpressions(), Optional.empty()),
-                    handle.getUpdateAssignments());
             try (PreparedStatement preparedStatement = queryBuilder.prepareStatement(this, session, connection, preparedQuery, Optional.empty())) {
                 return OptionalLong.of(preparedStatement.executeUpdate());
             }

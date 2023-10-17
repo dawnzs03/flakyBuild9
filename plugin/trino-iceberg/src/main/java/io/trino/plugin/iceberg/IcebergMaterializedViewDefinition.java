@@ -75,7 +75,7 @@ public class IcebergMaterializedViewDefinition
                 definition.getCatalog(),
                 definition.getSchema(),
                 definition.getColumns().stream()
-                        .map(column -> new Column(column.getName(), column.getType(), column.getComment()))
+                        .map(column -> new Column(column.getName(), column.getType()))
                         .collect(toImmutableList()),
                 definition.getGracePeriod(),
                 definition.getComment());
@@ -159,17 +159,14 @@ public class IcebergMaterializedViewDefinition
     {
         private final String name;
         private final TypeId type;
-        private final Optional<String> comment;
 
         @JsonCreator
         public Column(
                 @JsonProperty("name") String name,
-                @JsonProperty("type") TypeId type,
-                @JsonProperty("comment") Optional<String> comment)
+                @JsonProperty("type") TypeId type)
         {
             this.name = requireNonNull(name, "name is null");
             this.type = requireNonNull(type, "type is null");
-            this.comment = requireNonNull(comment, "comment is null");
         }
 
         @JsonProperty
@@ -182,12 +179,6 @@ public class IcebergMaterializedViewDefinition
         public TypeId getType()
         {
             return type;
-        }
-
-        @JsonProperty
-        public Optional<String> getComment()
-        {
-            return comment;
         }
 
         @Override

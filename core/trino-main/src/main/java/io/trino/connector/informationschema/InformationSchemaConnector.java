@@ -34,12 +34,12 @@ public class InformationSchemaConnector
     private final ConnectorSplitManager splitManager;
     private final ConnectorPageSourceProvider pageSourceProvider;
 
-    public InformationSchemaConnector(String catalogName, InternalNodeManager nodeManager, Metadata metadata, AccessControl accessControl, int maxPrefetchedInformationSchemaPrefixes)
+    public InformationSchemaConnector(String catalogName, InternalNodeManager nodeManager, Metadata metadata, AccessControl accessControl)
     {
         requireNonNull(catalogName, "catalogName is null");
         requireNonNull(metadata, "metadata is null");
 
-        this.metadata = new InformationSchemaMetadata(catalogName, metadata, maxPrefetchedInformationSchemaPrefixes);
+        this.metadata = new InformationSchemaMetadata(catalogName, metadata);
         this.splitManager = new InformationSchemaSplitManager(nodeManager);
         this.pageSourceProvider = new InformationSchemaPageSourceProvider(metadata, accessControl);
     }

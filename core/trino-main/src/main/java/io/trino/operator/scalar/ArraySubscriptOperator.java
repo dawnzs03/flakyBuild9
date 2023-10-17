@@ -67,8 +67,9 @@ public class ArraySubscriptOperator
 
     private ArraySubscriptOperator()
     {
-        super(FunctionMetadata.operatorBuilder(SUBSCRIPT)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .operatorType(SUBSCRIPT)
                         .typeVariable("E")
                         .returnType(new TypeSignature("E"))
                         .argumentType(arrayType(new TypeSignature("E")))

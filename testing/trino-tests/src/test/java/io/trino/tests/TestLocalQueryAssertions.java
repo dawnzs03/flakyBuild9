@@ -16,7 +16,7 @@ package io.trino.tests;
 import io.trino.Session;
 import io.trino.testing.LocalQueryRunner;
 import io.trino.testing.QueryRunner;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static io.airlift.testing.Closeables.closeAllSuppress;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +44,6 @@ public class TestLocalQueryAssertions
         return queryRunner;
     }
 
-    @Test
     @Override
     public void testIsFullyPushedDown()
     {
@@ -53,7 +52,6 @@ public class TestLocalQueryAssertions
                 .hasMessage("isFullyPushedDown() currently does not work with LocalQueryRunner");
     }
 
-    @Test
     @Override
     public void testIsFullyPushedDownWithSession()
     {

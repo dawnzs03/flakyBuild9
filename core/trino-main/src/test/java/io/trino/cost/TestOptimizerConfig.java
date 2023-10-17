@@ -19,7 +19,7 @@ import io.airlift.units.Duration;
 import io.trino.sql.planner.OptimizerConfig;
 import io.trino.sql.planner.OptimizerConfig.JoinDistributionType;
 import io.trino.sql.planner.OptimizerConfig.JoinReorderingStrategy;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 
@@ -48,7 +48,6 @@ public class TestOptimizerConfig
                 .setJoinMultiClauseIndependenceFactor(0.25)
                 .setJoinReorderingStrategy(JoinReorderingStrategy.AUTOMATIC)
                 .setMaxReorderedJoins(9)
-                .setMaxPrefetchedInformationSchemaPrefixes(100)
                 .setColocatedJoinsEnabled(true)
                 .setSpatialJoinsEnabled(true)
                 .setUsePreferredWritePartitioning(true)
@@ -60,7 +59,7 @@ public class TestOptimizerConfig
                 .setFilterConjunctionIndependenceFactor(0.75)
                 .setNonEstimatablePredicateApproximationEnabled(true)
                 .setOptimizeMetadataQueries(false)
-                .setOptimizeHashGeneration(false)
+                .setOptimizeHashGeneration(true)
                 .setPushTableWriteThroughUnion(true)
                 .setDictionaryAggregation(false)
                 .setOptimizeMixedDistinctAggregations(false)
@@ -70,7 +69,7 @@ public class TestOptimizerConfig
                 .setPushAggregationThroughOuterJoin(true)
                 .setPushPartialAggregationThroughJoin(false)
                 .setPreAggregateCaseAggregationsEnabled(true)
-                .setMarkDistinctStrategy(OptimizerConfig.MarkDistinctStrategy.AUTOMATIC)
+                .setMarkDistinctStrategy(null)
                 .setPreferPartialAggregation(true)
                 .setOptimizeTopNRanking(true)
                 .setDistributedSortEnabled(true)
@@ -113,7 +112,6 @@ public class TestOptimizerConfig
                 .put("optimizer.join-multi-clause-independence-factor", "0.75")
                 .put("optimizer.join-reordering-strategy", "NONE")
                 .put("optimizer.max-reordered-joins", "5")
-                .put("optimizer.experimental-max-prefetched-information-schema-prefixes", "10")
                 .put("iterative-optimizer-timeout", "10s")
                 .put("enable-forced-exchange-below-group-id", "false")
                 .put("colocated-joins-enabled", "false")
@@ -121,7 +119,7 @@ public class TestOptimizerConfig
                 .put("distributed-sort", "false")
                 .put("use-preferred-write-partitioning", "false")
                 .put("optimizer.optimize-metadata-queries", "true")
-                .put("optimizer.optimize-hash-generation", "true")
+                .put("optimizer.optimize-hash-generation", "false")
                 .put("optimizer.optimize-mixed-distinct-aggregations", "true")
                 .put("optimizer.push-table-write-through-union", "false")
                 .put("optimizer.dictionary-aggregation", "true")
@@ -165,7 +163,6 @@ public class TestOptimizerConfig
                 .setJoinMultiClauseIndependenceFactor(0.75)
                 .setJoinReorderingStrategy(NONE)
                 .setMaxReorderedJoins(5)
-                .setMaxPrefetchedInformationSchemaPrefixes(10)
                 .setIterativeOptimizerTimeout(new Duration(10, SECONDS))
                 .setEnableForcedExchangeBelowGroupId(false)
                 .setColocatedJoinsEnabled(false)
@@ -175,7 +172,7 @@ public class TestOptimizerConfig
                 .setFilterConjunctionIndependenceFactor(1.0)
                 .setNonEstimatablePredicateApproximationEnabled(false)
                 .setOptimizeMetadataQueries(true)
-                .setOptimizeHashGeneration(true)
+                .setOptimizeHashGeneration(false)
                 .setOptimizeMixedDistinctAggregations(true)
                 .setPushTableWriteThroughUnion(false)
                 .setDictionaryAggregation(true)

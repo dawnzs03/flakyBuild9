@@ -22,6 +22,7 @@ import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeOperators;
 import io.trino.sql.gen.JoinCompiler;
 import io.trino.sql.planner.plan.AggregationNode.Step;
+import io.trino.type.BlockTypeOperators;
 
 import java.util.List;
 import java.util.OptionalInt;
@@ -56,6 +57,7 @@ public class TestingAggregationFunction
                 factory,
                 parameterTypes,
                 new JoinCompiler(TYPE_OPERATORS),
+                new BlockTypeOperators(TYPE_OPERATORS),
                 TEST_SESSION);
     }
 
@@ -70,6 +72,7 @@ public class TestingAggregationFunction
                 factory,
                 parameterTypes,
                 new JoinCompiler(TYPE_OPERATORS),
+                new BlockTypeOperators(TYPE_OPERATORS),
                 TEST_SESSION);
     }
 

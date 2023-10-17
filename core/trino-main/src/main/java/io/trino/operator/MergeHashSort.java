@@ -17,7 +17,7 @@ import io.trino.memory.context.AggregatedMemoryContext;
 import io.trino.spi.Page;
 import io.trino.spi.PageBuilder;
 import io.trino.spi.type.Type;
-import io.trino.spi.type.TypeOperators;
+import io.trino.type.BlockTypeOperators;
 import io.trino.util.MergeSortedPages.PageWithPosition;
 
 import java.io.Closeable;
@@ -26,7 +26,6 @@ import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static io.trino.operator.InterpretedHashGenerator.createPagePrefixHashGenerator;
 import static io.trino.util.MergeSortedPages.mergeSortedPages;
 
 /**
@@ -40,12 +39,12 @@ public class MergeHashSort
         implements Closeable
 {
     private final AggregatedMemoryContext memoryContext;
-    private final TypeOperators typeOperators;
+    private final BlockTypeOperators blockTypeOperators;
 
-    public MergeHashSort(AggregatedMemoryContext memoryContext, TypeOperators typeOperators)
+    public MergeHashSort(AggregatedMemoryContext memoryContext, BlockTypeOperators blockTypeOperators)
     {
         this.memoryContext = memoryContext;
-        this.typeOperators = typeOperators;
+        this.blockTypeOperators = blockTypeOperators;
     }
 
     /**
@@ -53,7 +52,7 @@ public class MergeHashSort
      */
     public WorkProcessor<Page> merge(List<Type> keyTypes, List<Type> allTypes, List<WorkProcessor<Page>> channels, DriverYieldSignal driverYieldSignal)
     {
-        InterpretedHashGenerator hashGenerator = createPagePrefixHashGenerator(keyTypes, typeOperators);
+        InterpretedHashGenerator hashGenerator = InterpretedHashGenerator.createPositionalWithTypes(keyTypes, blockTypeOperators);
         return mergeSortedPages(
                 channels,
                 createHashPageWithPositionComparator(hashGenerator),
@@ -73,20 +72,11 @@ public class MergeHashSort
 
     private static BiPredicate<PageBuilder, PageWithPosition> keepSameHashValuesWithinSinglePage(InterpretedHashGenerator hashGenerator)
     {
-        return new BiPredicate<>()
-        {
-            private long lastHash;
-
-            @Override
-            public boolean test(PageBuilder pageBuilder, PageWithPosition pageWithPosition)
-            {
-                // set the last bit on the hash, so that zero is never produced
-                long hash = hashGenerator.hashPosition(pageWithPosition.getPosition(), pageWithPosition.getPage()) | 1;
-                boolean sameHash = hash == lastHash;
-                lastHash = hash;
-
-                return !pageBuilder.isEmpty() && !sameHash && pageBuilder.isFull();
-            }
+        return (pageBuilder, pageWithPosition) -> {
+            long hash = hashGenerator.hashPosition(pageWithPosition.getPosition(), pageWithPosition.getPage());
+            return !pageBuilder.isEmpty()
+                    && hashGenerator.hashPosition(pageBuilder.getPositionCount() - 1, pageBuilder::getBlockBuilder) != hash
+                    && pageBuilder.isFull();
         };
     }
 

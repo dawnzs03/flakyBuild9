@@ -25,14 +25,13 @@ import io.trino.sql.relational.ConstantExpression;
 import io.trino.sql.relational.RowExpression;
 import io.trino.sql.relational.SpecialForm;
 import io.trino.sql.relational.optimizer.ExpressionOptimizer;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import io.trino.sql.tree.QualifiedName;
+import org.testng.annotations.Test;
 
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.airlift.testing.Assertions.assertInstanceOf;
 import static io.trino.SessionTestUtils.TEST_SESSION;
 import static io.trino.block.BlockAssertions.toValues;
-import static io.trino.metadata.GlobalFunctionCatalog.builtinFunctionName;
 import static io.trino.operator.scalar.JsonStringToArrayCast.JSON_STRING_TO_ARRAY_NAME;
 import static io.trino.operator.scalar.JsonStringToMapCast.JSON_STRING_TO_MAP_NAME;
 import static io.trino.operator.scalar.JsonStringToRowCast.JSON_STRING_TO_ROW_NAME;
@@ -59,8 +58,7 @@ public class TestExpressionOptimizer
             functionResolution.getPlannerContext().getFunctionManager(),
             TEST_SESSION);
 
-    @Test
-    @Timeout(10)
+    @Test(timeOut = 10_000)
     public void testPossibleExponentialOptimizationTime()
     {
         RowExpression expression = constant(1L, BIGINT);
@@ -88,7 +86,7 @@ public class TestExpressionOptimizer
     @Test
     public void testCastWithJsonParseOptimization()
     {
-        ResolvedFunction jsonParseFunction = functionResolution.resolveFunction("json_parse", fromTypes(VARCHAR));
+        ResolvedFunction jsonParseFunction = functionResolution.resolveFunction(QualifiedName.of("json_parse"), fromTypes(VARCHAR));
 
         // constant
         ResolvedFunction jsonCastFunction = functionResolution.getCoercion(JSON, new ArrayType(INTEGER));
@@ -117,7 +115,7 @@ public class TestExpressionOptimizer
         assertEquals(
                 resultExpression,
                 call(
-                        functionResolution.getCoercion(builtinFunctionName(jsonStringToRowName), VARCHAR, targetType),
+                        functionResolution.getCoercion(QualifiedName.of(jsonStringToRowName), VARCHAR, targetType),
                         field(1, VARCHAR)));
     }
 

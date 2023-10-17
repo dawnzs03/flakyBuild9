@@ -39,7 +39,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static io.trino.RowPagesBuilder.rowPagesBuilder;
 import static io.trino.client.ClientStandardTypes.ARRAY;
 import static io.trino.client.ClientStandardTypes.BIGINT;
@@ -58,6 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.testng.collections.Lists.newArrayList;
 
 public class TestQueryResultRows
 {

@@ -14,7 +14,7 @@
 package io.trino.execution;
 
 import io.airlift.json.JsonCodec;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 

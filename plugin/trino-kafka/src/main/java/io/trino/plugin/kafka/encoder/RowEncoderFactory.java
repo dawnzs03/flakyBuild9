@@ -15,7 +15,10 @@ package io.trino.plugin.kafka.encoder;
 
 import io.trino.spi.connector.ConnectorSession;
 
+import java.util.List;
+import java.util.Optional;
+
 public interface RowEncoderFactory
 {
-    RowEncoder create(ConnectorSession session, RowEncoderSpec rowEncoderSpec);
+    RowEncoder create(ConnectorSession session, Optional<String> dataSchema, List<EncoderColumnHandle> columnHandles);
 }

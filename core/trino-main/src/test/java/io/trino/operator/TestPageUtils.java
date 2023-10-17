@@ -17,7 +17,7 @@ import io.trino.spi.Page;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.DictionaryBlock;
 import io.trino.spi.block.LazyBlock;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.concurrent.atomic.AtomicLong;
 

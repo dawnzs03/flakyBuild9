@@ -58,16 +58,13 @@ public class TestUuidType
     protected Object getGreaterValue(Object value)
     {
         Slice slice = (Slice) value;
-        Slice greater = Slices.allocate(2 * SIZE_OF_LONG);
-        greater.setLong(0, slice.getLong(0));
-        greater.setLong(SIZE_OF_LONG, reverseBytes(reverseBytes(slice.getLong(SIZE_OF_LONG)) + 1));
-        return greater;
+        return Slices.wrappedLongArray(slice.getLong(0), reverseBytes(reverseBytes(slice.getLong(SIZE_OF_LONG)) + 1));
     }
 
     @Override
     protected Object getNonNullValue()
     {
-        return Slices.allocate(2 * SIZE_OF_LONG);
+        return Slices.wrappedLongArray(0, 0);
     }
 
     @Test
@@ -116,26 +113,5 @@ public class TestUuidType
         assertThat(lowerSlice)
                 .as("comparing slices lexicographically")
                 .isLessThan(higherSlice);
-    }
-
-    @Test
-    public void testRange()
-    {
-        assertThat(type.getRange())
-                .isEmpty();
-    }
-
-    @Test
-    public void testPreviousValue()
-    {
-        assertThat(type.getPreviousValue(getSampleValue()))
-                .isEmpty();
-    }
-
-    @Test
-    public void testNextValue()
-    {
-        assertThat(type.getNextValue(getSampleValue()))
-                .isEmpty();
     }
 }

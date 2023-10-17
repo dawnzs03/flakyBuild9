@@ -25,7 +25,6 @@ import static io.airlift.slice.SizeOf.sizeOf;
 import static io.trino.spi.block.BlockUtil.copyIsNullAndAppendNull;
 import static io.trino.spi.block.BlockUtil.copyOffsetsAndAppendNull;
 import static io.trino.spi.block.MapHashTables.HASH_MULTIPLIER;
-import static io.trino.spi.block.MapHashTables.HashBuildMode.DUPLICATE_NOT_CHECKED;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -80,7 +79,7 @@ public class MapBlock
                 offsets,
                 keyBlock,
                 valueBlock,
-                new MapHashTables(mapType, mapCount, Optional.empty()));
+                new MapHashTables(mapType, Optional.empty()));
     }
 
     /**
@@ -304,7 +303,7 @@ public class MapBlock
     @Override
     protected void ensureHashTableLoaded()
     {
-        hashTables.buildAllHashTablesIfNecessary(DUPLICATE_NOT_CHECKED, getRawKeyBlock(), offsets, mapIsNull);
+        hashTables.buildAllHashTablesIfNecessary(getRawKeyBlock(), offsets, mapIsNull);
     }
 
     @Override

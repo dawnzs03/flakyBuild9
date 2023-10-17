@@ -16,12 +16,9 @@ package io.trino.plugin.iceberg.catalog;
 import io.trino.plugin.iceberg.ColumnIdentity;
 import io.trino.plugin.iceberg.UnknownTableTypeException;
 import io.trino.spi.connector.CatalogSchemaTableName;
-import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorMaterializedViewDefinition;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorViewDefinition;
-import io.trino.spi.connector.RelationColumnsMetadata;
-import io.trino.spi.connector.RelationCommentMetadata;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.security.TrinoPrincipal;
 import org.apache.iceberg.PartitionSpec;
@@ -31,13 +28,9 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.Transaction;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 
 /**
  * An interface to allow different Iceberg catalog implementations in IcebergMetadata.
@@ -74,18 +67,6 @@ public interface TrinoCatalog
 
     List<SchemaTableName> listTables(ConnectorSession session, Optional<String> namespace);
 
-    Optional<Iterator<RelationColumnsMetadata>> streamRelationColumns(
-            ConnectorSession session,
-            Optional<String> namespace,
-            UnaryOperator<Set<SchemaTableName>> relationFilter,
-            Predicate<SchemaTableName> isRedirected);
-
-    Optional<Iterator<RelationCommentMetadata>> streamRelationComments(
-            ConnectorSession session,
-            Optional<String> namespace,
-            UnaryOperator<Set<SchemaTableName>> relationFilter,
-            Predicate<SchemaTableName> isRedirected);
-
     Transaction newCreateTableTransaction(
             ConnectorSession session,
             SchemaTableName schemaTableName,
@@ -114,11 +95,6 @@ public interface TrinoCatalog
      * @throws UnknownTableTypeException if table is not of Iceberg type in the metastore
      */
     Table loadTable(ConnectorSession session, SchemaTableName schemaTableName);
-
-    /**
-     * Bulk load column metadata. The returned map may contain fewer entries then asked for.
-     */
-    Map<SchemaTableName, List<ColumnMetadata>> tryGetColumnMetadata(ConnectorSession session, List<SchemaTableName> tables);
 
     void updateTableComment(ConnectorSession session, SchemaTableName schemaTableName, Optional<String> comment);
 
@@ -152,8 +128,6 @@ public interface TrinoCatalog
             ConnectorMaterializedViewDefinition definition,
             boolean replace,
             boolean ignoreExisting);
-
-    void updateMaterializedViewColumnComment(ConnectorSession session, SchemaTableName schemaViewName, String columnName, Optional<String> comment);
 
     void dropMaterializedView(ConnectorSession session, SchemaTableName viewName);
 

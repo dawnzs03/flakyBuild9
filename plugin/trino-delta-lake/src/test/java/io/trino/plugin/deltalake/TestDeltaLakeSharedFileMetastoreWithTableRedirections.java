@@ -18,8 +18,7 @@ import io.trino.Session;
 import io.trino.plugin.hive.TestingHivePlugin;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -27,9 +26,7 @@ import java.util.Map;
 import static io.trino.plugin.deltalake.DeltaLakeConnectorFactory.CONNECTOR_NAME;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.lang.String.format;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 public class TestDeltaLakeSharedFileMetastoreWithTableRedirections
         extends BaseDeltaLakeSharedMetastoreWithTableRedirectionsTest
 {
@@ -75,7 +72,7 @@ public class TestDeltaLakeSharedFileMetastoreWithTableRedirections
         return queryRunner;
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void cleanup()
     {
         getQueryRunner().execute("DROP TABLE IF EXISTS hive_with_redirections." + schema + ".region");

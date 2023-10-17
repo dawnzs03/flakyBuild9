@@ -200,8 +200,16 @@ public class BenchmarkLike
 
     public static boolean likeVarchar(Slice value, JoniRegexp pattern)
     {
-        int offset = value.byteArrayOffset();
-        Matcher matcher = pattern.regex().matcher(value.byteArray(), offset, offset + value.length());
+        Matcher matcher;
+        int offset;
+        if (value.hasByteArray()) {
+            offset = value.byteArrayOffset();
+            matcher = pattern.regex().matcher(value.byteArray(), offset, offset + value.length());
+        }
+        else {
+            offset = 0;
+            matcher = pattern.matcher(value.getBytes());
+        }
         return matcher.match(offset, offset + value.length(), Option.NONE) != -1;
     }
 

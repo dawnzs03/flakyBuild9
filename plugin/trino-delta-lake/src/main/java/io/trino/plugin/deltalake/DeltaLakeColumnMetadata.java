@@ -20,22 +20,21 @@ import java.util.Objects;
 import java.util.OptionalInt;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 
 public class DeltaLakeColumnMetadata
 {
     private final ColumnMetadata columnMetadata;
-    private final String name;
     private final OptionalInt fieldId;
     private final String physicalName;
     private final Type physicalColumnType;
 
-    public DeltaLakeColumnMetadata(ColumnMetadata columnMetadata, String name, OptionalInt fieldId, String physicalName, Type physicalColumnType)
+    public DeltaLakeColumnMetadata(ColumnMetadata columnMetadata, OptionalInt fieldId, String physicalName, Type physicalColumnType)
     {
         this.columnMetadata = requireNonNull(columnMetadata, "columnMetadata is null");
-        this.name = requireNonNull(name, "name is null");
         this.fieldId = requireNonNull(fieldId, "fieldId is null");
-        this.physicalName = requireNonNull(physicalName, "physicalName is null");
+        this.physicalName = physicalName.toLowerCase(ENGLISH);
         this.physicalColumnType = requireNonNull(physicalColumnType, "physicalColumnType is null");
     }
 
@@ -51,7 +50,7 @@ public class DeltaLakeColumnMetadata
 
     public String getName()
     {
-        return name;
+        return columnMetadata.getName();
     }
 
     public Type getType()
@@ -74,7 +73,6 @@ public class DeltaLakeColumnMetadata
     {
         return toStringHelper(this)
                 .add("columnMetadata", columnMetadata)
-                .add("name", name)
                 .add("fieldId", fieldId)
                 .add("physicalName", physicalName)
                 .add("physicalColumnType", physicalColumnType)
@@ -92,7 +90,6 @@ public class DeltaLakeColumnMetadata
         }
         DeltaLakeColumnMetadata that = (DeltaLakeColumnMetadata) o;
         return Objects.equals(columnMetadata, that.columnMetadata) &&
-                Objects.equals(name, that.name) &&
                 Objects.equals(fieldId, that.fieldId) &&
                 Objects.equals(physicalName, that.physicalName) &&
                 Objects.equals(physicalColumnType, that.physicalColumnType);
@@ -101,6 +98,6 @@ public class DeltaLakeColumnMetadata
     @Override
     public int hashCode()
     {
-        return Objects.hash(columnMetadata, name, fieldId, physicalName, physicalColumnType);
+        return Objects.hash(columnMetadata, fieldId, physicalName, physicalColumnType);
     }
 }

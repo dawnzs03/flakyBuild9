@@ -31,11 +31,9 @@ import io.trino.connector.CatalogManagerConfig;
 import io.trino.connector.system.GlobalSystemConnector;
 import io.trino.failuredetector.NoOpFailureDetector;
 import io.trino.server.InternalCommunicationConfig;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.Timeout;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.List;
@@ -51,13 +49,11 @@ import static io.airlift.testing.Assertions.assertEqualsIgnoreOrder;
 import static io.trino.metadata.NodeState.ACTIVE;
 import static io.trino.metadata.NodeState.INACTIVE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_METHOD)
+@Test(singleThreaded = true)
 public class TestDiscoveryNodeManager
 {
     private final NodeInfo nodeInfo = new NodeInfo("test");
@@ -70,7 +66,7 @@ public class TestDiscoveryNodeManager
     private final TrinoNodeServiceSelector selector = new TrinoNodeServiceSelector();
     private HttpClient testHttpClient;
 
-    @BeforeEach
+    @BeforeMethod
     public void setup()
     {
         testHttpClient = new TestingHttpClient(input -> new TestingResponse(OK, ArrayListMultimap.create(), ACTIVE.name().getBytes(UTF_8)));
@@ -91,7 +87,7 @@ public class TestDiscoveryNodeManager
         selector.announceNodes(activeNodes, inactiveNodes);
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void tearDown()
     {
         testHttpClient.close();
@@ -186,23 +182,20 @@ public class TestDiscoveryNodeManager
     }
 
     @SuppressWarnings("ResultOfObjectAllocationIgnored")
-    @Test
+    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".* current node not returned .*")
     public void testGetCurrentNodeRequired()
     {
-        assertThatThrownBy(() -> new DiscoveryNodeManager(
+        new DiscoveryNodeManager(
                 selector,
                 new NodeInfo("test"),
                 new NoOpFailureDetector(),
                 expectedVersion,
                 testHttpClient,
                 internalCommunicationConfig,
-                new CatalogManagerConfig()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("current node not returned");
+                new CatalogManagerConfig());
     }
 
-    @Test
-    @Timeout(60)
+    @Test(timeOut = 60000)
     public void testNodeChangeListener()
             throws Exception
     {

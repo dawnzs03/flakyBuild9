@@ -30,7 +30,6 @@ import io.trino.spi.type.RowType;
 import io.trino.spi.type.SqlDecimal;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.VarcharType;
-import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -42,6 +41,7 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.testng.annotations.Test;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;

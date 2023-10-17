@@ -14,6 +14,7 @@
 package io.trino.spi.predicate;
 
 import io.trino.spi.block.Block;
+import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeOperators;
 import jakarta.annotation.Nullable;
@@ -39,7 +40,9 @@ public final class Utils
                 throw new IllegalArgumentException(format("Object '%s' (%s) is not instance of %s", object, object.getClass().getName(), expectedClass.getName()));
             }
         }
-        return writeNativeValue(type, object);
+        BlockBuilder blockBuilder = type.createBlockBuilder(null, 1);
+        writeNativeValue(type, blockBuilder, object);
+        return blockBuilder.build();
     }
 
     public static Object blockToNativeValue(Type type, Block block)

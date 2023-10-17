@@ -14,7 +14,6 @@
 package io.trino.plugin.deltalake.transactionlog.checkpoint;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.math.LongMath;
@@ -25,7 +24,6 @@ import io.trino.plugin.deltalake.DeltaLakeColumnHandle;
 import io.trino.plugin.deltalake.DeltaLakeColumnMetadata;
 import io.trino.plugin.deltalake.transactionlog.AddFileEntry;
 import io.trino.plugin.deltalake.transactionlog.CommitInfoEntry;
-import io.trino.plugin.deltalake.transactionlog.DeletionVectorEntry;
 import io.trino.plugin.deltalake.transactionlog.DeltaLakeTransactionLogEntry;
 import io.trino.plugin.deltalake.transactionlog.MetadataEntry;
 import io.trino.plugin.deltalake.transactionlog.ProtocolEntry;
@@ -59,8 +57,10 @@ import org.joda.time.DateTimeZone;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayDeque;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -76,7 +76,6 @@ import static io.trino.plugin.deltalake.DeltaLakeColumnType.REGULAR;
 import static io.trino.plugin.deltalake.DeltaLakeErrorCode.DELTA_LAKE_BAD_DATA;
 import static io.trino.plugin.deltalake.DeltaLakeErrorCode.DELTA_LAKE_INVALID_SCHEMA;
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.extractSchema;
-import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.isDeletionVectorEnabled;
 import static io.trino.plugin.deltalake.transactionlog.TransactionLogAccess.columnsWithStats;
 import static io.trino.plugin.deltalake.transactionlog.TransactionLogParser.START_OF_MODERN_ERA_EPOCH_DAY;
 import static io.trino.plugin.deltalake.transactionlog.checkpoint.CheckpointEntryIterator.EntryType.ADD;
@@ -100,7 +99,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 public class CheckpointEntryIterator
-        extends AbstractIterator<DeltaLakeTransactionLogEntry>
+        implements Iterator<DeltaLakeTransactionLogEntry>
 {
     public enum EntryType
     {
@@ -135,7 +134,6 @@ public class CheckpointEntryIterator
     private final List<CheckPointFieldExtractor> extractors;
     private final boolean checkpointRowStatisticsWritingEnabled;
     private MetadataEntry metadataEntry;
-    private ProtocolEntry protocolEntry;
     private List<DeltaLakeColumnMetadata> schema; // Use DeltaLakeColumnMetadata?
     private Page page;
     private long pageIndex;
@@ -149,7 +147,6 @@ public class CheckpointEntryIterator
             TypeManager typeManager,
             Set<EntryType> fields,
             Optional<MetadataEntry> metadataEntry,
-            Optional<ProtocolEntry> protocolEntry,
             FileFormatDataSourceStats stats,
             ParquetReaderOptions parquetReaderOptions,
             boolean checkpointRowStatisticsWritingEnabled,
@@ -173,13 +170,11 @@ public class CheckpointEntryIterator
         if (fields.contains(ADD)) {
             checkArgument(metadataEntry.isPresent(), "Metadata entry must be provided when reading ADD entries from Checkpoint files");
             this.metadataEntry = metadataEntry.get();
-            checkArgument(protocolEntry.isPresent(), "Protocol entry must be provided when reading ADD entries from Checkpoint files");
-            this.protocolEntry = protocolEntry.get();
-            this.schema = extractSchema(this.metadataEntry, this.protocolEntry, typeManager);
+            this.schema = extractSchema(this.metadataEntry, typeManager);
         }
 
         List<HiveColumnHandle> columns = fields.stream()
-                .map(field -> buildColumnHandle(field, checkpointSchemaManager, this.metadataEntry, this.protocolEntry).toHiveColumnHandle())
+                .map(field -> buildColumnHandle(field, checkpointSchemaManager, this.metadataEntry).toHiveColumnHandle())
                 .collect(toImmutableList());
 
         TupleDomain<HiveColumnHandle> tupleDomain = columns.size() > 1 ?
@@ -197,8 +192,7 @@ public class CheckpointEntryIterator
                 stats,
                 parquetReaderOptions,
                 Optional.empty(),
-                domainCompactionThreshold,
-                OptionalLong.empty());
+                domainCompactionThreshold);
 
         verify(pageSource.getReaderColumns().isEmpty(), "All columns expected to be base columns");
 
@@ -209,16 +203,31 @@ public class CheckpointEntryIterator
                 .collect(toImmutableList());
     }
 
-    private DeltaLakeColumnHandle buildColumnHandle(EntryType entryType, CheckpointSchemaManager schemaManager, MetadataEntry metadataEntry, ProtocolEntry protocolEntry)
+    private DeltaLakeColumnHandle buildColumnHandle(EntryType entryType, CheckpointSchemaManager schemaManager, MetadataEntry metadataEntry)
     {
-        Type type = switch (entryType) {
-            case TRANSACTION -> schemaManager.getTxnEntryType();
-            case ADD -> schemaManager.getAddEntryType(metadataEntry, protocolEntry, true, true);
-            case REMOVE -> schemaManager.getRemoveEntryType();
-            case METADATA -> schemaManager.getMetadataEntryType();
-            case PROTOCOL -> schemaManager.getProtocolEntryType(true, true);
-            case COMMIT -> schemaManager.getCommitInfoEntryType();
-        };
+        Type type;
+        switch (entryType) {
+            case TRANSACTION:
+                type = schemaManager.getTxnEntryType();
+                break;
+            case ADD:
+                type = schemaManager.getAddEntryType(metadataEntry, true, true);
+                break;
+            case REMOVE:
+                type = schemaManager.getRemoveEntryType();
+                break;
+            case METADATA:
+                type = schemaManager.getMetadataEntryType();
+                break;
+            case PROTOCOL:
+                type = schemaManager.getProtocolEntryType(true, true);
+                break;
+            case COMMIT:
+                type = schemaManager.getCommitInfoEntryType();
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported Delta Lake checkpoint entry type: " + entryType);
+        }
         return new DeltaLakeColumnHandle(entryType.getColumnName(), type, OptionalInt.empty(), entryType.getColumnName(), type, REGULAR, Optional.empty());
     }
 
@@ -234,23 +243,26 @@ public class CheckpointEntryIterator
         String field;
         Type type;
         switch (entryType) {
-            case COMMIT, TRANSACTION -> {
+            case COMMIT:
+            case TRANSACTION:
                 field = "version";
                 type = BIGINT;
-            }
-            case ADD, REMOVE -> {
+                break;
+            case ADD:
+            case REMOVE:
                 field = "path";
                 type = VARCHAR;
-            }
-            case METADATA -> {
+                break;
+            case METADATA:
                 field = "id";
                 type = VARCHAR;
-            }
-            case PROTOCOL -> {
+                break;
+            case PROTOCOL:
                 field = "minReaderVersion";
                 type = BIGINT;
-            }
-            default -> throw new IllegalArgumentException("Unsupported Delta Lake checkpoint entry type: " + entryType);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported Delta Lake checkpoint entry type: " + entryType);
         }
         HiveColumnHandle handle = new HiveColumnHandle(
                 column.getBaseColumnName(),
@@ -401,27 +413,18 @@ public class CheckpointEntryIterator
         if (block.isNull(pagePosition)) {
             return null;
         }
-        boolean deletionVectorsEnabled = isDeletionVectorEnabled(metadataEntry, protocolEntry);
         Block addEntryBlock = block.getObject(pagePosition, Block.class);
         log.debug("Block %s has %s fields", block, addEntryBlock.getPositionCount());
 
-        String path = getString(addEntryBlock, 0);
         Map<String, String> partitionValues = getMap(addEntryBlock, 1);
         long size = getLong(addEntryBlock, 2);
         long modificationTime = getLong(addEntryBlock, 3);
         boolean dataChange = getByte(addEntryBlock, 4) != 0;
-        Optional<DeletionVectorEntry> deletionVector = Optional.empty();
-        int position = 5;
-        if (deletionVectorsEnabled) {
-            if (!addEntryBlock.isNull(5)) {
-                deletionVector = Optional.of(parseDeletionVectorFromParquet(addEntryBlock.getObject(5, Block.class)));
-            }
-            position = 6;
-        }
-        Map<String, String> tags = getMap(addEntryBlock, position + 2);
+        Map<String, String> tags = getMap(addEntryBlock, 7);
 
+        String path = getString(addEntryBlock, 0);
         AddFileEntry result;
-        if (!addEntryBlock.isNull(position + 1)) {
+        if (!addEntryBlock.isNull(6)) {
             result = new AddFileEntry(
                     path,
                     partitionValues,
@@ -429,21 +432,19 @@ public class CheckpointEntryIterator
                     modificationTime,
                     dataChange,
                     Optional.empty(),
-                    Optional.of(parseStatisticsFromParquet(addEntryBlock.getObject(position + 1, Block.class))),
-                    tags,
-                    deletionVector);
+                    Optional.of(parseStatisticsFromParquet(addEntryBlock.getObject(6, Block.class))),
+                    tags);
         }
-        else if (!addEntryBlock.isNull(position)) {
+        else if (!addEntryBlock.isNull(5)) {
             result = new AddFileEntry(
                     path,
                     partitionValues,
                     size,
                     modificationTime,
                     dataChange,
-                    Optional.of(getString(addEntryBlock, position)),
+                    Optional.of(getString(addEntryBlock, 5)),
                     Optional.empty(),
-                    tags,
-                    deletionVector);
+                    tags);
         }
         else {
             result = new AddFileEntry(
@@ -454,24 +455,11 @@ public class CheckpointEntryIterator
                     dataChange,
                     Optional.empty(),
                     Optional.empty(),
-                    tags,
-                    deletionVector);
+                    tags);
         }
 
         log.debug("Result: %s", result);
         return DeltaLakeTransactionLogEntry.addFileEntry(result);
-    }
-
-    private DeletionVectorEntry parseDeletionVectorFromParquet(Block block)
-    {
-        checkArgument(block.getPositionCount() == 5, "Deletion vector entry must have 5 fields");
-
-        String storageType = getString(block, 0);
-        String pathOrInlineDv = getString(block, 1);
-        OptionalInt offset = block.isNull(2) ? OptionalInt.empty() : OptionalInt.of(getInt(block, 2));
-        int sizeInBytes = getInt(block, 3);
-        long cardinality = getLong(block, 4);
-        return new DeletionVectorEntry(storageType, pathOrInlineDv, offset, sizeInBytes, cardinality);
     }
 
     private DeltaLakeParquetFileStatistics parseStatisticsFromParquet(Block statsRowBlock)
@@ -480,7 +468,7 @@ public class CheckpointEntryIterator
             throw new TrinoException(DELTA_LAKE_BAD_DATA, "Checkpoint file found without metadata entry");
         }
         // Block ordering is determined by TransactionLogAccess#buildAddColumnHandle, using the same method to ensure blocks are matched with the correct column
-        List<DeltaLakeColumnMetadata> columnsWithMinMaxStats = columnsWithStats(schema, metadataEntry.getOriginalPartitionColumns());
+        List<DeltaLakeColumnMetadata> columnsWithMinMaxStats = columnsWithStats(schema, metadataEntry.getCanonicalPartitionColumns());
 
         long numRecords = getLong(statsRowBlock, 0);
 
@@ -630,21 +618,21 @@ public class CheckpointEntryIterator
     }
 
     @Override
-    protected DeltaLakeTransactionLogEntry computeNext()
+    public boolean hasNext()
     {
         if (nextEntries.isEmpty()) {
             fillNextEntries();
         }
-        if (!nextEntries.isEmpty()) {
-            return nextEntries.remove();
+        return !nextEntries.isEmpty();
+    }
+
+    @Override
+    public DeltaLakeTransactionLogEntry next()
+    {
+        if (!hasNext()) {
+            throw new NoSuchElementException();
         }
-        try {
-            pageSource.close();
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return endOfData();
+        return nextEntries.remove();
     }
 
     private boolean tryAdvancePage()

@@ -14,7 +14,7 @@
 package io.trino.plugin.kudu.properties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 

@@ -86,6 +86,7 @@ public class HiveMetastoreRecording
 
     @Inject
     public HiveMetastoreRecording(RecordingMetastoreConfig config, JsonCodec<Recording> recordingCodec)
+            throws IOException
     {
         this.recordingCodec = recordingCodec;
         this.recordingPath = Paths.get(requireNonNull(config.getRecordingPath(), "recordingPath is null"));
@@ -116,13 +117,11 @@ public class HiveMetastoreRecording
 
     @VisibleForTesting
     void loadRecording()
+            throws IOException
     {
         Recording recording;
         try (GZIPInputStream inputStream = new GZIPInputStream(Files.newInputStream(recordingPath))) {
             recording = recordingCodec.fromJson(inputStream.readAllBytes());
-        }
-        catch (RuntimeException | IOException e) {
-            throw new RuntimeException("Failed to load recording from: " + recordingPath, e);
         }
 
         allDatabases = recording.getAllDatabases();

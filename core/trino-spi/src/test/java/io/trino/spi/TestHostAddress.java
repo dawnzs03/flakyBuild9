@@ -13,9 +13,10 @@
  */
 package io.trino.spi;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 
 public class TestHostAddress
 {
@@ -24,16 +25,16 @@ public class TestHostAddress
     {
         HostAddress address1 = HostAddress.fromParts("[1111:2222:3333:4444:5555:6666:7777:8888]", 1234);
         HostAddress address1NoBrackets = HostAddress.fromParts("1111:2222:3333:4444:5555:6666:7777:8888", 1234);
-        assertThat(address1).isEqualTo(address1NoBrackets);
+        assertEquals(address1, address1NoBrackets);
 
         HostAddress address1FromString = HostAddress.fromString("[1111:2222:3333:4444:5555:6666:7777:8888]:1234");
-        assertThat(address1).isEqualTo(address1FromString);
+        assertEquals(address1, address1FromString);
 
         HostAddress address2 = HostAddress.fromParts("[1111:2222:3333:4444:5555:6666:7777:9999]", 1234);
-        assertThat(address1).isNotEqualTo(address2);
+        assertNotEquals(address1, address2);
 
         HostAddress address3 = HostAddress.fromParts("[1111:2222:3333:4444:5555:6666:7777:8888]", 1235);
-        assertThat(address1).isNotEqualTo(address3);
+        assertNotEquals(address1, address3);
     }
 
     @Test
@@ -41,11 +42,11 @@ public class TestHostAddress
     {
         HostAddress address = HostAddress.fromParts("[1111:2222:3333:4444:5555:6666:7777:8888]", 1234);
         HostAddress fromParts = HostAddress.fromParts(address.getHostText(), address.getPort());
-        assertThat(address).isEqualTo(fromParts);
+        assertEquals(address, fromParts);
 
         HostAddress fromString = HostAddress.fromString(address.toString());
-        assertThat(address).isEqualTo(fromString);
+        assertEquals(address, fromString);
 
-        assertThat(fromParts).isEqualTo(fromString);
+        assertEquals(fromParts, fromString);
     }
 }

@@ -343,9 +343,7 @@ public class QueryMonitor
     {
         return new QueryContext(
                 session.getUser(),
-                session.getOriginalUser(),
                 session.getPrincipal(),
-                session.getEnabledRoles(),
                 session.getGroups(),
                 session.getTraceToken(),
                 session.getRemoteUserAddress(),
@@ -354,7 +352,6 @@ public class QueryMonitor
                 session.getClientTags(),
                 session.getClientCapabilities(),
                 session.getSource(),
-                session.getTimeZone(),
                 session.getCatalog(),
                 session.getSchema(),
                 resourceGroup,

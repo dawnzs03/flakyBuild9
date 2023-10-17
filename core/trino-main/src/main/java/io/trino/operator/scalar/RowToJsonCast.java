@@ -59,8 +59,9 @@ public class RowToJsonCast
 
     private RowToJsonCast()
     {
-        super(FunctionMetadata.operatorBuilder(CAST)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .operatorType(CAST)
                         .typeVariableConstraint(
                                 // this is technically a recursive constraint for cast, but TypeRegistry.canCast has explicit handling for row to json cast
                                 TypeVariableConstraint.builder("T")

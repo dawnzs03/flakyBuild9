@@ -216,12 +216,6 @@ public class CachingJdbcClient
     }
 
     @Override
-    public Optional<Type> getSupportedType(ConnectorSession session, Type type)
-    {
-        return delegate.getSupportedType(session, type);
-    }
-
-    @Override
     public boolean supportsAggregationPushdown(ConnectorSession session, JdbcTableHandle table, List<AggregateFunction> aggregates, Map<String, ColumnHandle> assignments, List<List<ColumnHandle>> groupingSets)
     {
         return delegate.supportsAggregationPushdown(session, table, aggregates, assignments, groupingSets);
@@ -452,9 +446,9 @@ public class CachingJdbcClient
     }
 
     @Override
-    public void dropSchema(ConnectorSession session, String schemaName, boolean cascade)
+    public void dropSchema(ConnectorSession session, String schemaName)
     {
-        delegate.dropSchema(session, schemaName, cascade);
+        delegate.dropSchema(session, schemaName);
         invalidateSchemasCache();
     }
 
@@ -603,14 +597,6 @@ public class CachingJdbcClient
     }
 
     @Override
-    public OptionalLong update(ConnectorSession session, JdbcTableHandle handle)
-    {
-        OptionalLong updatedRowsCount = delegate.update(session, handle);
-        onDataChanged(handle.getRequiredNamedRelation().getSchemaTableName());
-        return updatedRowsCount;
-    }
-
-    @Override
     public void truncateTable(ConnectorSession session, JdbcTableHandle handle)
     {
         delegate.truncateTable(session, handle);
@@ -708,6 +694,7 @@ public class CachingJdbcClient
 
     private record ColumnsCacheKey(IdentityCacheKey identity, Map<String, Object> sessionProperties, SchemaTableName table)
     {
+        @SuppressWarnings("UnusedVariable") // TODO: Remove once https://github.com/google/error-prone/issues/2713 is fixed
         private ColumnsCacheKey
         {
             requireNonNull(identity, "identity is null");

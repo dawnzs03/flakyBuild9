@@ -18,7 +18,7 @@ import com.google.common.collect.ImmutableList;
 import io.trino.spi.connector.SortOrder;
 import io.trino.sql.planner.Symbol;
 import io.trino.sql.planner.plan.TopNNode;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 public class TestTopNStatsRule
         extends BaseStatsCalculatorTest

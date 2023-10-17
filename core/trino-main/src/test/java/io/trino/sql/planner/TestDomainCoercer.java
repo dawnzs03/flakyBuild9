@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.ValueSet;
 import io.trino.spi.type.Type;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static io.trino.SessionTestUtils.TEST_SESSION;
 import static io.trino.spi.predicate.Domain.multipleValues;
@@ -34,7 +34,6 @@ import static io.trino.spi.type.RealType.REAL;
 import static io.trino.spi.type.SmallintType.SMALLINT;
 import static io.trino.sql.planner.TestingPlannerContext.PLANNER_CONTEXT;
 import static java.lang.Float.floatToIntBits;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testng.Assert.assertEquals;
 
 public class TestDomainCoercer
@@ -204,11 +203,10 @@ public class TestDomainCoercer
                         true));
     }
 
-    @Test
+    @Test(expectedExceptions = IllegalStateException.class)
     public void testUnsupportedCast()
     {
-        assertThatThrownBy(() -> applySaturatedCasts(Domain.singleValue(INTEGER, 10L), BIGINT))
-                .isInstanceOf(IllegalStateException.class);
+        applySaturatedCasts(Domain.singleValue(INTEGER, 10L), BIGINT);
     }
 
     private static Domain applySaturatedCasts(Domain domain, Type coercedValueType)

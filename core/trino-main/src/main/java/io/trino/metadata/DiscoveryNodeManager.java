@@ -209,9 +209,8 @@ public final class DiscoveryNodeManager
     private synchronized void refreshNodesInternal()
     {
         // This is a deny-list.
-        Set<ServiceDescriptor> failed = failureDetector.getFailed();
         Set<ServiceDescriptor> services = serviceSelector.selectAllServices().stream()
-                .filter(service -> !failed.contains(service))
+                .filter(service -> !failureDetector.getFailed().contains(service))
                 .collect(toImmutableSet());
 
         ImmutableSet.Builder<InternalNode> activeNodesBuilder = ImmutableSet.builder();

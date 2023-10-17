@@ -18,7 +18,8 @@ import com.google.common.collect.ImmutableMap;
 import io.trino.metadata.TestingFunctionResolution;
 import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.MapType;
-import org.junit.jupiter.api.Test;
+import io.trino.sql.tree.QualifiedName;
+import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +45,7 @@ public class TestMapUnionAggregation
         MapType mapType = mapType(DOUBLE, VARCHAR);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "map_union",
+                QualifiedName.of("map_union"),
                 fromTypes(mapType),
                 ImmutableMap.of(23.0, "aaa", 33.0, "bbb", 43.0, "ccc", 53.0, "ddd", 13.0, "eee"),
                 arrayBlockOf(
@@ -55,7 +56,7 @@ public class TestMapUnionAggregation
         mapType = mapType(DOUBLE, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "map_union", fromTypes(mapType),
+                QualifiedName.of("map_union"), fromTypes(mapType),
                 ImmutableMap.of(1.0, 99L, 2.0, 99L, 3.0, 99L, 4.0, 44L),
                 arrayBlockOf(
                         mapType,
@@ -65,7 +66,7 @@ public class TestMapUnionAggregation
         mapType = mapType(BOOLEAN, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "map_union",
+                QualifiedName.of("map_union"),
                 fromTypes(mapType),
                 ImmutableMap.of(false, 12L, true, 13L),
                 arrayBlockOf(
@@ -83,7 +84,7 @@ public class TestMapUnionAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "map_union",
+                QualifiedName.of("map_union"),
                 fromTypes(mapType),
                 expected,
                 arrayBlockOf(
@@ -99,7 +100,7 @@ public class TestMapUnionAggregation
         MapType mapType = mapType(DOUBLE, new ArrayType(VARCHAR));
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "map_union",
+                QualifiedName.of("map_union"),
                 fromTypes(mapType),
                 ImmutableMap.of(
                         1.0, ImmutableList.of("a", "b"),
@@ -132,7 +133,7 @@ public class TestMapUnionAggregation
         mapType = mapType(DOUBLE, mapType(VARCHAR, VARCHAR));
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "map_union",
+                QualifiedName.of("map_union"),
                 fromTypes(mapType),
                 ImmutableMap.of(
                         1.0, ImmutableMap.of("a", "b"),
@@ -158,7 +159,7 @@ public class TestMapUnionAggregation
         mapType = mapType(new ArrayType(VARCHAR), DOUBLE);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "map_union",
+                QualifiedName.of("map_union"),
                 fromTypes(mapType),
                 ImmutableMap.of(
                         ImmutableList.of("a", "b"), 1.0,

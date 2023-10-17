@@ -15,8 +15,6 @@
 package io.trino.sql.parser;
 
 import com.google.errorprone.annotations.ThreadSafe;
-import io.trino.grammar.sql.SqlBaseLexer;
-import io.trino.grammar.sql.SqlBaseParser;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;

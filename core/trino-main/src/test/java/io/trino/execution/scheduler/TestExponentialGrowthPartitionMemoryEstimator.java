@@ -26,7 +26,7 @@ import io.trino.metadata.InternalNodeManager;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.memory.MemoryPoolInfo;
 import io.trino.testing.TestingSession;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.time.Duration;
@@ -53,7 +53,6 @@ public class TestExponentialGrowthPartitionMemoryEstimator
                 false,
                 true,
                 Duration.of(1, MINUTES),
-                DataSize.ofBytes(0),
                 DataSize.ofBytes(0),
                 Ticker.systemTicker());
         nodeAllocatorService.refreshNodePoolMemoryInfos();

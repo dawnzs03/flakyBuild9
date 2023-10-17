@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableMap;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.trino.plugin.hive.HiveCompressionCodec;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 import java.util.TimeZone;
@@ -68,8 +68,7 @@ public class TestDeltaLakeConfig
                 .setUniqueTableLocation(true)
                 .setLegacyCreateTableWithExistingLocationEnabled(false)
                 .setRegisterTableProcedureEnabled(false)
-                .setProjectionPushdownEnabled(true)
-                .setQueryPartitionFilterRequired(false));
+                .setProjectionPushdownEnabled(true));
     }
 
     @Test
@@ -106,7 +105,6 @@ public class TestDeltaLakeConfig
                 .put("delta.legacy-create-table-with-existing-location.enabled", "true")
                 .put("delta.register-table-procedure.enabled", "true")
                 .put("delta.projection-pushdown-enabled", "false")
-                .put("delta.query-partition-filter-required", "true")
                 .buildOrThrow();
 
         DeltaLakeConfig expected = new DeltaLakeConfig()
@@ -139,8 +137,7 @@ public class TestDeltaLakeConfig
                 .setUniqueTableLocation(false)
                 .setLegacyCreateTableWithExistingLocationEnabled(true)
                 .setRegisterTableProcedureEnabled(true)
-                .setProjectionPushdownEnabled(false)
-                .setQueryPartitionFilterRequired(true);
+                .setProjectionPushdownEnabled(false);
 
         assertFullMapping(properties, expected);
     }

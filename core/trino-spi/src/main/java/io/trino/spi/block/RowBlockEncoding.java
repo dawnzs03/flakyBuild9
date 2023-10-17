@@ -17,6 +17,7 @@ package io.trino.spi.block;
 import io.airlift.slice.SliceInput;
 import io.airlift.slice.SliceOutput;
 
+import static io.airlift.slice.Slices.wrappedIntArray;
 import static io.trino.spi.block.RowBlock.createRowBlockInternal;
 
 public class RowBlockEncoding
@@ -60,14 +61,14 @@ public class RowBlockEncoding
 
         if (fieldBlockOffsets != null) {
             if (startFieldBlockOffset == 0) {
-                sliceOutput.writeInts(fieldBlockOffsets, offsetBase, positionCount + 1);
+                sliceOutput.writeBytes(wrappedIntArray(fieldBlockOffsets, offsetBase, positionCount + 1));
             }
             else {
                 int[] newFieldBlockOffsets = new int[positionCount + 1];
                 for (int position = 0; position < positionCount + 1; position++) {
                     newFieldBlockOffsets[position] = fieldBlockOffsets[offsetBase + position] - startFieldBlockOffset;
                 }
-                sliceOutput.writeInts(newFieldBlockOffsets);
+                sliceOutput.writeBytes(wrappedIntArray(newFieldBlockOffsets));
             }
         }
     }
@@ -87,7 +88,7 @@ public class RowBlockEncoding
         int[] fieldBlockOffsets = null;
         if (rowIsNull != null) {
             fieldBlockOffsets = new int[positionCount + 1];
-            sliceInput.readInts(fieldBlockOffsets);
+            sliceInput.readBytes(wrappedIntArray(fieldBlockOffsets));
         }
         return createRowBlockInternal(0, positionCount, rowIsNull, fieldBlockOffsets, fieldBlocks);
     }

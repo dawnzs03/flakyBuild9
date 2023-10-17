@@ -14,7 +14,7 @@
 package io.trino.server.security;
 
 import com.google.common.collect.ImmutableMap;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;

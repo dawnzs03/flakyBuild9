@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableList;
 import io.airlift.units.DataSize;
 import io.trino.plugin.deltalake.DeltaLakeColumnHandle;
 import io.trino.plugin.deltalake.transactionlog.MetadataEntry;
-import io.trino.plugin.deltalake.transactionlog.ProtocolEntry;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +30,6 @@ public class DeltaTableOptimizeHandle
         extends DeltaTableProcedureHandle
 {
     private final MetadataEntry metadataEntry;
-    private final ProtocolEntry protocolEntry;
     private final List<DeltaLakeColumnHandle> tableColumns;
     private final List<String> originalPartitionColumns;
     private final DataSize maxScannedFileSize;
@@ -41,7 +39,6 @@ public class DeltaTableOptimizeHandle
     @JsonCreator
     public DeltaTableOptimizeHandle(
             MetadataEntry metadataEntry,
-            ProtocolEntry protocolEntry,
             List<DeltaLakeColumnHandle> tableColumns,
             List<String> originalPartitionColumns,
             DataSize maxScannedFileSize,
@@ -49,7 +46,6 @@ public class DeltaTableOptimizeHandle
             boolean retriesEnabled)
     {
         this.metadataEntry = requireNonNull(metadataEntry, "metadataEntry is null");
-        this.protocolEntry = requireNonNull(protocolEntry, "protocolEntry is null");
         this.tableColumns = ImmutableList.copyOf(requireNonNull(tableColumns, "tableColumns is null"));
         this.originalPartitionColumns = ImmutableList.copyOf(requireNonNull(originalPartitionColumns, "originalPartitionColumns is null"));
         this.maxScannedFileSize = requireNonNull(maxScannedFileSize, "maxScannedFileSize is null");
@@ -62,7 +58,6 @@ public class DeltaTableOptimizeHandle
         checkState(this.currentVersion.isEmpty(), "currentVersion already set");
         return new DeltaTableOptimizeHandle(
                 metadataEntry,
-                protocolEntry,
                 tableColumns,
                 originalPartitionColumns,
                 maxScannedFileSize,
@@ -74,12 +69,6 @@ public class DeltaTableOptimizeHandle
     public MetadataEntry getMetadataEntry()
     {
         return metadataEntry;
-    }
-
-    @JsonProperty
-    public ProtocolEntry getProtocolEntry()
-    {
-        return protocolEntry;
     }
 
     @JsonProperty

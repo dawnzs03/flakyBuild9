@@ -33,10 +33,9 @@ import io.trino.spi.exchange.ExchangeSource;
 import io.trino.spi.exchange.ExchangeSourceHandle;
 import io.trino.spi.exchange.ExchangeSourceHandleSource.ExchangeSourceHandleBatch;
 import io.trino.spi.exchange.ExchangeSourceOutputSelector;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.ArrayDeque;
 import java.util.List;
@@ -55,21 +54,20 @@ import static io.trino.spi.exchange.ExchangeId.createRandomExchangeId;
 import static java.lang.Math.toIntExact;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_CLASS)
 public abstract class AbstractTestExchangeManager
 {
     private ExchangeManager exchangeManager;
 
-    @BeforeAll
+    @BeforeClass
     public void init()
             throws Exception
     {
         exchangeManager = createExchangeManager();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void destroy()
             throws Exception
     {
@@ -160,7 +158,7 @@ public abstract class AbstractTestExchangeManager
         exchange.allRequiredSinksFinished();
 
         ExchangeSourceHandleBatch sourceHandleBatch = exchange.getSourceHandles().getNextBatch().get();
-        assertThat(sourceHandleBatch.lastBatch()).isTrue();
+        assertTrue(sourceHandleBatch.lastBatch());
         List<ExchangeSourceHandle> partitionHandles = sourceHandleBatch.handles();
         assertThat(partitionHandles).hasSize(2);
 
@@ -234,7 +232,7 @@ public abstract class AbstractTestExchangeManager
         exchange.allRequiredSinksFinished();
 
         ExchangeSourceHandleBatch sourceHandleBatch = exchange.getSourceHandles().getNextBatch().get();
-        assertThat(sourceHandleBatch.lastBatch()).isTrue();
+        assertTrue(sourceHandleBatch.lastBatch());
         List<ExchangeSourceHandle> partitionHandles = sourceHandleBatch.handles();
         assertThat(partitionHandles).hasSize(10);
 

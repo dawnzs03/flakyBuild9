@@ -31,6 +31,7 @@ import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.type.TypeOperators;
 import io.trino.sql.gen.JoinCompiler;
+import io.trino.type.BlockTypeOperators;
 import io.trino.version.EmbedVersion;
 
 import static io.trino.spi.connector.MetadataProvider.NOOP_METADATA_PROVIDER;
@@ -47,7 +48,8 @@ public final class TestingConnectorContext
 
     public TestingConnectorContext()
     {
-        pageIndexerFactory = new GroupByHashPageIndexerFactory(new JoinCompiler(new TypeOperators()));
+        TypeOperators typeOperators = new TypeOperators();
+        pageIndexerFactory = new GroupByHashPageIndexerFactory(new JoinCompiler(typeOperators), new BlockTypeOperators(typeOperators));
         nodeManager = new ConnectorAwareNodeManager(new InMemoryNodeManager(), "testenv", TEST_CATALOG_HANDLE, true);
     }
 

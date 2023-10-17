@@ -29,7 +29,7 @@ import io.trino.spi.security.SelectedRole;
 import io.trino.sql.planner.plan.PlanFragmentId;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.transaction.TransactionId;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.Optional;
@@ -108,8 +108,6 @@ public class TestQueryInfo
                 Optional.of("set_catalog"),
                 Optional.of("set_schema"),
                 Optional.of("set_path"),
-                Optional.of("set_authorization_user"),
-                false,
                 ImmutableMap.of("set_property", "set_value"),
                 ImmutableSet.of("reset_property"),
                 ImmutableMap.of("set_roles", new SelectedRole(SelectedRole.Type.ROLE, Optional.of("role"))),

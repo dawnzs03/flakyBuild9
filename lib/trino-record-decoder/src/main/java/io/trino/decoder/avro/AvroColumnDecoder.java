@@ -53,7 +53,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.trino.decoder.DecoderErrorCode.DECODER_CONVERSION_NOT_SUPPORTED;
 import static io.trino.spi.StandardErrorCode.GENERIC_USER_ERROR;
-import static io.trino.spi.block.MapValueBuilder.buildMapValue;
 import static io.trino.spi.block.RowValueBuilder.buildRowValue;
 import static io.trino.spi.type.Varchars.truncateToLength;
 import static java.lang.Float.floatToIntBits;
@@ -230,7 +229,7 @@ public class AvroColumnDecoder
 
         if (type instanceof VarbinaryType) {
             if (value instanceof ByteBuffer) {
-                return Slices.wrappedHeapBuffer((ByteBuffer) value);
+                return Slices.wrappedBuffer((ByteBuffer) value);
             }
             if (value instanceof GenericFixed) {
                 return Slices.wrappedBuffer(((GenericFixed) value).bytes());
@@ -326,21 +325,27 @@ public class AvroColumnDecoder
         Type keyType = type.getKeyType();
         Type valueType = type.getValueType();
 
+        MapBlockBuilder blockBuilder;
         if (parentBlockBuilder != null) {
-            ((MapBlockBuilder) parentBlockBuilder).buildEntry((keyBuilder, valueBuilder) -> buildMap(columnName, map, keyType, valueType, keyBuilder, valueBuilder));
-            return null;
+            blockBuilder = (MapBlockBuilder) parentBlockBuilder;
         }
-        return buildMapValue(type, map.size(), (keyBuilder, valueBuilder) -> buildMap(columnName, map, keyType, valueType, keyBuilder, valueBuilder));
-    }
+        else {
+            blockBuilder = type.createBlockBuilder(null, 1);
+        }
 
-    private static void buildMap(String columnName, Map<?, ?> map, Type keyType, Type valueType, BlockBuilder keyBuilder, BlockBuilder valueBuilder)
-    {
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            if (entry.getKey() != null) {
-                keyType.writeSlice(keyBuilder, truncateToLength(utf8Slice(entry.getKey().toString()), keyType));
-                serializeObject(valueBuilder, entry.getValue(), valueType, columnName);
+        blockBuilder.buildEntry((keyBuilder, valueBuilder) -> {
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                if (entry.getKey() != null) {
+                    keyType.writeSlice(keyBuilder, truncateToLength(utf8Slice(entry.getKey().toString()), keyType));
+                    serializeObject(valueBuilder, entry.getValue(), valueType, columnName);
+                }
             }
+        });
+
+        if (parentBlockBuilder == null) {
+            return blockBuilder.getObject(0, Block.class);
         }
+        return null;
     }
 
     private static Block serializeRow(BlockBuilder blockBuilder, Object value, Type type, String columnName)

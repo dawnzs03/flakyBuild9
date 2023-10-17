@@ -79,7 +79,18 @@ public class TestHiveCompression
     @Test(groups = HIVE_COMPRESSION)
     public void testSnappyCompressedParquetTableCreatedInTrino()
     {
-        String tableName = "table_trino_parquet_snappy";
+        testSnappyCompressedParquetTableCreatedInTrino(false);
+    }
+
+    @Test(groups = HIVE_COMPRESSION)
+    public void testSnappyCompressedParquetTableCreatedInTrinoWithNativeWriter()
+    {
+        testSnappyCompressedParquetTableCreatedInTrino(true);
+    }
+
+    private void testSnappyCompressedParquetTableCreatedInTrino(boolean optimizedParquetWriter)
+    {
+        String tableName = "table_trino_parquet_snappy" + (optimizedParquetWriter ? "_native_writer" : "");
         onTrino().executeQuery("DROP TABLE IF EXISTS " + tableName);
         onTrino().executeQuery(format(
                 "CREATE TABLE %s (" +
@@ -90,6 +101,7 @@ public class TestHiveCompression
 
         String catalog = (String) onTrino().executeQuery("SELECT CURRENT_CATALOG").getOnlyValue();
         onTrino().executeQuery("SET SESSION " + catalog + ".compression_codec = 'SNAPPY'");
+        onTrino().executeQuery("SET SESSION " + catalog + ".parquet_optimized_writer_enabled = " + optimizedParquetWriter);
         onTrino().executeQuery(format("INSERT INTO %s VALUES(1, 'test data')", tableName));
 
         assertThat(onTrino().executeQuery("SELECT * FROM " + tableName)).containsExactlyInOrder(row(1, "test data"));

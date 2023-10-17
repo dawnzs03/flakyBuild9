@@ -72,13 +72,14 @@ public final class DecimalOperators
         TypeSignature decimalResultSignature = new TypeSignature("decimal", typeVariable("r_precision"), typeVariable("r_scale"));
 
         Signature signature = Signature.builder()
+                .operatorType(ADD)
                 .longVariable("r_precision", "min(38, max(a_precision - a_scale, b_precision - b_scale) + max(a_scale, b_scale) + 1)")
                 .longVariable("r_scale", "max(a_scale, b_scale)")
                 .argumentType(decimalLeftSignature)
                 .argumentType(decimalRightSignature)
                 .returnType(decimalResultSignature)
                 .build();
-        return new PolymorphicScalarFunctionBuilder(ADD, DecimalOperators.class)
+        return new PolymorphicScalarFunctionBuilder(DecimalOperators.class)
                 .signature(signature)
                 .deterministic(true)
                 .choice(choice -> choice
@@ -153,13 +154,14 @@ public final class DecimalOperators
         TypeSignature decimalResultSignature = new TypeSignature("decimal", typeVariable("r_precision"), typeVariable("r_scale"));
 
         Signature signature = Signature.builder()
+                .operatorType(SUBTRACT)
                 .longVariable("r_precision", "min(38, max(a_precision - a_scale, b_precision - b_scale) + max(a_scale, b_scale) + 1)")
                 .longVariable("r_scale", "max(a_scale, b_scale)")
                 .argumentType(decimalLeftSignature)
                 .argumentType(decimalRightSignature)
                 .returnType(decimalResultSignature)
                 .build();
-        return new PolymorphicScalarFunctionBuilder(SUBTRACT, DecimalOperators.class)
+        return new PolymorphicScalarFunctionBuilder(DecimalOperators.class)
                 .signature(signature)
                 .deterministic(true)
                 .choice(choice -> choice
@@ -233,13 +235,14 @@ public final class DecimalOperators
         TypeSignature decimalResultSignature = new TypeSignature("decimal", typeVariable("r_precision"), typeVariable("r_scale"));
 
         Signature signature = Signature.builder()
+                .operatorType(MULTIPLY)
                 .longVariable("r_precision", "min(38, a_precision + b_precision)")
                 .longVariable("r_scale", "a_scale + b_scale")
                 .argumentType(decimalLeftSignature)
                 .argumentType(decimalRightSignature)
                 .returnType(decimalResultSignature)
                 .build();
-        return new PolymorphicScalarFunctionBuilder(MULTIPLY, DecimalOperators.class)
+        return new PolymorphicScalarFunctionBuilder(DecimalOperators.class)
                 .signature(signature)
                 .deterministic(true)
                 .choice(choice -> choice
@@ -316,13 +319,14 @@ public final class DecimalOperators
         // if scale of divisor is greater than scale of dividend we extend scale further as we
         // want result scale to be maximum of scales of divisor and dividend.
         Signature signature = Signature.builder()
+                .operatorType(DIVIDE)
                 .longVariable("r_precision", "min(38, a_precision + b_scale + max(b_scale - a_scale, 0))")
                 .longVariable("r_scale", "max(a_scale, b_scale)")
                 .argumentType(decimalLeftSignature)
                 .argumentType(decimalRightSignature)
                 .returnType(decimalResultSignature)
                 .build();
-        return new PolymorphicScalarFunctionBuilder(DIVIDE, DecimalOperators.class)
+        return new PolymorphicScalarFunctionBuilder(DecimalOperators.class)
                 .signature(signature)
                 .deterministic(true)
                 .choice(choice -> choice
@@ -471,41 +475,36 @@ public final class DecimalOperators
 
     private static SqlScalarFunction decimalModulusOperator()
     {
-        return modulusScalarFunction(new PolymorphicScalarFunctionBuilder(MODULUS, DecimalOperators.class));
+        Signature signature = modulusSignatureBuilder()
+                .operatorType(MODULUS)
+                .build();
+        return modulusScalarFunction(signature);
     }
 
-    public static SqlScalarFunction modulusScalarFunction()
+    public static SqlScalarFunction modulusScalarFunction(Signature signature)
     {
-        return modulusScalarFunction(new PolymorphicScalarFunctionBuilder("mod", DecimalOperators.class));
+        return new PolymorphicScalarFunctionBuilder(DecimalOperators.class)
+                .signature(signature)
+                .deterministic(true)
+                .choice(choice -> choice
+                        .implementation(methodsGroup -> methodsGroup
+                                .methods("modulusShortShortShort", "modulusLongLongLong", "modulusShortLongLong", "modulusShortLongShort", "modulusLongShortShort", "modulusLongShortLong")
+                                .withExtraParameters(DecimalOperators::modulusRescaleParameters)))
+                .build();
     }
 
-    private static SqlScalarFunction modulusScalarFunction(PolymorphicScalarFunctionBuilder builder)
+    public static Signature.Builder modulusSignatureBuilder()
     {
         TypeSignature decimalLeftSignature = new TypeSignature("decimal", typeVariable("a_precision"), typeVariable("a_scale"));
         TypeSignature decimalRightSignature = new TypeSignature("decimal", typeVariable("b_precision"), typeVariable("b_scale"));
         TypeSignature decimalResultSignature = new TypeSignature("decimal", typeVariable("r_precision"), typeVariable("r_scale"));
 
-        Signature signature = Signature.builder()
+        return Signature.builder()
                 .longVariable("r_precision", "min(b_precision - b_scale, a_precision - a_scale) + max(a_scale, b_scale)")
                 .longVariable("r_scale", "max(a_scale, b_scale)")
                 .argumentType(decimalLeftSignature)
                 .argumentType(decimalRightSignature)
-                .returnType(decimalResultSignature)
-                .build();
-
-        return builder.signature(signature)
-                .deterministic(true)
-                .choice(choice -> choice
-                        .implementation(methodsGroup -> methodsGroup
-                                .methods(
-                                        "modulusShortShortShort",
-                                        "modulusLongLongLong",
-                                        "modulusShortLongLong",
-                                        "modulusShortLongShort",
-                                        "modulusLongShortShort",
-                                        "modulusLongShortLong")
-                                .withExtraParameters(DecimalOperators::modulusRescaleParameters)))
-                .build();
+                .returnType(decimalResultSignature);
     }
 
     private static List<Object> calculateShortRescaleParameters(SpecializeContext context)

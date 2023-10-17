@@ -29,7 +29,7 @@ import io.trino.plugin.hive.metastore.RawHiveMetastoreFactory;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.io.File;
 import java.util.Optional;
@@ -42,6 +42,7 @@ import static io.trino.plugin.hive.metastore.file.TestingFileHiveMetastore.creat
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.util.Objects.requireNonNull;
 
+@Test(singleThreaded = true) // metastore invocation counters shares mutable state so can't be run from many threads simultaneously
 public class TestDeltaLakeMetastoreAccessOperations
         extends AbstractTestQueryFramework
 {
@@ -253,8 +254,6 @@ public class TestDeltaLakeMetastoreAccessOperations
 
     private void assertMetastoreInvocations(@Language("SQL") String query, Multiset<?> expectedInvocations)
     {
-        assertUpdate("CALL system.flush_metadata_cache()");
-
         CountingAccessHiveMetastoreUtil.assertMetastoreInvocations(metastore, getQueryRunner(), getSession(), query, expectedInvocations);
     }
 }

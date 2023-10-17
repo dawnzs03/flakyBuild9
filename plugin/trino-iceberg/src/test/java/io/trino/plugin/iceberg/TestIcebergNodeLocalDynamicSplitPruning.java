@@ -51,7 +51,7 @@ import org.apache.iceberg.PartitionSpecParser;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SchemaParser;
 import org.apache.iceberg.types.Types;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -160,6 +160,7 @@ public class TestIcebergNodeLocalDynamicSplitPruning
                 0,
                 inputFile.length(),
                 inputFile.length(),
+                0, // This is incorrect, but the value is only used for delete operations
                 ORC,
                 PartitionSpecParser.toJson(PartitionSpec.unpartitioned()),
                 PartitionData.toJson(new PartitionData(new Object[] {})),

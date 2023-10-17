@@ -13,10 +13,10 @@
  */
 package io.trino.operator.scalar;
 
-import io.trino.operator.aggregation.histogram.TypedHistogram;
+import io.trino.operator.aggregation.histogram.SingleTypedHistogram;
 import io.trino.spi.block.Block;
+import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.block.MapBlock;
-import io.trino.spi.block.MapBlockBuilder;
 import io.trino.spi.function.Convention;
 import io.trino.spi.function.Description;
 import io.trino.spi.function.OperatorDependency;
@@ -26,19 +26,19 @@ import io.trino.spi.function.SqlType;
 import io.trino.spi.function.TypeParameter;
 import io.trino.spi.type.MapType;
 import io.trino.spi.type.Type;
+import io.trino.type.BlockTypeOperators.BlockPositionEqual;
+import io.trino.type.BlockTypeOperators.BlockPositionHashCode;
 
-import java.lang.invoke.MethodHandle;
-
-import static io.trino.spi.function.InvocationConvention.InvocationArgumentConvention.BLOCK_POSITION_NOT_NULL;
-import static io.trino.spi.function.InvocationConvention.InvocationArgumentConvention.FLAT;
-import static io.trino.spi.function.InvocationConvention.InvocationReturnConvention.BLOCK_BUILDER;
+import static io.trino.spi.function.InvocationConvention.InvocationArgumentConvention.BLOCK_POSITION;
 import static io.trino.spi.function.InvocationConvention.InvocationReturnConvention.FAIL_ON_NULL;
-import static io.trino.spi.function.InvocationConvention.InvocationReturnConvention.FLAT_RETURN;
+import static io.trino.spi.function.InvocationConvention.InvocationReturnConvention.NULLABLE_RETURN;
 
 @Description("Return a map containing the counts of the elements in the array")
 @ScalarFunction(value = "array_histogram")
 public final class ArrayHistogramFunction
 {
+    private static final int EXPECTED_HISTOGRAM_SIZE = 10;
+
     private ArrayHistogramFunction() {}
 
     @TypeParameter("T")
@@ -46,37 +46,31 @@ public final class ArrayHistogramFunction
     public static Block arrayHistogram(
             @TypeParameter("T") Type elementType,
             @OperatorDependency(
-                    operator = OperatorType.READ_VALUE,
-                    argumentTypes = "T",
-                    convention = @Convention(arguments = FLAT, result = BLOCK_BUILDER)) MethodHandle readFlat,
-            @OperatorDependency(
-                    operator = OperatorType.READ_VALUE,
-                    argumentTypes = "T",
-                    convention = @Convention(arguments = BLOCK_POSITION_NOT_NULL, result = FLAT_RETURN)) MethodHandle writeFlat,
-            @OperatorDependency(
-                    operator = OperatorType.HASH_CODE,
-                    argumentTypes = "T",
-                    convention = @Convention(arguments = FLAT, result = FAIL_ON_NULL)) MethodHandle hashFlat,
-            @OperatorDependency(
-                    operator = OperatorType.IS_DISTINCT_FROM,
+                    operator = OperatorType.EQUAL,
                     argumentTypes = {"T", "T"},
-                    convention = @Convention(arguments = {FLAT, BLOCK_POSITION_NOT_NULL}, result = FAIL_ON_NULL)) MethodHandle distinctFlatBlock,
+                    convention = @Convention(arguments = {BLOCK_POSITION, BLOCK_POSITION}, result = NULLABLE_RETURN))
+            BlockPositionEqual equalOperator,
             @OperatorDependency(
                     operator = OperatorType.HASH_CODE,
                     argumentTypes = "T",
-                    convention = @Convention(arguments = BLOCK_POSITION_NOT_NULL, result = FAIL_ON_NULL)) MethodHandle hashBlock,
+                    convention = @Convention(arguments = BLOCK_POSITION, result = FAIL_ON_NULL))
+            BlockPositionHashCode hashCodeOperator,
             @TypeParameter("map(T, bigint)") MapType mapType,
             @SqlType("array(T)") Block arrayBlock)
     {
-        TypedHistogram histogram = new TypedHistogram(elementType, readFlat, writeFlat, hashFlat, distinctFlatBlock, hashBlock, false);
+        SingleTypedHistogram histogram = new SingleTypedHistogram(
+                elementType,
+                equalOperator,
+                hashCodeOperator,
+                EXPECTED_HISTOGRAM_SIZE);
         int positionCount = arrayBlock.getPositionCount();
         for (int position = 0; position < positionCount; position++) {
             if (!arrayBlock.isNull(position)) {
-                histogram.add(0, arrayBlock, position, 1L);
+                histogram.add(position, arrayBlock, 1L);
             }
         }
-        MapBlockBuilder blockBuilder = mapType.createBlockBuilder(null, histogram.size());
-        histogram.serialize(0, blockBuilder);
+        BlockBuilder blockBuilder = mapType.createBlockBuilder(null, histogram.getPositionCount());
+        histogram.serialize(blockBuilder);
         MapBlock mapBlock = (MapBlock) blockBuilder.build();
         return mapBlock.getObject(0, Block.class);
     }

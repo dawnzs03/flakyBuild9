@@ -18,13 +18,10 @@ import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.SqlTimestamp;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.Type.Range;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static io.trino.spi.type.TimestampType.TIMESTAMP_MILLIS;
 import static io.trino.spi.type.TimestampType.createTimestampType;
@@ -62,7 +59,7 @@ public class TestShortTimestampType
         return ((Long) value) + 1_000;
     }
 
-    @Test
+    @Override
     public void testRange()
     {
         Range range = type.getRange().orElseThrow();
@@ -70,8 +67,7 @@ public class TestShortTimestampType
         assertEquals(range.getMax(), Long.MAX_VALUE - 807);
     }
 
-    @ParameterizedTest
-    @MethodSource("testRangeEveryPrecisionDataProvider")
+    @Test(dataProvider = "testRangeEveryPrecisionDataProvider")
     public void testRangeEveryPrecision(int precision, long expectedMin, long expectedMax)
     {
         Range range = createTimestampType(precision).getRange().orElseThrow();
@@ -79,19 +75,21 @@ public class TestShortTimestampType
         assertEquals(range.getMax(), expectedMax);
     }
 
-    public static Stream<Arguments> testRangeEveryPrecisionDataProvider()
+    @DataProvider
+    public static Object[][] testRangeEveryPrecisionDataProvider()
     {
-        return Stream.of(
-                Arguments.of(0, Long.MIN_VALUE + 775808, Long.MAX_VALUE - 775807),
-                Arguments.of(1, Long.MIN_VALUE + 75808, Long.MAX_VALUE - 75807),
-                Arguments.of(2, Long.MIN_VALUE + 5808, Long.MAX_VALUE - 5807),
-                Arguments.of(3, Long.MIN_VALUE + 808, Long.MAX_VALUE - 807),
-                Arguments.of(4, Long.MIN_VALUE + 8, Long.MAX_VALUE - 7),
-                Arguments.of(5, Long.MIN_VALUE + 8, Long.MAX_VALUE - 7),
-                Arguments.of(6, Long.MIN_VALUE, Long.MAX_VALUE));
+        return new Object[][] {
+                {0, Long.MIN_VALUE + 775808, Long.MAX_VALUE - 775807},
+                {1, Long.MIN_VALUE + 75808, Long.MAX_VALUE - 75807},
+                {2, Long.MIN_VALUE + 5808, Long.MAX_VALUE - 5807},
+                {3, Long.MIN_VALUE + 808, Long.MAX_VALUE - 807},
+                {4, Long.MIN_VALUE + 8, Long.MAX_VALUE - 7},
+                {5, Long.MIN_VALUE + 8, Long.MAX_VALUE - 7},
+                {6, Long.MIN_VALUE, Long.MAX_VALUE},
+        };
     }
 
-    @Test
+    @Override
     public void testPreviousValue()
     {
         long minValue = Long.MIN_VALUE + 808;
@@ -111,7 +109,7 @@ public class TestShortTimestampType
                 .isEqualTo(Optional.of(maxValue - 1_000));
     }
 
-    @Test
+    @Override
     public void testNextValue()
     {
         long minValue = Long.MIN_VALUE + 808;
@@ -131,8 +129,7 @@ public class TestShortTimestampType
                 .isEqualTo(Optional.empty());
     }
 
-    @ParameterizedTest
-    @MethodSource("testPreviousNextValueEveryPrecisionDataProvider")
+    @Test(dataProvider = "testPreviousNextValueEveryPrecisionDatProvider")
     public void testPreviousValueEveryPrecision(int precision, long minValue, long maxValue, long step)
     {
         Type type = createTimestampType(precision);
@@ -153,8 +150,7 @@ public class TestShortTimestampType
                 .isEqualTo(Optional.of(maxValue - step));
     }
 
-    @ParameterizedTest
-    @MethodSource("testPreviousNextValueEveryPrecisionDataProvider")
+    @Test(dataProvider = "testPreviousNextValueEveryPrecisionDatProvider")
     public void testNextValueEveryPrecision(int precision, long minValue, long maxValue, long step)
     {
         Type type = createTimestampType(precision);
@@ -175,15 +171,17 @@ public class TestShortTimestampType
                 .isEqualTo(Optional.empty());
     }
 
-    public static Stream<Arguments> testPreviousNextValueEveryPrecisionDataProvider()
+    @DataProvider
+    public Object[][] testPreviousNextValueEveryPrecisionDatProvider()
     {
-        return Stream.of(
-                Arguments.of(0, Long.MIN_VALUE + 775808, Long.MAX_VALUE - 775807, 1_000_000L),
-                Arguments.of(1, Long.MIN_VALUE + 75808, Long.MAX_VALUE - 75807, 100_000L),
-                Arguments.of(2, Long.MIN_VALUE + 5808, Long.MAX_VALUE - 5807, 10_000L),
-                Arguments.of(3, Long.MIN_VALUE + 808, Long.MAX_VALUE - 807, 1_000L),
-                Arguments.of(4, Long.MIN_VALUE + 8, Long.MAX_VALUE - 7, 100L),
-                Arguments.of(5, Long.MIN_VALUE + 8, Long.MAX_VALUE - 7, 10L),
-                Arguments.of(6, Long.MIN_VALUE, Long.MAX_VALUE, 1L));
+        return new Object[][] {
+                {0, Long.MIN_VALUE + 775808, Long.MAX_VALUE - 775807, 1_000_000L},
+                {1, Long.MIN_VALUE + 75808, Long.MAX_VALUE - 75807, 100_000L},
+                {2, Long.MIN_VALUE + 5808, Long.MAX_VALUE - 5807, 10_000L},
+                {3, Long.MIN_VALUE + 808, Long.MAX_VALUE - 807, 1_000L},
+                {4, Long.MIN_VALUE + 8, Long.MAX_VALUE - 7, 100L},
+                {5, Long.MIN_VALUE + 8, Long.MAX_VALUE - 7, 10L},
+                {6, Long.MIN_VALUE, Long.MAX_VALUE, 1L},
+        };
     }
 }

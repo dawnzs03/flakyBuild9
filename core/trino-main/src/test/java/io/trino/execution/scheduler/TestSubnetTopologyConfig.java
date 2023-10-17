@@ -15,7 +15,7 @@ package io.trino.execution.scheduler;
 
 import com.google.common.collect.ImmutableMap;
 import io.airlift.configuration.testing.ConfigAssertions;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.util.Map;

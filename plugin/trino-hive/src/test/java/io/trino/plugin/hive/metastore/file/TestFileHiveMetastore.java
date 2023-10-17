@@ -23,10 +23,9 @@ import io.trino.plugin.hive.metastore.Table;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat;
 import org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -34,23 +33,21 @@ import java.util.Optional;
 
 import static com.google.common.io.MoreFiles.deleteRecursively;
 import static com.google.common.io.RecursiveDeleteOption.ALLOW_INSECURE;
-import static io.trino.plugin.hive.HiveTestUtils.HDFS_FILE_SYSTEM_FACTORY;
+import static io.trino.plugin.hive.HiveTestUtils.HDFS_ENVIRONMENT;
 import static io.trino.plugin.hive.HiveType.HIVE_INT;
 import static io.trino.plugin.hive.metastore.PrincipalPrivileges.NO_PRIVILEGES;
-import static io.trino.plugin.hive.util.HiveClassNames.HUDI_PARQUET_INPUT_FORMAT;
+import static io.trino.plugin.hive.util.HiveUtil.HUDI_PARQUET_INPUT_FORMAT;
 import static io.trino.spi.security.PrincipalType.USER;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 public class TestFileHiveMetastore
 {
     private Path tmpDir;
     private FileHiveMetastore metastore;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
             throws IOException
     {
@@ -58,7 +55,7 @@ public class TestFileHiveMetastore
 
         metastore = new FileHiveMetastore(
                 new NodeVersion("testversion"),
-                HDFS_FILE_SYSTEM_FACTORY,
+                HDFS_ENVIRONMENT,
                 new HiveMetastoreConfig().isHideDeltaLakeTables(),
                 new FileHiveMetastoreConfig()
                         .setCatalogDirectory(tmpDir.toString())
@@ -72,7 +69,7 @@ public class TestFileHiveMetastore
                 .build());
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
             throws IOException
     {

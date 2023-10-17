@@ -25,7 +25,6 @@ import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorPartitioningHandle;
 import io.trino.spi.connector.ConnectorTableLayout;
 import io.trino.spi.connector.TableProcedureMetadata;
-import io.trino.spi.connector.WriterScalingOptions;
 import io.trino.spi.session.PropertyMetadata;
 import io.trino.sql.planner.SystemPartitioningHandle;
 import io.trino.sql.planner.TestTableScanNodePartitioning;
@@ -53,6 +52,7 @@ import static io.trino.sql.planner.SystemPartitioningHandle.SCALED_WRITER_HASH_D
 import static io.trino.sql.planner.assertions.PlanMatchPattern.anyTree;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.exchange;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.node;
+import static io.trino.sql.planner.assertions.PlanMatchPattern.project;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.tableScan;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.values;
 import static io.trino.sql.planner.plan.ExchangeNode.Scope.LOCAL;
@@ -99,7 +99,6 @@ public class TestLimitMaxWriterNodesCount
                     }
                     return null;
                 }))
-                .withWriterScalingOptions(WriterScalingOptions.ENABLED)
                 .withGetInsertLayout((session, tableMetadata) -> {
                     if (tableMetadata.getTableName().equals(partitionedTable)) {
                         return Optional.of(new ConnectorTableLayout(ImmutableList.of("column_a")));
@@ -219,10 +218,12 @@ public class TestLimitMaxWriterNodesCount
                 session,
                 anyTree(
                         node(TableWriterNode.class,
+                                project(
                                 exchange(LOCAL,
                                         // partitionCount for writing stage should be set to because session variable MAX_WRITER_TASKS_COUNT is set to 2
                                         exchange(REMOTE, SCALED_WRITER_HASH_DISTRIBUTION, Optional.of(2),
-                                                values("column_a", "column_b"))))));
+                                                project(
+                                                        values("column_a", "column_b"))))))));
     }
 
     @Test
@@ -262,10 +263,12 @@ public class TestLimitMaxWriterNodesCount
                 session,
                 anyTree(
                         node(TableWriterNode.class,
-                                exchange(LOCAL,
-                                        // partitionCount for writing stage should be set to 4 because it was specified by connector
-                                        exchange(REMOTE, SCALED_WRITER_HASH_DISTRIBUTION, Optional.of(1),
-                                                values("column_a", "column_b"))))));
+                                project(
+                                        exchange(LOCAL,
+                                                // partitionCount for writing stage should be set to 4 because it was specified by connector
+                                                exchange(REMOTE, SCALED_WRITER_HASH_DISTRIBUTION, Optional.of(1),
+                                                        project(
+                                                                values("column_a", "column_b"))))))));
     }
 
     @Test
@@ -285,9 +288,11 @@ public class TestLimitMaxWriterNodesCount
                 session,
                 anyTree(
                         node(TableWriterNode.class,
-                                exchange(LOCAL,
-                                        exchange(REMOTE, SCALED_WRITER_HASH_DISTRIBUTION, Optional.empty(),
-                                                values("column_a", "column_b"))))));
+                                project(
+                                        exchange(LOCAL,
+                                                exchange(REMOTE, SCALED_WRITER_HASH_DISTRIBUTION, Optional.empty(),
+                                                        project(
+                                                                values("column_a", "column_b"))))))));
     }
 
     @Test
@@ -371,10 +376,12 @@ public class TestLimitMaxWriterNodesCount
                 session,
                 anyTree(
                         node(TableExecuteNode.class,
-                                exchange(LOCAL,
-                                        // partitionCount for writing stage should be set to because session variable MAX_WRITER_TASKS_COUNT is set to 2
-                                        exchange(REMOTE, SCALED_WRITER_HASH_DISTRIBUTION, Optional.of(2),
-                                                node(TableScanNode.class))))));
+                                project(
+                                        exchange(LOCAL,
+                                                // partitionCount for writing stage should be set to because session variable MAX_WRITER_TASKS_COUNT is set to 2
+                                                exchange(REMOTE, SCALED_WRITER_HASH_DISTRIBUTION, Optional.of(2),
+                                                        project(
+                                                                node(TableScanNode.class))))))));
     }
 
     @Test
@@ -393,10 +400,12 @@ public class TestLimitMaxWriterNodesCount
                 session,
                 anyTree(
                         node(TableExecuteNode.class,
-                                exchange(LOCAL,
-                                        // partitionCount for writing stage should be set to 4 because it was specified by connector
-                                        exchange(REMOTE, SCALED_WRITER_HASH_DISTRIBUTION, Optional.of(1),
-                                                node(TableScanNode.class))))));
+                                    project(
+                                        exchange(LOCAL,
+                                                // partitionCount for writing stage should be set to 4 because it was specified by connector
+                                                exchange(REMOTE, SCALED_WRITER_HASH_DISTRIBUTION, Optional.of(1),
+                                                        project(
+                                                                node(TableScanNode.class))))))));
     }
 
     @Test
@@ -416,9 +425,11 @@ public class TestLimitMaxWriterNodesCount
                 session,
                 anyTree(
                         node(TableExecuteNode.class,
-                                exchange(LOCAL,
-                                        // partitionCount for writing stage is empty because it is FTE mode
-                                        exchange(REMOTE, SCALED_WRITER_HASH_DISTRIBUTION, Optional.empty(),
-                                                node(TableScanNode.class))))));
+                                project(
+                                        exchange(LOCAL,
+                                                // partitionCount for writing stage is empty because it is FTE mode
+                                                exchange(REMOTE, SCALED_WRITER_HASH_DISTRIBUTION, Optional.empty(),
+                                                        project(
+                                                                node(TableScanNode.class))))))));
     }
 }

@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
+import static io.trino.SessionTestUtils.TEST_SESSION;
 import static io.trino.metadata.MetadataManager.createTestMetadataManager;
 import static io.trino.spi.StandardErrorCode.INVALID_WINDOW_FRAME;
 import static io.trino.spi.type.DecimalType.createDecimalType;
@@ -69,7 +70,7 @@ public class TestWindowFrameRange
                                         .addFunction(
                                                 "array_agg_result",
                                                 functionCall("array_agg", ImmutableList.of("key")),
-                                                createTestMetadataManager().resolveBuiltinFunction("array_agg", fromTypes(INTEGER)),
+                                                createTestMetadataManager().resolveFunction(TEST_SESSION, QualifiedName.of("array_agg"), fromTypes(INTEGER)),
                                                 windowFrame(
                                                         RANGE,
                                                         PRECEDING,
@@ -116,7 +117,7 @@ public class TestWindowFrameRange
                                         .addFunction(
                                                 "array_agg_result",
                                                 functionCall("array_agg", ImmutableList.of("key")),
-                                                createTestMetadataManager().resolveBuiltinFunction("array_agg", fromTypes(createDecimalType(2, 1))),
+                                                createTestMetadataManager().resolveFunction(TEST_SESSION, QualifiedName.of("array_agg"), fromTypes(createDecimalType(2, 1))),
                                                 windowFrame(
                                                         RANGE,
                                                         CURRENT_ROW,
@@ -163,7 +164,7 @@ public class TestWindowFrameRange
                                         .addFunction(
                                                 "array_agg_result",
                                                 functionCall("array_agg", ImmutableList.of("key")),
-                                                createTestMetadataManager().resolveBuiltinFunction("array_agg", fromTypes(INTEGER)),
+                                                createTestMetadataManager().resolveFunction(TEST_SESSION, QualifiedName.of("array_agg"), fromTypes(INTEGER)),
                                                 windowFrame(
                                                         RANGE,
                                                         PRECEDING,

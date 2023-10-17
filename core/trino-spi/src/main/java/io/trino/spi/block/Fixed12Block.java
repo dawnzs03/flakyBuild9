@@ -13,6 +13,8 @@
  */
 package io.trino.spi.block;
 
+import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
 import jakarta.annotation.Nullable;
 
 import java.util.Optional;
@@ -278,13 +280,8 @@ public class Fixed12Block
         return values[offset + 2];
     }
 
-    int getPositionOffset()
+    Slice getValuesSlice()
     {
-        return positionOffset;
-    }
-
-    int[] getRawValues()
-    {
-        return values;
+        return Slices.wrappedIntArray(values, positionOffset * 3, positionCount * 3);
     }
 }

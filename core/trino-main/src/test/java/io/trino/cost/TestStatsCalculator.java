@@ -22,10 +22,9 @@ import io.trino.sql.planner.assertions.PlanAssert;
 import io.trino.sql.planner.assertions.PlanMatchPattern;
 import io.trino.sql.planner.plan.TableScanNode;
 import io.trino.testing.LocalQueryRunner;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import static io.trino.execution.querystats.PlanOptimizersStatsCollector.createPlanOptimizersStatsCollector;
 import static io.trino.sql.planner.LogicalPlanner.Stage.OPTIMIZED_AND_VALIDATED;
@@ -33,14 +32,12 @@ import static io.trino.sql.planner.assertions.PlanMatchPattern.anyTree;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.node;
 import static io.trino.testing.TestingHandles.TEST_CATALOG_NAME;
 import static io.trino.testing.TestingSession.testSessionBuilder;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 public class TestStatsCalculator
 {
     private LocalQueryRunner queryRunner;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         queryRunner = LocalQueryRunner.create(testSessionBuilder()
@@ -55,7 +52,7 @@ public class TestStatsCalculator
                 ImmutableMap.of());
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         queryRunner.close();

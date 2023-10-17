@@ -15,10 +15,8 @@ package io.trino.plugin.redis.decoder.hash;
 
 import io.trino.decoder.DecoderColumnHandle;
 import io.trino.decoder.RowDecoderFactory;
-import io.trino.decoder.RowDecoderSpec;
 import io.trino.plugin.redis.RedisFieldDecoder;
 import io.trino.plugin.redis.decoder.RedisRowDecoder;
-import io.trino.spi.connector.ConnectorSession;
 
 import java.util.Map;
 import java.util.Set;
@@ -26,15 +24,17 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 
 public class HashRedisRowDecoderFactory
         implements RowDecoderFactory
 {
     @Override
-    public RedisRowDecoder create(ConnectorSession session, RowDecoderSpec rowDecoderSpec)
+    public RedisRowDecoder create(Map<String, String> decoderParams, Set<DecoderColumnHandle> columns)
     {
-        return new HashRedisRowDecoder(chooseFieldDecoders(rowDecoderSpec.columns()));
+        requireNonNull(columns, "columns is null");
+        return new HashRedisRowDecoder(chooseFieldDecoders(columns));
     }
 
     private Map<DecoderColumnHandle, RedisFieldDecoder<String>> chooseFieldDecoders(Set<DecoderColumnHandle> columns)

@@ -57,9 +57,8 @@ import io.trino.sql.tree.QualifiedName;
 import io.trino.testing.LocalQueryRunner;
 import io.trino.testing.TestingMetadata.TestingTableHandle;
 import io.trino.transaction.TransactionManager;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -90,9 +89,7 @@ import static io.trino.testing.TestingHandles.TEST_CATALOG_HANDLE;
 import static io.trino.testing.TestingHandles.TEST_CATALOG_NAME;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 
-@TestInstance(PER_METHOD)
 public abstract class BaseDataDefinitionTaskTest
 {
     public static final String SCHEMA = "schema";
@@ -115,7 +112,7 @@ public abstract class BaseDataDefinitionTaskTest
     protected TransactionManager transactionManager;
     protected QueryStateMachine queryStateMachine;
 
-    @BeforeEach
+    @BeforeMethod
     public void setUp()
     {
         testSession = testSessionBuilder()
@@ -137,7 +134,7 @@ public abstract class BaseDataDefinitionTaskTest
         queryStateMachine = stateMachine(transactionManager, createTestMetadataManager(), new AllowAllAccessControl(), testSession);
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void tearDown()
     {
         if (queryRunner != null) {
@@ -488,26 +485,6 @@ public abstract class BaseDataDefinitionTaskTest
         }
 
         @Override
-        public void setMaterializedViewColumnComment(Session session, QualifiedObjectName viewName, String columnName, Optional<String> comment)
-        {
-            MaterializedViewDefinition view = materializedViews.get(viewName.asSchemaTableName());
-            materializedViews.put(
-                    viewName.asSchemaTableName(),
-                    new MaterializedViewDefinition(
-                            view.getOriginalSql(),
-                            view.getCatalog(),
-                            view.getSchema(),
-                            view.getColumns().stream()
-                                    .map(currentViewColumn -> columnName.equals(currentViewColumn.getName()) ? new ViewColumn(currentViewColumn.getName(), currentViewColumn.getType(), comment) : currentViewColumn)
-                                    .collect(toImmutableList()),
-                            view.getGracePeriod(),
-                            view.getComment(),
-                            view.getRunAsIdentity().get(),
-                            view.getStorageTable(),
-                            view.getProperties()));
-        }
-
-        @Override
         public void dropMaterializedView(Session session, QualifiedObjectName viewName)
         {
             materializedViews.remove(viewName.asSchemaTableName());
@@ -608,9 +585,9 @@ public abstract class BaseDataDefinitionTaskTest
         }
 
         @Override
-        public ResolvedFunction getCoercion(OperatorType operatorType, Type fromType, Type toType)
+        public ResolvedFunction getCoercion(Session session, OperatorType operatorType, Type fromType, Type toType)
         {
-            return delegate.getCoercion(operatorType, fromType, toType);
+            return delegate.getCoercion(session, operatorType, fromType, toType);
         }
 
         private static ColumnMetadata withComment(ColumnMetadata tableColumn, Optional<String> comment)

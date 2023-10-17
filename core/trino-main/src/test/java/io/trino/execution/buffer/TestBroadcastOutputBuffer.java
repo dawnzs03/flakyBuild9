@@ -26,10 +26,9 @@ import io.trino.memory.context.SimpleLocalMemoryContext;
 import io.trino.spi.Page;
 import io.trino.spi.QueryId;
 import io.trino.spi.type.BigintType;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,12 +68,10 @@ import static io.trino.spi.type.BigintType.BIGINT;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_CLASS)
 public class TestBroadcastOutputBuffer
 {
     private static final String TASK_INSTANCE_ID = "task-instance-id";
@@ -86,13 +83,13 @@ public class TestBroadcastOutputBuffer
 
     private ScheduledExecutorService stateNotificationExecutor;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         stateNotificationExecutor = newScheduledThreadPool(5, daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         if (stateNotificationExecutor != null) {

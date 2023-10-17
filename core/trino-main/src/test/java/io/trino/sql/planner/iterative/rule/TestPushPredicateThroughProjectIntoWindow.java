@@ -25,10 +25,12 @@ import io.trino.sql.planner.plan.Assignments;
 import io.trino.sql.planner.plan.DataOrganizationSpecification;
 import io.trino.sql.planner.plan.TopNRankingNode.RankingType;
 import io.trino.sql.planner.plan.WindowNode.Function;
+import io.trino.sql.tree.QualifiedName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
+import static io.trino.SessionTestUtils.TEST_SESSION;
 import static io.trino.spi.connector.SortOrder.ASC_NULLS_FIRST;
 import static io.trino.sql.analyzer.TypeSignatureProvider.fromTypes;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.expression;
@@ -279,7 +281,7 @@ public class TestPushPredicateThroughProjectIntoWindow
     private Function rowNumberFunction()
     {
         return new Function(
-                tester().getMetadata().resolveBuiltinFunction("row_number", fromTypes()),
+                tester().getMetadata().resolveFunction(TEST_SESSION, QualifiedName.of("row_number"), fromTypes()),
                 ImmutableList.of(),
                 DEFAULT_FRAME,
                 false);
@@ -288,7 +290,7 @@ public class TestPushPredicateThroughProjectIntoWindow
     private Function rankFunction()
     {
         return new Function(
-                tester().getMetadata().resolveBuiltinFunction("rank", fromTypes()),
+                tester().getMetadata().resolveFunction(TEST_SESSION, QualifiedName.of("rank"), fromTypes()),
                 ImmutableList.of(),
                 DEFAULT_FRAME,
                 false);

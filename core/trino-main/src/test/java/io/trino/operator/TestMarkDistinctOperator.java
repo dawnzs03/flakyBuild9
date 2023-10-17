@@ -25,6 +25,7 @@ import io.trino.spi.type.TypeOperators;
 import io.trino.sql.gen.JoinCompiler;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.testing.MaterializedResult;
+import io.trino.type.BlockTypeOperators;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -61,6 +62,7 @@ public class TestMarkDistinctOperator
     private ScheduledExecutorService scheduledExecutor;
     private DriverContext driverContext;
     private final TypeOperators typeOperators = new TypeOperators();
+    private final BlockTypeOperators blockTypeOperators = new BlockTypeOperators(typeOperators);
     private final JoinCompiler joinCompiler = new JoinCompiler(typeOperators);
 
     @BeforeMethod
@@ -101,13 +103,7 @@ public class TestMarkDistinctOperator
                 .addSequencePage(100, 0)
                 .build();
 
-        OperatorFactory operatorFactory = new MarkDistinctOperatorFactory(
-                0,
-                new PlanNodeId("test"),
-                rowPagesBuilder.getTypes(),
-                ImmutableList.of(0),
-                rowPagesBuilder.getHashChannel(),
-                joinCompiler);
+        OperatorFactory operatorFactory = new MarkDistinctOperatorFactory(0, new PlanNodeId("test"), rowPagesBuilder.getTypes(), ImmutableList.of(0), rowPagesBuilder.getHashChannel(), joinCompiler, blockTypeOperators);
 
         MaterializedResult.Builder expected = resultBuilder(driverContext.getSession(), BIGINT, BOOLEAN);
         for (long i = 0; i < 100; i++) {
@@ -132,13 +128,7 @@ public class TestMarkDistinctOperator
         Page secondInput = inputs.get(1);
         Page singleDistinctPage = inputs.get(2);
         Page singleNotDistinctPage = inputs.get(3);
-        OperatorFactory operatorFactory = new MarkDistinctOperatorFactory(
-                0,
-                new PlanNodeId("test"),
-                rowPagesBuilder.getTypes(),
-                ImmutableList.of(0),
-                rowPagesBuilder.getHashChannel(),
-                joinCompiler);
+        OperatorFactory operatorFactory = new MarkDistinctOperatorFactory(0, new PlanNodeId("test"), rowPagesBuilder.getTypes(), ImmutableList.of(0), rowPagesBuilder.getHashChannel(), joinCompiler, blockTypeOperators);
 
         int maskChannel = firstInput.getChannelCount(); // mask channel is appended to the input
         try (Operator operator = operatorFactory.createOperator(driverContext)) {
@@ -183,7 +173,7 @@ public class TestMarkDistinctOperator
     {
         List<Page> input = createPagesWithDistinctHashKeys(type, 6_000, 600);
 
-        OperatorFactory operatorFactory = new MarkDistinctOperatorFactory(0, new PlanNodeId("test"), ImmutableList.of(type), ImmutableList.of(0), Optional.of(1), joinCompiler);
+        OperatorFactory operatorFactory = new MarkDistinctOperatorFactory(0, new PlanNodeId("test"), ImmutableList.of(type), ImmutableList.of(0), Optional.of(1), joinCompiler, blockTypeOperators);
 
         // get result with yield; pick a relatively small buffer for partitionRowCount's memory usage
         GroupByHashYieldAssertion.GroupByHashYieldResult result = finishOperatorWithYieldingGroupByHash(input, type, operatorFactory, operator -> ((MarkDistinctOperator) operator).getCapacity(), 450_000);

@@ -15,6 +15,7 @@ package io.trino.plugin.hive.parquet;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import io.trino.Session;
 import io.trino.plugin.hive.HiveQueryRunner;
 import io.trino.plugin.hive.parquet.write.TestingMapredParquetOutputFormat;
 import io.trino.testing.AbstractTestQueryFramework;
@@ -304,7 +305,8 @@ public class TestParquetDecimalScaling
         @Language("SQL") String query = format("SELECT * FROM tpch.%s", tableName);
         @Language("RegExp") String expectedMessage = format("Cannot cast DECIMAL\\(%d, %d\\) '.*' to DECIMAL\\(%d, %d\\)", precision, scale, schemaPrecision, schemaScale);
 
-        assertQueryFails(query, expectedMessage);
+        assertQueryFails(optimizedParquetReaderEnabled(false), query, expectedMessage);
+        assertQueryFails(optimizedParquetReaderEnabled(true), query, expectedMessage);
 
         dropTable(tableName);
     }
@@ -358,7 +360,8 @@ public class TestParquetDecimalScaling
                     "Could not read unscaled value %s into a short decimal from column .*",
                     new BigDecimal(writeValue).unscaledValue());
 
-            assertQueryFails(query, expectedMessage);
+            assertQueryFails(optimizedParquetReaderEnabled(false), query, expectedMessage);
+            assertQueryFails(optimizedParquetReaderEnabled(true), query, expectedMessage);
         }
         else {
             assertValues(tableName, schemaScale, ImmutableList.of(writeValue));
@@ -395,7 +398,13 @@ public class TestParquetDecimalScaling
 
     private void assertValues(String tableName, int scale, List<String> expected)
     {
-        MaterializedResult materializedRows = computeActual(format("SELECT value FROM tpch.%s", tableName));
+        assertValues(optimizedParquetReaderEnabled(false), tableName, scale, expected);
+        assertValues(optimizedParquetReaderEnabled(true), tableName, scale, expected);
+    }
+
+    private void assertValues(Session session, String tableName, int scale, List<String> expected)
+    {
+        MaterializedResult materializedRows = computeActual(session, format("SELECT value FROM tpch.%s", tableName));
 
         List<BigDecimal> actualValues = materializedRows.getMaterializedRows().stream()
                 .map(row -> row.getField(0))
@@ -411,7 +420,13 @@ public class TestParquetDecimalScaling
 
     private void assertRoundedValues(String tableName, int scale, List<String> expected)
     {
-        MaterializedResult materializedRows = computeActual(format("SELECT value FROM tpch.%s", tableName));
+        assertRoundedValues(optimizedParquetReaderEnabled(false), tableName, scale, expected);
+        assertRoundedValues(optimizedParquetReaderEnabled(true), tableName, scale, expected);
+    }
+
+    private void assertRoundedValues(Session session, String tableName, int scale, List<String> expected)
+    {
+        MaterializedResult materializedRows = computeActual(session, format("SELECT value FROM tpch.%s", tableName));
 
         List<BigDecimal> actualValues = materializedRows.getMaterializedRows().stream()
                 .map(row -> row.getField(0))
@@ -522,6 +537,14 @@ public class TestParquetDecimalScaling
         Object[][] versions = Stream.of(WriterVersion.values())
                 .collect(toDataProvider());
         return cartesianProduct(args, versions);
+    }
+
+    private Session optimizedParquetReaderEnabled(boolean enabled)
+    {
+        Session session = getSession();
+        return Session.builder(session)
+                .setCatalogSessionProperty(session.getCatalog().orElseThrow(), "parquet_optimized_reader_enabled", Boolean.toString(enabled))
+                .build();
     }
 
     protected static class ParquetDecimalInsert

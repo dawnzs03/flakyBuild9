@@ -15,7 +15,6 @@ package io.trino.testing;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import io.opentelemetry.api.OpenTelemetry;
 import io.trino.eventlistener.EventListenerManager;
 import io.trino.metadata.QualifiedObjectName;
 import io.trino.plugin.base.security.DefaultSystemAccessControl;
@@ -46,7 +45,6 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.trino.spi.security.AccessDeniedException.denyAddColumn;
 import static io.trino.spi.security.AccessDeniedException.denyAlterColumn;
@@ -143,18 +141,14 @@ public class TestingAccessControlManager
     private BiPredicate<Identity, String> denyIdentityTable = IDENTITY_TABLE_TRUE;
 
     @Inject
-    public TestingAccessControlManager(
-            TransactionManager transactionManager,
-            EventListenerManager eventListenerManager,
-            AccessControlConfig accessControlConfig,
-            OpenTelemetry openTelemetry)
+    public TestingAccessControlManager(TransactionManager transactionManager, EventListenerManager eventListenerManager, AccessControlConfig accessControlConfig)
     {
-        super(transactionManager, eventListenerManager, accessControlConfig, openTelemetry, DefaultSystemAccessControl.NAME);
+        super(transactionManager, eventListenerManager, accessControlConfig, DefaultSystemAccessControl.NAME);
     }
 
     public TestingAccessControlManager(TransactionManager transactionManager, EventListenerManager eventListenerManager)
     {
-        this(transactionManager, eventListenerManager, new AccessControlConfig(), OpenTelemetry.noop());
+        this(transactionManager, eventListenerManager, new AccessControlConfig());
     }
 
     public static TestingPrivilege privilege(String entityName, TestingPrivilegeType type)
@@ -667,29 +661,13 @@ public class TestingAccessControlManager
     @Override
     public Set<String> filterColumns(SecurityContext context, CatalogSchemaTableName table, Set<String> columns)
     {
-        Set<String> visibleColumns = localFilterColumns(context, table.getSchemaTableName(), columns);
-        return super.filterColumns(context, table, visibleColumns);
-    }
-
-    @Override
-    public Map<SchemaTableName, Set<String>> filterColumns(SecurityContext context, String catalogName, Map<SchemaTableName, Set<String>> tableColumns)
-    {
-        tableColumns = tableColumns.entrySet().stream()
-                .collect(toImmutableMap(
-                        Map.Entry::getKey,
-                        e -> localFilterColumns(context, e.getKey(), e.getValue())));
-        return super.filterColumns(context, catalogName, tableColumns);
-    }
-
-    private Set<String> localFilterColumns(SecurityContext context, SchemaTableName table, Set<String> columns)
-    {
         ImmutableSet.Builder<String> visibleColumns = ImmutableSet.builder();
         for (String column : columns) {
-            if (!shouldDenyPrivilege(context.getIdentity().getUser(), table.getTableName() + "." + column, SELECT_COLUMN)) {
+            if (!shouldDenyPrivilege(context.getIdentity().getUser(), table.getSchemaTableName().getTableName() + "." + column, SELECT_COLUMN)) {
                 visibleColumns.add(column);
             }
         }
-        return visibleColumns.build();
+        return super.filterColumns(context, table, visibleColumns.build());
     }
 
     @Override

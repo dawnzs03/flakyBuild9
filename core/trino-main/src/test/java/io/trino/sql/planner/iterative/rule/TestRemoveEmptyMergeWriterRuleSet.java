@@ -15,7 +15,6 @@ package io.trino.sql.planner.iterative.rule;
 
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.SchemaTableName;
-import io.trino.spi.connector.WriterScalingOptions;
 import io.trino.sql.planner.Partitioning;
 import io.trino.sql.planner.PartitioningScheme;
 import io.trino.sql.planner.Symbol;
@@ -90,7 +89,7 @@ public class TestRemoveEmptyMergeWriterRuleSet
                             List.of(rowCount));
                     return p.tableFinish(
                             planWithExchange ? withExchange(p, merge, rowCount) : merge,
-                            p.createTarget(catalogHandle, schemaTableName, true, WriterScalingOptions.ENABLED),
+                            p.createTarget(catalogHandle, schemaTableName, true),
                             rowCount);
                 })
                 .matches(values("A"));

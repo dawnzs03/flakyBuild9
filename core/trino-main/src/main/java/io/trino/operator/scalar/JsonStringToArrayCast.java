@@ -31,8 +31,9 @@ public final class JsonStringToArrayCast
 
     private JsonStringToArrayCast()
     {
-        super(FunctionMetadata.scalarBuilder(JSON_STRING_TO_ARRAY_NAME)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name(JSON_STRING_TO_ARRAY_NAME)
                         .typeVariable("T")
                         .returnType(arrayType(new TypeSignature("T")))
                         .argumentType(VARCHAR)

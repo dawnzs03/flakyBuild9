@@ -25,7 +25,7 @@ import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.testing.TestingTaskContext;
 import io.trino.tpch.LineItem;
 import io.trino.tpch.LineItemGenerator;
-import org.junit.jupiter.api.Test;
+import io.trino.type.BlockTypeOperators;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -39,6 +39,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.RunnerException;
+import org.testng.annotations.Test;
 
 import java.util.Iterator;
 import java.util.List;
@@ -91,7 +92,6 @@ public class BenchmarkDynamicFilterSourceOperator
             int maxDistinctValuesCount = Integer.parseInt(limits[0]);
             int minMaxCollectionLimit = Integer.parseInt(limits[1]);
 
-            TypeOperators typeOperators = new TypeOperators();
             operatorFactory = new DynamicFilterSourceOperator.DynamicFilterSourceOperatorFactory(
                     1,
                     new PlanNodeId("joinNodeId"),
@@ -115,7 +115,7 @@ public class BenchmarkDynamicFilterSourceOperator
                     maxDistinctValuesCount,
                     DataSize.ofBytes(Long.MAX_VALUE),
                     minMaxCollectionLimit,
-                    typeOperators);
+                    new BlockTypeOperators(new TypeOperators()));
         }
 
         @TearDown

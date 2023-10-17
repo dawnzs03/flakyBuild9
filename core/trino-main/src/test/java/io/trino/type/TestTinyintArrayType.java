@@ -16,7 +16,6 @@ package io.trino.type;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.Type;
-import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -24,7 +23,6 @@ import static io.trino.spi.type.TinyintType.TINYINT;
 import static io.trino.spi.type.TypeSignature.arrayType;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
 import static io.trino.util.StructuralTestUtil.arrayBlockOf;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestTinyintArrayType
         extends AbstractTestType
@@ -55,26 +53,5 @@ public class TestTinyintArrayType
         TINYINT.writeLong(blockBuilder, 1L);
 
         return blockBuilder.build();
-    }
-
-    @Test
-    public void testRange()
-    {
-        assertThat(type.getRange())
-                .isEmpty();
-    }
-
-    @Test
-    public void testPreviousValue()
-    {
-        assertThat(type.getPreviousValue(getSampleValue()))
-                .isEmpty();
-    }
-
-    @Test
-    public void testNextValue()
-    {
-        assertThat(type.getNextValue(getSampleValue()))
-                .isEmpty();
     }
 }

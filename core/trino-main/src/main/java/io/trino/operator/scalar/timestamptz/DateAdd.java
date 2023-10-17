@@ -14,7 +14,6 @@
 package io.trino.operator.scalar.timestamptz;
 
 import io.airlift.slice.Slice;
-import io.trino.spi.TrinoException;
 import io.trino.spi.function.Description;
 import io.trino.spi.function.LiteralParameter;
 import io.trino.spi.function.LiteralParameters;
@@ -24,7 +23,6 @@ import io.trino.spi.type.LongTimestampWithTimeZone;
 import io.trino.spi.type.StandardTypes;
 
 import static io.trino.operator.scalar.DateTimeFunctions.getTimestampField;
-import static io.trino.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 import static io.trino.spi.type.DateTimeEncoding.unpackMillisUtc;
 import static io.trino.spi.type.DateTimeEncoding.updateMillisUtc;
 import static io.trino.type.DateTimes.round;
@@ -45,17 +43,12 @@ public class DateAdd
             @SqlType(StandardTypes.BIGINT) long value,
             @SqlType("timestamp(p) with time zone") long packedEpochMillis)
     {
-        try {
-            long epochMillis = unpackMillisUtc(packedEpochMillis);
+        long epochMillis = unpackMillisUtc(packedEpochMillis);
 
-            epochMillis = getTimestampField(unpackChronology(packedEpochMillis), unit).add(epochMillis, toIntExact(value));
-            epochMillis = round(epochMillis, (int) (3 - precision));
+        epochMillis = getTimestampField(unpackChronology(packedEpochMillis), unit).add(epochMillis, toIntExact(value));
+        epochMillis = round(epochMillis, (int) (3 - precision));
 
-            return updateMillisUtc(epochMillis, packedEpochMillis);
-        }
-        catch (IllegalArgumentException | ArithmeticException e) {
-            throw new TrinoException(INVALID_FUNCTION_ARGUMENT, e.getMessage());
-        }
+        return updateMillisUtc(epochMillis, packedEpochMillis);
     }
 
     @LiteralParameters({"x", "p"})
@@ -65,13 +58,8 @@ public class DateAdd
             @SqlType(StandardTypes.BIGINT) long value,
             @SqlType("timestamp(p) with time zone") LongTimestampWithTimeZone timestamp)
     {
-        try {
-            long epochMillis = getTimestampField(unpackChronology(timestamp.getTimeZoneKey()), unit).add(timestamp.getEpochMillis(), toIntExact(value));
+        long epochMillis = getTimestampField(unpackChronology(timestamp.getTimeZoneKey()), unit).add(timestamp.getEpochMillis(), toIntExact(value));
 
-            return LongTimestampWithTimeZone.fromEpochMillisAndFraction(epochMillis, timestamp.getPicosOfMilli(), timestamp.getTimeZoneKey());
-        }
-        catch (IllegalArgumentException | ArithmeticException e) {
-            throw new TrinoException(INVALID_FUNCTION_ARGUMENT, e.getMessage());
-        }
+        return LongTimestampWithTimeZone.fromEpochMillisAndFraction(epochMillis, timestamp.getPicosOfMilli(), timestamp.getTimeZoneKey());
     }
 }

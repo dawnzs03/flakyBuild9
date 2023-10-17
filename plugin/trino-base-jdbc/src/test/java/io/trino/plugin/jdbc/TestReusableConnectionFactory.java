@@ -16,7 +16,7 @@ package io.trino.plugin.jdbc;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.security.ConnectorIdentity;
 import io.trino.testing.TestingConnectorSession;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.sql.Connection;
 import java.time.Duration;
@@ -24,7 +24,7 @@ import java.time.Duration;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Thread.sleep;
 import static java.util.Objects.requireNonNull;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class TestReusableConnectionFactory
 {

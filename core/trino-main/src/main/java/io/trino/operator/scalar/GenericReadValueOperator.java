@@ -34,8 +34,9 @@ public class GenericReadValueOperator
 
     public GenericReadValueOperator(TypeOperators typeOperators)
     {
-        super(FunctionMetadata.operatorBuilder(READ_VALUE)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .operatorType(READ_VALUE)
                         .typeVariable("T")
                         .returnType(new TypeSignature("T"))
                         .argumentType(new TypeSignature("T"))

@@ -26,7 +26,7 @@ import io.trino.spi.type.Type;
 import io.trino.sql.gen.ExpressionCompiler;
 import io.trino.sql.relational.CallExpression;
 import io.trino.sql.relational.RowExpression;
-import org.junit.jupiter.api.Test;
+import io.trino.sql.tree.QualifiedName;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -39,6 +39,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Optional;
@@ -116,7 +117,7 @@ public class BenchmarkArrayIntersect
             TestingFunctionResolution functionResolution = new TestingFunctionResolution();
             ArrayType arrayType = new ArrayType(elementType);
             ImmutableList<RowExpression> projections = ImmutableList.of(new CallExpression(
-                    functionResolution.resolveFunction(name, fromTypes(arrayType, arrayType)),
+                    functionResolution.resolveFunction(QualifiedName.of(name), fromTypes(arrayType, arrayType)),
                     ImmutableList.of(field(0, arrayType), field(1, arrayType))));
 
             ExpressionCompiler compiler = functionResolution.getExpressionCompiler();

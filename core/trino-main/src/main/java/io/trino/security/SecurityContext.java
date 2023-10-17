@@ -19,8 +19,8 @@ import io.trino.spi.security.Identity;
 import io.trino.spi.security.SystemSecurityContext;
 import io.trino.transaction.TransactionId;
 
-import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
@@ -30,20 +30,18 @@ public class SecurityContext
     public static SecurityContext of(Session session)
     {
         requireNonNull(session, "session is null");
-        return new SecurityContext(session.getRequiredTransactionId(), session.getIdentity(), session.getQueryId(), session.getStart());
+        return new SecurityContext(session.getRequiredTransactionId(), session.getIdentity(), session.getQueryId());
     }
 
     private final TransactionId transactionId;
     private final Identity identity;
     private final QueryId queryId;
-    private final Instant queryStart;
 
-    public SecurityContext(TransactionId transactionId, Identity identity, QueryId queryId, Instant queryStart)
+    public SecurityContext(TransactionId transactionId, Identity identity, QueryId queryId)
     {
         this.transactionId = requireNonNull(transactionId, "transactionId is null");
         this.identity = requireNonNull(identity, "identity is null");
         this.queryId = requireNonNull(queryId, "queryId is null");
-        this.queryStart = requireNonNull(queryStart, "queryStart is null");
     }
 
     public TransactionId getTransactionId()
@@ -63,7 +61,7 @@ public class SecurityContext
 
     public SystemSecurityContext toSystemSecurityContext()
     {
-        return new SystemSecurityContext(identity, queryId, queryStart);
+        return new SystemSecurityContext(identity, Optional.of(queryId));
     }
 
     @Override

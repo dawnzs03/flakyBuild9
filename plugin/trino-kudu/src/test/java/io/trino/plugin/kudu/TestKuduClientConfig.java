@@ -15,7 +15,7 @@ package io.trino.plugin.kudu;
 
 import com.google.common.collect.ImmutableMap;
 import io.airlift.units.Duration;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 
@@ -37,8 +37,7 @@ public class TestKuduClientConfig
                 .setDisableStatistics(false)
                 .setSchemaEmulationEnabled(false)
                 .setSchemaEmulationPrefix("presto::")
-                .setDynamicFilteringWaitTimeout(new Duration(0, MINUTES))
-                .setAllowLocalScheduling(false));
+                .setDynamicFilteringWaitTimeout(new Duration(0, MINUTES)));
     }
 
     @Test
@@ -52,7 +51,6 @@ public class TestKuduClientConfig
                 .put("kudu.schema-emulation.enabled", "true")
                 .put("kudu.schema-emulation.prefix", "trino::")
                 .put("kudu.dynamic-filtering.wait-timeout", "30m")
-                .put("kudu.allow-local-scheduling", "true")
                 .buildOrThrow();
 
         KuduClientConfig expected = new KuduClientConfig()
@@ -62,8 +60,7 @@ public class TestKuduClientConfig
                 .setDisableStatistics(true)
                 .setSchemaEmulationEnabled(true)
                 .setSchemaEmulationPrefix("trino::")
-                .setDynamicFilteringWaitTimeout(new Duration(30, MINUTES))
-                .setAllowLocalScheduling(true);
+                .setDynamicFilteringWaitTimeout(new Duration(30, MINUTES));
 
         assertFullMapping(properties, expected);
     }

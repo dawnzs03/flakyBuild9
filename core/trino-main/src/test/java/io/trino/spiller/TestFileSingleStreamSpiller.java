@@ -25,10 +25,9 @@ import io.trino.spi.Page;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.block.TestingBlockEncodingSerde;
 import io.trino.spi.type.Type;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,12 +48,11 @@ import static io.trino.spi.type.DoubleType.DOUBLE;
 import static io.trino.spi.type.VarbinaryType.VARBINARY;
 import static java.nio.file.Files.newInputStream;
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_CLASS)
+@Test(singleThreaded = true)
 public class TestFileSingleStreamSpiller
 {
     private static final List<Type> TYPES = ImmutableList.of(BIGINT, DOUBLE, VARBINARY);
@@ -62,14 +60,14 @@ public class TestFileSingleStreamSpiller
     private final ListeningExecutorService executor = listeningDecorator(newCachedThreadPool());
     private File spillPath;
 
-    @BeforeAll
+    @BeforeClass(alwaysRun = true)
     public void setUp()
             throws IOException
     {
         spillPath = Files.createTempDirectory("tmp").toFile();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
             throws Exception
     {

@@ -5,7 +5,6 @@
 - **Type:** {ref}`prop-type-integer`
 - **Restrictions:** Must be a power of two
 - **Default value:** The number of physical CPUs of the node, with a minimum value of 2 and a maximum of 32
-- **Session property:** `task_concurrency`
 
 Default local concurrency for parallel operators, such as joins and aggregations.
 This value should be adjusted up or down based on the query concurrency and worker
@@ -13,7 +12,8 @@ resource utilization. Lower values are better for clusters that run many queries
 concurrently, because the cluster is already utilized by all the running
 queries, so adding more concurrency results in slow downs due to context
 switching and other overhead. Higher values are better for clusters that only run
-one or a few queries at a time.
+one or a few queries at a time. This can also be specified on a per-query basis
+using the `task_concurrency` session property.
 
 ## `task.http-response-threads`
 
@@ -102,26 +102,16 @@ the task has remaining splits to process.
 
 ## `task.scale-writers.enabled`
 
-- **Description:** see details at {ref}`prop-task-scale-writers`
-
-## `task.writer-count`
-
-Deprecated and replaced by {ref}`prop-task-min-writer-count`.
-
-## `task.partitioned-writer-count`
-
-Deprecated and replaced by {ref}`prop-task-max-writer-count`.
+- **Description:** {ref}`prop-task-scale-writers`
 
 ## `task.scale-writers.max-writer-count`
 
-Deprecated and replaced by {ref}`prop-task-max-writer-count`.
+- **Description:** {ref}`prop-task-scale-writers-max-writer-count`
 
-(prop-task-min-writer-count)=
-## `task.min-writer-count`
+## `task.writer-count`
 
 - **Type:** {ref}`prop-type-integer`
 - **Default value:** `1`
-- **Session property:** `task_min_writer_count`
 
 The number of concurrent writer threads per worker per query when
 {ref}`preferred partitioning <preferred-write-partitioning>` and
@@ -136,21 +126,21 @@ utilization. Especially when the engine is inserting into a partitioned table wi
 could write to all partitions. This can lead to out of memory error since writing to a partition
 allocates a certain amount of memory for buffering.
 
-(prop-task-max-writer-count)=
-## `task.max-writer-count`
+This can also be specified on a per-query basis using the `task_writer_count` session property.
+
+## `task.partitioned-writer-count`
 
 - **Type:** {ref}`prop-type-integer`
 - **Restrictions:** Must be a power of two
-- **Default value:** The number of physical CPUs of the node, with a minimum value of 2 and a maximum of 64
-- **Session property:** `task_max_writer_count`
+- **Default value:** The number of physical CPUs of the node, with a minimum value of 2 and a maximum of 32
 
-The number of concurrent writer threads per worker per query when either
-{ref}`task writer scaling <prop-task-scale-writers>` or
+The number of concurrent writer threads per worker per query when
 {ref}`preferred partitioning <preferred-write-partitioning>` is used. Increasing this value may
 increase write speed, especially when a query is not I/O bound and can take advantage of additional
 CPU for parallel writes. Some connectors can be bottlenecked on CPU when writing due to compression
 or other factors. Setting this too high may cause the cluster to become overloaded due to excessive
-resource utilization.
+resource utilization. This can also be specified on a per-query basis using the
+`task_partitioned_writer_count` session property.
 
 ## `task.interrupt-stuck-split-tasks-enabled`
 

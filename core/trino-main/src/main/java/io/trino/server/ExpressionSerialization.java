@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.google.inject.Inject;
 import io.trino.sql.ExpressionFormatter;
+import io.trino.sql.parser.ParsingOptions;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.tree.Expression;
 
@@ -58,7 +59,7 @@ public final class ExpressionSerialization
         public Expression deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
                 throws IOException
         {
-            return rewriteIdentifiersToSymbolReferences(sqlParser.createExpression(jsonParser.readValueAs(String.class)));
+            return rewriteIdentifiersToSymbolReferences(sqlParser.createExpression(jsonParser.readValueAs(String.class), new ParsingOptions()));
         }
     }
 }

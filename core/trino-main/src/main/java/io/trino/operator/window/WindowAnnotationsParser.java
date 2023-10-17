@@ -42,7 +42,9 @@ public final class WindowAnnotationsParser
 
     private static SqlWindowFunction parse(Class<? extends WindowFunction> clazz, WindowFunctionSignature window)
     {
-        Signature.Builder signatureBuilder = Signature.builder();
+        Signature.Builder signatureBuilder = Signature.builder()
+                .name(window.name());
+
         if (!window.typeVariable().isEmpty()) {
             signatureBuilder.typeVariable(window.typeVariable());
         }
@@ -57,11 +59,6 @@ public final class WindowAnnotationsParser
 
         boolean deprecated = clazz.getAnnotationsByType(Deprecated.class).length > 0;
 
-        return new SqlWindowFunction(
-                window.name(),
-                signatureBuilder.build(),
-                description,
-                deprecated,
-                new ReflectionWindowFunctionSupplier(window.argumentTypes().length, clazz));
+        return new SqlWindowFunction(signatureBuilder.build(), description, deprecated, new ReflectionWindowFunctionSupplier(window.argumentTypes().length, clazz));
     }
 }

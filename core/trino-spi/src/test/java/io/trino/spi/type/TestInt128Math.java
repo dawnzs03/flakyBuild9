@@ -13,7 +13,7 @@
  */
 package io.trino.spi.type;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -35,6 +35,10 @@ import static io.trino.spi.type.Int128Math.shiftRightMultiPrecision;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class TestInt128Math
 {
@@ -247,7 +251,7 @@ public class TestInt128Math
         leftArg[3] = (int) (left.getHigh() >> 32);
 
         multiply256Destructive(leftArg, right);
-        assertThat(leftArg).isEqualTo(expected);
+        assertEquals(leftArg, expected);
     }
 
     @Test
@@ -418,110 +422,117 @@ public class TestInt128Math
     @Test
     public void testNegate()
     {
-        assertThat(negate(negate(MIN_DECIMAL))).isEqualTo(MIN_DECIMAL);
-        assertThat(negate(MIN_DECIMAL)).isEqualTo(MAX_DECIMAL);
-        assertThat(negate(MIN_DECIMAL)).isEqualTo(MAX_DECIMAL);
+        assertEquals(negate(negate(MIN_DECIMAL)), MIN_DECIMAL);
+        assertEquals(negate(MIN_DECIMAL), MAX_DECIMAL);
+        assertEquals(negate(MIN_DECIMAL), MAX_DECIMAL);
 
-        assertThat(negate(Int128.valueOf(1))).isEqualTo(Int128.valueOf(-1));
-        assertThat(negate(Int128.valueOf(-1))).isEqualTo(Int128.valueOf(1));
+        assertEquals(negate(Int128.valueOf(1)), Int128.valueOf(-1));
+        assertEquals(negate(Int128.valueOf(-1)), Int128.valueOf(1));
     }
 
     @Test
     public void testIsNegative()
     {
-        assertThat(MIN_DECIMAL.isNegative()).isTrue();
-        assertThat(MAX_DECIMAL.isNegative()).isFalse();
-        assertThat(Int128.ZERO.isNegative()).isFalse();
+        assertTrue(MIN_DECIMAL.isNegative());
+        assertFalse(MAX_DECIMAL.isNegative());
+        assertFalse(Int128.ZERO.isNegative());
     }
 
     @Test
     public void testToString()
     {
-        assertThat(Int128.ZERO.toString()).isEqualTo("0");
-        assertThat(Int128.valueOf(1).toString()).isEqualTo("1");
-        assertThat(Int128.valueOf(-1).toString()).isEqualTo("-1");
-        assertThat(MAX_DECIMAL.toString()).isEqualTo(Decimals.MAX_UNSCALED_DECIMAL.toBigInteger().toString());
-        assertThat(MIN_DECIMAL.toString()).isEqualTo(Decimals.MIN_UNSCALED_DECIMAL.toBigInteger().toString());
-        assertThat(Int128.valueOf("1000000000000000000000000000000000000").toString()).isEqualTo("1000000000000000000000000000000000000");
-        assertThat(Int128.valueOf("-1000000000002000000000000300000000000").toString()).isEqualTo("-1000000000002000000000000300000000000");
+        assertEquals(Int128.ZERO.toString(), "0");
+        assertEquals(Int128.valueOf(1).toString(), "1");
+        assertEquals(Int128.valueOf(-1).toString(), "-1");
+        assertEquals(MAX_DECIMAL.toString(), Decimals.MAX_UNSCALED_DECIMAL.toBigInteger().toString());
+        assertEquals(MIN_DECIMAL.toString(), Decimals.MIN_UNSCALED_DECIMAL.toBigInteger().toString());
+        assertEquals(Int128.valueOf("1000000000000000000000000000000000000").toString(), "1000000000000000000000000000000000000");
+        assertEquals(Int128.valueOf("-1000000000002000000000000300000000000").toString(), "-1000000000002000000000000300000000000");
     }
 
     @Test
     public void testShiftLeftMultiPrecision()
     {
-        assertThat(shiftLeftMultiPrecision(
+        assertEquals(shiftLeftMultiPrecision(
+                        new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
+                                0b11111111000000011010101010101011, 0b00000000000000000000000000000000}, 4, 0),
                 new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
-                        0b11111111000000011010101010101011, 0b00000000000000000000000000000000}, 4, 0))
-                .isEqualTo(new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
                         0b11111111000000011010101010101011, 0b00000000000000000000000000000000});
-        assertThat(shiftLeftMultiPrecision(
-                new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
-                        0b11111111000000011010101010101011, 0b00000000000000000000000000000000}, 5, 1))
-                .isEqualTo(new int[] {0b01000010100010110100001010001010, 0b10101101001011010110101010101011, 0b10100101111100011111000101010100,
+        assertEquals(shiftLeftMultiPrecision(
+                        new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
+                                0b11111111000000011010101010101011, 0b00000000000000000000000000000000}, 5, 1),
+                new int[] {0b01000010100010110100001010001010, 0b10101101001011010110101010101011, 0b10100101111100011111000101010100,
                         0b11111110000000110101010101010110, 0b00000000000000000000000000000001});
-        assertThat(shiftLeftMultiPrecision(
-                new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
-                        0b11111111000000011010101010101011, 0b00000000000000000000000000000000}, 5, 31))
-                .isEqualTo(new int[] {0b10000000000000000000000000000000, 0b11010000101000101101000010100010, 0b00101011010010110101101010101010,
+        assertEquals(shiftLeftMultiPrecision(
+                        new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
+                                0b11111111000000011010101010101011, 0b00000000000000000000000000000000}, 5, 31),
+                new int[] {0b10000000000000000000000000000000, 0b11010000101000101101000010100010, 0b00101011010010110101101010101010,
                         0b10101001011111000111110001010101, 0b1111111100000001101010101010101});
-        assertThat(shiftLeftMultiPrecision(
-                new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
-                        0b11111111000000011010101010101011, 0b00000000000000000000000000000000}, 5, 32))
-                .isEqualTo(new int[] {0b00000000000000000000000000000000, 0b10100001010001011010000101000101, 0b01010110100101101011010101010101,
+        assertEquals(shiftLeftMultiPrecision(
+                        new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
+                                0b11111111000000011010101010101011, 0b00000000000000000000000000000000}, 5, 32),
+                new int[] {0b00000000000000000000000000000000, 0b10100001010001011010000101000101, 0b01010110100101101011010101010101,
                         0b01010010111110001111100010101010, 0b11111111000000011010101010101011});
-        assertThat(shiftLeftMultiPrecision(
-                new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
-                        0b11111111000000011010101010101011, 0b00000000000000000000000000000000, 0b00000000000000000000000000000000}, 6, 33))
-                .isEqualTo(new int[] {0b00000000000000000000000000000000, 0b01000010100010110100001010001010, 0b10101101001011010110101010101011,
+        assertEquals(shiftLeftMultiPrecision(
+                        new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
+                                0b11111111000000011010101010101011, 0b00000000000000000000000000000000, 0b00000000000000000000000000000000}, 6, 33),
+                new int[] {0b00000000000000000000000000000000, 0b01000010100010110100001010001010, 0b10101101001011010110101010101011,
                         0b10100101111100011111000101010100, 0b11111110000000110101010101010110, 0b00000000000000000000000000000001});
-        assertThat(shiftLeftMultiPrecision(
-                new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
-                        0b11111111000000011010101010101011, 0b00000000000000000000000000000000, 0b00000000000000000000000000000000}, 6, 37))
-                .isEqualTo(new int[] {0b00000000000000000000000000000000, 0b00101000101101000010100010100000, 0b11010010110101101010101010110100,
+        assertEquals(shiftLeftMultiPrecision(
+                        new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
+                                0b11111111000000011010101010101011, 0b00000000000000000000000000000000, 0b00000000000000000000000000000000}, 6, 37),
+                new int[] {0b00000000000000000000000000000000, 0b00101000101101000010100010100000, 0b11010010110101101010101010110100,
                         0b01011111000111110001010101001010, 0b11100000001101010101010101101010, 0b00000000000000000000000000011111});
-        assertThat(shiftLeftMultiPrecision(
-                new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
-                        0b11111111000000011010101010101011, 0b00000000000000000000000000000000, 0b00000000000000000000000000000000}, 6, 64))
-                .isEqualTo(new int[] {0b00000000000000000000000000000000, 0b00000000000000000000000000000000, 0b10100001010001011010000101000101,
+        assertEquals(shiftLeftMultiPrecision(
+                        new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
+                                0b11111111000000011010101010101011, 0b00000000000000000000000000000000, 0b00000000000000000000000000000000}, 6, 64),
+                new int[] {0b00000000000000000000000000000000, 0b00000000000000000000000000000000, 0b10100001010001011010000101000101,
                         0b01010110100101101011010101010101, 0b01010010111110001111100010101010, 0b11111111000000011010101010101011});
     }
 
     @Test
     public void testShiftRightMultiPrecision()
     {
-        assertThat(shiftRightMultiPrecision(
-                new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
-                        0b11111111000000011010101010101011, 0b00000000000000000000000000000000}, 4, 0))
-                .isEqualTo(new int[] {0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
-                        0b11111111000000011010101010101011, 0b00000000000000000000000000000000});
-        assertThat(shiftRightMultiPrecision(
-                new int[] {0b00000000000000000000000000000000, 0b10100001010001011010000101000101, 0b01010110100101101011010101010101,
-                        0b01010010111110001111100010101010, 0b11111111000000011010101010101011}, 5, 1))
-                .isEqualTo(new int[] {
-                        0b10000000000000000000000000000000, 0b11010000101000101101000010100010, 0b00101011010010110101101010101010,
-                        0b10101001011111000111110001010101, 0b1111111100000001101010101010101});
-        assertThat(shiftRightMultiPrecision(
-                new int[] {0b00000000000000000000000000000000, 0b10100001010001011010000101000101, 0b01010110100101101011010101010101,
-                        0b01010010111110001111100010101010, 0b11111111000000011010101010101011}, 5, 32))
-                .isEqualTo(new int[] {
+        assertEquals(shiftRightMultiPrecision(
+                        new int[] {
+                                0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
+                                0b11111111000000011010101010101011, 0b00000000000000000000000000000000}, 4, 0),
+                new int[] {
                         0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
                         0b11111111000000011010101010101011, 0b00000000000000000000000000000000});
-        assertThat(shiftRightMultiPrecision(
-                new int[] {0b00000000000000000000000000000000, 0b00000000000000000000000000000000, 0b10100001010001011010000101000101,
-                        0b01010110100101101011010101010101, 0b01010010111110001111100010101010, 0b11111111000000011010101010101011}, 6, 33))
-                .isEqualTo(new int[] {
+        assertEquals(shiftRightMultiPrecision(
+                        new int[] {
+                                0b00000000000000000000000000000000, 0b10100001010001011010000101000101, 0b01010110100101101011010101010101,
+                                0b01010010111110001111100010101010, 0b11111111000000011010101010101011}, 5, 1),
+                new int[] {
+                        0b10000000000000000000000000000000, 0b11010000101000101101000010100010, 0b00101011010010110101101010101010,
+                        0b10101001011111000111110001010101, 0b1111111100000001101010101010101});
+        assertEquals(shiftRightMultiPrecision(
+                        new int[] {
+                                0b00000000000000000000000000000000, 0b10100001010001011010000101000101, 0b01010110100101101011010101010101,
+                                0b01010010111110001111100010101010, 0b11111111000000011010101010101011}, 5, 32),
+                new int[] {
+                        0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
+                        0b11111111000000011010101010101011, 0b00000000000000000000000000000000});
+        assertEquals(shiftRightMultiPrecision(
+                        new int[] {
+                                0b00000000000000000000000000000000, 0b00000000000000000000000000000000, 0b10100001010001011010000101000101,
+                                0b01010110100101101011010101010101, 0b01010010111110001111100010101010, 0b11111111000000011010101010101011}, 6, 33),
+                new int[] {
                         0b10000000000000000000000000000000, 0b11010000101000101101000010100010, 0b00101011010010110101101010101010,
                         0b10101001011111000111110001010101, 0b01111111100000001101010101010101, 0b00000000000000000000000000000000});
-        assertThat(shiftRightMultiPrecision(
-                new int[] {0b00000000000000000000000000000000, 0b00000000000000000000000000000000, 0b10100001010001011010000101000101,
-                        0b01010110100101101011010101010101, 0b01010010111110001111100010101010, 0b11111111000000011010101010101011}, 6, 37))
-                .isEqualTo(new int[] {
+        assertEquals(shiftRightMultiPrecision(
+                        new int[] {
+                                0b00000000000000000000000000000000, 0b00000000000000000000000000000000, 0b10100001010001011010000101000101,
+                                0b01010110100101101011010101010101, 0b01010010111110001111100010101010, 0b11111111000000011010101010101011}, 6, 37),
+                new int[] {
                         0b00101000000000000000000000000000, 0b10101101000010100010110100001010, 0b01010010101101001011010110101010,
                         0b01011010100101111100011111000101, 0b00000111111110000000110101010101, 0b00000000000000000000000000000000});
-        assertThat(shiftRightMultiPrecision(
-                new int[] {0b00000000000000000000000000000000, 0b00000000000000000000000000000000, 0b10100001010001011010000101000101,
-                        0b01010110100101101011010101010101, 0b01010010111110001111100010101010, 0b11111111000000011010101010101011}, 6, 64))
-                .isEqualTo(new int[] {
+        assertEquals(shiftRightMultiPrecision(
+                        new int[] {
+                                0b00000000000000000000000000000000, 0b00000000000000000000000000000000, 0b10100001010001011010000101000101,
+                                0b01010110100101101011010101010101, 0b01010010111110001111100010101010, 0b11111111000000011010101010101011}, 6, 64),
+                new int[] {
                         0b10100001010001011010000101000101, 0b01010110100101101011010101010101, 0b01010010111110001111100010101010,
                         0b11111111000000011010101010101011, 0b00000000000000000000000000000000, 0b00000000000000000000000000000000});
     }
@@ -529,15 +540,15 @@ public class TestInt128Math
     @Test
     public void testShiftLeft()
     {
-        assertThat(shiftLeft(Int128.valueOf(0xEFDCBA0987654321L, 0x1234567890ABCDEFL), 0)).isEqualTo(Int128.valueOf(0xEFDCBA0987654321L, 0x1234567890ABCDEFL));
-        assertThat(shiftLeft(Int128.valueOf(0xEFDCBA0987654321L, 0x1234567890ABCDEFL), 1)).isEqualTo(Int128.valueOf(0xDFB974130ECA8642L, 0x2468ACF121579BDEL));
-        assertThat(shiftLeft(Int128.valueOf(0x00DCBA0987654321L, 0x1234567890ABCDEFL), 8)).isEqualTo(Int128.valueOf(0xDCBA098765432112L, 0x34567890ABCDEF00L));
-        assertThat(shiftLeft(Int128.valueOf(0x0000BA0987654321L, 0x1234567890ABCDEFL), 16)).isEqualTo(Int128.valueOf(0xBA09876543211234L, 0x567890ABCDEF0000L));
-        assertThat(shiftLeft(Int128.valueOf(0x0000000087654321L, 0x1234567890ABCDEFL), 32)).isEqualTo(Int128.valueOf(0x8765432112345678L, 0x90ABCDEF00000000L));
-        assertThat(shiftLeft(Int128.valueOf(0L, 0x1234567890ABCDEFL), 64)).isEqualTo(Int128.valueOf(0x1234567890ABCDEFL, 0x0000000000000000L));
-        assertThat(shiftLeft(Int128.valueOf(0L, 0x0034567890ABCDEFL), 64 + 8)).isEqualTo(Int128.valueOf(0x34567890ABCDEF00L, 0x0000000000000000L));
-        assertThat(shiftLeft(Int128.valueOf(0L, 0x000000000000CDEFL), 64 + 48)).isEqualTo(Int128.valueOf(0xCDEF000000000000L, 0x0000000000000000L));
-        assertThat(shiftLeft(Int128.valueOf(0L, 0x1L), 64 + 63)).isEqualTo(Int128.valueOf(0x8000000000000000L, 0x0000000000000000L));
+        assertEquals(shiftLeft(Int128.valueOf(0xEFDCBA0987654321L, 0x1234567890ABCDEFL), 0), Int128.valueOf(0xEFDCBA0987654321L, 0x1234567890ABCDEFL));
+        assertEquals(shiftLeft(Int128.valueOf(0xEFDCBA0987654321L, 0x1234567890ABCDEFL), 1), Int128.valueOf(0xDFB974130ECA8642L, 0x2468ACF121579BDEL));
+        assertEquals(shiftLeft(Int128.valueOf(0x00DCBA0987654321L, 0x1234567890ABCDEFL), 8), Int128.valueOf(0xDCBA098765432112L, 0x34567890ABCDEF00L));
+        assertEquals(shiftLeft(Int128.valueOf(0x0000BA0987654321L, 0x1234567890ABCDEFL), 16), Int128.valueOf(0xBA09876543211234L, 0x567890ABCDEF0000L));
+        assertEquals(shiftLeft(Int128.valueOf(0x0000000087654321L, 0x1234567890ABCDEFL), 32), Int128.valueOf(0x8765432112345678L, 0x90ABCDEF00000000L));
+        assertEquals(shiftLeft(Int128.valueOf(0L, 0x1234567890ABCDEFL), 64), Int128.valueOf(0x1234567890ABCDEFL, 0x0000000000000000L));
+        assertEquals(shiftLeft(Int128.valueOf(0L, 0x0034567890ABCDEFL), 64 + 8), Int128.valueOf(0x34567890ABCDEF00L, 0x0000000000000000L));
+        assertEquals(shiftLeft(Int128.valueOf(0L, 0x000000000000CDEFL), 64 + 48), Int128.valueOf(0xCDEF000000000000L, 0x0000000000000000L));
+        assertEquals(shiftLeft(Int128.valueOf(0L, 0x1L), 64 + 63), Int128.valueOf(0x8000000000000000L, 0x0000000000000000L));
 
         assertShiftLeft(new BigInteger("446319580078125"), 19);
 
@@ -583,7 +594,7 @@ public class TestInt128Math
                 right.getHigh(), right.getLow(),
                 resultArray,
                 0);
-        assertThat(Int128.valueOf(resultArray[0], resultArray[1]).toBigInteger()).isEqualTo(result.toBigInteger());
+        assertEquals(Int128.valueOf(resultArray[0], resultArray[1]).toBigInteger(), result.toBigInteger());
     }
 
     private static void assertInt128ToLongOverflows(BigInteger value)
@@ -610,26 +621,26 @@ public class TestInt128Math
 
     private static void assertCompare(Int128 left, Int128 right, int expectedResult)
     {
-        assertThat(left.compareTo(right)).isEqualTo(expectedResult);
-        assertThat(Int128.compare(left.getHigh(), left.getLow(), right.getHigh(), right.getLow())).isEqualTo(expectedResult);
+        assertEquals(left.compareTo(right), expectedResult);
+        assertEquals(Int128.compare(left.getHigh(), left.getLow(), right.getHigh(), right.getLow()), expectedResult);
     }
 
     private static void assertConvertsUnscaledBigIntegerToDecimal(BigInteger value)
     {
-        assertThat(Int128.valueOf(value).toBigInteger()).isEqualTo(value);
+        assertEquals(Int128.valueOf(value).toBigInteger(), value);
     }
 
     private static void assertConvertsUnscaledLongToDecimal(long value)
     {
-        assertThat(Int128.valueOf(value).toLongExact()).isEqualTo(value);
-        assertThat(Int128.valueOf(value)).isEqualTo(Int128.valueOf(BigInteger.valueOf(value)));
+        assertEquals(Int128.valueOf(value).toLongExact(), value);
+        assertEquals(Int128.valueOf(value), Int128.valueOf(BigInteger.valueOf(value)));
     }
 
     private static void assertShiftRight(Int128 decimal, int rightShifts, boolean roundUp, Int128 expectedResult)
     {
         long[] result = new long[2];
         shiftRight(decimal.getHigh(), decimal.getLow(), rightShifts, roundUp, result, 0);
-        assertThat(Int128.valueOf(result)).isEqualTo(expectedResult);
+        assertEquals(Int128.valueOf(result), expectedResult);
     }
 
     private static void assertDivideAllSigns(int[] dividend, int[] divisor)
@@ -642,7 +653,7 @@ public class TestInt128Math
         Int128 decimal = Int128.valueOf(value);
         BigInteger expectedResult = value.multiply(TWO.pow(leftShifts));
         decimal = shiftLeft(decimal, leftShifts);
-        assertThat(decimal.toBigInteger()).isEqualTo(expectedResult);
+        assertEquals(decimal.toBigInteger(), expectedResult);
     }
 
     private static void assertDivideAllSigns(String dividend, String divisor)
@@ -701,7 +712,7 @@ public class TestInt128Math
                     divisorRescaleFactor);
 
             if (overflowIsExpected) {
-                throw new AssertionError("overflow is expected");
+                fail("overflow is expected");
             }
 
             BigInteger actualQuotient = quotient.toBigInteger();
@@ -711,7 +722,7 @@ public class TestInt128Math
                 return;
             }
 
-            throw new AssertionError(format("%s / %s ([%s * 2^%d] / [%s * 2^%d]) Expected: %s(%s). Actual: %s(%s)",
+            fail(format("%s / %s ([%s * 2^%d] / [%s * 2^%d]) Expected: %s(%s). Actual: %s(%s)",
                     rescaledDividend, rescaledDivisor,
                     dividendBigInteger, dividendRescaleFactor,
                     divisorBigInteger, divisorRescaleFactor,
@@ -720,7 +731,7 @@ public class TestInt128Math
         }
         catch (ArithmeticException e) {
             if (!overflowIsExpected) {
-                throw new AssertionError("overflow wasn't expected");
+                fail("overflow wasn't expected");
             }
         }
     }
@@ -752,36 +763,36 @@ public class TestInt128Math
 
     private static void assertMultiply(BigInteger a, BigInteger b, BigInteger result)
     {
-        assertThat(Int128.valueOf(result)).isEqualTo(multiply(Int128.valueOf(a), Int128.valueOf(b)));
+        assertEquals(Int128.valueOf(result), multiply(Int128.valueOf(a), Int128.valueOf(b)));
         if (isShort(a) && isShort(b)) {
-            assertThat(Int128.valueOf(result)).isEqualTo(multiply(a.longValue(), b.longValue()));
+            assertEquals(Int128.valueOf(result), multiply(a.longValue(), b.longValue()));
         }
         if (isShort(a) && !isShort(b)) {
-            assertThat(Int128.valueOf(result)).isEqualTo(multiply(Int128.valueOf(b), a.longValue()));
+            assertEquals(Int128.valueOf(result), multiply(Int128.valueOf(b), a.longValue()));
         }
         if (!isShort(a) && isShort(b)) {
-            assertThat(Int128.valueOf(result)).isEqualTo(multiply(Int128.valueOf(a), b.longValue()));
+            assertEquals(Int128.valueOf(result), multiply(Int128.valueOf(a), b.longValue()));
         }
     }
 
     private static void assertRescale(Int128 decimal, int rescale, Int128 expected)
     {
-        assertThat(rescale(decimal, rescale)).isEqualTo(expected);
+        assertEquals(rescale(decimal, rescale), expected);
 
         // test non-zero offset
         long[] result = new long[3];
         rescale(decimal.getHigh(), decimal.getLow(), rescale, result, 1);
-        assertThat(Int128.valueOf(result[1], result[2])).isEqualTo(expected);
+        assertEquals(Int128.valueOf(result[1], result[2]), expected);
     }
 
     private static void assertRescaleTruncate(Int128 decimal, int rescale, Int128 expected)
     {
-        assertThat(rescaleTruncate(decimal, rescale)).isEqualTo(expected);
+        assertEquals(rescaleTruncate(decimal, rescale), expected);
 
         // test non-zero offset
         long[] result = new long[3];
         rescaleTruncate(decimal.getHigh(), decimal.getLow(), rescale, result, 1);
-        assertThat(Int128.valueOf(result[1], result[2])).isEqualTo(expected);
+        assertEquals(Int128.valueOf(result[1], result[2]), expected);
     }
 
     private static Int128 shiftLeft(Int128 value, int shift)

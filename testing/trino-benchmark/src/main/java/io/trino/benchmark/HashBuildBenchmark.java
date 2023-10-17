@@ -17,9 +17,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 import io.trino.operator.Driver;
 import io.trino.operator.DriverFactory;
+import io.trino.operator.OperatorFactories;
 import io.trino.operator.OperatorFactory;
 import io.trino.operator.PagesIndex;
 import io.trino.operator.TaskContext;
+import io.trino.operator.TrinoOperatorFactories;
 import io.trino.operator.ValuesOperator.ValuesOperatorFactory;
 import io.trino.operator.join.HashBuilderOperator.HashBuilderOperatorFactory;
 import io.trino.operator.join.JoinBridgeManager;
@@ -30,6 +32,7 @@ import io.trino.spiller.SingleStreamSpillerFactory;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.testing.LocalQueryRunner;
 import io.trino.testing.NullOutputOperator.NullOutputOperatorFactory;
+import io.trino.type.BlockTypeOperators;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,17 +41,25 @@ import java.util.OptionalInt;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.benchmark.BenchmarkQueryRunner.createLocalQueryRunner;
 import static io.trino.operator.HashArraySizeSupplier.incrementalLoadFactorHashArraySizeSupplier;
-import static io.trino.operator.JoinOperatorType.innerJoin;
-import static io.trino.operator.OperatorFactories.spillingJoin;
+import static io.trino.operator.OperatorFactories.JoinOperatorType.innerJoin;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spiller.PartitioningSpillerFactory.unsupportedPartitioningSpillerFactory;
+import static java.util.Objects.requireNonNull;
 
 public class HashBuildBenchmark
         extends AbstractOperatorBenchmark
 {
+    private final OperatorFactories operatorFactories;
+
     public HashBuildBenchmark(LocalQueryRunner localQueryRunner)
     {
+        this(localQueryRunner, new TrinoOperatorFactories());
+    }
+
+    public HashBuildBenchmark(LocalQueryRunner localQueryRunner, OperatorFactories operatorFactories)
+    {
         super(localQueryRunner, "hash_build", 4, 5);
+        this.operatorFactories = requireNonNull(operatorFactories, "operatorFactories is null");
     }
 
     @Override
@@ -57,7 +68,7 @@ public class HashBuildBenchmark
         // hash build
         List<Type> ordersTypes = getColumnTypes("orders", "orderkey", "totalprice");
         OperatorFactory ordersTableScan = createTableScanOperator(0, new PlanNodeId("test"), "orders", "orderkey", "totalprice");
-        TypeOperators typeOperators = new TypeOperators();
+        BlockTypeOperators blockTypeOperators = new BlockTypeOperators(new TypeOperators());
         JoinBridgeManager<PartitionedLookupSourceFactory> lookupSourceFactoryManager = JoinBridgeManager.lookupAllAtOnce(new PartitionedLookupSourceFactory(
                 ordersTypes,
                 ImmutableList.of(0, 1).stream()
@@ -68,7 +79,7 @@ public class HashBuildBenchmark
                         .collect(toImmutableList()),
                 1,
                 false,
-                typeOperators));
+                blockTypeOperators));
         HashBuilderOperatorFactory hashBuilder = new HashBuilderOperatorFactory(
                 1,
                 new PlanNodeId("test"),
@@ -89,7 +100,7 @@ public class HashBuildBenchmark
         // empty join so build finishes
         ImmutableList.Builder<OperatorFactory> joinDriversBuilder = ImmutableList.builder();
         joinDriversBuilder.add(new ValuesOperatorFactory(0, new PlanNodeId("values"), ImmutableList.of()));
-        OperatorFactory joinOperator = spillingJoin(
+        OperatorFactory joinOperator = operatorFactories.spillingJoin(
                 innerJoin(false, false),
                 2,
                 new PlanNodeId("test"),
@@ -101,7 +112,7 @@ public class HashBuildBenchmark
                 Optional.empty(),
                 OptionalInt.empty(),
                 unsupportedPartitioningSpillerFactory(),
-                typeOperators);
+                blockTypeOperators);
         joinDriversBuilder.add(joinOperator);
         joinDriversBuilder.add(new NullOutputOperatorFactory(3, new PlanNodeId("test")));
         DriverFactory joinDriverFactory = new DriverFactory(1, true, true, joinDriversBuilder.build(), OptionalInt.empty());

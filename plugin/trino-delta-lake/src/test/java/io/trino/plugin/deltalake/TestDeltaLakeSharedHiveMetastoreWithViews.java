@@ -19,9 +19,8 @@ import io.trino.plugin.hive.containers.HiveMinioDataLake;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 
@@ -31,9 +30,7 @@ import static io.trino.testing.containers.Minio.MINIO_ACCESS_KEY;
 import static io.trino.testing.containers.Minio.MINIO_SECRET_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 public class TestDeltaLakeSharedHiveMetastoreWithViews
         extends AbstractTestQueryFramework
 {
@@ -79,7 +76,7 @@ public class TestDeltaLakeSharedHiveMetastoreWithViews
         return queryRunner;
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void cleanup()
     {
         assertQuerySucceeds("DROP TABLE IF EXISTS hive." + schema + ".hive_table");

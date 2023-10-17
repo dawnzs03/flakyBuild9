@@ -17,10 +17,9 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.airlift.units.Duration;
 import io.trino.spi.Page;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,20 +29,18 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 public class TestOperatorAssertion
 {
     private ScheduledExecutorService executor;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         executor = newSingleThreadScheduledExecutor();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         executor.shutdownNow();

@@ -18,6 +18,7 @@ import io.airlift.units.DataSize;
 import io.trino.RowPagesBuilder;
 import io.trino.operator.Driver;
 import io.trino.operator.DriverContext;
+import io.trino.operator.OperatorFactories;
 import io.trino.operator.OperatorFactory;
 import io.trino.operator.PagesIndex;
 import io.trino.operator.PipelineContext;
@@ -38,6 +39,7 @@ import io.trino.spi.type.TypeOperators;
 import io.trino.sql.gen.JoinFilterFunctionCompiler;
 import io.trino.sql.planner.NodePartitioningManager;
 import io.trino.sql.planner.plan.PlanNodeId;
+import io.trino.type.BlockTypeOperators;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,33 +55,34 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.airlift.concurrent.MoreFutures.getFutureValue;
 import static io.trino.operator.HashArraySizeSupplier.incrementalLoadFactorHashArraySizeSupplier;
-import static io.trino.operator.JoinOperatorType.innerJoin;
-import static io.trino.operator.OperatorFactories.join;
+import static io.trino.operator.OperatorFactories.JoinOperatorType.innerJoin;
 import static io.trino.sql.planner.SystemPartitioningHandle.FIXED_HASH_DISTRIBUTION;
 import static java.util.Objects.requireNonNull;
 
 public final class JoinTestUtils
 {
     private static final int PARTITION_COUNT = 4;
-    private static final TypeOperators TYPE_OPERATORS = new TypeOperators();
+    private static final BlockTypeOperators TYPE_OPERATOR_FACTORY = new BlockTypeOperators(new TypeOperators());
 
     private JoinTestUtils() {}
 
     public static OperatorFactory innerJoinOperatorFactory(
+            OperatorFactories operatorFactories,
             JoinBridgeManager<PartitionedLookupSourceFactory> lookupSourceFactoryManager,
             RowPagesBuilder probePages,
             boolean hasFilter)
     {
-        return innerJoinOperatorFactory(lookupSourceFactoryManager, probePages, false, hasFilter);
+        return innerJoinOperatorFactory(operatorFactories, lookupSourceFactoryManager, probePages, false, hasFilter);
     }
 
     public static OperatorFactory innerJoinOperatorFactory(
+            OperatorFactories operatorFactories,
             JoinBridgeManager<PartitionedLookupSourceFactory> lookupSourceFactoryManager,
             RowPagesBuilder probePages,
             boolean outputSingleMatch,
             boolean hasFilter)
     {
-        return join(
+        return operatorFactories.join(
                 innerJoin(outputSingleMatch, false),
                 0,
                 new PlanNodeId("test"),
@@ -89,7 +92,7 @@ public final class JoinTestUtils
                 probePages.getHashChannels().orElseThrow(),
                 getHashChannelAsInt(probePages),
                 Optional.empty(),
-                TYPE_OPERATORS);
+                TYPE_OPERATOR_FACTORY);
     }
 
     public static void instantiateBuildDrivers(BuildSideSetup buildSideSetup, TaskContext taskContext)
@@ -147,9 +150,8 @@ public final class JoinTestUtils
                 hashChannelTypes,
                 buildPages.getHashChannel(),
                 DataSize.of(32, DataSize.Unit.MEGABYTE),
-                TYPE_OPERATORS,
-                DataSize.of(32, DataSize.Unit.MEGABYTE),
-                () -> 0L);
+                TYPE_OPERATOR_FACTORY,
+                DataSize.of(32, DataSize.Unit.MEGABYTE));
 
         // collect input data into the partitioned exchange
         DriverContext collectDriverContext = taskContext.addPipelineContext(0, true, true, false).addDriverContext();
@@ -178,7 +180,7 @@ public final class JoinTestUtils
                         .collect(toImmutableList()),
                 partitionCount,
                 false,
-                TYPE_OPERATORS);
+                TYPE_OPERATOR_FACTORY);
         JoinBridgeManager<PartitionedLookupSourceFactory> lookupSourceFactoryManager = new JoinBridgeManager<PartitionedLookupSourceFactory>(
                 false,
                 factory,

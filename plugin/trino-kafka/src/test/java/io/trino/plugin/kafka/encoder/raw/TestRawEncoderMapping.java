@@ -18,7 +18,6 @@ import io.airlift.slice.Slices;
 import io.trino.plugin.kafka.KafkaColumnHandle;
 import io.trino.plugin.kafka.encoder.EncoderColumnHandle;
 import io.trino.plugin.kafka.encoder.RowEncoder;
-import io.trino.plugin.kafka.encoder.RowEncoderSpec;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.LongArrayBlockBuilder;
 import io.trino.spi.block.VariableWidthBlockBuilder;
@@ -29,7 +28,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import static io.trino.plugin.kafka.encoder.KafkaFieldType.MESSAGE;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.VarcharType.createUnboundedVarcharType;
 import static io.trino.spi.type.VarcharType.createVarcharType;
@@ -38,7 +36,6 @@ import static org.testng.Assert.assertEquals;
 public class TestRawEncoderMapping
 {
     private static final RawRowEncoderFactory ENCODER_FACTORY = new RawRowEncoderFactory();
-    private static final String TOPIC = "topic";
 
     @Test
     public void testMapping()
@@ -51,7 +48,7 @@ public class TestRawEncoderMapping
         EncoderColumnHandle col6 = new KafkaColumnHandle("test6", createVarcharType(6), "36:42", "BYTE", null, false, false, false);
         EncoderColumnHandle col7 = new KafkaColumnHandle("test7", createVarcharType(6), "42:48", "BYTE", null, false, false, false);
 
-        RowEncoder rowEncoder = ENCODER_FACTORY.create(TestingConnectorSession.SESSION, new RowEncoderSpec(RawRowEncoder.NAME, Optional.empty(), ImmutableList.of(col1, col2, col3, col4, col5, col6, col7), TOPIC, MESSAGE));
+        RowEncoder rowEncoder = ENCODER_FACTORY.create(TestingConnectorSession.SESSION, Optional.empty(), ImmutableList.of(col1, col2, col3, col4, col5, col6, col7));
 
         ByteBuffer buf = ByteBuffer.allocate(48);
         buf.putLong(123456789); // 0-8

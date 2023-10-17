@@ -15,13 +15,10 @@
 package io.trino.operator.aggregation.histogram;
 
 import io.trino.spi.block.Block;
-import io.trino.spi.block.MapBlockBuilder;
-import io.trino.spi.block.SingleMapBlock;
 import io.trino.spi.type.Type;
+import io.trino.type.BlockTypeOperators.BlockPositionEqual;
+import io.trino.type.BlockTypeOperators.BlockPositionHashCode;
 
-import java.lang.invoke.MethodHandle;
-
-import static com.google.common.base.Preconditions.checkState;
 import static io.airlift.slice.SizeOf.instanceSize;
 import static java.util.Objects.requireNonNull;
 
@@ -31,47 +28,33 @@ public class SingleHistogramState
     private static final int INSTANCE_SIZE = instanceSize(SingleHistogramState.class);
 
     private final Type keyType;
-    private final MethodHandle readFlat;
-    private final MethodHandle writeFlat;
-    private final MethodHandle hashFlat;
-    private final MethodHandle distinctFlatBlock;
-    private final MethodHandle hashBlock;
-    private TypedHistogram typedHistogram;
-    private SingleMapBlock tempSerializedState;
+    private final BlockPositionEqual equalOperator;
+    private final BlockPositionHashCode hashCodeOperator;
+    private SingleTypedHistogram typedHistogram;
 
-    public SingleHistogramState(
-            Type keyType,
-            MethodHandle readFlat,
-            MethodHandle writeFlat,
-            MethodHandle hashFlat,
-            MethodHandle distinctFlatBlock,
-            MethodHandle hashBlock)
+    public SingleHistogramState(Type keyType, BlockPositionEqual equalOperator, BlockPositionHashCode hashCodeOperator, int expectedEntriesCount)
     {
         this.keyType = requireNonNull(keyType, "keyType is null");
-        this.readFlat = requireNonNull(readFlat, "readFlat is null");
-        this.writeFlat = requireNonNull(writeFlat, "writeFlat is null");
-        this.hashFlat = requireNonNull(hashFlat, "hashFlat is null");
-        this.distinctFlatBlock = requireNonNull(distinctFlatBlock, "distinctFlatBlock is null");
-        this.hashBlock = requireNonNull(hashBlock, "hashBlock is null");
+        this.equalOperator = requireNonNull(equalOperator, "equalOperator is null");
+        this.hashCodeOperator = requireNonNull(hashCodeOperator, "hashCodeOperator is null");
+        typedHistogram = new SingleTypedHistogram(keyType, equalOperator, hashCodeOperator, expectedEntriesCount);
     }
 
     @Override
-    public void add(Block block, int position, long count)
+    public TypedHistogram get()
     {
-        if (typedHistogram == null) {
-            typedHistogram = new TypedHistogram(keyType, readFlat, writeFlat, hashFlat, distinctFlatBlock, hashBlock, false);
-        }
-        typedHistogram.add(0, block, position, count);
+        return typedHistogram;
     }
 
     @Override
-    public void writeAll(MapBlockBuilder out)
+    public void deserialize(Block block, int expectedSize)
     {
-        if (typedHistogram == null) {
-            out.appendNull();
-            return;
-        }
-        typedHistogram.serialize(0, out);
+        typedHistogram = new SingleTypedHistogram(block, keyType, equalOperator, hashCodeOperator, expectedSize);
+    }
+
+    @Override
+    public void addMemoryUsage(long memory)
+    {
     }
 
     @Override
@@ -83,18 +66,5 @@ public class SingleHistogramState
             estimatedSize += typedHistogram.getEstimatedSize();
         }
         return estimatedSize;
-    }
-
-    void setTempSerializedState(SingleMapBlock tempSerializedState)
-    {
-        this.tempSerializedState = tempSerializedState;
-    }
-
-    SingleMapBlock removeTempSerializedState()
-    {
-        SingleMapBlock block = tempSerializedState;
-        checkState(block != null, "tempDeserializeBlock is null");
-        tempSerializedState = null;
-        return block;
     }
 }

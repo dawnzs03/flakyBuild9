@@ -19,11 +19,9 @@ import io.trino.Session;
 import io.trino.execution.QueryManager;
 import io.trino.server.BasicQueryInfo;
 import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.Timeout;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -41,21 +39,19 @@ import static java.lang.String.format;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 public abstract class AbstractDistributedEngineOnlyQueries
         extends AbstractTestEngineOnlyQueries
 {
     private ExecutorService executorService;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         executorService = newCachedThreadPool();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void shutdown()
     {
         if (executorService != null) {
@@ -352,8 +348,7 @@ public abstract class AbstractDistributedEngineOnlyQueries
         assertUpdate("INSERT INTO target_table SELECT * from source_table", 0);
     }
 
-    @Test
-    @Timeout(10)
+    @Test(timeOut = 10_000)
     public void testQueryTransitionsToRunningState()
     {
         String query = format(
@@ -379,8 +374,7 @@ public abstract class AbstractDistributedEngineOnlyQueries
         assertThatThrownBy(queryFuture::get).hasMessageContaining("Query was canceled");
     }
 
-    @Test
-    @Timeout(30)
+    @Test(timeOut = 30_000)
     public void testSelectiveLimit()
     {
         assertQuery("" +

@@ -18,7 +18,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Closer;
-import io.opentelemetry.api.OpenTelemetry;
 import io.trino.FeaturesConfig;
 import io.trino.Session;
 import io.trino.SystemSessionProperties;
@@ -82,6 +81,7 @@ import io.trino.spi.type.RowType;
 import io.trino.spi.type.Type;
 import io.trino.sql.PlannerContext;
 import io.trino.sql.parser.ParsingException;
+import io.trino.sql.parser.ParsingOptions;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.planner.OptimizerConfig;
 import io.trino.sql.rewrite.ShowQueriesRewrite;
@@ -192,6 +192,8 @@ import static io.trino.spi.type.TinyintType.TINYINT;
 import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.spi.type.VarcharType.createUnboundedVarcharType;
 import static io.trino.spi.type.VarcharType.createVarcharType;
+import static io.trino.sql.parser.ParsingOptions.DecimalLiteralTreatment.AS_DECIMAL;
+import static io.trino.sql.parser.ParsingOptions.DecimalLiteralTreatment.AS_DOUBLE;
 import static io.trino.testing.TestingAccessControlManager.TestingPrivilegeType.SELECT_COLUMN;
 import static io.trino.testing.TestingAccessControlManager.privilege;
 import static io.trino.testing.TestingEventListenerManager.emptyEventListenerManager;
@@ -4031,13 +4033,6 @@ public class TestAnalyzer
     }
 
     @Test
-    public void testNullAggregationFilter()
-    {
-        analyze("SELECT count(*) FILTER (WHERE NULL) FROM t1");
-        analyze("SELECT a, count(*) FILTER (WHERE NULL) FROM t1 GROUP BY a");
-    }
-
-    @Test
     public void testInvalidAggregationFilter()
     {
         assertFails("SELECT sum(x) FILTER (WHERE x > 1) OVER (PARTITION BY x) FROM (VALUES (1), (2), (2), (4)) t (x)")
@@ -4049,12 +4044,6 @@ public class TestAnalyzer
         assertFails("SELECT abs(x) FILTER (where y = 1) FROM (VALUES (1, 1, 1)) t(x, y, z) GROUP BY z")
                 .hasErrorCode(FUNCTION_NOT_AGGREGATE)
                 .hasMessage("line 1:8: Filter is only valid for aggregation functions");
-        assertFails("SELECT count(*) FILTER (WHERE 0) FROM t1")
-                .hasErrorCode(TYPE_MISMATCH)
-                .hasMessage("line 1:31: Filter expression must evaluate to a boolean (actual: integer)");
-        assertFails("SELECT a, count(*) FILTER (WHERE 0) FROM t1 GROUP BY a")
-                .hasErrorCode(TYPE_MISMATCH)
-                .hasMessage("line 1:34: Filter expression must evaluate to a boolean (actual: integer)");
     }
 
     @Test
@@ -6728,7 +6717,6 @@ public class TestAnalyzer
                 transactionManager,
                 emptyEventListenerManager(),
                 new AccessControlConfig(),
-                OpenTelemetry.noop(),
                 DefaultSystemAccessControl.NAME);
         accessControlManager.setSystemAccessControls(List.of(AllowAllSystemAccessControl.INSTANCE));
         this.accessControl = accessControlManager;
@@ -7144,7 +7132,8 @@ public class TestAnalyzer
                 .readUncommitted()
                 .execute(clientSession, session -> {
                     Analyzer analyzer = createAnalyzer(session, accessControl);
-                    Statement statement = SQL_PARSER.createStatement(query);
+                    Statement statement = SQL_PARSER.createStatement(query, new ParsingOptions(
+                            new FeaturesConfig().isParseDecimalLiteralsAsDouble() ? AS_DOUBLE : AS_DECIMAL));
                     return analyzer.analyze(statement);
                 });
     }

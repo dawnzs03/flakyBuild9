@@ -13,10 +13,8 @@
  */
 package io.trino.plugin.deltalake;
 
-import io.trino.plugin.hive.containers.HiveHadoop;
 import io.trino.plugin.hive.containers.HiveMinioDataLake;
 import io.trino.testing.QueryRunner;
-import org.testng.annotations.AfterClass;
 
 import java.util.List;
 
@@ -26,22 +24,12 @@ import static java.lang.String.format;
 public abstract class BaseDeltaLakeAwsConnectorSmokeTest
         extends BaseDeltaLakeConnectorSmokeTest
 {
-    protected HiveMinioDataLake hiveMinioDataLake;
-
     @Override
-    protected HiveHadoop createHiveHadoop()
+    protected HiveMinioDataLake createHiveMinioDataLake()
     {
-        hiveMinioDataLake = closeAfterClass(new HiveMinioDataLake(bucketName));
+        hiveMinioDataLake = new HiveMinioDataLake(bucketName); // closed by superclass
         hiveMinioDataLake.start();
-        return hiveMinioDataLake.getHiveHadoop();  // closed by superclass
-    }
-
-    @Override
-    @AfterClass(alwaysRun = true)
-    public void cleanUp()
-    {
-        hiveMinioDataLake = null; // closed by closeAfterClass
-        super.cleanUp();
+        return hiveMinioDataLake;
     }
 
     @Override
@@ -70,19 +58,13 @@ public abstract class BaseDeltaLakeAwsConnectorSmokeTest
     }
 
     @Override
-    protected List<String> listFiles(String directory)
+    protected List<String> listCheckpointFiles(String transactionLogDirectory)
     {
-        return hiveMinioDataLake.listFiles(directory).stream()
+        return hiveMinioDataLake.listFiles(transactionLogDirectory)
+                .stream()
+                .filter(path -> path.contains("checkpoint.parquet"))
                 .map(path -> format("s3://%s/%s", bucketName, path))
                 .collect(toImmutableList());
-    }
-
-    @Override
-    protected void deleteFile(String filePath)
-    {
-        String key = filePath.substring(bucketUrl().length());
-        hiveMinioDataLake.getMinioClient()
-                .removeObject(bucketName, key);
     }
 
     @Override

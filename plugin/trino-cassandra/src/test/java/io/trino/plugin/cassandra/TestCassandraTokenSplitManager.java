@@ -14,10 +14,9 @@
 package io.trino.plugin.cassandra;
 
 import io.trino.plugin.cassandra.CassandraTokenSplitManager.TokenSplit;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,10 +24,8 @@ import java.util.Optional;
 import static io.trino.plugin.cassandra.CassandraTestingUtils.createKeyspace;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 
-@TestInstance(PER_CLASS)
 public class TestCassandraTokenSplitManager
 {
     private static final int SPLIT_SIZE = 100;
@@ -39,7 +36,7 @@ public class TestCassandraTokenSplitManager
     private CassandraSession session;
     private CassandraTokenSplitManager splitManager;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
             throws Exception
     {
@@ -49,7 +46,7 @@ public class TestCassandraTokenSplitManager
         splitManager = new CassandraTokenSplitManager(session, SPLIT_SIZE, Optional.empty());
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         server.close();

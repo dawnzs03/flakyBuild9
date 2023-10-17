@@ -220,9 +220,7 @@ public class JdbcPageSink
             throw new TrinoException(JDBC_ERROR, "Failed to insert data: " + firstNonNull(e.getMessage(), e), e);
         }
         // pass the successful page sink id
-        Slice value = Slices.allocate(Long.BYTES);
-        value.setLong(0, pageSinkId.getId());
-        return completedFuture(ImmutableList.of(value));
+        return completedFuture(ImmutableList.of(Slices.wrappedLongArray(pageSinkId.getId())));
     }
 
     @SuppressWarnings("unused")

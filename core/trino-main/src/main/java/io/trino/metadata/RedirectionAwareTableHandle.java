@@ -15,29 +15,68 @@ package io.trino.metadata;
 
 import java.util.Optional;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-public record RedirectionAwareTableHandle(
-        Optional<TableHandle> tableHandle,
-        // the target table name after redirection. Optional.empty() if the table is not redirected.
-        Optional<QualifiedObjectName> redirectedTableName)
+public abstract class RedirectionAwareTableHandle
 {
+    private final Optional<TableHandle> tableHandle;
+
+    protected RedirectionAwareTableHandle(Optional<TableHandle> tableHandle)
+    {
+        this.tableHandle = requireNonNull(tableHandle, "tableHandle is null");
+    }
+
     public static RedirectionAwareTableHandle withRedirectionTo(QualifiedObjectName redirectedTableName, TableHandle tableHandle)
     {
-        return new RedirectionAwareTableHandle(Optional.of(tableHandle), Optional.of(redirectedTableName));
+        return new TableHandleWithRedirection(redirectedTableName, tableHandle);
     }
 
     public static RedirectionAwareTableHandle noRedirection(Optional<TableHandle> tableHandle)
     {
-        return new RedirectionAwareTableHandle(tableHandle, Optional.empty());
+        return new TableHandleWithoutRedirection(tableHandle);
     }
 
-    public RedirectionAwareTableHandle
+    public Optional<TableHandle> getTableHandle()
     {
-        requireNonNull(tableHandle, "tableHandle is null");
-        requireNonNull(redirectedTableName, "redirectedTableName is null");
-        // Table handle must exist if there is redirection
-        checkArgument(tableHandle.isPresent() || redirectedTableName.isEmpty(), "redirectedTableName present without tableHandle");
+        return tableHandle;
+    }
+
+    /**
+     * @return the target table name after redirection. Optional.empty() if the table is not redirected.
+     */
+    public abstract Optional<QualifiedObjectName> getRedirectedTableName();
+
+    private static class TableHandleWithoutRedirection
+            extends RedirectionAwareTableHandle
+    {
+        protected TableHandleWithoutRedirection(Optional<TableHandle> tableHandle)
+        {
+            super(tableHandle);
+        }
+
+        @Override
+        public Optional<QualifiedObjectName> getRedirectedTableName()
+        {
+            return Optional.empty();
+        }
+    }
+
+    private static class TableHandleWithRedirection
+            extends RedirectionAwareTableHandle
+    {
+        private final QualifiedObjectName redirectedTableName;
+
+        public TableHandleWithRedirection(QualifiedObjectName redirectedTableName, TableHandle tableHandle)
+        {
+            // Table handle must exist if there is redirection
+            super(Optional.of(tableHandle));
+            this.redirectedTableName = requireNonNull(redirectedTableName, "redirectedTableName is null");
+        }
+
+        @Override
+        public Optional<QualifiedObjectName> getRedirectedTableName()
+        {
+            return Optional.of(redirectedTableName);
+        }
     }
 }

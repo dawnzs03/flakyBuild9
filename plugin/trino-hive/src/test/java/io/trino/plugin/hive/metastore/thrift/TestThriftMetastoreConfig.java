@@ -16,7 +16,7 @@ package io.trino.plugin.hive.metastore.thrift;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import io.airlift.units.Duration;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -56,8 +56,7 @@ public class TestThriftMetastoreConfig
                 .setDeleteFilesOnDrop(false)
                 .setMaxWaitForTransactionLock(new Duration(10, MINUTES))
                 .setAssumeCanonicalPartitionKeys(false)
-                .setWriteStatisticsThreads(20)
-                .setBatchMetadataFetchEnabled(true));
+                .setWriteStatisticsThreads(20));
     }
 
     @Test
@@ -88,7 +87,6 @@ public class TestThriftMetastoreConfig
                 .put("hive.metastore.thrift.write-statistics-threads", "10")
                 .put("hive.metastore.thrift.assume-canonical-partition-keys", "true")
                 .put("hive.metastore.thrift.use-spark-table-statistics-fallback", "false")
-                .put("hive.metastore.thrift.batch-fetch.enabled", "false")
                 .buildOrThrow();
 
         ThriftMetastoreConfig expected = new ThriftMetastoreConfig()
@@ -111,8 +109,7 @@ public class TestThriftMetastoreConfig
                 .setMaxWaitForTransactionLock(new Duration(5, MINUTES))
                 .setAssumeCanonicalPartitionKeys(true)
                 .setWriteStatisticsThreads(10)
-                .setUseSparkTableStatisticsFallback(false)
-                .setBatchMetadataFetchEnabled(false);
+                .setUseSparkTableStatisticsFallback(false);
 
         assertFullMapping(properties, expected);
     }

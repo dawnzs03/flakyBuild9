@@ -16,7 +16,6 @@ sql/alter-view
 sql/analyze
 sql/call
 sql/comment
-sql/comments
 sql/commit
 sql/create-materialized-view
 sql/create-role
@@ -48,7 +47,6 @@ sql/pattern-recognition-in-window
 sql/prepare
 sql/refresh-materialized-view
 sql/reset-session
-sql/reset-session-authorization
 sql/revoke
 sql/revoke-roles
 sql/rollback
@@ -56,7 +54,6 @@ sql/select
 sql/set-path
 sql/set-role
 sql/set-session
-sql/set-session-authorization
 sql/set-time-zone
 sql/show-catalogs
 sql/show-columns

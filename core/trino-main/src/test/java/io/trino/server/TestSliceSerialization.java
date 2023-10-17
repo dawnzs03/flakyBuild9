@@ -21,25 +21,22 @@ import com.google.common.collect.ImmutableMap;
 import io.airlift.json.ObjectMapperProvider;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 
-@TestInstance(PER_CLASS)
 public class TestSliceSerialization
 {
     private ObjectMapperProvider provider;
 
-    @BeforeAll
+    @BeforeClass
     public void setup()
     {
         provider = new ObjectMapperProvider();
@@ -47,7 +44,7 @@ public class TestSliceSerialization
         provider.setJsonDeserializers(ImmutableMap.of(Slice.class, new SliceSerialization.SliceDeserializer()));
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void teardown()
     {
         provider = null;
@@ -75,7 +72,39 @@ public class TestSliceSerialization
         slice.setBytes(0, bytes);
         testRoundTrip(slice);
 
+        slice = Slices.wrappedShortArray(new short[bytes.length / Short.BYTES + bytes.length % Short.BYTES]);
+        slice.setBytes(bytes.length % Short.BYTES, bytes);
+        testRoundTrip(slice.slice(bytes.length % Short.BYTES, bytes.length));
+
+        slice = Slices.wrappedIntArray(new int[bytes.length / Integer.BYTES + bytes.length % Integer.BYTES]);
+        slice.setBytes(bytes.length % Integer.BYTES, bytes);
+        testRoundTrip(slice.slice(bytes.length % Integer.BYTES, bytes.length));
+
+        slice = Slices.wrappedLongArray(new long[bytes.length / Long.BYTES + bytes.length % Long.BYTES]);
+        slice.setBytes(bytes.length % Long.BYTES, bytes);
+        testRoundTrip(slice.slice(bytes.length % Long.BYTES, bytes.length));
+
+        slice = Slices.wrappedDoubleArray(new double[bytes.length / Double.BYTES + bytes.length % Double.BYTES]);
+        slice.setBytes(bytes.length % Double.BYTES, bytes);
+        testRoundTrip(slice.slice(bytes.length % Double.BYTES, bytes.length));
+
+        slice = Slices.wrappedFloatArray(new float[bytes.length / Float.BYTES + bytes.length % Float.BYTES]);
+        slice.setBytes(bytes.length % Float.BYTES, bytes);
+        testRoundTrip(slice.slice(bytes.length % Float.BYTES, bytes.length));
+
+        slice = Slices.wrappedBooleanArray(new boolean[bytes.length]);
+        slice.setBytes(0, bytes);
+        testRoundTrip(slice);
+
+        slice = Slices.wrappedBooleanArray(new boolean[bytes.length + 3], 2, bytes.length);
+        slice.setBytes(0, bytes);
+        testRoundTrip(slice);
+
         slice = Slices.allocate(bytes.length);
+        slice.setBytes(0, bytes);
+        testRoundTrip(slice);
+
+        slice = Slices.allocateDirect(bytes.length);
         slice.setBytes(0, bytes);
         testRoundTrip(slice);
     }

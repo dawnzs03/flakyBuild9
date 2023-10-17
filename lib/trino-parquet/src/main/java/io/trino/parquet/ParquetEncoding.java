@@ -15,6 +15,7 @@ package io.trino.parquet;
 
 import io.trino.parquet.dictionary.BinaryDictionary;
 import io.trino.parquet.dictionary.Dictionary;
+import io.trino.parquet.dictionary.DictionaryReader;
 import io.trino.parquet.dictionary.DoubleDictionary;
 import io.trino.parquet.dictionary.FloatDictionary;
 import io.trino.parquet.dictionary.IntegerDictionary;
@@ -106,10 +107,22 @@ public enum ParquetEncoding
 
     PLAIN_DICTIONARY {
         @Override
+        public ValuesReader getDictionaryBasedValuesReader(ColumnDescriptor descriptor, ValuesType valuesType, Dictionary dictionary)
+        {
+            return RLE_DICTIONARY.getDictionaryBasedValuesReader(descriptor, valuesType, dictionary);
+        }
+
+        @Override
         public Dictionary initDictionary(ColumnDescriptor descriptor, DictionaryPage dictionaryPage)
                 throws IOException
         {
             return PLAIN.initDictionary(descriptor, dictionaryPage);
+        }
+
+        @Override
+        public boolean usesDictionary()
+        {
+            return true;
         }
     },
 
@@ -144,10 +157,22 @@ public enum ParquetEncoding
 
     RLE_DICTIONARY {
         @Override
+        public ValuesReader getDictionaryBasedValuesReader(ColumnDescriptor descriptor, ValuesType valuesType, Dictionary dictionary)
+        {
+            return new DictionaryReader(dictionary);
+        }
+
+        @Override
         public Dictionary initDictionary(ColumnDescriptor descriptor, DictionaryPage dictionaryPage)
                 throws IOException
         {
             return PLAIN.initDictionary(descriptor, dictionaryPage);
+        }
+
+        @Override
+        public boolean usesDictionary()
+        {
+            return true;
         }
     };
 
@@ -167,6 +192,11 @@ public enum ParquetEncoding
         };
     }
 
+    public boolean usesDictionary()
+    {
+        return false;
+    }
+
     public Dictionary initDictionary(ColumnDescriptor descriptor, DictionaryPage dictionaryPage)
             throws IOException
     {
@@ -176,5 +206,10 @@ public enum ParquetEncoding
     public ValuesReader getValuesReader(ColumnDescriptor descriptor, ValuesType valuesType)
     {
         throw new UnsupportedOperationException("Error decoding  values in encoding: " + this.name());
+    }
+
+    public ValuesReader getDictionaryBasedValuesReader(ColumnDescriptor descriptor, ValuesType valuesType, Dictionary dictionary)
+    {
+        throw new UnsupportedOperationException(" Dictionary encoding is not supported for: " + name());
     }
 }

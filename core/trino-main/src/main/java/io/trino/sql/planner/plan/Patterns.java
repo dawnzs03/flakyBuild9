@@ -65,11 +65,6 @@ public final class Patterns
         return typeOf(MergeWriterNode.class);
     }
 
-    public static Pattern<MergeProcessorNode> mergeProcessor()
-    {
-        return typeOf(MergeProcessorNode.class);
-    }
-
     public static Pattern<ExchangeNode> exchange()
     {
         return typeOf(ExchangeNode.class);

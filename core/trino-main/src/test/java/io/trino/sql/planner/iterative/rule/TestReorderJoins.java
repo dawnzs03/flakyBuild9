@@ -31,6 +31,7 @@ import io.trino.sql.planner.plan.JoinNode.EquiJoinClause;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.sql.tree.ArithmeticUnaryExpression;
 import io.trino.sql.tree.ComparisonExpression;
+import io.trino.sql.tree.QualifiedName;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -346,7 +347,7 @@ public class TestReorderJoins
                                 Optional.of(new ComparisonExpression(
                                         LESS_THAN,
                                         p.symbol("A1").toSymbolReference(),
-                                        new TestingFunctionResolution().functionCallBuilder("random").build()))))
+                                        new TestingFunctionResolution().functionCallBuilder(QualifiedName.of("random")).build()))))
                 .doesNotFire();
     }
 

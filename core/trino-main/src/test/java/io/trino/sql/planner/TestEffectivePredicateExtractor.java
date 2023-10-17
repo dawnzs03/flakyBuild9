@@ -33,6 +33,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTableProperties;
 import io.trino.spi.connector.SortOrder;
 import io.trino.spi.function.BoundSignature;
+import io.trino.spi.function.FunctionMetadata;
 import io.trino.spi.function.FunctionNullability;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
@@ -72,6 +73,7 @@ import io.trino.sql.tree.IsNullPredicate;
 import io.trino.sql.tree.LongLiteral;
 import io.trino.sql.tree.NotExpression;
 import io.trino.sql.tree.NullLiteral;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.Row;
 import io.trino.testing.TestingMetadata.TestingColumnHandle;
 import io.trino.testing.TestingSession;
@@ -93,7 +95,6 @@ import java.util.stream.IntStream;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static io.trino.metadata.GlobalFunctionCatalog.builtinFunctionName;
 import static io.trino.spi.function.FunctionId.toFunctionId;
 import static io.trino.spi.function.FunctionKind.SCALAR;
 import static io.trino.spi.type.BigintType.BIGINT;
@@ -143,15 +144,21 @@ public class TestEffectivePredicateExtractor
         private final Metadata delegate = functionResolution.getMetadata();
 
         @Override
-        public ResolvedFunction resolveBuiltinFunction(String name, List<TypeSignatureProvider> parameterTypes)
+        public ResolvedFunction resolveFunction(Session session, QualifiedName name, List<TypeSignatureProvider> parameterTypes)
         {
-            return delegate.resolveBuiltinFunction(name, parameterTypes);
+            return delegate.resolveFunction(session, name, parameterTypes);
         }
 
         @Override
-        public ResolvedFunction getCoercion(Type fromType, Type toType)
+        public FunctionMetadata getFunctionMetadata(Session session, ResolvedFunction resolvedFunction)
         {
-            return delegate.getCoercion(fromType, toType);
+            return delegate.getFunctionMetadata(session, resolvedFunction);
+        }
+
+        @Override
+        public ResolvedFunction getCoercion(Session session, Type fromType, Type toType)
+        {
+            return delegate.getCoercion(session, fromType, toType);
         }
 
         @Override
@@ -273,7 +280,7 @@ public class TestEffectivePredicateExtractor
                         greaterThan(
                                 AE,
                                 functionResolution
-                                        .functionCallBuilder("rand")
+                                        .functionCallBuilder(QualifiedName.of("rand"))
                                         .build()),
                         lessThan(BE, bigintLiteral(10))));
 
@@ -722,7 +729,7 @@ public class TestEffectivePredicateExtractor
                         or(new ComparisonExpression(EQUAL, BE, bigintLiteral(200)), new IsNullPredicate(BE))));
 
         // non-deterministic
-        ResolvedFunction rand = functionResolution.resolveFunction("rand", ImmutableList.of());
+        ResolvedFunction rand = functionResolution.resolveFunction(QualifiedName.of("rand"), ImmutableList.of());
         ValuesNode node = new ValuesNode(
                 newId(),
                 ImmutableList.of(A, B),
@@ -1200,11 +1207,11 @@ public class TestEffectivePredicateExtractor
 
     private static ResolvedFunction fakeFunction(String name)
     {
-        BoundSignature boundSignature = new BoundSignature(builtinFunctionName(name), UNKNOWN, ImmutableList.of());
+        BoundSignature boundSignature = new BoundSignature(name, UNKNOWN, ImmutableList.of());
         return new ResolvedFunction(
                 boundSignature,
                 GlobalSystemConnector.CATALOG_HANDLE,
-                toFunctionId(name, boundSignature.toSignature()),
+                toFunctionId(boundSignature.toSignature()),
                 SCALAR,
                 true,
                 new FunctionNullability(false, ImmutableList.of()),

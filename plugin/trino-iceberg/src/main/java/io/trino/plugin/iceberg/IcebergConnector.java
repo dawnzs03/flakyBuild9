@@ -32,8 +32,6 @@ import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.TableProcedureMetadata;
-import io.trino.spi.function.FunctionProvider;
-import io.trino.spi.function.table.ConnectorTableFunction;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.session.PropertyMetadata;
 import io.trino.spi.transaction.IsolationLevel;
@@ -68,8 +66,6 @@ public class IcebergConnector
     private final Optional<ConnectorAccessControl> accessControl;
     private final Set<Procedure> procedures;
     private final Set<TableProcedureMetadata> tableProcedures;
-    private final Set<ConnectorTableFunction> tableFunctions;
-    private final FunctionProvider functionProvider;
 
     public IcebergConnector(
             Injector injector,
@@ -86,9 +82,7 @@ public class IcebergConnector
             List<PropertyMetadata<?>> analyzeProperties,
             Optional<ConnectorAccessControl> accessControl,
             Set<Procedure> procedures,
-            Set<TableProcedureMetadata> tableProcedures,
-            Set<ConnectorTableFunction> tableFunctions,
-            FunctionProvider functionProvider)
+            Set<TableProcedureMetadata> tableProcedures)
     {
         this.injector = requireNonNull(injector, "injector is null");
         this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
@@ -107,8 +101,6 @@ public class IcebergConnector
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
         this.procedures = ImmutableSet.copyOf(requireNonNull(procedures, "procedures is null"));
         this.tableProcedures = ImmutableSet.copyOf(requireNonNull(tableProcedures, "tableProcedures is null"));
-        this.tableFunctions = ImmutableSet.copyOf(requireNonNull(tableFunctions, "tableFunctions is null"));
-        this.functionProvider = requireNonNull(functionProvider, "functionProvider is null");
     }
 
     @Override
@@ -160,18 +152,6 @@ public class IcebergConnector
     public Set<TableProcedureMetadata> getTableProcedures()
     {
         return tableProcedures;
-    }
-
-    @Override
-    public Set<ConnectorTableFunction> getTableFunctions()
-    {
-        return tableFunctions;
-    }
-
-    @Override
-    public Optional<FunctionProvider> getFunctionProvider()
-    {
-        return Optional.of(functionProvider);
     }
 
     @Override

@@ -14,7 +14,7 @@
 package io.trino.plugin.iceberg.catalog.nessie;
 
 import com.google.common.collect.ImmutableMap;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.Map;

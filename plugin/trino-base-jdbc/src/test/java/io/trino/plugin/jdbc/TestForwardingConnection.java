@@ -14,7 +14,7 @@
 
 package io.trino.plugin.jdbc;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.sql.Connection;
 

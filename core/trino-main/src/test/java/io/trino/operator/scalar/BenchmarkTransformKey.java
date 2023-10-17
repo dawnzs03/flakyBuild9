@@ -29,6 +29,7 @@ import io.trino.sql.gen.ExpressionCompiler;
 import io.trino.sql.relational.LambdaDefinitionExpression;
 import io.trino.sql.relational.RowExpression;
 import io.trino.sql.relational.VariableReferenceExpression;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.type.FunctionType;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -118,7 +119,7 @@ public class BenchmarkTransformKey
             }
             MapType mapType = mapType(elementType, elementType);
             ResolvedFunction resolvedFunction = functionResolution.resolveFunction(
-                    name,
+                    QualifiedName.of(name),
                     fromTypes(mapType, new FunctionType(ImmutableList.of(elementType, elementType), elementType)));
             ResolvedFunction add = functionResolution.resolveOperator(ADD, ImmutableList.of(elementType, elementType));
             projectionsBuilder.add(call(resolvedFunction, ImmutableList.of(

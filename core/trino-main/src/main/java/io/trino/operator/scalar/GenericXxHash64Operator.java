@@ -35,8 +35,9 @@ public class GenericXxHash64Operator
 
     public GenericXxHash64Operator(TypeOperators typeOperators)
     {
-        super(FunctionMetadata.operatorBuilder(XX_HASH_64)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .operatorType(XX_HASH_64)
                         .comparableTypeParameter("T")
                         .returnType(BIGINT)
                         .argumentType(new TypeSignature("T"))

@@ -15,7 +15,7 @@ package io.trino.cost;
 
 import com.google.common.collect.ImmutableList;
 import io.trino.sql.planner.Symbol;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Optional;
 

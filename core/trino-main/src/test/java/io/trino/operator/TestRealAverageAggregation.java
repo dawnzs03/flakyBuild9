@@ -18,7 +18,8 @@ import io.trino.operator.aggregation.AbstractTestAggregationFunction;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.Type;
-import org.junit.jupiter.api.Test;
+import io.trino.sql.tree.QualifiedName;
+import org.testng.annotations.Test;
 
 import java.util.List;
 
@@ -28,6 +29,7 @@ import static io.trino.spi.type.RealType.REAL;
 import static io.trino.sql.analyzer.TypeSignatureProvider.fromTypes;
 import static java.lang.Float.floatToRawIntBits;
 
+@Test(singleThreaded = true)
 public class TestRealAverageAggregation
         extends AbstractTestAggregationFunction
 {
@@ -36,7 +38,7 @@ public class TestRealAverageAggregation
     {
         assertAggregation(
                 functionResolution,
-                "avg",
+                QualifiedName.of("avg"),
                 fromTypes(REAL),
                 null,
                 createBlockOfReals(null, null));
@@ -47,7 +49,7 @@ public class TestRealAverageAggregation
     {
         assertAggregation(
                 functionResolution,
-                "avg",
+                QualifiedName.of("avg"),
                 fromTypes(REAL),
                 1.23f,
                 createBlockOfReals(1.23f));
@@ -58,7 +60,7 @@ public class TestRealAverageAggregation
     {
         assertAggregation(
                 functionResolution,
-                "avg",
+                QualifiedName.of("avg"),
                 fromTypes(REAL),
                 Float.MAX_VALUE,
                 createBlockOfReals(Float.MAX_VALUE, Float.MAX_VALUE));

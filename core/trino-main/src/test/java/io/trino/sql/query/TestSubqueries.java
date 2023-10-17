@@ -207,10 +207,11 @@ public class TestSubqueries
                         join(INNER, builder -> builder
                                 .equiCriteria("cast_b", "cast_a")
                                 .left(
-                                        project(
-                                                ImmutableMap.of("cast_b", expression("CAST(b AS decimal(11, 1))")),
-                                                any(
-                                                        values("b"))))
+                                        any(
+                                                project(
+                                                        ImmutableMap.of("cast_b", expression("CAST(b AS decimal(11, 1))")),
+                                                        any(
+                                                                values("b")))))
                                 .right(
                                         anyTree(
                                                 project(
@@ -231,10 +232,11 @@ public class TestSubqueries
                         join(INNER, builder -> builder
                                 .equiCriteria("expr", "a")
                                 .left(
-                                        project(
-                                                ImmutableMap.of("expr", expression("b * c - 1")),
-                                                any(
-                                                        values("b", "c"))))
+                                        any(
+                                                project(
+                                                        ImmutableMap.of("expr", expression("b * c - 1")),
+                                                        any(
+                                                                values("b", "c")))))
                                 .right(
                                         any(
                                                 rowNumber(

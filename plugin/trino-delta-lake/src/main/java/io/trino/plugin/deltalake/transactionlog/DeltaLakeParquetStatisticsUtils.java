@@ -172,7 +172,7 @@ public class DeltaLakeParquetStatisticsUtils
     }
 
     @Nullable
-    public static Object toJsonValue(Type type, @Nullable Object value)
+    private static Object toJsonValue(Type type, @Nullable Object value)
     {
         if (value == null) {
             return null;

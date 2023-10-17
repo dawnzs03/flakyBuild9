@@ -113,13 +113,7 @@ public class SymbolAllocator
             nameHint = identifier.getValue();
         }
         else if (expression instanceof FunctionCall functionCall) {
-            // symbol allocation can happen during planning, before function calls are rewritten
-            if (ResolvedFunction.isResolved(functionCall.getName())) {
-                nameHint = ResolvedFunction.extractFunctionName(functionCall.getName()).getFunctionName();
-            }
-            else {
-                nameHint = functionCall.getName().getSuffix();
-            }
+            nameHint = ResolvedFunction.extractFunctionName(functionCall.getName());
         }
         else if (expression instanceof SymbolReference symbolReference) {
             nameHint = symbolReference.getName();

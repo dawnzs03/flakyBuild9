@@ -39,8 +39,9 @@ public final class GenericLongFunction
 
     GenericLongFunction(String suffix, LongUnaryOperator longUnaryOperator)
     {
-        super(FunctionMetadata.scalarBuilder("generic_long_" + requireNonNull(suffix, "suffix is null"))
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("generic_long_" + requireNonNull(suffix, "suffix is null"))
                         .returnType(BIGINT)
                         .argumentType(BIGINT)
                         .build())

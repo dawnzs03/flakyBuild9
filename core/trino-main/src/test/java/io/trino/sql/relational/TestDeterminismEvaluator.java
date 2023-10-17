@@ -16,7 +16,8 @@ package io.trino.sql.relational;
 import com.google.common.collect.ImmutableList;
 import io.trino.metadata.ResolvedFunction;
 import io.trino.metadata.TestingFunctionResolution;
-import org.junit.jupiter.api.Test;
+import io.trino.sql.tree.QualifiedName;
+import org.testng.annotations.Test;
 
 import static io.trino.spi.function.OperatorType.LESS_THAN;
 import static io.trino.spi.type.BigintType.BIGINT;
@@ -36,7 +37,7 @@ public class TestDeterminismEvaluator
         TestingFunctionResolution functionResolution = new TestingFunctionResolution();
 
         CallExpression random = new CallExpression(
-                functionResolution.resolveFunction("random", fromTypes(BIGINT)),
+                functionResolution.resolveFunction(QualifiedName.of("random"), fromTypes(BIGINT)),
                 singletonList(constant(10L, BIGINT)));
         assertFalse(isDeterministic(random));
 

@@ -25,7 +25,6 @@ import io.trino.plugin.pinot.query.PinotProxyGrpcRequestBuilder;
 import io.trino.spi.connector.ConnectorSession;
 import jakarta.annotation.PreDestroy;
 import org.apache.pinot.common.config.GrpcConfig;
-import org.apache.pinot.common.datatable.DataTable;
 import org.apache.pinot.common.datatable.DataTableFactory;
 import org.apache.pinot.common.proto.Server;
 import org.apache.pinot.common.utils.grpc.GrpcQueryClient;
@@ -41,10 +40,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static io.trino.plugin.pinot.PinotErrorCode.PINOT_EXCEPTION;
 import static java.lang.Boolean.FALSE;
-import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static org.apache.pinot.common.config.GrpcConfig.CONFIG_MAX_INBOUND_MESSAGE_BYTES_SIZE;
 import static org.apache.pinot.common.config.GrpcConfig.CONFIG_USE_PLAIN_TEXT;
@@ -258,19 +254,17 @@ public class PinotGrpcDataFetcher
                 grpcRequestBuilder.setHostName(mappedHostAndPort.getHost()).setPort(grpcPort);
             }
             Server.ServerRequest serverRequest = grpcRequestBuilder.build();
-            return new ResponseIterator(client.submit(serverRequest), query);
+            return new ResponseIterator(client.submit(serverRequest));
         }
 
         public static class ResponseIterator
                 extends AbstractIterator<PinotDataTableWithSize>
         {
             private final Iterator<Server.ServerResponse> responseIterator;
-            private final String query;
 
-            public ResponseIterator(Iterator<Server.ServerResponse> responseIterator, String query)
+            public ResponseIterator(Iterator<Server.ServerResponse> responseIterator)
             {
                 this.responseIterator = requireNonNull(responseIterator, "responseIterator is null");
-                this.query = requireNonNull(query, "query is null");
             }
 
             @Override
@@ -285,22 +279,12 @@ public class PinotGrpcDataFetcher
                     return endOfData();
                 }
                 ByteBuffer buffer = response.getPayload().asReadOnlyByteBuffer();
-                DataTable dataTable;
                 try {
-                    dataTable = DataTableFactory.getDataTable(buffer);
+                    return new PinotDataTableWithSize(DataTableFactory.getDataTable(buffer), buffer.remaining());
                 }
                 catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
-                if (!dataTable.getExceptions().isEmpty()) {
-                    List<String> exceptions = dataTable.getExceptions().entrySet().stream()
-                            .map(entry -> format("Error code: %d Error message: %s", entry.getKey(), entry.getValue()))
-                            .collect(toImmutableList());
-
-                    throw new PinotException(PINOT_EXCEPTION, Optional.of(query), format("Encountered %d exceptions: %s", exceptions.size(), exceptions));
-                }
-
-                return new PinotDataTableWithSize(dataTable, buffer.remaining());
             }
         }
     }

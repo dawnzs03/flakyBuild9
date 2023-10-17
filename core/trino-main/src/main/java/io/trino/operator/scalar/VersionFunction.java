@@ -36,8 +36,9 @@ public final class VersionFunction
 
     public VersionFunction(String nodeVersion)
     {
-        super(FunctionMetadata.scalarBuilder("version")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("version")
                         .returnType(VARCHAR)
                         .build())
                 .hidden()

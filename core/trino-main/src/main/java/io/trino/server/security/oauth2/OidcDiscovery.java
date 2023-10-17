@@ -97,7 +97,7 @@ public class OidcDiscovery
             }
             throw new IllegalStateException(format("Invalid response from OpenID Metadata endpoint. Expected response code to be %s, but was %s", OK.code(), statusCode));
         }
-        return readConfiguration(response.getBody());
+        return readConfiguration(response.getContent());
     }
 
     private OAuth2ServerConfig readConfiguration(String body)

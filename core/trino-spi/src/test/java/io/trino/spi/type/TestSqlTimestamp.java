@@ -13,7 +13,7 @@
  */
 package io.trino.spi.type;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.time.LocalDateTime;
 

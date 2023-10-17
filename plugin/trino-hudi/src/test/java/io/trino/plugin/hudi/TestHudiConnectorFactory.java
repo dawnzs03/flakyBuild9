@@ -21,7 +21,7 @@ import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.testing.TestingConnectorContext;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 

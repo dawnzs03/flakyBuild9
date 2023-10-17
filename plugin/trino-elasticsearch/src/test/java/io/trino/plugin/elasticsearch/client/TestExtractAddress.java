@@ -13,7 +13,7 @@
  */
 package io.trino.plugin.elasticsearch.client;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Optional;
 

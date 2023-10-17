@@ -15,7 +15,6 @@ package io.trino.plugin.deltalake.transactionlog.statistics;
 
 import io.trino.plugin.deltalake.DeltaLakeColumnHandle;
 import io.trino.spi.type.BigintType;
-import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -32,6 +31,7 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.VerboseMode;
+import org.testng.annotations.Test;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

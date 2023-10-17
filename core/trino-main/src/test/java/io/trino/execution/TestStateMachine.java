@@ -16,9 +16,8 @@ package io.trino.execution;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.Test;
 
 import java.util.concurrent.ExecutorService;
 
@@ -27,12 +26,10 @@ import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_CLASS)
 public class TestStateMachine
 {
     private enum State
@@ -42,7 +39,7 @@ public class TestStateMachine
 
     private ExecutorService executor = newCachedThreadPool(daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         executor.shutdownNow();

@@ -20,15 +20,9 @@ import io.trino.spi.block.BlockBuilderStatus;
 import io.trino.spi.block.LongArrayBlockBuilder;
 import io.trino.spi.block.PageBuilderStatus;
 import io.trino.spi.connector.ConnectorSession;
-import io.trino.spi.function.FlatFixed;
-import io.trino.spi.function.FlatFixedOffset;
-import io.trino.spi.function.FlatVariableWidth;
 import io.trino.spi.function.IsNull;
 import io.trino.spi.function.ScalarOperator;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
 import java.util.Optional;
 
 import static io.trino.spi.function.OperatorType.COMPARISON_UNORDERED_FIRST;
@@ -38,7 +32,6 @@ import static io.trino.spi.function.OperatorType.HASH_CODE;
 import static io.trino.spi.function.OperatorType.IS_DISTINCT_FROM;
 import static io.trino.spi.function.OperatorType.LESS_THAN;
 import static io.trino.spi.function.OperatorType.LESS_THAN_OR_EQUAL;
-import static io.trino.spi.function.OperatorType.READ_VALUE;
 import static io.trino.spi.function.OperatorType.XX_HASH_64;
 import static io.trino.spi.type.TypeOperatorDeclaration.extractOperatorDeclaration;
 import static java.lang.Double.doubleToLongBits;
@@ -50,7 +43,6 @@ public final class DoubleType
         implements FixedWidthType
 {
     private static final TypeOperatorDeclaration TYPE_OPERATOR_DECLARATION = extractOperatorDeclaration(DoubleType.class, lookup(), double.class);
-    private static final VarHandle DOUBLE_HANDLE = MethodHandles.byteArrayViewVarHandle(double[].class, ByteOrder.LITTLE_ENDIAN);
 
     public static final DoubleType DOUBLE = new DoubleType();
 
@@ -143,12 +135,6 @@ public final class DoubleType
     }
 
     @Override
-    public int getFlatFixedSize()
-    {
-        return Double.BYTES;
-    }
-
-    @Override
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     public boolean equals(Object other)
     {
@@ -167,26 +153,6 @@ public final class DoubleType
         // The range for double is undefined because NaN is a special value that
         // is *not* in any reasonable definition of a range for this type.
         return Optional.empty();
-    }
-
-    @ScalarOperator(READ_VALUE)
-    private static double readFlat(
-            @FlatFixed byte[] fixedSizeSlice,
-            @FlatFixedOffset int fixedSizeOffset,
-            @FlatVariableWidth byte[] unusedVariableSizeSlice)
-    {
-        return (double) DOUBLE_HANDLE.get(fixedSizeSlice, fixedSizeOffset);
-    }
-
-    @ScalarOperator(READ_VALUE)
-    private static void writeFlat(
-            double value,
-            byte[] fixedSizeSlice,
-            int fixedSizeOffset,
-            byte[] unusedVariableSizeSlice,
-            int unusedVariableSizeOffset)
-    {
-        DOUBLE_HANDLE.set(fixedSizeSlice, fixedSizeOffset, value);
     }
 
     @ScalarOperator(EQUAL)

@@ -23,20 +23,21 @@ import java.util.Iterator;
 import java.util.Optional;
 
 import static io.trino.filesystem.azure.AzureUtils.handleAzureException;
-import static java.util.Objects.requireNonNull;
 
 final class AzureDataLakeFileIterator
         implements FileIterator
 {
     private final AzureLocation location;
     private final Iterator<PathItem> iterator;
-    private final Location baseLocation;
+    private final String base;
 
     AzureDataLakeFileIterator(AzureLocation location, Iterator<PathItem> iterator)
     {
-        this.location = requireNonNull(location, "location is null");
-        this.iterator = requireNonNull(iterator, "iterator is null");
-        this.baseLocation = location.baseLocation();
+        this.location = location;
+        this.iterator = iterator;
+        this.base = "abfs://%s%s.dfs.core.windows.net".formatted(
+                location.container().map(container -> container + "@").orElse(""),
+                location.account());
     }
 
     @Override
@@ -58,7 +59,7 @@ final class AzureDataLakeFileIterator
         try {
             PathItem pathItem = iterator.next();
             return new FileEntry(
-                    baseLocation.appendPath(pathItem.getName()),
+                    Location.of(base + "/" + pathItem.getName()),
                     pathItem.getContentLength(),
                     pathItem.getLastModified().toInstant(),
                     Optional.empty());

@@ -16,12 +16,11 @@ package io.trino.operator.scalar;
 import com.google.common.collect.ImmutableList;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.function.BoundSignature;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Optional;
 
-import static io.trino.metadata.GlobalFunctionCatalog.builtinFunctionName;
 import static io.trino.spi.function.InvocationConvention.InvocationArgumentConvention.NEVER_NULL;
 import static io.trino.spi.function.InvocationConvention.InvocationReturnConvention.FAIL_ON_NULL;
 import static io.trino.spi.type.BigintType.BIGINT;
@@ -38,16 +37,15 @@ public class TestParametricScalarFunctionImplementationValidation
     {
         // Without cached instance factory
         MethodHandle validFunctionMethodHandle = methodHandle(TestParametricScalarFunctionImplementationValidation.class, "validConnectorSessionParameterPosition", ConnectorSession.class, long.class, long.class);
-        BoundSignature signature = new BoundSignature(builtinFunctionName("test"), BIGINT, ImmutableList.of(BIGINT, BIGINT));
         ChoicesSpecializedSqlScalarFunction validFunction = new ChoicesSpecializedSqlScalarFunction(
-                signature,
+                new BoundSignature("test", BIGINT, ImmutableList.of(BIGINT, BIGINT)),
                 FAIL_ON_NULL,
                 ImmutableList.of(NEVER_NULL, NEVER_NULL),
                 validFunctionMethodHandle);
         assertEquals(validFunction.getChoices().get(0).getMethodHandle(), validFunctionMethodHandle);
 
         assertThatThrownBy(() -> new ChoicesSpecializedSqlScalarFunction(
-                signature,
+                new BoundSignature("test", BIGINT, ImmutableList.of(BIGINT, BIGINT)),
                 FAIL_ON_NULL,
                 ImmutableList.of(NEVER_NULL, NEVER_NULL),
                 methodHandle(TestParametricScalarFunctionImplementationValidation.class, "invalidConnectorSessionParameterPosition", long.class, long.class, ConnectorSession.class)))
@@ -57,7 +55,7 @@ public class TestParametricScalarFunctionImplementationValidation
         // With cached instance factory
         MethodHandle validFunctionWithInstanceFactoryMethodHandle = methodHandle(TestParametricScalarFunctionImplementationValidation.class, "validConnectorSessionParameterPosition", Object.class, ConnectorSession.class, long.class, long.class);
         ChoicesSpecializedSqlScalarFunction validFunctionWithInstanceFactory = new ChoicesSpecializedSqlScalarFunction(
-                signature,
+                new BoundSignature("test", BIGINT, ImmutableList.of(BIGINT, BIGINT)),
                 FAIL_ON_NULL,
                 ImmutableList.of(NEVER_NULL, NEVER_NULL),
                 validFunctionWithInstanceFactoryMethodHandle,
@@ -65,7 +63,7 @@ public class TestParametricScalarFunctionImplementationValidation
         assertEquals(validFunctionWithInstanceFactory.getChoices().get(0).getMethodHandle(), validFunctionWithInstanceFactoryMethodHandle);
 
         assertThatThrownBy(() -> new ChoicesSpecializedSqlScalarFunction(
-                signature,
+                new BoundSignature("test", BIGINT, ImmutableList.of(BIGINT, BIGINT)),
                 FAIL_ON_NULL,
                 ImmutableList.of(NEVER_NULL, NEVER_NULL),
                 methodHandle(TestParametricScalarFunctionImplementationValidation.class, "invalidConnectorSessionParameterPosition", Object.class, long.class, long.class, ConnectorSession.class),

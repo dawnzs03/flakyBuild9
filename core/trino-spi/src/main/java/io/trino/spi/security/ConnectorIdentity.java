@@ -157,6 +157,7 @@ public class ConnectorIdentity
 
         public Builder withEnabledSystemRoles(Set<String> enabledSystemRoles)
         {
+            enabledSystemRoles = new HashSet<>(requireNonNull(enabledSystemRoles, "enabledSystemRoles is null"));
             this.enabledSystemRoles = new HashSet<>(requireNonNull(enabledSystemRoles, "enabledSystemRoles is null"));
             return this;
         }

@@ -26,14 +26,14 @@ import io.trino.spi.security.Identity;
 import io.trino.spi.security.RoleGrant;
 import io.trino.spi.security.SelectedRole;
 import io.trino.spi.security.TrinoPrincipal;
+import io.trino.sql.parser.ParsingOptions;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.tree.SetRole;
 import io.trino.testing.LocalQueryRunner;
 import io.trino.transaction.TransactionManager;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.Map;
@@ -50,10 +50,8 @@ import static io.trino.spi.security.PrincipalType.USER;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static io.trino.testing.assertions.TrinoExceptionAssert.assertTrinoExceptionThrownBy;
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 
-@TestInstance(PER_CLASS)
 public class TestSetRoleTask
 {
     private static final String CATALOG_NAME = "foo";
@@ -68,7 +66,7 @@ public class TestSetRoleTask
     private ExecutorService executor;
     private SqlParser parser;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         queryRunner = LocalQueryRunner.create(TEST_SESSION);
@@ -89,7 +87,7 @@ public class TestSetRoleTask
         executor = newCachedThreadPool(daemonThreadsNamed("test-set-role-task-executor-%s"));
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         if (queryRunner != null) {
@@ -148,7 +146,7 @@ public class TestSetRoleTask
 
     private QueryStateMachine executeSetRole(String statement)
     {
-        SetRole setRole = (SetRole) parser.createStatement(statement);
+        SetRole setRole = (SetRole) parser.createStatement(statement, new ParsingOptions());
         QueryStateMachine stateMachine = QueryStateMachine.begin(
                 Optional.empty(),
                 statement,

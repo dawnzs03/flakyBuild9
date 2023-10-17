@@ -28,6 +28,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static io.trino.jmh.Benchmarks.benchmark;
@@ -215,7 +216,9 @@ public class BenchmarkLongBitPacker
         @Setup
         public void setup()
         {
-            input = Slices.random(256 * 64).getInput();
+            byte[] bytes = new byte[256 * 64];
+            ThreadLocalRandom.current().nextBytes(bytes);
+            input = Slices.wrappedBuffer(bytes).getInput();
         }
     }
 

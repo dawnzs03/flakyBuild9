@@ -28,7 +28,6 @@ public enum TestingConnectorBehavior
     SUPPORTS_DELETE,
     SUPPORTS_ROW_LEVEL_DELETE(SUPPORTS_DELETE),
     SUPPORTS_UPDATE,
-    SUPPORTS_ROW_LEVEL_UPDATE(SUPPORTS_UPDATE),
     SUPPORTS_MERGE,
 
     SUPPORTS_TRUNCATE(SUPPORTS_DELETE),
@@ -87,9 +86,7 @@ public enum TestingConnectorBehavior
     SUPPORTS_DROP_COLUMN(SUPPORTS_ADD_COLUMN),
     SUPPORTS_DROP_FIELD(and(SUPPORTS_DROP_COLUMN, SUPPORTS_ROW_TYPE)),
     SUPPORTS_RENAME_COLUMN,
-    SUPPORTS_RENAME_FIELD(fallback -> fallback.test(SUPPORTS_RENAME_COLUMN) && fallback.test(SUPPORTS_ROW_TYPE)),
     SUPPORTS_SET_COLUMN_TYPE,
-    SUPPORTS_SET_FIELD_TYPE(fallback -> fallback.test(SUPPORTS_SET_COLUMN_TYPE) && fallback.test(SUPPORTS_ROW_TYPE)),
 
     SUPPORTS_COMMENT_ON_TABLE,
     SUPPORTS_COMMENT_ON_COLUMN(SUPPORTS_COMMENT_ON_TABLE),
@@ -104,7 +101,6 @@ public enum TestingConnectorBehavior
     SUPPORTS_MATERIALIZED_VIEW_FRESHNESS_FROM_BASE_TABLES(SUPPORTS_CREATE_MATERIALIZED_VIEW),
     SUPPORTS_RENAME_MATERIALIZED_VIEW(SUPPORTS_CREATE_MATERIALIZED_VIEW),
     SUPPORTS_RENAME_MATERIALIZED_VIEW_ACROSS_SCHEMAS(SUPPORTS_RENAME_MATERIALIZED_VIEW),
-    SUPPORTS_COMMENT_ON_MATERIALIZED_VIEW_COLUMN(SUPPORTS_CREATE_MATERIALIZED_VIEW),
 
     SUPPORTS_NOT_NULL_CONSTRAINT(SUPPORTS_CREATE_TABLE),
     SUPPORTS_ADD_COLUMN_NOT_NULL_CONSTRAINT(and(SUPPORTS_NOT_NULL_CONSTRAINT, SUPPORTS_ADD_COLUMN)),
@@ -116,8 +112,6 @@ public enum TestingConnectorBehavior
     SUPPORTS_MULTI_STATEMENT_WRITES(false),
 
     SUPPORTS_NATIVE_QUERY(true), // system.query or equivalent PTF for query passthrough
-
-    SUPPORTS_REPORTING_WRITTEN_BYTES(false),
 
     /**/;
 
@@ -137,7 +131,6 @@ public enum TestingConnectorBehavior
                         (name().equals("SUPPORTS_CANCELLATION") ||
                                 name().equals("SUPPORTS_DYNAMIC_FILTER_PUSHDOWN") ||
                                 name().equals("SUPPORTS_JOIN_PUSHDOWN") ||
-                                name().equals("SUPPORTS_REPORTING_WRITTEN_BYTES") ||
                                 name().equals("SUPPORTS_MULTI_STATEMENT_WRITES")),
                 "Every behavior should be expected to be true by default. Having mixed defaults makes reasoning about tests harder. False default provided for %s",
                 name());

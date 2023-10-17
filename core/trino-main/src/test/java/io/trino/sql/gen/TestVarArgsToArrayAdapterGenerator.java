@@ -101,8 +101,9 @@ public class TestVarArgsToArrayAdapterGenerator
 
         private TestVarArgsSum()
         {
-            super(FunctionMetadata.scalarBuilder("var_args_sum")
+            super(FunctionMetadata.scalarBuilder()
                     .signature(Signature.builder()
+                            .name("var_args_sum")
                             .returnType(INTEGER)
                             .argumentType(INTEGER)
                             .variableArity()

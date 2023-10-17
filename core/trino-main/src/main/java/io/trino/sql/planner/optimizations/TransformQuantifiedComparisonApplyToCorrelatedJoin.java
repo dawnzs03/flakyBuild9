@@ -40,6 +40,7 @@ import io.trino.sql.tree.ComparisonExpression;
 import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.GenericLiteral;
 import io.trino.sql.tree.NullLiteral;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.QuantifiedComparisonExpression;
 import io.trino.sql.tree.SearchedCaseExpression;
 import io.trino.sql.tree.SimpleCaseExpression;
@@ -92,23 +93,29 @@ public class TransformQuantifiedComparisonApplyToCorrelatedJoin
             PlanOptimizersStatsCollector planOptimizersStatsCollector,
             TableStatsProvider tableStatsProvider)
     {
-        return rewriteWith(new Rewriter(idAllocator, types, symbolAllocator, metadata), plan, null);
+        return rewriteWith(new Rewriter(idAllocator, types, symbolAllocator, metadata, session), plan, null);
     }
 
     private static class Rewriter
             extends SimplePlanRewriter<PlanNode>
     {
+        private static final QualifiedName MIN = QualifiedName.of("min");
+        private static final QualifiedName MAX = QualifiedName.of("max");
+        private static final QualifiedName COUNT = QualifiedName.of("count");
+
         private final PlanNodeIdAllocator idAllocator;
         private final TypeProvider types;
         private final SymbolAllocator symbolAllocator;
         private final Metadata metadata;
+        private final Session session;
 
-        public Rewriter(PlanNodeIdAllocator idAllocator, TypeProvider types, SymbolAllocator symbolAllocator, Metadata metadata)
+        public Rewriter(PlanNodeIdAllocator idAllocator, TypeProvider types, SymbolAllocator symbolAllocator, Metadata metadata, Session session)
         {
             this.idAllocator = requireNonNull(idAllocator, "idAllocator is null");
             this.types = requireNonNull(types, "types is null");
             this.symbolAllocator = requireNonNull(symbolAllocator, "symbolAllocator is null");
             this.metadata = requireNonNull(metadata, "metadata is null");
+            this.session = session;
         }
 
         @Override
@@ -134,8 +141,8 @@ public class TransformQuantifiedComparisonApplyToCorrelatedJoin
             Type outputColumnType = types.get(outputColumn);
             checkState(outputColumnType.isOrderable(), "Subquery result type must be orderable");
 
-            Symbol minValue = symbolAllocator.newSymbol("min", outputColumnType);
-            Symbol maxValue = symbolAllocator.newSymbol("max", outputColumnType);
+            Symbol minValue = symbolAllocator.newSymbol(MIN.toString(), outputColumnType);
+            Symbol maxValue = symbolAllocator.newSymbol(MAX.toString(), outputColumnType);
             Symbol countAllValue = symbolAllocator.newSymbol("count_all", BigintType.BIGINT);
             Symbol countNonNullValue = symbolAllocator.newSymbol("count_non_null", BigintType.BIGINT);
 
@@ -146,28 +153,28 @@ public class TransformQuantifiedComparisonApplyToCorrelatedJoin
                     subqueryPlan,
                     ImmutableMap.of(
                             minValue, new Aggregation(
-                                    metadata.resolveBuiltinFunction("min", fromTypes(outputColumnType)),
+                                    metadata.resolveFunction(session, MIN, fromTypes(outputColumnType)),
                                     outputColumnReferences,
                                     false,
                                     Optional.empty(),
                                     Optional.empty(),
                                     Optional.empty()),
                             maxValue, new Aggregation(
-                                    metadata.resolveBuiltinFunction("max", fromTypes(outputColumnType)),
+                                    metadata.resolveFunction(session, MAX, fromTypes(outputColumnType)),
                                     outputColumnReferences,
                                     false,
                                     Optional.empty(),
                                     Optional.empty(),
                                     Optional.empty()),
                             countAllValue, new Aggregation(
-                                    metadata.resolveBuiltinFunction("count", emptyList()),
+                                    metadata.resolveFunction(session, COUNT, emptyList()),
                                     ImmutableList.of(),
                                     false,
                                     Optional.empty(),
                                     Optional.empty(),
                                     Optional.empty()),
                             countNonNullValue, new Aggregation(
-                                    metadata.resolveBuiltinFunction("count", fromTypes(outputColumnType)),
+                                    metadata.resolveFunction(session, COUNT, fromTypes(outputColumnType)),
                                     outputColumnReferences,
                                     false,
                                     Optional.empty(),

@@ -26,11 +26,10 @@ import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.exchange.ExchangeSourceHandle;
 import io.trino.split.RemoteSplit;
 import io.trino.sql.planner.plan.PlanNodeId;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Optional;
 
-import static io.airlift.json.JsonCodec.jsonCodec;
 import static io.airlift.units.DataSize.Unit.KILOBYTE;
 import static io.trino.operator.ExchangeOperator.REMOTE_CATALOG_HANDLE;
 import static io.trino.spi.StandardErrorCode.EXCEEDED_TASK_DESCRIPTOR_STORAGE_CAPACITY;
@@ -52,7 +51,7 @@ public class TestTaskDescriptorStorage
     @Test
     public void testHappyPath()
     {
-        TaskDescriptorStorage manager = new TaskDescriptorStorage(DataSize.of(15, KILOBYTE), jsonCodec(Split.class));
+        TaskDescriptorStorage manager = new TaskDescriptorStorage(DataSize.of(15, KILOBYTE));
         manager.initialize(QUERY_1);
         manager.initialize(QUERY_2);
 
@@ -102,7 +101,7 @@ public class TestTaskDescriptorStorage
     @Test
     public void testDestroy()
     {
-        TaskDescriptorStorage manager = new TaskDescriptorStorage(DataSize.of(5, KILOBYTE), jsonCodec(Split.class));
+        TaskDescriptorStorage manager = new TaskDescriptorStorage(DataSize.of(5, KILOBYTE));
         manager.initialize(QUERY_1);
         manager.initialize(QUERY_2);
 
@@ -129,7 +128,7 @@ public class TestTaskDescriptorStorage
     @Test
     public void testCapacityExceeded()
     {
-        TaskDescriptorStorage manager = new TaskDescriptorStorage(DataSize.of(5, KILOBYTE), jsonCodec(Split.class));
+        TaskDescriptorStorage manager = new TaskDescriptorStorage(DataSize.of(5, KILOBYTE));
         manager.initialize(QUERY_1);
         manager.initialize(QUERY_2);
 

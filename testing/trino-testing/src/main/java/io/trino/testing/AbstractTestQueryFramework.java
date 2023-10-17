@@ -54,9 +54,6 @@ import io.trino.transaction.TransactionBuilder;
 import io.trino.util.AutoCloseableCloser;
 import org.assertj.core.api.AssertProvider;
 import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -78,6 +75,7 @@ import static io.trino.SystemSessionProperties.JOIN_DISTRIBUTION_TYPE;
 import static io.trino.SystemSessionProperties.JOIN_REORDERING_STRATEGY;
 import static io.trino.execution.StageInfo.getAllStages;
 import static io.trino.execution.querystats.PlanOptimizersStatsCollector.createPlanOptimizersStatsCollector;
+import static io.trino.sql.ParsingUtil.createParsingOptions;
 import static io.trino.sql.SqlFormatter.formatSql;
 import static io.trino.sql.planner.OptimizerConfig.JoinReorderingStrategy;
 import static io.trino.testing.assertions.Assert.assertEventually;
@@ -87,10 +85,8 @@ import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.fail;
 
-@TestInstance(PER_CLASS)
 public abstract class AbstractTestQueryFramework
 {
     private static final SqlParser SQL_PARSER = new SqlParser();
@@ -101,7 +97,6 @@ public abstract class AbstractTestQueryFramework
     private io.trino.sql.query.QueryAssertions queryAssertions;
 
     @BeforeClass
-    @BeforeAll
     public void init()
             throws Exception
     {
@@ -114,7 +109,6 @@ public abstract class AbstractTestQueryFramework
     protected abstract QueryRunner createQueryRunner()
             throws Exception;
 
-    @AfterAll
     @AfterClass(alwaysRun = true)
     public final void close()
             throws Exception
@@ -594,7 +588,7 @@ public abstract class AbstractTestQueryFramework
 
     protected String formatSqlText(@Language("SQL") String sql)
     {
-        return formatSql(SQL_PARSER.createStatement(sql));
+        return formatSql(SQL_PARSER.createStatement(sql, createParsingOptions(getSession())));
     }
 
     protected String getExplainPlan(@Language("SQL") String query, ExplainType.Type planType)
@@ -608,7 +602,7 @@ public abstract class AbstractTestQueryFramework
         return newTransaction()
                 .singleStatement()
                 .execute(session, transactionSession -> {
-                    return explainer.getPlan(transactionSession, SQL_PARSER.createStatement(query), planType, emptyList(), WarningCollector.NOOP, createPlanOptimizersStatsCollector());
+                    return explainer.getPlan(transactionSession, SQL_PARSER.createStatement(query, createParsingOptions(transactionSession)), planType, emptyList(), WarningCollector.NOOP, createPlanOptimizersStatsCollector());
                 });
     }
 
@@ -618,7 +612,7 @@ public abstract class AbstractTestQueryFramework
         return newTransaction()
                 .singleStatement()
                 .execute(queryRunner.getDefaultSession(), session -> {
-                    return explainer.getGraphvizPlan(session, SQL_PARSER.createStatement(query), planType, emptyList(), WarningCollector.NOOP, createPlanOptimizersStatsCollector());
+                    return explainer.getGraphvizPlan(session, SQL_PARSER.createStatement(query, createParsingOptions(session)), planType, emptyList(), WarningCollector.NOOP, createPlanOptimizersStatsCollector());
                 });
     }
 

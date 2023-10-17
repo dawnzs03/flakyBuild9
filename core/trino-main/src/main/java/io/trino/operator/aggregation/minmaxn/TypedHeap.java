@@ -14,114 +14,59 @@
 package io.trino.operator.aggregation.minmaxn;
 
 import com.google.common.base.Throwables;
-import com.google.common.primitives.Ints;
-import io.airlift.slice.SizeOf;
-import io.trino.operator.VariableWidthData;
+import io.trino.spi.block.ArrayBlockBuilder;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.block.RowBlockBuilder;
+import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.Type;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 
 import java.lang.invoke.MethodHandle;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.airlift.slice.SizeOf.instanceSize;
-import static io.trino.operator.VariableWidthData.EMPTY_CHUNK;
-import static io.trino.operator.VariableWidthData.MAX_CHUNK_SIZE;
-import static io.trino.operator.VariableWidthData.MIN_CHUNK_SIZE;
-import static io.trino.operator.VariableWidthData.POINTER_SIZE;
-import static io.trino.operator.VariableWidthData.getChunkOffset;
-import static io.trino.operator.VariableWidthData.getValueLength;
-import static io.trino.operator.VariableWidthData.writePointer;
+import static io.airlift.slice.SizeOf.sizeOf;
+import static io.trino.spi.type.BigintType.BIGINT;
+import static java.lang.Math.toIntExact;
 import static java.util.Objects.requireNonNull;
 
-public final class TypedHeap
+public class TypedHeap
 {
     private static final int INSTANCE_SIZE = instanceSize(TypedHeap.class);
 
+    private static final int COMPACT_THRESHOLD_BYTES = 32768;
+    private static final int COMPACT_THRESHOLD_RATIO = 3; // when 2/3 of elements in heapBlockBuilder is unreferenced, do compact
+
     private final boolean min;
-    private final MethodHandle readFlat;
-    private final MethodHandle writeFlat;
-    private final MethodHandle compareFlatFlat;
-    private final MethodHandle compareFlatBlock;
+    private final MethodHandle compare;
     private final Type elementType;
     private final int capacity;
 
-    private final int recordElementOffset;
-
-    private final int recordSize;
-    /**
-     * The fixed chunk contains an array of records. The records are laid out as follows:
-     * <ul>
-     *     <li>12 byte optional pointer to variable width data (only present if the type is variable width)</li>
-     *     <li>N byte fixed size data for the element type</li>
-     * </ul>
-     * The pointer is placed first to simplify the offset calculations for variable with code.
-     * This chunk contains {@code capacity + 1} records. The extra record is used for the swap operation.
-     */
-    private final byte[] fixedChunk;
-
-    private VariableWidthData variableWidthData;
-
     private int positionCount;
+    private final int[] heapIndex;
+    private BlockBuilder heapBlockBuilder;
 
-    public TypedHeap(
-            boolean min,
-            MethodHandle readFlat,
-            MethodHandle writeFlat,
-            MethodHandle compareFlatFlat,
-            MethodHandle compareFlatBlock,
-            Type elementType,
-            int capacity)
+    public TypedHeap(boolean min, MethodHandle compare, Type elementType, int capacity)
     {
         this.min = min;
-        this.readFlat = requireNonNull(readFlat, "readFlat is null");
-        this.writeFlat = requireNonNull(writeFlat, "writeFlat is null");
-        this.compareFlatFlat = requireNonNull(compareFlatFlat, "compareFlatFlat is null");
-        this.compareFlatBlock = requireNonNull(compareFlatBlock, "compareFlatBlock is null");
+        this.compare = requireNonNull(compare, "compare is null");
         this.elementType = requireNonNull(elementType, "elementType is null");
         this.capacity = capacity;
-
-        boolean variableWidth = elementType.isFlatVariableWidth();
-        variableWidthData = variableWidth ? new VariableWidthData() : null;
-        recordElementOffset = (variableWidth ? POINTER_SIZE : 0);
-
-        recordSize = recordElementOffset + elementType.getFlatFixedSize();
-
-        // allocate the fixed chunk with on extra slow for use in swap
-        fixedChunk = new byte[recordSize * (capacity + 1)];
+        this.heapIndex = new int[capacity];
+        this.heapBlockBuilder = elementType.createBlockBuilder(null, capacity);
     }
 
-    public TypedHeap(TypedHeap typedHeap)
+    // for copying
+    private TypedHeap(boolean min, MethodHandle compare, Type elementType, int capacity, int positionCount, int[] heapIndex, BlockBuilder heapBlockBuilder)
     {
-        this.min = typedHeap.min;
-        this.readFlat = typedHeap.readFlat;
-        this.writeFlat = typedHeap.writeFlat;
-        this.compareFlatFlat = typedHeap.compareFlatFlat;
-        this.compareFlatBlock = typedHeap.compareFlatBlock;
-        this.elementType = typedHeap.elementType;
-        this.capacity = typedHeap.capacity;
-        this.positionCount = typedHeap.positionCount;
-
-        this.recordElementOffset = typedHeap.recordElementOffset;
-
-        this.recordSize = typedHeap.recordSize;
-        this.fixedChunk = Arrays.copyOf(typedHeap.fixedChunk, typedHeap.fixedChunk.length);
-
-        if (typedHeap.variableWidthData != null) {
-            this.variableWidthData = new VariableWidthData(typedHeap.variableWidthData);
-        }
-        else {
-            this.variableWidthData = null;
-        }
-    }
-
-    public Type getElementType()
-    {
-        return elementType;
+        this.min = min;
+        this.compare = requireNonNull(compare, "compare is null");
+        this.elementType = requireNonNull(elementType, "elementType is null");
+        this.capacity = capacity;
+        this.positionCount = positionCount;
+        this.heapIndex = heapIndex;
+        this.heapBlockBuilder = heapBlockBuilder;
     }
 
     public int getCapacity()
@@ -131,9 +76,7 @@ public final class TypedHeap
 
     public long getEstimatedSize()
     {
-        return INSTANCE_SIZE +
-                SizeOf.sizeOf(fixedChunk) +
-                (variableWidthData == null ? 0 : variableWidthData.getRetainedSizeBytes());
+        return INSTANCE_SIZE + (heapBlockBuilder == null ? 0 : heapBlockBuilder.getRetainedSizeInBytes()) + sizeOf(heapIndex);
     }
 
     public boolean isEmpty()
@@ -141,53 +84,43 @@ public final class TypedHeap
         return positionCount == 0;
     }
 
-    public void writeAllSorted(BlockBuilder resultBlockBuilder)
+    public void serialize(BlockBuilder out)
     {
-        // fully sort the heap
-        int[] indexes = new int[positionCount];
-        for (int i = 0; i < indexes.length; i++) {
-            indexes[i] = i;
+        ((RowBlockBuilder) out).buildEntry(fieldBuilders -> {
+            BIGINT.writeLong(fieldBuilders.get(0), capacity);
+
+            ((ArrayBlockBuilder) fieldBuilders.get(1)).buildEntry(elementBuilder -> {
+                for (int i = 0; i < positionCount; i++) {
+                    elementType.appendTo(heapBlockBuilder, heapIndex[i], elementBuilder);
+                }
+            });
+        });
+    }
+
+    public static TypedHeap deserialize(boolean min, MethodHandle compare, Type elementType, Block rowBlock)
+    {
+        int capacity = toIntExact(BIGINT.getLong(rowBlock, 0));
+        int[] heapIndex = new int[capacity];
+
+        BlockBuilder heapBlockBuilder = elementType.createBlockBuilder(null, capacity);
+
+        Block heapBlock = new ArrayType(elementType).getObject(rowBlock, 1);
+        for (int position = 0; position < heapBlock.getPositionCount(); position++) {
+            heapIndex[position] = position;
+            elementType.appendTo(heapBlock, position, heapBlockBuilder);
         }
-        IntArrays.quickSort(indexes, this::compare);
+
+        return new TypedHeap(min, compare, elementType, capacity, heapBlock.getPositionCount(), heapIndex, heapBlockBuilder);
+    }
+
+    public void writeAll(BlockBuilder resultBlockBuilder)
+    {
+        int[] indexes = new int[positionCount];
+        System.arraycopy(heapIndex, 0, indexes, 0, positionCount);
+        IntArrays.quickSort(indexes, (a, b) -> compare(heapBlockBuilder, a, heapBlockBuilder, b));
 
         for (int index : indexes) {
-            write(index, resultBlockBuilder);
-        }
-    }
-
-    public void writeAllUnsorted(BlockBuilder elementBuilder)
-    {
-        for (int i = 0; i < positionCount; i++) {
-            write(i, elementBuilder);
-        }
-    }
-
-    private void write(int index, BlockBuilder blockBuilder)
-    {
-        int recordOffset = getRecordOffset(index);
-
-        byte[] variableWidthChunk = EMPTY_CHUNK;
-        if (variableWidthData != null) {
-            variableWidthChunk = variableWidthData.getChunk(fixedChunk, recordOffset);
-        }
-
-        try {
-            readFlat.invokeExact(
-                    fixedChunk,
-                    recordOffset + recordElementOffset,
-                    variableWidthChunk,
-                    blockBuilder);
-        }
-        catch (Throwable throwable) {
-            Throwables.throwIfUnchecked(throwable);
-            throw new RuntimeException(throwable);
-        }
-    }
-
-    public void addAll(Block block)
-    {
-        for (int i = 0; i < block.getPositionCount(); i++) {
-            add(block, i);
+            elementType.appendTo(heapBlockBuilder, index, resultBlockBuilder);
         }
     }
 
@@ -195,56 +128,33 @@ public final class TypedHeap
     {
         checkArgument(!block.isNull(position));
         if (positionCount == capacity) {
-            // is it possible the value is within the top N values?
-            if (!shouldConsiderValue(block, position)) {
-                return;
+            if (keyGreaterThanOrEqual(heapBlockBuilder, heapIndex[0], block, position)) {
+                return; // and new element is not larger than heap top: do not add
             }
-            clear(0);
-            set(0, block, position);
+            heapIndex[0] = heapBlockBuilder.getPositionCount();
+            elementType.appendTo(block, position, heapBlockBuilder);
             siftDown();
         }
         else {
-            set(positionCount, block, position);
+            heapIndex[positionCount] = heapBlockBuilder.getPositionCount();
             positionCount++;
+            elementType.appendTo(block, position, heapBlockBuilder);
             siftUp();
         }
+        compactIfNecessary();
     }
 
-    private void clear(int index)
+    public void addAll(TypedHeap other)
     {
-        if (variableWidthData == null) {
-            return;
+        for (int i = 0; i < other.positionCount; i++) {
+            add(other.heapBlockBuilder, other.heapIndex[i]);
         }
-
-        variableWidthData.free(fixedChunk, getRecordOffset(index));
-        variableWidthData = compactIfNecessary(
-                variableWidthData,
-                fixedChunk,
-                recordSize,
-                0,
-                positionCount,
-                (fixedSizeOffset, variableWidthChunk, variableWidthChunkOffset) ->
-                        elementType.relocateFlatVariableWidthOffsets(fixedChunk, fixedSizeOffset + recordElementOffset, variableWidthChunk, variableWidthChunkOffset));
     }
 
-    private void set(int index, Block block, int position)
+    public void addAll(Block block)
     {
-        int recordOffset = getRecordOffset(index);
-
-        byte[] variableWidthChunk = EMPTY_CHUNK;
-        int variableWidthChunkOffset = 0;
-        if (variableWidthData != null) {
-            int variableWidthLength = elementType.getFlatVariableWidthSize(block, position);
-            variableWidthChunk = variableWidthData.allocate(fixedChunk, recordOffset, variableWidthLength);
-            variableWidthChunkOffset = getChunkOffset(fixedChunk, recordOffset);
-        }
-
-        try {
-            writeFlat.invokeExact(block, position, fixedChunk, recordOffset + recordElementOffset, variableWidthChunk, variableWidthChunkOffset);
-        }
-        catch (Throwable throwable) {
-            Throwables.throwIfUnchecked(throwable);
-            throw new RuntimeException(throwable);
+        for (int i = 0; i < block.getPositionCount(); i++) {
+            add(block, i);
         }
     }
 
@@ -262,13 +172,14 @@ public final class TypedHeap
                 smallerChildPosition = leftPosition;
             }
             else {
-                smallerChildPosition = compare(leftPosition, rightPosition) < 0 ? rightPosition : leftPosition;
+                smallerChildPosition = keyGreaterThanOrEqual(heapBlockBuilder, heapIndex[leftPosition], heapBlockBuilder, heapIndex[rightPosition]) ? rightPosition : leftPosition;
             }
-            if (compare(smallerChildPosition, position) < 0) {
-                // child is larger or equal
-                break;
+            if (keyGreaterThanOrEqual(heapBlockBuilder, heapIndex[smallerChildPosition], heapBlockBuilder, heapIndex[position])) {
+                break; // child is larger or equal
             }
-            swap(position, smallerChildPosition);
+            int swapTemp = heapIndex[position];
+            heapIndex[position] = heapIndex[smallerChildPosition];
+            heapIndex[smallerChildPosition] = swapTemp;
             position = smallerChildPosition;
         }
     }
@@ -278,45 +189,36 @@ public final class TypedHeap
         int position = positionCount - 1;
         while (position != 0) {
             int parentPosition = (position - 1) / 2;
-            if (compare(position, parentPosition) < 0) {
-                // child is larger or equal
-                break;
+            if (keyGreaterThanOrEqual(heapBlockBuilder, heapIndex[position], heapBlockBuilder, heapIndex[parentPosition])) {
+                break; // child is larger or equal
             }
-            swap(position, parentPosition);
+            int swapTemp = heapIndex[position];
+            heapIndex[position] = heapIndex[parentPosition];
+            heapIndex[parentPosition] = swapTemp;
             position = parentPosition;
         }
     }
 
-    private void swap(int leftPosition, int rightPosition)
+    private void compactIfNecessary()
     {
-        int leftOffset = getRecordOffset(leftPosition);
-        int rightOffset = getRecordOffset(rightPosition);
-        int tempOffset = getRecordOffset(capacity);
-        System.arraycopy(fixedChunk, leftOffset, fixedChunk, tempOffset, recordSize);
-        System.arraycopy(fixedChunk, rightOffset, fixedChunk, leftOffset, recordSize);
-        System.arraycopy(fixedChunk, tempOffset, fixedChunk, rightOffset, recordSize);
+        // Byte size check is needed. Otherwise, if size * 3 is small, BlockBuilder can be reallocated too often.
+        // Position count is needed. Otherwise, for large elements, heap will be compacted every time.
+        // Size instead of retained size is needed because default allocation size can be huge for some block builders. And the first check will become useless in such case.
+        if (heapBlockBuilder.getSizeInBytes() < COMPACT_THRESHOLD_BYTES || heapBlockBuilder.getPositionCount() / positionCount < COMPACT_THRESHOLD_RATIO) {
+            return;
+        }
+        BlockBuilder newHeapBlockBuilder = elementType.createBlockBuilder(null, heapBlockBuilder.getPositionCount());
+        for (int i = 0; i < positionCount; i++) {
+            elementType.appendTo(heapBlockBuilder, heapIndex[i], newHeapBlockBuilder);
+            heapIndex[i] = i;
+        }
+        heapBlockBuilder = newHeapBlockBuilder;
     }
 
-    private int compare(int leftPosition, int rightPosition)
+    private int compare(Block leftBlock, int leftPosition, Block rightBlock, int rightPosition)
     {
-        int leftRecordOffset = getRecordOffset(leftPosition);
-        int rightRecordOffset = getRecordOffset(rightPosition);
-
-        byte[] leftVariableWidthChunk = EMPTY_CHUNK;
-        byte[] rightVariableWidthChunk = EMPTY_CHUNK;
-        if (variableWidthData != null) {
-            leftVariableWidthChunk = variableWidthData.getChunk(fixedChunk, leftRecordOffset);
-            rightVariableWidthChunk = variableWidthData.getChunk(fixedChunk, rightRecordOffset);
-        }
-
         try {
-            long result = (long) compareFlatFlat.invokeExact(
-                    fixedChunk,
-                    leftRecordOffset + recordElementOffset,
-                    leftVariableWidthChunk,
-                    fixedChunk,
-                    rightRecordOffset + recordElementOffset,
-                    rightVariableWidthChunk);
+            long result = (long) compare.invokeExact(leftBlock, leftPosition, rightBlock, rightPosition);
             return (int) (min ? result : -result);
         }
         catch (Throwable throwable) {
@@ -325,115 +227,17 @@ public final class TypedHeap
         }
     }
 
-    private boolean shouldConsiderValue(Block right, int rightPosition)
+    private boolean keyGreaterThanOrEqual(Block leftBlock, int leftPosition, Block rightBlock, int rightPosition)
     {
-        byte[] leftFixedRecordChunk = fixedChunk;
-        int leftRecordOffset = getRecordOffset(0);
-        byte[] leftVariableWidthChunk = EMPTY_CHUNK;
-        if (variableWidthData != null) {
-            leftVariableWidthChunk = variableWidthData.getChunk(leftFixedRecordChunk, leftRecordOffset);
-        }
-
-        try {
-            long result = (long) compareFlatBlock.invokeExact(
-                    leftFixedRecordChunk,
-                    leftRecordOffset + recordElementOffset,
-                    leftVariableWidthChunk,
-                    right,
-                    rightPosition);
-            return min ? result > 0 : result < 0;
-        }
-        catch (Throwable throwable) {
-            Throwables.throwIfUnchecked(throwable);
-            throw new RuntimeException(throwable);
-        }
+        return compare(leftBlock, leftPosition, rightBlock, rightPosition) < 0;
     }
 
-    private int getRecordOffset(int index)
+    public TypedHeap copy()
     {
-        return index * recordSize;
-    }
-
-    private static final double MAX_FREE_RATIO = 0.66;
-
-    public interface RelocateVariableWidthOffsets
-    {
-        void relocate(int fixedSizeOffset, byte[] variableWidthChunk, int variableWidthChunkOffset);
-    }
-
-    public static VariableWidthData compactIfNecessary(VariableWidthData data, byte[] fixedSizeChunk, int fixedRecordSize, int fixedRecordPointerOffset, int recordCount, RelocateVariableWidthOffsets relocateVariableWidthOffsets)
-    {
-        List<byte[]> chunks = data.getAllChunks();
-        double freeRatio = 1.0 * data.getFreeBytes() / data.getAllocatedBytes();
-        if (chunks.size() <= 1 || freeRatio < MAX_FREE_RATIO) {
-            return data;
+        BlockBuilder heapBlockBuilderCopy = null;
+        if (heapBlockBuilder != null) {
+            heapBlockBuilderCopy = (BlockBuilder) heapBlockBuilder.copyRegion(0, heapBlockBuilder.getPositionCount());
         }
-
-        // there are obviously much smarter ways to compact the memory, so feel free to improve this
-        List<byte[]> newSlices = new ArrayList<>();
-
-        int newSize = 0;
-        int indexStart = 0;
-        for (int i = 0; i < recordCount; i++) {
-            int valueLength = getValueLength(fixedSizeChunk, i * fixedRecordSize + fixedRecordPointerOffset);
-            if (newSize + valueLength > MAX_CHUNK_SIZE) {
-                moveVariableWidthToNewSlice(data, fixedSizeChunk, fixedRecordSize, fixedRecordPointerOffset, indexStart, i, newSlices, newSize, relocateVariableWidthOffsets);
-                indexStart = i;
-                newSize = 0;
-            }
-            newSize += valueLength;
-        }
-
-        // remaining data is copied into the open slice
-        int openChunkOffset;
-        if (newSize > 0) {
-            int openSliceSize = newSize;
-            if (newSize < MAX_CHUNK_SIZE) {
-                openSliceSize = Ints.constrainToRange(Ints.saturatedCast(openSliceSize * 2L), MIN_CHUNK_SIZE, MAX_CHUNK_SIZE);
-            }
-            moveVariableWidthToNewSlice(data, fixedSizeChunk, fixedRecordSize, fixedRecordPointerOffset, indexStart, recordCount, newSlices, openSliceSize, relocateVariableWidthOffsets);
-            openChunkOffset = newSize;
-        }
-        else {
-            openChunkOffset = newSlices.get(newSlices.size() - 1).length;
-        }
-
-        return new VariableWidthData(newSlices, openChunkOffset);
-    }
-
-    private static void moveVariableWidthToNewSlice(
-            VariableWidthData sourceData,
-            byte[] fixedSizeChunk,
-            int fixedRecordSize,
-            int fixedRecordPointerOffset,
-            int indexStart,
-            int indexEnd,
-            List<byte[]> newSlices,
-            int newSliceSize,
-            RelocateVariableWidthOffsets relocateVariableWidthOffsets)
-    {
-        int newSliceIndex = newSlices.size();
-        byte[] newSlice = new byte[newSliceSize];
-        newSlices.add(newSlice);
-
-        int newSliceOffset = 0;
-        for (int index = indexStart; index < indexEnd; index++) {
-            int fixedChunkOffset = index * fixedRecordSize;
-            int pointerOffset = fixedChunkOffset + fixedRecordPointerOffset;
-
-            int variableWidthOffset = getChunkOffset(fixedSizeChunk, pointerOffset);
-            byte[] variableWidthChunk = sourceData.getChunk(fixedSizeChunk, pointerOffset);
-            int variableWidthLength = getValueLength(fixedSizeChunk, pointerOffset);
-
-            System.arraycopy(variableWidthChunk, variableWidthOffset, newSlice, newSliceOffset, variableWidthLength);
-            writePointer(
-                    fixedSizeChunk,
-                    pointerOffset,
-                    newSliceIndex,
-                    newSliceOffset,
-                    variableWidthLength);
-            relocateVariableWidthOffsets.relocate(fixedChunkOffset, newSlice, newSliceOffset);
-            newSliceOffset += variableWidthLength;
-        }
+        return new TypedHeap(min, compare, elementType, capacity, positionCount, heapIndex.clone(), heapBlockBuilderCopy);
     }
 }

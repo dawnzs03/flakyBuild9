@@ -23,4 +23,6 @@ public interface ParametricImplementation
     boolean hasSpecializedTypeParameters();
 
     FunctionNullability getFunctionNullability();
+
+    ParametricImplementation withAlias(String alias);
 }

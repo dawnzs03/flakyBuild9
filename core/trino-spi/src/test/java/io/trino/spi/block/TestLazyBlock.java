@@ -14,13 +14,16 @@
 package io.trino.spi.block;
 
 import com.google.common.collect.ImmutableList;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 public class TestLazyBlock
 {
@@ -32,10 +35,10 @@ public class TestLazyBlock
         LazyBlock.listenForLoads(lazyBlock, notifications::add);
 
         Block loadedBlock = lazyBlock.getBlock();
-        assertThat(notifications).isEqualTo(ImmutableList.of(loadedBlock));
+        assertEquals(notifications, ImmutableList.of(loadedBlock));
 
         loadedBlock = lazyBlock.getBlock();
-        assertThat(notifications).isEqualTo(ImmutableList.of(loadedBlock));
+        assertEquals(notifications, ImmutableList.of(loadedBlock));
     }
 
     @Test
@@ -57,7 +60,7 @@ public class TestLazyBlock
         Block nestedRowBlock = lazyBlock.getBlock();
         LazyBlock.listenForLoads(lazyBlock, actualNotifications::add);
         Block loadedBlock = ((LazyBlock) nestedRowBlock.getChildren().get(0)).getBlock();
-        assertThat(actualNotifications).isEqualTo(ImmutableList.of(loadedBlock));
+        assertEquals(actualNotifications, ImmutableList.of(loadedBlock));
     }
 
     @Test
@@ -73,26 +76,26 @@ public class TestLazyBlock
         Block loadedBlock = lazyBlock.getBlock();
         assertThat(loadedBlock).isInstanceOf(DictionaryBlock.class);
         assertThat(((DictionaryBlock) loadedBlock).getDictionary()).isInstanceOf(LazyBlock.class);
-        assertThat(actualNotifications).isEqualTo(ImmutableList.of(loadedBlock));
+        assertEquals(actualNotifications, ImmutableList.of(loadedBlock));
 
         Block fullyLoadedBlock = lazyBlock.getLoadedBlock();
         assertThat(fullyLoadedBlock).isInstanceOf(DictionaryBlock.class);
         assertThat(((DictionaryBlock) fullyLoadedBlock).getDictionary()).isInstanceOf(IntArrayBlock.class);
-        assertThat(actualNotifications).isEqualTo(ImmutableList.of(loadedBlock, arrayBlock));
-        assertThat(lazyBlock.isLoaded()).isTrue();
-        assertThat(dictionaryBlock.isLoaded()).isTrue();
+        assertEquals(actualNotifications, ImmutableList.of(loadedBlock, arrayBlock));
+        assertTrue(lazyBlock.isLoaded());
+        assertTrue(dictionaryBlock.isLoaded());
     }
 
     private static void assertNotificationsRecursive(int depth, Block lazyBlock, List<Block> actualNotifications, List<Block> expectedNotifications)
     {
-        assertThat(lazyBlock.isLoaded()).isFalse();
+        assertFalse(lazyBlock.isLoaded());
         Block loadedBlock = ((LazyBlock) lazyBlock).getBlock();
         expectedNotifications.add(loadedBlock);
-        assertThat(actualNotifications).isEqualTo(expectedNotifications);
+        assertEquals(actualNotifications, expectedNotifications);
 
         if (loadedBlock instanceof ArrayBlock) {
-            long expectedSize = (long) (Integer.BYTES + Byte.BYTES) * loadedBlock.getPositionCount();
-            assertThat(loadedBlock.getSizeInBytes()).isEqualTo(expectedSize);
+            long expectedSize = (Integer.BYTES + Byte.BYTES) * loadedBlock.getPositionCount();
+            assertEquals(loadedBlock.getSizeInBytes(), expectedSize);
 
             Block elementsBlock = loadedBlock.getChildren().get(0);
             if (depth > 0) {
@@ -100,12 +103,12 @@ public class TestLazyBlock
             }
 
             expectedSize += elementsBlock.getSizeInBytes();
-            assertThat(loadedBlock.getSizeInBytes()).isEqualTo(expectedSize);
+            assertEquals(loadedBlock.getSizeInBytes(), expectedSize);
             return;
         }
         if (loadedBlock instanceof RowBlock) {
-            long expectedSize = (long) (Integer.BYTES + Byte.BYTES) * loadedBlock.getPositionCount();
-            assertThat(loadedBlock.getSizeInBytes()).isEqualTo(expectedSize);
+            long expectedSize = (Integer.BYTES + Byte.BYTES) * loadedBlock.getPositionCount();
+            assertEquals(loadedBlock.getSizeInBytes(), expectedSize);
 
             for (Block fieldBlock : loadedBlock.getChildren()) {
                 if (depth > 0) {
@@ -114,7 +117,7 @@ public class TestLazyBlock
 
                 long fieldBlockSize = fieldBlock.getSizeInBytes();
                 expectedSize += fieldBlockSize;
-                assertThat(loadedBlock.getSizeInBytes()).isEqualTo(expectedSize);
+                assertEquals(loadedBlock.getSizeInBytes(), expectedSize);
             }
             return;
         }

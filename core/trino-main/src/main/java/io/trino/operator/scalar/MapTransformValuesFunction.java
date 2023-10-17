@@ -87,8 +87,9 @@ public final class MapTransformValuesFunction
 
     private MapTransformValuesFunction()
     {
-        super(FunctionMetadata.scalarBuilder("transform_values")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("transform_values")
                         .typeVariable("K")
                         .typeVariable("V1")
                         .typeVariable("V2")

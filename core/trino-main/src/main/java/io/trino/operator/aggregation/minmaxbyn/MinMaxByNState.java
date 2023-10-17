@@ -48,4 +48,11 @@ public interface MinMaxByNState
      * Write this state to the specified block builder.
      */
     void serialize(BlockBuilder out);
+
+    /**
+     * Read the state to the specified block builder.
+     *
+     * @throws IllegalStateException if state is already initialized
+     */
+    void deserialize(Block rowBlock);
 }

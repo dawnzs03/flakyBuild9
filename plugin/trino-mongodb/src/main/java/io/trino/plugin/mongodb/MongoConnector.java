@@ -45,7 +45,6 @@ public class MongoConnector
     private final MongoSplitManager splitManager;
     private final MongoPageSourceProvider pageSourceProvider;
     private final MongoPageSinkProvider pageSinkProvider;
-    private final MongoMetadataFactory mongoMetadataFactory;
     private final Set<ConnectorTableFunction> connectorTableFunctions;
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -57,7 +56,6 @@ public class MongoConnector
             MongoSplitManager splitManager,
             MongoPageSourceProvider pageSourceProvider,
             MongoPageSinkProvider pageSinkProvider,
-            MongoMetadataFactory mongoMetadataFactory,
             Set<ConnectorTableFunction> connectorTableFunctions,
             Set<SessionPropertiesProvider> sessionPropertiesProviders)
     {
@@ -65,7 +63,6 @@ public class MongoConnector
         this.splitManager = requireNonNull(splitManager, "splitManager is null");
         this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
         this.pageSinkProvider = requireNonNull(pageSinkProvider, "pageSinkProvider is null");
-        this.mongoMetadataFactory = requireNonNull(mongoMetadataFactory, "mongoMetadataFactory is null");
         this.connectorTableFunctions = ImmutableSet.copyOf(requireNonNull(connectorTableFunctions, "connectorTableFunctions is null"));
         this.sessionProperties = sessionPropertiesProviders.stream()
                 .flatMap(sessionPropertiesProvider -> sessionPropertiesProvider.getSessionProperties().stream())
@@ -77,7 +74,7 @@ public class MongoConnector
     {
         checkConnectorSupports(READ_UNCOMMITTED, isolationLevel);
         MongoTransactionHandle transaction = new MongoTransactionHandle();
-        transactions.put(transaction, mongoMetadataFactory.create());
+        transactions.put(transaction, new MongoMetadata(mongoSession));
         return transaction;
     }
 

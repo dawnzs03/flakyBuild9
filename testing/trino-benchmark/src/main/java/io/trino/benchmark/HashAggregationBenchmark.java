@@ -61,7 +61,7 @@ public class HashAggregationBenchmark
                 100_000,
                 Optional.of(DataSize.of(16, MEGABYTE)),
                 new JoinCompiler(localQueryRunner.getTypeOperators()),
-                localQueryRunner.getTypeOperators(),
+                localQueryRunner.getBlockTypeOperators(),
                 Optional.empty());
         return ImmutableList.of(tableScanOperator, aggregationOperator);
     }

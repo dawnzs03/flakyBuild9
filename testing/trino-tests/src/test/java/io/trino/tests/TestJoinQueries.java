@@ -19,8 +19,7 @@ import io.trino.testing.AbstractTestJoinQueries;
 import io.trino.testing.MaterializedResult;
 import io.trino.testing.QueryRunner;
 import io.trino.tests.tpch.TpchQueryRunnerBuilder;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.testng.annotations.Test;
 
 import static com.google.common.base.Verify.verify;
 import static io.trino.testing.QueryAssertions.assertEqualsIgnoreOrder;
@@ -62,8 +61,7 @@ public class TestJoinQueries
      * Note: The test is expected to take ~25 second. The increase in run time is contributed by the decreased split queue size and the
      * decreased size of the broadcast output buffer.
      */
-    @Test
-    @Timeout(120)
+    @Test(timeOut = 120_000)
     public void testBroadcastJoinDeadlockResolution()
             throws Exception
     {

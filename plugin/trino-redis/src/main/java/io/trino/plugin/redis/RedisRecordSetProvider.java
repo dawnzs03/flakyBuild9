@@ -16,7 +16,6 @@ package io.trino.plugin.redis;
 import com.google.inject.Inject;
 import io.trino.decoder.DispatchingRowDecoderFactory;
 import io.trino.decoder.RowDecoder;
-import io.trino.decoder.RowDecoderSpec;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorRecordSetProvider;
 import io.trino.spi.connector.ConnectorSession;
@@ -58,24 +57,20 @@ public class RedisRecordSetProvider
                 .collect(toImmutableList());
 
         RowDecoder keyDecoder = decoderFactory.create(
-                session,
-                new RowDecoderSpec(
-                        redisSplit.getKeyDataFormat(),
-                        emptyMap(),
-                        redisColumns.stream()
-                                .filter(col -> !col.isInternal())
-                                .filter(RedisColumnHandle::isKeyDecoder)
-                                .collect(toImmutableSet())));
+                redisSplit.getKeyDataFormat(),
+                emptyMap(),
+                redisColumns.stream()
+                        .filter(col -> !col.isInternal())
+                        .filter(RedisColumnHandle::isKeyDecoder)
+                        .collect(toImmutableSet()));
 
         RowDecoder valueDecoder = decoderFactory.create(
-                session,
-                new RowDecoderSpec(
-                        redisSplit.getValueDataFormat(),
-                        emptyMap(),
-                        redisColumns.stream()
-                                .filter(col -> !col.isInternal())
-                                .filter(col -> !col.isKeyDecoder())
-                                .collect(toImmutableSet())));
+                redisSplit.getValueDataFormat(),
+                emptyMap(),
+                redisColumns.stream()
+                        .filter(col -> !col.isInternal())
+                        .filter(col -> !col.isKeyDecoder())
+                        .collect(toImmutableSet()));
 
         return new RedisRecordSet(redisSplit, jedisManager, redisColumns, keyDecoder, valueDecoder);
     }

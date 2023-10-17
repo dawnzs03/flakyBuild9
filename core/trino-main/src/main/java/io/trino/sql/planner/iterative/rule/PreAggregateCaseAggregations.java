@@ -22,7 +22,6 @@ import io.trino.matching.Captures;
 import io.trino.matching.Pattern;
 import io.trino.metadata.ResolvedFunction;
 import io.trino.spi.TrinoException;
-import io.trino.spi.function.CatalogSchemaFunctionName;
 import io.trino.spi.type.BigintType;
 import io.trino.spi.type.DecimalType;
 import io.trino.spi.type.Int128;
@@ -41,6 +40,7 @@ import io.trino.sql.planner.plan.ProjectNode;
 import io.trino.sql.tree.Cast;
 import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.NodeRef;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.SearchedCaseExpression;
 import io.trino.sql.tree.SymbolReference;
 import io.trino.sql.tree.WhenClause;
@@ -57,7 +57,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static io.trino.SystemSessionProperties.isPreAggregateCaseAggregationsEnabled;
 import static io.trino.matching.Capture.newCapture;
-import static io.trino.metadata.GlobalFunctionCatalog.builtinFunctionName;
 import static io.trino.spi.type.DoubleType.DOUBLE;
 import static io.trino.spi.type.IntegerType.INTEGER;
 import static io.trino.spi.type.RealType.REAL;
@@ -103,14 +102,7 @@ public class PreAggregateCaseAggregations
         implements Rule<AggregationNode>
 {
     private static final int MIN_AGGREGATION_COUNT = 4;
-
-    // BE EXTREMELY CAREFUL WHEN ADDING NEW FUNCTIONS TO THIS SET
-    // This code appears to be generic, but is not. It only works because the allowed functions have very specific behavior.
-    private static final CatalogSchemaFunctionName MAX = builtinFunctionName("max");
-    private static final CatalogSchemaFunctionName MIN = builtinFunctionName("min");
-    private static final CatalogSchemaFunctionName SUM = builtinFunctionName("sum");
-    private static final Set<CatalogSchemaFunctionName> ALLOWED_FUNCTIONS = ImmutableSet.of(MAX, MIN, SUM);
-
+    private static final Set<String> ALLOWED_FUNCTIONS = ImmutableSet.of("max", "min", "sum");
     private static final Capture<ProjectNode> PROJECT_CAPTURE = newCapture();
     private static final Pattern<AggregationNode> PATTERN = aggregation()
             .matching(aggregation -> aggregation.getStep() == SINGLE && aggregation.getGroupingSetCount() == 1)
@@ -337,8 +329,7 @@ public class PreAggregateCaseAggregations
             return Optional.empty();
         }
 
-        ResolvedFunction resolvedFunction = aggregation.getResolvedFunction();
-        CatalogSchemaFunctionName name = resolvedFunction.getSignature().getName();
+        String name = aggregation.getResolvedFunction().getSignature().getName();
         if (!ALLOWED_FUNCTIONS.contains(name)) {
             // only cumulative aggregations (e.g. that can be split into aggregation of aggregations) are supported
             return Optional.empty();
@@ -363,10 +354,10 @@ public class PreAggregateCaseAggregations
             return Optional.empty();
         }
 
-        Type aggregationType = resolvedFunction.getSignature().getReturnType();
+        Type aggregationType = aggregation.getResolvedFunction().getSignature().getReturnType();
         ResolvedFunction cumulativeFunction;
         try {
-            cumulativeFunction = plannerContext.getMetadata().resolveBuiltinFunction(name.getFunctionName(), fromTypes(aggregationType));
+            cumulativeFunction = plannerContext.getMetadata().resolveFunction(context.getSession(), QualifiedName.of(name), fromTypes(aggregationType));
         }
         catch (TrinoException e) {
             // there is no cumulative aggregation
@@ -383,7 +374,7 @@ public class PreAggregateCaseAggregations
             Type defaultType = getType(context, caseExpression.getDefaultValue().get());
             Object defaultValue = optimizeExpression(caseExpression.getDefaultValue().get(), context);
             if (defaultValue != null) {
-                if (!name.equals(SUM)) {
+                if (!name.equals("sum")) {
                     return Optional.empty();
                 }
 
@@ -412,7 +403,7 @@ public class PreAggregateCaseAggregations
 
         return Optional.of(new CaseAggregation(
                 aggregationSymbol,
-                resolvedFunction,
+                aggregation.getResolvedFunction(),
                 cumulativeFunction,
                 name,
                 caseExpression.getWhenClauses().get(0).getOperand(),
@@ -441,7 +432,7 @@ public class PreAggregateCaseAggregations
         // cumulative aggregation function (e.g. aggregation of aggregations)
         private final ResolvedFunction cumulativeFunction;
         // aggregation function name
-        private final CatalogSchemaFunctionName name;
+        private final String name;
         // CASE expression only operand expression
         private final Expression operand;
         // CASE expression only result expression
@@ -453,7 +444,7 @@ public class PreAggregateCaseAggregations
                 Symbol aggregationSymbol,
                 ResolvedFunction function,
                 ResolvedFunction cumulativeFunction,
-                CatalogSchemaFunctionName name,
+                String name,
                 Expression operand,
                 Expression result,
                 Optional<Expression> cumulativeAggregationDefaultValue)
@@ -482,7 +473,7 @@ public class PreAggregateCaseAggregations
             return cumulativeFunction;
         }
 
-        public CatalogSchemaFunctionName getName()
+        public String getName()
         {
             return name;
         }

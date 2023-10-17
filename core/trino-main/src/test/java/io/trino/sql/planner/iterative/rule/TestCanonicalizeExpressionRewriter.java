@@ -13,7 +13,6 @@
  */
 package io.trino.sql.planner.iterative.rule;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.security.AllowAllAccessControl;
 import io.trino.spi.type.Type;
@@ -23,8 +22,6 @@ import io.trino.sql.planner.TypeAnalyzer;
 import io.trino.sql.planner.TypeProvider;
 import io.trino.sql.planner.assertions.SymbolAliases;
 import io.trino.sql.planner.iterative.rule.test.PlanBuilder;
-import io.trino.sql.tree.Expression;
-import io.trino.sql.tree.FunctionCall;
 import io.trino.sql.tree.SymbolReference;
 import io.trino.transaction.TransactionManager;
 import org.junit.jupiter.api.Test;
@@ -35,7 +32,6 @@ import static io.trino.spi.type.TimestampType.createTimestampType;
 import static io.trino.spi.type.TimestampWithTimeZoneType.createTimestampWithTimeZoneType;
 import static io.trino.spi.type.VarcharType.createVarcharType;
 import static io.trino.sql.ExpressionTestUtils.assertExpressionEquals;
-import static io.trino.sql.analyzer.TypeSignatureProvider.fromTypes;
 import static io.trino.sql.planner.TestingPlannerContext.plannerContextBuilder;
 import static io.trino.sql.planner.TypeAnalyzer.createTestingTypeAnalyzer;
 import static io.trino.sql.planner.iterative.rule.CanonicalizeExpressionRewriter.rewrite;
@@ -113,30 +109,17 @@ public class TestCanonicalizeExpressionRewriter
     @Test
     public void testCanonicalizeRewriteDateFunctionToCast()
     {
-        assertCanonicalizedDate(createTimestampType(3), "ts");
-        assertCanonicalizedDate(createTimestampWithTimeZoneType(3), "tstz");
-        assertCanonicalizedDate(createVarcharType(100), "v");
-    }
-
-    private static void assertCanonicalizedDate(Type type, String symbolName)
-    {
-        FunctionCall date = new FunctionCall(
-                PLANNER_CONTEXT.getMetadata().resolveBuiltinFunction("date", fromTypes(type)).toQualifiedName(),
-                ImmutableList.of(new SymbolReference(symbolName)));
-        assertRewritten(date, "CAST(" + symbolName + " as DATE)");
+        assertRewritten("date(ts)", "CAST(ts as DATE)");
+        assertRewritten("date(tstz)", "CAST(tstz as DATE)");
+        assertRewritten("date(v)", "CAST(v as DATE)");
     }
 
     private static void assertRewritten(String from, String to)
     {
-        assertRewritten(PlanBuilder.expression(from), to);
-    }
-
-    private static void assertRewritten(Expression from, String to)
-    {
         assertExpressionEquals(
                 transaction(TRANSACTION_MANAGER, ACCESS_CONTROL).execute(TEST_SESSION, transactedSession -> {
                     return rewrite(
-                            from,
+                            PlanBuilder.expression(from),
                             transactedSession,
                             PLANNER_CONTEXT,
                             TYPE_ANALYZER,

@@ -14,7 +14,7 @@
 package io.trino.plugin.accumulo.model;
 
 import org.apache.accumulo.core.data.Range;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 

@@ -15,6 +15,7 @@ package io.trino.sql.planner.assertions;
 
 import com.google.common.collect.ImmutableList;
 import io.trino.spi.type.Type;
+import io.trino.sql.parser.ParsingOptions;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.planner.Symbol;
 import io.trino.sql.planner.SymbolAllocator;
@@ -48,7 +49,7 @@ public class PatternRecognitionExpressionRewriter
 
     public static ExpressionAndValuePointers rewrite(String definition, Map<IrLabel, Set<IrLabel>> subsets)
     {
-        return rewrite(new SqlParser().createExpression(definition), subsets);
+        return rewrite(new SqlParser().createExpression(definition, new ParsingOptions()), subsets);
     }
 
     public static ExpressionAndValuePointers rewrite(Expression definition, Map<IrLabel, Set<IrLabel>> subsets)

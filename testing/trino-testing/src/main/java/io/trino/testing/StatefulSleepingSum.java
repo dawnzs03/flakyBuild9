@@ -40,8 +40,9 @@ public class StatefulSleepingSum
 
     private StatefulSleepingSum()
     {
-        super(FunctionMetadata.scalarBuilder("stateful_sleeping_sum")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("stateful_sleeping_sum")
                         .typeVariable("bigint")
                         .returnType(BIGINT)
                         .argumentType(DOUBLE)

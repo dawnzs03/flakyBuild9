@@ -36,22 +36,19 @@ public class KuduSplit
     private final int primaryKeyColumnCount;
     private final byte[] serializedScanToken;
     private final int bucketNumber;
-    private final List<HostAddress> addresses;
 
     @JsonCreator
     public KuduSplit(
             @JsonProperty("schemaTableName") SchemaTableName schemaTableName,
             @JsonProperty("primaryKeyColumnCount") int primaryKeyColumnCount,
             @JsonProperty("serializedScanToken") byte[] serializedScanToken,
-            @JsonProperty("bucketNumber") int bucketNumber,
-            @JsonProperty("addresses") List<HostAddress> addresses)
+            @JsonProperty("bucketNumber") int bucketNumber)
     {
         this.schemaTableName = requireNonNull(schemaTableName, "schemaTableName is null");
         this.primaryKeyColumnCount = primaryKeyColumnCount;
         this.serializedScanToken = requireNonNull(serializedScanToken, "serializedScanToken is null");
         checkArgument(bucketNumber >= 0, "bucketNumber is negative");
         this.bucketNumber = bucketNumber;
-        this.addresses = ImmutableList.copyOf(requireNonNull(addresses, "addresses is null"));
     }
 
     @JsonProperty
@@ -84,11 +81,10 @@ public class KuduSplit
         return true;
     }
 
-    @JsonProperty
     @Override
     public List<HostAddress> getAddresses()
     {
-        return addresses;
+        return ImmutableList.of();
     }
 
     @Override

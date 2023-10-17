@@ -20,7 +20,7 @@ import io.trino.spi.connector.ConnectorOutputTableHandle;
 import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.security.TrinoPrincipal;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -32,7 +32,7 @@ import static io.trino.spi.security.PrincipalType.USER;
 import static io.trino.testing.TestingConnectorSession.SESSION;
 import static io.trino.testing.assertions.TrinoExceptionAssert.assertTrinoExceptionThrownBy;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.testng.Assert.assertEquals;
 
 public class TestBlackHoleMetadata
 {
@@ -47,9 +47,9 @@ public class TestBlackHoleMetadata
     @Test
     public void testCreateSchema()
     {
-        assertThat(metadata.listSchemaNames(SESSION)).isEqualTo(ImmutableList.of("default"));
+        assertEquals(metadata.listSchemaNames(SESSION), ImmutableList.of("default"));
         metadata.createSchema(SESSION, "test", ImmutableMap.of(), new TrinoPrincipal(USER, SESSION.getUser()));
-        assertThat(metadata.listSchemaNames(SESSION)).isEqualTo(ImmutableList.of("default", "test"));
+        assertEquals(metadata.listSchemaNames(SESSION), ImmutableList.of("default", "test"));
     }
 
     @Test
@@ -70,8 +70,8 @@ public class TestBlackHoleMetadata
         metadata.finishCreateTable(SESSION, table, ImmutableList.of(), ImmutableList.of());
 
         List<SchemaTableName> tables = metadata.listTables(SESSION, Optional.empty());
-        assertThat(tables).hasSize(1);
-        assertThat(tables.get(0).getTableName()).isEqualTo("temp_table");
+        assertEquals(tables.size(), 1, "Expected only one table.");
+        assertEquals(tables.get(0).getTableName(), "temp_table", "Expected table with name 'temp_table'");
     }
 
     @Test
@@ -85,6 +85,6 @@ public class TestBlackHoleMetadata
 
     private void assertThatNoTableIsCreated()
     {
-        assertThat(metadata.listTables(SESSION, Optional.empty())).isEmpty();
+        assertEquals(metadata.listTables(SESSION, Optional.empty()), ImmutableList.of(), "No table was expected");
     }
 }

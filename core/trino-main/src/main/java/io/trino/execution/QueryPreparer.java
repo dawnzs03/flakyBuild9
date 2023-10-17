@@ -32,6 +32,7 @@ import java.util.Optional;
 import static io.trino.execution.ParameterExtractor.getParameterCount;
 import static io.trino.spi.StandardErrorCode.INVALID_PARAMETER_USAGE;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static io.trino.sql.ParsingUtil.createParsingOptions;
 import static io.trino.sql.analyzer.ConstantExpressionVerifier.verifyExpressionIsConstant;
 import static io.trino.sql.analyzer.SemanticExceptions.semanticException;
 import static io.trino.util.StatementUtils.getQueryType;
@@ -51,7 +52,7 @@ public class QueryPreparer
     public PreparedQuery prepareQuery(Session session, String query)
             throws ParsingException, TrinoException
     {
-        Statement wrappedStatement = sqlParser.createStatement(query);
+        Statement wrappedStatement = sqlParser.createStatement(query, createParsingOptions(session));
         return prepareQuery(session, wrappedStatement);
     }
 
@@ -62,12 +63,13 @@ public class QueryPreparer
         Optional<String> prepareSql = Optional.empty();
         if (statement instanceof Execute executeStatement) {
             prepareSql = Optional.of(session.getPreparedStatementFromExecute(executeStatement));
-            statement = sqlParser.createStatement(prepareSql.get());
+            statement = sqlParser.createStatement(prepareSql.get(), createParsingOptions(session));
         }
         else if (statement instanceof ExecuteImmediate executeImmediateStatement) {
             statement = sqlParser.createStatement(
                     executeImmediateStatement.getStatement().getValue(),
-                    executeImmediateStatement.getStatement().getLocation().orElseThrow(() -> new ParsingException("Missing location for embedded statement")));
+                    executeImmediateStatement.getStatement().getLocation().orElseThrow(() -> new ParsingException("Missing location for embedded statement")),
+                    createParsingOptions(session));
         }
         else if (statement instanceof ExplainAnalyze explainAnalyzeStatement) {
             Statement innerStatement = explainAnalyzeStatement.getStatement();

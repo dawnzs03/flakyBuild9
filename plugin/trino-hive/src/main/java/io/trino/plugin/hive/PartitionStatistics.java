@@ -94,11 +94,6 @@ public class PartitionStatistics
         return new Builder();
     }
 
-    public PartitionStatistics withBasicStatistics(HiveBasicStatistics basicStatistics)
-    {
-        return new PartitionStatistics(basicStatistics, columnStatistics);
-    }
-
     public static class Builder
     {
         private HiveBasicStatistics basicStatistics = HiveBasicStatistics.createEmptyStatistics();

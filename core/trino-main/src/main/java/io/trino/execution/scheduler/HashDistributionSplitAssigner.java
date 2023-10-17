@@ -224,7 +224,10 @@ class HashDistributionSplitAssigner
 
         // adjust targetPartitionSizeInBytes based on total input bytes
         if (targetMaxTaskCount != Integer.MAX_VALUE || targetMinTaskCount != 0) {
-            long totalBytes = mergedEstimate.getTotalSizeInBytes();
+            long totalBytes = 0;
+            for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                totalBytes += mergedEstimate.getPartitionSizeInBytes(partitionId);
+            }
 
             if (totalBytes / targetPartitionSizeInBytes > targetMaxTaskCount) {
                 // targetMaxTaskCount is only used to adjust targetPartitionSizeInBytes to avoid excessive number

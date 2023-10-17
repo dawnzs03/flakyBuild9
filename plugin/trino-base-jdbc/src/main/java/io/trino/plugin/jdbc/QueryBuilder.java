@@ -60,15 +60,6 @@ public interface QueryBuilder
             TupleDomain<ColumnHandle> tupleDomain,
             Optional<ParameterizedExpression> additionalPredicate);
 
-    PreparedQuery prepareUpdateQuery(
-            JdbcClient client,
-            ConnectorSession session,
-            Connection connection,
-            JdbcNamedRelationHandle baseRelation,
-            TupleDomain<ColumnHandle> tupleDomain,
-            Optional<ParameterizedExpression> additionalPredicate,
-            List<JdbcAssignmentItem> assignments);
-
     PreparedStatement prepareStatement(
             JdbcClient client,
             ConnectorSession session,

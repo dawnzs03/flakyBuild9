@@ -20,10 +20,9 @@ import io.trino.operator.GroupIdOperator.GroupIdOperatorFactory;
 import io.trino.spi.Page;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.testing.MaterializedResult;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -40,16 +39,15 @@ import static io.trino.testing.MaterializedResult.resultBuilder;
 import static io.trino.testing.TestingTaskContext.createTaskContext;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 
-@TestInstance(PER_METHOD)
+@Test(singleThreaded = true)
 public class TestGroupIdOperator
 {
     private ExecutorService executor;
     private ScheduledExecutorService scheduledExecutor;
     private DriverContext driverContext;
 
-    @BeforeEach
+    @BeforeMethod
     public void setUp()
     {
         executor = newCachedThreadPool(daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
@@ -60,7 +58,7 @@ public class TestGroupIdOperator
                 .addDriverContext();
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void tearDown()
     {
         executor.shutdownNow();

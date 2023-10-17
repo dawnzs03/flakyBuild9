@@ -13,9 +13,6 @@
  */
 package io.trino.sql.parser;
 
-import io.trino.grammar.sql.SqlBaseBaseListener;
-import io.trino.grammar.sql.SqlBaseLexer;
-import io.trino.grammar.sql.SqlBaseParser;
 import io.trino.sql.tree.DataType;
 import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.Node;
@@ -23,7 +20,6 @@ import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.PathSpecification;
 import io.trino.sql.tree.RowPattern;
 import io.trino.sql.tree.Statement;
-import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonToken;
@@ -37,6 +33,7 @@ import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.Pair;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.Arrays;
@@ -49,7 +46,7 @@ import static java.util.Objects.requireNonNull;
 
 public class SqlParser
 {
-    private static final ANTLRErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
+    private static final BaseErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
     {
         @Override
         public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String message, RecognitionException e)
@@ -84,45 +81,45 @@ public class SqlParser
         this.initializer = requireNonNull(initializer, "initializer is null");
     }
 
-    public Statement createStatement(String sql)
+    public Statement createStatement(String sql, ParsingOptions parsingOptions)
     {
-        return (Statement) invokeParser("statement", sql, SqlBaseParser::singleStatement);
+        return (Statement) invokeParser("statement", sql, SqlBaseParser::singleStatement, parsingOptions);
     }
 
-    public Statement createStatement(String sql, NodeLocation location)
+    public Statement createStatement(String sql, NodeLocation location, ParsingOptions parsingOptions)
     {
-        return (Statement) invokeParser("statement", sql, Optional.ofNullable(location), SqlBaseParser::singleStatement);
+        return (Statement) invokeParser("statement", sql, Optional.ofNullable(location), SqlBaseParser::singleStatement, parsingOptions);
     }
 
-    public Expression createExpression(String expression)
+    public Expression createExpression(String expression, ParsingOptions parsingOptions)
     {
-        return (Expression) invokeParser("expression", expression, SqlBaseParser::standaloneExpression);
+        return (Expression) invokeParser("expression", expression, SqlBaseParser::standaloneExpression, parsingOptions);
     }
 
     public DataType createType(String expression)
     {
-        return (DataType) invokeParser("type", expression, SqlBaseParser::standaloneType);
+        return (DataType) invokeParser("type", expression, SqlBaseParser::standaloneType, new ParsingOptions());
     }
 
     public PathSpecification createPathSpecification(String expression)
     {
-        return (PathSpecification) invokeParser("path specification", expression, SqlBaseParser::standalonePathSpecification);
+        return (PathSpecification) invokeParser("path specification", expression, SqlBaseParser::standalonePathSpecification, new ParsingOptions());
     }
 
     public RowPattern createRowPattern(String pattern)
     {
-        return (RowPattern) invokeParser("row pattern", pattern, SqlBaseParser::standaloneRowPattern);
+        return (RowPattern) invokeParser("row pattern", pattern, SqlBaseParser::standaloneRowPattern, new ParsingOptions());
     }
 
-    private Node invokeParser(String name, String sql, Function<SqlBaseParser, ParserRuleContext> parseFunction)
+    private Node invokeParser(String name, String sql, Function<SqlBaseParser, ParserRuleContext> parseFunction, ParsingOptions parsingOptions)
     {
-        return invokeParser(name, sql, Optional.empty(), parseFunction);
+        return invokeParser(name, sql, Optional.empty(), parseFunction, parsingOptions);
     }
 
-    private Node invokeParser(String name, String sql, Optional<NodeLocation> location, Function<SqlBaseParser, ParserRuleContext> parseFunction)
+    private Node invokeParser(String name, String sql, Optional<NodeLocation> location, Function<SqlBaseParser, ParserRuleContext> parseFunction, ParsingOptions parsingOptions)
     {
         try {
-            SqlBaseLexer lexer = new SqlBaseLexer(CharStreams.fromString(sql));
+            SqlBaseLexer lexer = new SqlBaseLexer(new CaseInsensitiveStream(CharStreams.fromString(sql)));
             CommonTokenStream tokenStream = new CommonTokenStream(lexer);
             SqlBaseParser parser = new SqlBaseParser(tokenStream);
             initializer.accept(lexer, parser);
@@ -152,19 +149,17 @@ public class SqlParser
 
             ParserRuleContext tree;
             try {
-                try {
-                    // first, try parsing with potentially faster SLL mode
-                    parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
-                    tree = parseFunction.apply(parser);
-                }
-                catch (ParsingException ex) {
-                    // if we fail, parse with LL mode
-                    tokenStream.seek(0); // rewind input stream
-                    parser.reset();
+                // first, try parsing with potentially faster SLL mode
+                parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
+                tree = parseFunction.apply(parser);
+            }
+            catch (ParseCancellationException ex) {
+                // if we fail, parse with LL mode
+                tokenStream.seek(0); // rewind input stream
+                parser.reset();
 
-                    parser.getInterpreter().setPredictionMode(PredictionMode.LL);
-                    tree = parseFunction.apply(parser);
-                }
+                parser.getInterpreter().setPredictionMode(PredictionMode.LL);
+                tree = parseFunction.apply(parser);
             }
             catch (ParsingException e) {
                 location.ifPresent(statementLocation -> {
@@ -179,7 +174,7 @@ public class SqlParser
                 throw e;
             }
 
-            return new AstBuilder(location).visit(tree);
+            return new AstBuilder(location, parsingOptions).visit(tree);
         }
         catch (StackOverflowError e) {
             throw new ParsingException(name + " is too large (stack overflow while parsing)");

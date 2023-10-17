@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Properties;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -63,6 +64,7 @@ public abstract class LineFileWriterFactory
 {
     private final TrinoFileSystemFactory fileSystemFactory;
     private final TypeManager typeManager;
+    private final Predicate<ConnectorSession> activation;
     private final LineSerializerFactory lineSerializerFactory;
     private final LineWriterFactory lineWriterFactory;
     private final boolean headerSupported;
@@ -72,10 +74,12 @@ public abstract class LineFileWriterFactory
             TypeManager typeManager,
             LineSerializerFactory lineSerializerFactory,
             LineWriterFactory lineWriterFactory,
+            Predicate<ConnectorSession> activation,
             boolean headerSupported)
     {
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
+        this.activation = requireNonNull(activation, "activation is null");
         this.lineSerializerFactory = requireNonNull(lineSerializerFactory, "lineSerializerFactory is null");
         this.lineWriterFactory = requireNonNull(lineWriterFactory, "lineWriterFactory is null");
         this.headerSupported = headerSupported;
@@ -95,7 +99,8 @@ public abstract class LineFileWriterFactory
             WriterKind writerKind)
     {
         if (!lineWriterFactory.getHiveOutputFormatClassName().equals(storageFormat.getOutputFormat()) ||
-                !lineSerializerFactory.getHiveSerDeClassNames().contains(storageFormat.getSerde())) {
+                !lineSerializerFactory.getHiveSerDeClassNames().contains(storageFormat.getSerde()) ||
+                !activation.test(session)) {
             return Optional.empty();
         }
 

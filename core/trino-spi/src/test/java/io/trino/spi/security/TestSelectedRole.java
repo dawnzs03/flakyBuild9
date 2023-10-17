@@ -14,12 +14,12 @@
 package io.trino.spi.security;
 
 import io.airlift.json.JsonCodec;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Optional;
 
 import static io.airlift.json.JsonCodec.jsonCodec;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.testng.Assert.assertEquals;
 
 public class TestSelectedRole
 {
@@ -35,7 +35,7 @@ public class TestSelectedRole
 
     private static void assertJsonRoundTrip(SelectedRole expected)
     {
-        assertThat(SELECTED_ROLE_JSON_CODEC.fromJson(SELECTED_ROLE_JSON_CODEC.toJson(expected))).isEqualTo(expected);
+        assertEquals(SELECTED_ROLE_JSON_CODEC.fromJson(SELECTED_ROLE_JSON_CODEC.toJson(expected)), expected);
     }
 
     @Test
@@ -48,6 +48,6 @@ public class TestSelectedRole
 
     private static void assertToStringRoundTrip(SelectedRole expected)
     {
-        assertThat(SelectedRole.valueOf(expected.toString())).isEqualTo(expected);
+        assertEquals(SelectedRole.valueOf(expected.toString()), expected);
     }
 }

@@ -35,13 +35,12 @@ import io.trino.spi.type.LongTimestamp;
 import io.trino.spi.type.RealType;
 import io.trino.spi.type.TimestampType;
 import io.trino.sql.gen.IsolatedClass;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.util.Optional;
 
-import static io.trino.metadata.GlobalFunctionCatalog.builtinFunctionName;
 import static io.trino.operator.aggregation.AggregationFunctionAdapter.AggregationParameterKind.INPUT_CHANNEL;
 import static io.trino.operator.aggregation.AggregationFunctionAdapter.AggregationParameterKind.STATE;
 import static io.trino.operator.aggregation.AggregationFunctionAdapter.normalizeInputMethod;
@@ -88,10 +87,7 @@ public class TestAccumulatorCompiler
         AccumulatorStateSerializer<S> stateSerializer = StateCompiler.generateStateSerializer(stateInterface);
         AccumulatorStateFactory<S> stateFactory = StateCompiler.generateStateFactory(stateInterface);
 
-        BoundSignature signature = new BoundSignature(
-                builtinFunctionName("longTimestampAggregation"),
-                RealType.REAL,
-                ImmutableList.of(TIMESTAMP_PICOS));
+        BoundSignature signature = new BoundSignature("longTimestampAggregation", RealType.REAL, ImmutableList.of(TIMESTAMP_PICOS));
         MethodHandle inputFunction = methodHandle(aggregation, "input", stateInterface, LongTimestamp.class);
         inputFunction = normalizeInputMethod(inputFunction, signature, STATE, INPUT_CHANNEL);
         MethodHandle combineFunction = methodHandle(aggregation, "combine", stateInterface, stateInterface);

@@ -63,8 +63,9 @@ public final class MapConcatFunction
 
     public MapConcatFunction(BlockTypeOperators blockTypeOperators)
     {
-        super(FunctionMetadata.scalarBuilder(FUNCTION_NAME)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name(FUNCTION_NAME)
                         .typeVariable("K")
                         .typeVariable("V")
                         .returnType(mapType(new TypeSignature("K"), new TypeSignature("V")))

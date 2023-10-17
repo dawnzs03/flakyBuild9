@@ -114,7 +114,7 @@ public final class OrcWriter
     private final DictionaryCompressionOptimizer dictionaryCompressionOptimizer;
     private int stripeRowCount;
     private int rowGroupRowCount;
-    private long bufferedBytes;
+    private int bufferedBytes;
     private long columnWritersRetainedBytes;
     private long closedStripesRetainedBytes;
     private long previouslyRecordedSizeInBytes;
@@ -224,7 +224,7 @@ public final class OrcWriter
     /**
      * Number of pending bytes not yet flushed.
      */
-    public long getBufferedBytes()
+    public int getBufferedBytes()
     {
         return bufferedBytes;
     }
@@ -376,7 +376,7 @@ public final class OrcWriter
         }
 
         // convert any dictionary encoded column with a low compression ratio to direct
-        dictionaryCompressionOptimizer.finalOptimize(toIntExact(bufferedBytes));
+        dictionaryCompressionOptimizer.finalOptimize(bufferedBytes);
 
         columnWriters.forEach(ColumnWriter::close);
 

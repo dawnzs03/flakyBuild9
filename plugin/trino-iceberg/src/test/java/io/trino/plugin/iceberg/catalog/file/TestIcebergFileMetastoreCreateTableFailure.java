@@ -25,9 +25,8 @@ import io.trino.plugin.iceberg.TestingIcebergPlugin;
 import io.trino.spi.connector.SchemaNotFoundException;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,14 +36,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.google.common.io.MoreFiles.deleteRecursively;
 import static com.google.common.io.RecursiveDeleteOption.ALLOW_INSECURE;
 import static com.google.inject.util.Modules.EMPTY_MODULE;
-import static io.trino.plugin.hive.HiveTestUtils.HDFS_FILE_SYSTEM_FACTORY;
+import static io.trino.plugin.hive.HiveTestUtils.HDFS_ENVIRONMENT;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
+@Test(singleThreaded = true) // testException is a shared mutable state
 public class TestIcebergFileMetastoreCreateTableFailure
         extends AbstractTestQueryFramework
 {
@@ -63,7 +61,7 @@ public class TestIcebergFileMetastoreCreateTableFailure
         // Using FileHiveMetastore as approximation of HMS
         this.metastore = new FileHiveMetastore(
                 new NodeVersion("testversion"),
-                HDFS_FILE_SYSTEM_FACTORY,
+                HDFS_ENVIRONMENT,
                 new HiveMetastoreConfig().isHideDeltaLakeTables(),
                 new FileHiveMetastoreConfig()
                         .setCatalogDirectory(dataDirectory.toString()))
@@ -88,7 +86,7 @@ public class TestIcebergFileMetastoreCreateTableFailure
         return queryRunner;
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void cleanup()
             throws Exception
     {

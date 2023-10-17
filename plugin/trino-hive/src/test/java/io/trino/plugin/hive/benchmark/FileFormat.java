@@ -16,6 +16,7 @@ package io.trino.plugin.hive.benchmark;
 import io.trino.hdfs.HdfsEnvironment;
 import io.trino.plugin.hive.HiveCompressionCodec;
 import io.trino.plugin.hive.HivePageSourceFactory;
+import io.trino.plugin.hive.HiveRecordCursorProvider;
 import io.trino.plugin.hive.HiveStorageFormat;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorPageSource;
@@ -25,6 +26,7 @@ import io.trino.spi.type.Type;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 public interface FileFormat
 {
@@ -40,7 +42,9 @@ public interface FileFormat
 
     boolean supportsDate();
 
-    HivePageSourceFactory getHivePageSourceFactory(HdfsEnvironment environment);
+    Optional<HivePageSourceFactory> getHivePageSourceFactory(HdfsEnvironment environment);
+
+    Optional<HiveRecordCursorProvider> getHiveRecordCursorProvider(HdfsEnvironment environment);
 
     ConnectorPageSource createFileFormatReader(
             ConnectorSession session,

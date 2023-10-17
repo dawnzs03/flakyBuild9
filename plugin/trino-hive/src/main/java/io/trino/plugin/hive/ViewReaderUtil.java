@@ -49,7 +49,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.linkedin.coral.trino.rel2trino.functions.TrinoKeywordsConverter.quoteWordIfNotQuoted;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_INVALID_VIEW_DATA;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_VIEW_TRANSLATION_ERROR;
-import static io.trino.plugin.hive.HiveMetadata.PRESTO_VIEW_COMMENT;
 import static io.trino.plugin.hive.HiveMetadata.TABLE_COMMENT;
 import static io.trino.plugin.hive.HiveSessionProperties.isHiveViewsLegacyTranslation;
 import static io.trino.plugin.hive.HiveStorageFormat.TEXTFILE;
@@ -83,7 +82,7 @@ public final class ViewReaderUtil
             boolean runHiveViewRunAsInvoker,
             HiveTimestampPrecision hiveViewsTimestampPrecision)
     {
-        if (isTrinoView(table)) {
+        if (isPrestoView(table)) {
             return new PrestoViewReader();
         }
         if (isHiveViewsLegacyTranslation(session)) {
@@ -131,44 +130,26 @@ public final class ViewReaderUtil
     private static final JsonCodec<ConnectorViewDefinition> VIEW_CODEC =
             new JsonCodecFactory(new ObjectMapperProvider()).jsonCodec(ConnectorViewDefinition.class);
 
-    /**
-     * Returns true if table represents a Hive view, Trino/Presto view, materialized view or anything
-     * else that gets registered using table type "VIRTUAL_VIEW".
-     * Note: this method returns false for a table that represents Hive's own materialized view
-     * ("MATERIALIZED_VIEW" table type). Hive own's materialized views are currently treated as ordinary
-     * tables by Trino.
-     */
-    public static boolean isSomeKindOfAView(Table table)
+    public static boolean isPrestoView(Table table)
     {
-        return table.getTableType().equals(VIRTUAL_VIEW.name());
+        return isPrestoView(table.getParameters());
     }
 
-    public static boolean isHiveView(Table table)
+    public static boolean isPrestoView(Map<String, String> tableParameters)
     {
-        return table.getTableType().equals(VIRTUAL_VIEW.name()) &&
-                !table.getParameters().containsKey(PRESTO_VIEW_FLAG);
+        // TODO isPrestoView should not return true for materialized views
+        return "true".equals(tableParameters.get(PRESTO_VIEW_FLAG));
     }
 
-    /**
-     * Returns true when the table represents a "Trino view" (AKA "presto view").
-     * Returns false for Hive views or Trino materialized views.
-     */
-    public static boolean isTrinoView(Table table)
+    public static boolean isHiveOrPrestoView(Table table)
     {
-        return isTrinoView(table.getTableType(), table.getParameters());
+        return isHiveOrPrestoView(table.getTableType());
     }
 
-    /**
-     * Returns true when the table represents a "Trino view" (AKA "presto view").
-     * Returns false for Hive views or Trino materialized views.
-     */
-    public static boolean isTrinoView(String tableType, Map<String, String> tableParameters)
+    public static boolean isHiveOrPrestoView(String tableType)
     {
-        // A Trino view can be recognized by table type "VIRTUAL_VIEW" and table parameters presto_view="true" and comment="Presto View" since their first implementation see
-        // https://github.com/trinodb/trino/blame/38bd0dff736024f3ae01dbbe7d1db5bd1d50c43e/presto-hive/src/main/java/com/facebook/presto/hive/HiveMetadata.java#L902.
-        return tableType.equals(VIRTUAL_VIEW.name()) &&
-                "true".equals(tableParameters.get(PRESTO_VIEW_FLAG)) &&
-                PRESTO_VIEW_COMMENT.equalsIgnoreCase(tableParameters.get(TABLE_COMMENT));
+        // TODO isHiveOrPrestoView should not return true for materialized views
+        return tableType.equals(VIRTUAL_VIEW.name());
     }
 
     public static boolean isTrinoMaterializedView(Table table)
@@ -178,12 +159,15 @@ public final class ViewReaderUtil
 
     public static boolean isTrinoMaterializedView(String tableType, Map<String, String> tableParameters)
     {
-        // A Trino materialized view can be recognized by table type "VIRTUAL_VIEW" and table parameters presto_view="true" and comment="Presto Materialized View"
-        // since their first implementation see
-        // https://github.com/trinodb/trino/blame/ff4a1e31fb9cb49f1b960abfc16ad469e7126a64/plugin/trino-iceberg/src/main/java/io/trino/plugin/iceberg/IcebergMetadata.java#L898
-        return tableType.equals(VIRTUAL_VIEW.name()) &&
-                "true".equals(tableParameters.get(PRESTO_VIEW_FLAG)) &&
-                ICEBERG_MATERIALIZED_VIEW_COMMENT.equalsIgnoreCase(tableParameters.get(TABLE_COMMENT));
+        // TODO isHiveOrPrestoView should not return true for materialized views
+        return isHiveOrPrestoView(tableType) && isPrestoView(tableParameters) && tableParameters.get(TABLE_COMMENT).equalsIgnoreCase(ICEBERG_MATERIALIZED_VIEW_COMMENT);
+    }
+
+    public static boolean canDecodeView(Table table)
+    {
+        // we can decode Hive or Presto view
+        return table.getTableType().equals(VIRTUAL_VIEW.name()) &&
+                !isTrinoMaterializedView(table.getTableType(), table.getParameters());
     }
 
     public static String encodeViewData(ConnectorViewDefinition definition)

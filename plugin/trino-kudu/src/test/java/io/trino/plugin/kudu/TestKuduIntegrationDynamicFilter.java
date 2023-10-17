@@ -37,8 +37,7 @@ import io.trino.tpch.TpchTable;
 import io.trino.transaction.TransactionId;
 import io.trino.transaction.TransactionManager;
 import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,8 +74,7 @@ public class TestKuduIntegrationDynamicFilter
                 TpchTable.getTables());
     }
 
-    @Test
-    @Timeout(30)
+    @Test(timeOut = 30_000)
     public void testIncompleteDynamicFilterTimeout()
             throws Exception
     {
@@ -149,7 +147,7 @@ public class TestKuduIntegrationDynamicFilter
                 "SELECT * FROM lineitem JOIN orders ON lineitem.orderkey = orders.orderkey AND orders.comment = 'nstructions sleep furiously among '",
                 withBroadcastJoin(),
                 6,
-                1);
+                6, 1);
     }
 
     @Test
@@ -163,7 +161,7 @@ public class TestKuduIntegrationDynamicFilter
                         " AND p.partkey = l.partkey AND p.comment = 'onic deposits'",
                 withBroadcastJoinNonReordering(),
                 1,
-                1, 1);
+                1, 1, 1);
     }
 
     private void assertDynamicFiltering(@Language("SQL") String selectQuery, Session session, int expectedRowCount, int... expectedOperatorRowsRead)

@@ -63,20 +63,13 @@ public final class HiveCoercionPolicy
                     toHiveType.equals(HIVE_BYTE) ||
                     toHiveType.equals(HIVE_SHORT) ||
                     toHiveType.equals(HIVE_INT) ||
-                    toHiveType.equals(HIVE_LONG) ||
-                    toHiveType.equals(HIVE_TIMESTAMP);
+                    toHiveType.equals(HIVE_LONG);
         }
         if (fromType instanceof CharType) {
             return toType instanceof CharType;
         }
         if (toType instanceof VarcharType) {
-            return fromHiveType.equals(HIVE_BYTE) ||
-                    fromHiveType.equals(HIVE_SHORT) ||
-                    fromHiveType.equals(HIVE_INT) ||
-                    fromHiveType.equals(HIVE_LONG) ||
-                    fromHiveType.equals(HIVE_TIMESTAMP) ||
-                    fromHiveType.equals(HIVE_DOUBLE) ||
-                    fromType instanceof DecimalType;
+            return fromHiveType.equals(HIVE_BYTE) || fromHiveType.equals(HIVE_SHORT) || fromHiveType.equals(HIVE_INT) || fromHiveType.equals(HIVE_LONG) || fromHiveType.equals(HIVE_TIMESTAMP) || fromType instanceof DecimalType;
         }
         if (fromHiveType.equals(HIVE_BYTE)) {
             return toHiveType.equals(HIVE_SHORT) || toHiveType.equals(HIVE_INT) || toHiveType.equals(HIVE_LONG);

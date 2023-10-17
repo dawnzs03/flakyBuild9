@@ -25,6 +25,7 @@ import io.trino.sql.planner.Symbol;
 import io.trino.sql.planner.iterative.rule.test.BaseRuleTest;
 import io.trino.sql.planner.plan.AggregationNode;
 import io.trino.sql.planner.plan.Assignments;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.SymbolReference;
 import org.junit.jupiter.api.Test;
 
@@ -51,7 +52,7 @@ public class TestPruneCountAggregationOverScalar
                                 .addAggregation(
                                         p.symbol("count_1", BigintType.BIGINT),
                                         functionResolution
-                                                .functionCallBuilder("count")
+                                                .functionCallBuilder(QualifiedName.of("count"))
                                                 .build(),
                                         ImmutableList.of())
                                 .source(
@@ -68,7 +69,7 @@ public class TestPruneCountAggregationOverScalar
                                 .addAggregation(
                                         p.symbol("count_1", BigintType.BIGINT),
                                         functionResolution
-                                                .functionCallBuilder("count")
+                                                .functionCallBuilder(QualifiedName.of("count"))
                                                 .build(),
                                         ImmutableList.of())
                                 .globalGrouping()
@@ -90,7 +91,7 @@ public class TestPruneCountAggregationOverScalar
                                 .addAggregation(
                                         p.symbol("count_1", BigintType.BIGINT),
                                         functionResolution
-                                                .functionCallBuilder("count")
+                                                .functionCallBuilder(QualifiedName.of("count"))
                                                 .build(),
                                         ImmutableList.of())
                                 .step(AggregationNode.Step.SINGLE)
@@ -108,7 +109,7 @@ public class TestPruneCountAggregationOverScalar
                                 .addAggregation(
                                         p.symbol("count_1", BigintType.BIGINT),
                                         functionResolution
-                                                .functionCallBuilder("count")
+                                                .functionCallBuilder(QualifiedName.of("count"))
                                                 .build(),
                                         ImmutableList.of())
                                 .step(AggregationNode.Step.SINGLE)
@@ -126,7 +127,7 @@ public class TestPruneCountAggregationOverScalar
                                 .addAggregation(
                                         p.symbol("count_1", BigintType.BIGINT),
                                         functionResolution
-                                                .functionCallBuilder("count")
+                                                .functionCallBuilder(QualifiedName.of("count"))
                                                 .build(),
                                         ImmutableList.of())
                                 .step(AggregationNode.Step.SINGLE)
@@ -149,7 +150,7 @@ public class TestPruneCountAggregationOverScalar
                     AggregationNode inner = p.aggregation((a) -> a
                             .addAggregation(totalPrice,
                                     functionResolution
-                                            .functionCallBuilder("sum")
+                                            .functionCallBuilder(QualifiedName.of("sum"))
                                             .addArgument(DOUBLE, new SymbolReference("totalprice"))
                                             .build(),
                                     ImmutableList.of(DOUBLE))
@@ -169,7 +170,7 @@ public class TestPruneCountAggregationOverScalar
                             .addAggregation(
                                     p.symbol("sum_outer", DOUBLE),
                                     functionResolution
-                                            .functionCallBuilder("sum")
+                                            .functionCallBuilder(QualifiedName.of("sum"))
                                             .addArgument(DOUBLE, new SymbolReference("sum_inner"))
                                             .build(),
                                     ImmutableList.of(DOUBLE))

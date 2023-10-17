@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import static io.trino.block.BlockAssertions.assertBlockEquals;
 import static io.trino.spi.type.BooleanType.BOOLEAN;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
@@ -87,26 +86,5 @@ public class TestBooleanType
     protected Object getGreaterValue(Object value)
     {
         return true;
-    }
-
-    @Test
-    public void testRange()
-    {
-        assertThat(type.getRange())
-                .isEmpty();
-    }
-
-    @Test
-    public void testPreviousValue()
-    {
-        assertThat(type.getPreviousValue(getSampleValue()))
-                .isEmpty();
-    }
-
-    @Test
-    public void testNextValue()
-    {
-        assertThat(type.getNextValue(getSampleValue()))
-                .isEmpty();
     }
 }

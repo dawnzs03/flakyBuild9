@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import io.trino.Session;
 import io.trino.spi.TrinoException;
 import io.trino.spi.function.BoundSignature;
 import io.trino.spi.function.FunctionId;
@@ -86,6 +87,7 @@ public class SignatureBinder
     // 4 is chosen arbitrarily here. This limit is set to avoid having infinite loops in iterative solving.
     private static final int SOLVE_ITERATION_LIMIT = 4;
 
+    private final Session session;
     private final Metadata metadata;
     private final TypeManager typeManager;
     private final TypeCoercion typeCoercion;
@@ -93,10 +95,10 @@ public class SignatureBinder
     private final boolean allowCoercion;
     private final Map<String, TypeVariableConstraint> typeVariableConstraints;
 
-    // this could use the function resolver instead of Metadata, but Metadata caches coercion resolution
-    SignatureBinder(Metadata metadata, TypeManager typeManager, Signature declaredSignature, boolean allowCoercion)
+    SignatureBinder(Session session, Metadata metadata, TypeManager typeManager, Signature declaredSignature, boolean allowCoercion)
     {
         checkNoLiteralVariableUsageAcrossTypes(declaredSignature);
+        this.session = requireNonNull(session, "session is null");
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.typeCoercion = new TypeCoercion(typeManager::getType);
@@ -179,6 +181,7 @@ public class SignatureBinder
         TypeSignature boundReturnTypeSignature = applyBoundVariables(signature.getReturnType(), typeVariables);
 
         return Signature.builder()
+                .name(signature.getName())
                 .returnType(boundReturnTypeSignature)
                 .argumentTypes(boundArgumentSignatures)
                 .build();
@@ -700,7 +703,7 @@ public class SignatureBinder
             }
         }
         try {
-            metadata.getCoercion(fromType, toType);
+            metadata.getCoercion(session, fromType, toType);
             return true;
         }
         catch (TrinoException e) {

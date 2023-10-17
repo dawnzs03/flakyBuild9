@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.hive.formats.line.csv.CsvSerializerFactory;
 import io.trino.hive.formats.line.text.TextLineWriterFactory;
+import io.trino.plugin.hive.HiveSessionProperties;
 import io.trino.spi.type.TypeManager;
 
 public class CsvFileWriterFactory
@@ -29,6 +30,7 @@ public class CsvFileWriterFactory
                 typeManager,
                 new CsvSerializerFactory(),
                 new TextLineWriterFactory(),
+                HiveSessionProperties::isCsvNativeWriterEnabled,
                 true);
     }
 }

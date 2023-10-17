@@ -61,7 +61,7 @@ class TypeSignatureMapping
         }
         if (dependency instanceof FunctionImplementationDependency functionDependency) {
             return new FunctionImplementationDependency(
-                    functionDependency.getName(),
+                    functionDependency.getFullyQualifiedName(),
                     functionDependency.getArgumentTypes().stream()
                             .map(this::mapTypeSignature)
                             .collect(toImmutableList()),

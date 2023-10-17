@@ -130,7 +130,6 @@ public class DriverFactory
                     }
                 }
             }
-            driverContext.failed(failure);
             throw failure;
         }
     }

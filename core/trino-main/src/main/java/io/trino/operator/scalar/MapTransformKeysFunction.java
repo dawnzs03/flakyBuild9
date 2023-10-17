@@ -88,8 +88,9 @@ public final class MapTransformKeysFunction
 
     public MapTransformKeysFunction(BlockTypeOperators blockTypeOperators)
     {
-        super(FunctionMetadata.scalarBuilder(NAME)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name(NAME)
                         .typeVariable("K1")
                         .typeVariable("K2")
                         .typeVariable("V")

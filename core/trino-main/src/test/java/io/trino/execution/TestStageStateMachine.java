@@ -27,9 +27,8 @@ import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.sql.planner.plan.ValuesNode;
 import io.trino.sql.tree.Row;
 import io.trino.sql.tree.StringLiteral;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -42,14 +41,12 @@ import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.sql.planner.SystemPartitioningHandle.SINGLE_DISTRIBUTION;
 import static io.trino.sql.planner.SystemPartitioningHandle.SOURCE_DISTRIBUTION;
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_CLASS)
 public class TestStageStateMachine
 {
     private static final StageId STAGE_ID = new StageId("query", 0);
@@ -63,7 +60,7 @@ public class TestStageStateMachine
 
     private ExecutorService executor = newCachedThreadPool(daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         executor.shutdownNow();

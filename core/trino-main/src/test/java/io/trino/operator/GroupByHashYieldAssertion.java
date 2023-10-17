@@ -42,9 +42,7 @@ import static io.trino.RowPagesBuilder.rowPagesBuilder;
 import static io.trino.SessionTestUtils.TEST_SESSION;
 import static io.trino.operator.OperatorAssertion.finishOperator;
 import static io.trino.spi.type.BigintType.BIGINT;
-import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.testing.TestingTaskContext.createTaskContext;
-import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
@@ -98,29 +96,16 @@ public final class GroupByHashYieldAssertion
                 .addDriverContext();
         Operator operator = operatorFactory.createOperator(driverContext);
 
-        byte[] pointer = new byte[VariableWidthData.POINTER_SIZE];
-        VariableWidthData variableWidthData = new VariableWidthData();
-
         // run operator
         int yieldCount = 0;
-        long maxReservedBytes = 0;
+        long expectedReservedExtraBytes = 0;
         for (Page page : input) {
-            // compute the memory reserved by the variable width data allocator for this page
-            long pageVariableWidthSize = 0;
-            if (hashKeyType == VARCHAR) {
-                long oldVariableWidthSize = variableWidthData.getRetainedSizeBytes();
-                for (int position = 0; position < page.getPositionCount(); position++) {
-                    variableWidthData.allocate(pointer, 0, page.getBlock(0).getSliceLength(position));
-                }
-                pageVariableWidthSize = variableWidthData.getRetainedSizeBytes() - oldVariableWidthSize;
-            }
-
             // unblocked
             assertTrue(operator.needsInput());
 
-            // reserve the most of the memory pool, except for the space necessary for the variable with data
-            // a small bit of memory is left unallocated for the aggregators
-            memoryPool.reserve(anotherTaskId, "test", memoryPool.getFreeBytes() - additionalMemoryInBytes - pageVariableWidthSize);
+            // saturate the pool with a tiny memory left
+            long reservedMemoryInBytes = memoryPool.getFreeBytes() - additionalMemoryInBytes;
+            memoryPool.reserve(anotherTaskId, "test", reservedMemoryInBytes);
 
             long oldMemoryUsage = operator.getOperatorContext().getDriverContext().getMemoryUsage();
             int oldCapacity = getHashCapacity.apply(operator);
@@ -135,13 +120,12 @@ public final class GroupByHashYieldAssertion
             }
 
             long newMemoryUsage = operator.getOperatorContext().getDriverContext().getMemoryUsage();
-            maxReservedBytes = max(maxReservedBytes, newMemoryUsage);
 
             // Skip if the memory usage is not large enough since we cannot distinguish
             // between rehash and memory used by aggregator
             if (newMemoryUsage < DataSize.of(4, MEGABYTE).toBytes()) {
                 // free the pool for the next iteration
-                memoryPool.free(anotherTaskId, "test", memoryPool.getTaskMemoryReservations().get(anotherTaskId));
+                memoryPool.free(anotherTaskId, "test", reservedMemoryInBytes);
                 // this required in case input is blocked
                 output = operator.getOutput();
                 if (output != null) {
@@ -150,10 +134,10 @@ public final class GroupByHashYieldAssertion
                 continue;
             }
 
-            long actualHashIncreased = newMemoryUsage - oldMemoryUsage - pageVariableWidthSize;
+            long actualIncreasedMemory = newMemoryUsage - oldMemoryUsage;
 
             if (operator.needsInput()) {
-                // The page processing completed
+                // We have successfully added a page
 
                 // Assert we are not blocked
                 assertTrue(operator.getOperatorContext().isWaitingForMemory().isDone());
@@ -162,37 +146,33 @@ public final class GroupByHashYieldAssertion
                 assertEquals((int) getHashCapacity.apply(operator), oldCapacity);
 
                 // We are not going to rehash; therefore, assert the memory increase only comes from the aggregator
-                assertLessThan(actualHashIncreased, additionalMemoryInBytes);
+                assertLessThan(actualIncreasedMemory, additionalMemoryInBytes);
 
                 // free the pool for the next iteration
-                memoryPool.free(anotherTaskId, "test", memoryPool.getTaskMemoryReservations().get(anotherTaskId));
+                memoryPool.free(anotherTaskId, "test", reservedMemoryInBytes);
             }
             else {
-                // Page processing is not completed
+                // We failed to finish the page processing i.e. we yielded
                 yieldCount++;
 
-                // Assert we are blocked waiting for memory
+                // Assert we are blocked
                 assertFalse(operator.getOperatorContext().isWaitingForMemory().isDone());
 
-                // Hash table capacity should not have changed, because memory must be allocated first
+                // Hash table capacity should not change
                 assertEquals(oldCapacity, (long) getHashCapacity.apply(operator));
 
-                long expectedHashBytes;
+                expectedReservedExtraBytes = getHashTableSizeInBytes(hashKeyType, oldCapacity * 2);
                 if (hashKeyType == BIGINT) {
-                    // The increase in hash memory should be twice the current capacity.
-                    expectedHashBytes = getHashTableSizeInBytes(hashKeyType, oldCapacity * 2);
+                    expectedReservedExtraBytes += page.getRetainedSizeInBytes();
                 }
-                else {
-                    // Flat hash uses an incremental rehash, so as new memory is allocated old memory is freed
-                    expectedHashBytes = getHashTableSizeInBytes(hashKeyType, oldCapacity) + oldCapacity;
-                }
-                assertBetweenInclusive(actualHashIncreased, expectedHashBytes, expectedHashBytes + additionalMemoryInBytes);
+                // Increased memory is no smaller than the hash table size and no greater than the hash table size + the memory used by aggregator
+                assertBetweenInclusive(actualIncreasedMemory, expectedReservedExtraBytes, expectedReservedExtraBytes + additionalMemoryInBytes);
 
                 // Output should be blocked as well
                 assertNull(operator.getOutput());
 
                 // Free the pool to unblock
-                memoryPool.free(anotherTaskId, "test", memoryPool.getTaskMemoryReservations().get(anotherTaskId));
+                memoryPool.free(anotherTaskId, "test", reservedMemoryInBytes);
 
                 // Trigger a process through getOutput() or needsInput()
                 output = operator.getOutput();
@@ -206,15 +186,16 @@ public final class GroupByHashYieldAssertion
 
                 // Assert the estimated reserved memory after rehash is lower than the one before rehash (extra memory allocation has been released)
                 long rehashedMemoryUsage = operator.getOperatorContext().getDriverContext().getMemoryUsage();
-                long expectedMemoryUsageAfterRehash = oldMemoryUsage + getHashTableSizeInBytes(hashKeyType, oldCapacity);
+                long previousHashTableSizeInBytes = getHashTableSizeInBytes(hashKeyType, oldCapacity);
+                long expectedMemoryUsageAfterRehash = newMemoryUsage - previousHashTableSizeInBytes;
                 double memoryUsageErrorUpperBound = 1.01;
                 double memoryUsageError = rehashedMemoryUsage * 1.0 / expectedMemoryUsageAfterRehash;
                 if (memoryUsageError > memoryUsageErrorUpperBound) {
                     // Usually the error is < 1%, but since MultiChannelGroupByHash.getEstimatedSize
                     // accounts for changes in completedPagesMemorySize, which is increased if new page is
                     // added by addNewGroup (an even that cannot be predicted as it depends on the number of unique groups
-                    // in the current page being processed), the difference includes the size of the added new page.
-                    // Lower bound is 1% lower than normal because "additionalMemoryInBytes" includes also aggregator state.
+                    // in the current page being processed), the difference includes size of the added new page.
+                    // Lower bound is 1% lower than normal because additionalMemoryInBytes includes also aggregator state.
                     assertBetweenInclusive(rehashedMemoryUsage * 1.0 / (expectedMemoryUsageAfterRehash + additionalMemoryInBytes), 0.97, memoryUsageErrorUpperBound,
                             "rehashedMemoryUsage " + rehashedMemoryUsage + ", expectedMemoryUsageAfterRehash: " + expectedMemoryUsageAfterRehash);
                 }
@@ -229,7 +210,7 @@ public final class GroupByHashYieldAssertion
         }
 
         result.addAll(finishOperator(operator));
-        return new GroupByHashYieldResult(yieldCount, maxReservedBytes, result);
+        return new GroupByHashYieldResult(yieldCount, expectedReservedExtraBytes, result);
     }
 
     private static long getHashTableSizeInBytes(Type hashKeyType, int capacity)
@@ -238,18 +219,8 @@ public final class GroupByHashYieldAssertion
             // groupIds and values double by hashCapacity; while valuesByGroupId double by maxFill = hashCapacity / 0.75
             return capacity * (long) (Long.BYTES * 1.75 + Integer.BYTES);
         }
-
-        @SuppressWarnings("OverlyComplexArithmeticExpression")
-        int sizePerEntry = Byte.BYTES + // control byte
-                Integer.BYTES + // groupId to hashPosition
-                VariableWidthData.POINTER_SIZE + // variable width pointer
-                Integer.BYTES + // groupId
-                Long.BYTES + // rawHash (optional, but present in this test)
-                Byte.BYTES + // field null
-                Integer.BYTES + // field variable length
-                Long.BYTES + // field first 8 bytes
-                Integer.BYTES; // field variable offset (or 4 more field bytes)
-        return (long) capacity * sizePerEntry;
+        // groupIdsByHash, and rawHashByHashPosition double by hashCapacity
+        return capacity * (long) (Integer.BYTES + Byte.BYTES);
     }
 
     public static final class GroupByHashYieldResult

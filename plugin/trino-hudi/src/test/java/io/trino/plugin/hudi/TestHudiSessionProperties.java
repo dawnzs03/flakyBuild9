@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 import io.trino.plugin.hive.parquet.ParquetReaderConfig;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.testing.TestingConnectorSession;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.List;
 

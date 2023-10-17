@@ -243,6 +243,7 @@ public class TestHiveStorageFormats
         return new StorageFormat[] {
                 storageFormat("ORC", ImmutableMap.of("hive.orc_optimized_writer_validate", "true")),
                 storageFormat("PARQUET", ImmutableMap.of("hive.parquet_optimized_writer_validation_percentage", "100")),
+                storageFormat("PARQUET", ImmutableMap.of("hive.parquet_optimized_writer_enabled", "false")),
                 storageFormat("RCBINARY", ImmutableMap.of("hive.rcfile_optimized_writer_validate", "true")),
                 storageFormat("RCTEXT", ImmutableMap.of("hive.rcfile_optimized_writer_validate", "true")),
                 storageFormat("SEQUENCEFILE"),
@@ -781,7 +782,20 @@ public class TestHiveStorageFormats
                 ImmutableMap.of(
                         "hive.parquet_writer_page_size", reducedRowGroupSize.toBytesValueString(),
                         "task_scale_writers_enabled", "false",
-                        "task_min_writer_count", "1")));
+                        "task_writer_count", "1")));
+    }
+
+    @Test(groups = STORAGE_FORMATS_DETAILED)
+    public void testLargeParquetInsertWithHiveWriter()
+    {
+        DataSize reducedRowGroupSize = DataSize.ofBytes(ParquetWriter.DEFAULT_PAGE_SIZE / 4);
+        runLargeInsert(storageFormat(
+                "PARQUET",
+                ImmutableMap.of(
+                        "hive.parquet_optimized_writer_enabled", "false",
+                        "hive.parquet_writer_page_size", reducedRowGroupSize.toBytesValueString(),
+                        "task_scale_writers_enabled", "false",
+                        "task_writer_count", "1")));
     }
 
     @Test(groups = STORAGE_FORMATS_DETAILED)
@@ -1005,7 +1019,7 @@ public class TestHiveStorageFormats
     {
         try {
             // create more than one split
-            setSessionProperty(connection, "task_min_writer_count", "4");
+            setSessionProperty(connection, "task_writer_count", "4");
             setSessionProperty(connection, "task_scale_writers_enabled", "false");
             setSessionProperty(connection, "redistribute_writes", "false");
             for (Map.Entry<String, String> sessionProperty : sessionProperties.entrySet()) {

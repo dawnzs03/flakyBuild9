@@ -48,8 +48,9 @@ public final class ZipWithFunction
 
     private ZipWithFunction()
     {
-        super(FunctionMetadata.scalarBuilder("zip_with")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("zip_with")
                         .typeVariable("T")
                         .typeVariable("U")
                         .typeVariable("R")

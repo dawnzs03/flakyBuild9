@@ -177,7 +177,7 @@ public class TestDeltaLakeMinioAndHmsConnectorSmokeTest
     public void testDeltaColumnInvariant()
     {
         String tableName = "test_invariants_" + randomNameSuffix();
-        hiveMinioDataLake.copyResources("deltalake/invariants", tableName);
+        hiveMinioDataLake.copyResources("databricks/invariants", tableName);
         assertUpdate("CALL system.register_table('%s', '%s', '%s')".formatted(SCHEMA, tableName, getLocationForTable(bucketName, tableName)));
 
         assertQuery("SELECT * FROM " + tableName, "VALUES 1");
@@ -192,33 +192,11 @@ public class TestDeltaLakeMinioAndHmsConnectorSmokeTest
         assertQuery("SELECT * FROM " + tableName, "VALUES (1), (2)");
     }
 
-    /**
-     * @see databricks122.invariants_writer_feature
-     */
-    @Test
-    public void testDeltaColumnInvariantWriterFeature()
-    {
-        String tableName = "test_invariants_writer_feature_" + randomNameSuffix();
-        hiveMinioDataLake.copyResources("databricks122/invariants_writer_feature", tableName);
-        assertUpdate("CALL system.register_table('%s', '%s', '%s')".formatted(SCHEMA, tableName, getLocationForTable(bucketName, tableName)));
-
-        assertQuery("SELECT * FROM " + tableName, "VALUES 1");
-        assertUpdate("INSERT INTO " + tableName + " VALUES 2", 1);
-        assertQuery("SELECT * FROM " + tableName, "VALUES 1, 2");
-
-        assertThatThrownBy(() -> query("INSERT INTO " + tableName + " VALUES 3"))
-                .hasMessageContaining("Check constraint violation: (\"col_invariants\" < 3)");
-        assertThatThrownBy(() -> query("UPDATE " + tableName + " SET col_invariants = 3 WHERE col_invariants = 1"))
-                .hasMessageContaining("Check constraint violation: (\"col_invariants\" < 3)");
-
-        assertQuery("SELECT * FROM " + tableName, "VALUES 1, 2");
-    }
-
     @Test
     public void testSchemaEvolutionOnTableWithColumnInvariant()
     {
         String tableName = "test_schema_evolution_on_table_with_column_invariant_" + randomNameSuffix();
-        hiveMinioDataLake.copyResources("deltalake/invariants", tableName);
+        hiveMinioDataLake.copyResources("databricks/invariants", tableName);
         getQueryRunner().execute(format(
                 "CALL system.register_table('%s', '%s', '%s')",
                 SCHEMA,

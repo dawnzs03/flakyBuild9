@@ -24,7 +24,6 @@ import io.airlift.units.DataSize;
 import io.trino.exchange.ExchangeManagerRegistry;
 import io.trino.execution.buffer.PipelinedOutputBuffers;
 import io.trino.execution.executor.TaskExecutor;
-import io.trino.execution.executor.timesharing.TimeSharingTaskExecutor;
 import io.trino.memory.MemoryPool;
 import io.trino.memory.QueryContext;
 import io.trino.memory.context.LocalMemoryContext;
@@ -36,10 +35,9 @@ import io.trino.spi.QueryId;
 import io.trino.spiller.SpillSpaceTracker;
 import io.trino.sql.planner.LocalExecutionPlanner;
 import io.trino.sql.planner.plan.PlanNodeId;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.Collection;
@@ -63,12 +61,11 @@ import static io.trino.execution.TestSqlTask.OUT;
 import static io.trino.execution.buffer.PipelinedOutputBuffers.BufferType.PARTITIONED;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_METHOD)
+@Test(singleThreaded = true)
 public class TestMemoryRevokingScheduler
 {
     private final AtomicInteger idGenerator = new AtomicInteger();
@@ -83,12 +80,12 @@ public class TestMemoryRevokingScheduler
 
     private Set<OperatorContext> allOperatorContexts;
 
-    @BeforeEach
+    @BeforeMethod
     public void setUp()
     {
         memoryPool = new MemoryPool(DataSize.ofBytes(10));
 
-        taskExecutor = new TimeSharingTaskExecutor(8, 16, 3, 4, Ticker.systemTicker());
+        taskExecutor = new TaskExecutor(8, 16, 3, 4, Ticker.systemTicker());
         taskExecutor.start();
 
         // Must be single threaded
@@ -108,7 +105,7 @@ public class TestMemoryRevokingScheduler
         allOperatorContexts = null;
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void tearDown()
     {
         queryContexts.clear();

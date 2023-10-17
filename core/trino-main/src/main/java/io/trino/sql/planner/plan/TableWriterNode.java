@@ -26,7 +26,6 @@ import io.trino.metadata.InsertTableHandle;
 import io.trino.metadata.MergeHandle;
 import io.trino.metadata.Metadata;
 import io.trino.metadata.OutputTableHandle;
-import io.trino.metadata.QualifiedObjectName;
 import io.trino.metadata.TableExecuteHandle;
 import io.trino.metadata.TableHandle;
 import io.trino.metadata.TableLayout;
@@ -34,7 +33,6 @@ import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.RowChangeParadigm;
 import io.trino.spi.connector.SchemaTableName;
-import io.trino.spi.connector.WriterScalingOptions;
 import io.trino.spi.type.Type;
 import io.trino.sql.planner.PartitioningScheme;
 import io.trino.sql.planner.Symbol;
@@ -197,8 +195,6 @@ public class TableWriterNode
         public abstract boolean supportsMultipleWritersPerPartition(Metadata metadata, Session session);
 
         public abstract OptionalInt getMaxWriterTasks(Metadata metadata, Session session);
-
-        public abstract WriterScalingOptions getWriterScalingOptions(Metadata metadata, Session session);
     }
 
     // only used during planning -- will not be serialized
@@ -233,16 +229,6 @@ public class TableWriterNode
             return metadata.getMaxWriterTasks(session, catalog);
         }
 
-        @Override
-        public WriterScalingOptions getWriterScalingOptions(Metadata metadata, Session session)
-        {
-            QualifiedObjectName tableName = new QualifiedObjectName(
-                    catalog,
-                    tableMetadata.getTableSchema().getTable().getSchemaName(),
-                    tableMetadata.getTableSchema().getTable().getTableName());
-            return metadata.getNewTableWriterScalingOptions(session, tableName, tableMetadata.getProperties());
-        }
-
         public Optional<TableLayout> getLayout()
         {
             return layout;
@@ -267,21 +253,18 @@ public class TableWriterNode
         private final SchemaTableName schemaTableName;
         private final boolean multipleWritersPerPartitionSupported;
         private final OptionalInt maxWriterTasks;
-        private final WriterScalingOptions writerScalingOptions;
 
         @JsonCreator
         public CreateTarget(
                 @JsonProperty("handle") OutputTableHandle handle,
                 @JsonProperty("schemaTableName") SchemaTableName schemaTableName,
                 @JsonProperty("multipleWritersPerPartitionSupported") boolean multipleWritersPerPartitionSupported,
-                @JsonProperty("maxWriterTasks") OptionalInt maxWriterTasks,
-                @JsonProperty("writerScalingOptions") WriterScalingOptions writerScalingOptions)
+                @JsonProperty("maxWriterTasks") OptionalInt maxWriterTasks)
         {
             this.handle = requireNonNull(handle, "handle is null");
             this.schemaTableName = requireNonNull(schemaTableName, "schemaTableName is null");
             this.multipleWritersPerPartitionSupported = multipleWritersPerPartitionSupported;
             this.maxWriterTasks = requireNonNull(maxWriterTasks, "maxWriterTasks is null");
-            this.writerScalingOptions = requireNonNull(writerScalingOptions, "writerScalingOptions is null");
         }
 
         @JsonProperty
@@ -302,12 +285,6 @@ public class TableWriterNode
             return multipleWritersPerPartitionSupported;
         }
 
-        @JsonProperty
-        public WriterScalingOptions getWriterScalingOptions()
-        {
-            return writerScalingOptions;
-        }
-
         @Override
         public String toString()
         {
@@ -324,12 +301,6 @@ public class TableWriterNode
         public OptionalInt getMaxWriterTasks(Metadata metadata, Session session)
         {
             return maxWriterTasks;
-        }
-
-        @Override
-        public WriterScalingOptions getWriterScalingOptions(Metadata metadata, Session session)
-        {
-            return writerScalingOptions;
         }
     }
 
@@ -375,12 +346,6 @@ public class TableWriterNode
         {
             return metadata.getMaxWriterTasks(session, handle.getCatalogHandle().getCatalogName());
         }
-
-        @Override
-        public WriterScalingOptions getWriterScalingOptions(Metadata metadata, Session session)
-        {
-            return metadata.getInsertWriterScalingOptions(session, handle);
-        }
     }
 
     public static class InsertTarget
@@ -390,21 +355,18 @@ public class TableWriterNode
         private final SchemaTableName schemaTableName;
         private final boolean multipleWritersPerPartitionSupported;
         private final OptionalInt maxWriterTasks;
-        private final WriterScalingOptions writerScalingOptions;
 
         @JsonCreator
         public InsertTarget(
                 @JsonProperty("handle") InsertTableHandle handle,
                 @JsonProperty("schemaTableName") SchemaTableName schemaTableName,
                 @JsonProperty("multipleWritersPerPartitionSupported") boolean multipleWritersPerPartitionSupported,
-                @JsonProperty("maxWriterTasks") OptionalInt maxWriterTasks,
-                @JsonProperty("writerScalingOptions") WriterScalingOptions writerScalingOptions)
+                @JsonProperty("maxWriterTasks") OptionalInt maxWriterTasks)
         {
             this.handle = requireNonNull(handle, "handle is null");
             this.schemaTableName = requireNonNull(schemaTableName, "schemaTableName is null");
             this.multipleWritersPerPartitionSupported = multipleWritersPerPartitionSupported;
             this.maxWriterTasks = requireNonNull(maxWriterTasks, "maxWriterTasks is null");
-            this.writerScalingOptions = requireNonNull(writerScalingOptions, "writerScalingOptions is null");
         }
 
         @JsonProperty
@@ -425,12 +387,6 @@ public class TableWriterNode
             return multipleWritersPerPartitionSupported;
         }
 
-        @JsonProperty
-        public WriterScalingOptions getWriterScalingOptions()
-        {
-            return writerScalingOptions;
-        }
-
         @Override
         public String toString()
         {
@@ -447,12 +403,6 @@ public class TableWriterNode
         public OptionalInt getMaxWriterTasks(Metadata metadata, Session session)
         {
             return maxWriterTasks;
-        }
-
-        @Override
-        public WriterScalingOptions getWriterScalingOptions(Metadata metadata, Session session)
-        {
-            return writerScalingOptions;
         }
     }
 
@@ -499,12 +449,6 @@ public class TableWriterNode
         {
             return metadata.getMaxWriterTasks(session, storageTableHandle.getCatalogHandle().getCatalogName());
         }
-
-        @Override
-        public WriterScalingOptions getWriterScalingOptions(Metadata metadata, Session session)
-        {
-            return metadata.getInsertWriterScalingOptions(session, storageTableHandle);
-        }
     }
 
     public static class RefreshMaterializedViewTarget
@@ -514,21 +458,18 @@ public class TableWriterNode
         private final InsertTableHandle insertHandle;
         private final SchemaTableName schemaTableName;
         private final List<TableHandle> sourceTableHandles;
-        private final WriterScalingOptions writerScalingOptions;
 
         @JsonCreator
         public RefreshMaterializedViewTarget(
                 @JsonProperty("tableHandle") TableHandle tableHandle,
                 @JsonProperty("insertHandle") InsertTableHandle insertHandle,
                 @JsonProperty("schemaTableName") SchemaTableName schemaTableName,
-                @JsonProperty("sourceTableHandles") List<TableHandle> sourceTableHandles,
-                @JsonProperty("writerScalingOptions") WriterScalingOptions writerScalingOptions)
+                @JsonProperty("sourceTableHandles") List<TableHandle> sourceTableHandles)
         {
             this.tableHandle = requireNonNull(tableHandle, "tableHandle is null");
             this.insertHandle = requireNonNull(insertHandle, "insertHandle is null");
             this.schemaTableName = requireNonNull(schemaTableName, "schemaTableName is null");
             this.sourceTableHandles = ImmutableList.copyOf(sourceTableHandles);
-            this.writerScalingOptions = requireNonNull(writerScalingOptions, "writerScalingOptions is null");
         }
 
         @JsonProperty
@@ -555,12 +496,6 @@ public class TableWriterNode
             return sourceTableHandles;
         }
 
-        @JsonProperty
-        public WriterScalingOptions getWriterScalingOptions()
-        {
-            return writerScalingOptions;
-        }
-
         @Override
         public String toString()
         {
@@ -579,12 +514,6 @@ public class TableWriterNode
         public OptionalInt getMaxWriterTasks(Metadata metadata, Session session)
         {
             return metadata.getMaxWriterTasks(session, tableHandle.getCatalogHandle().getCatalogName());
-        }
-
-        @Override
-        public WriterScalingOptions getWriterScalingOptions(Metadata metadata, Session session)
-        {
-            return writerScalingOptions;
         }
     }
 
@@ -635,12 +564,6 @@ public class TableWriterNode
 
         @Override
         public OptionalInt getMaxWriterTasks(Metadata metadata, Session session)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public WriterScalingOptions getWriterScalingOptions(Metadata metadata, Session session)
         {
             throw new UnsupportedOperationException();
         }
@@ -715,12 +638,6 @@ public class TableWriterNode
         {
             throw new UnsupportedOperationException();
         }
-
-        @Override
-        public WriterScalingOptions getWriterScalingOptions(Metadata metadata, Session session)
-        {
-            throw new UnsupportedOperationException();
-        }
     }
 
     public static class TableExecuteTarget
@@ -729,19 +646,16 @@ public class TableWriterNode
         private final TableExecuteHandle executeHandle;
         private final Optional<TableHandle> sourceHandle;
         private final SchemaTableName schemaTableName;
-        private final WriterScalingOptions writerScalingOptions;
 
         @JsonCreator
         public TableExecuteTarget(
                 @JsonProperty("executeHandle") TableExecuteHandle executeHandle,
                 @JsonProperty("sourceHandle") Optional<TableHandle> sourceHandle,
-                @JsonProperty("schemaTableName") SchemaTableName schemaTableName,
-                @JsonProperty("writerScalingOptions") WriterScalingOptions writerScalingOptions)
+                @JsonProperty("schemaTableName") SchemaTableName schemaTableName)
         {
             this.executeHandle = requireNonNull(executeHandle, "handle is null");
             this.sourceHandle = requireNonNull(sourceHandle, "sourceHandle is null");
             this.schemaTableName = requireNonNull(schemaTableName, "schemaTableName is null");
-            this.writerScalingOptions = requireNonNull(writerScalingOptions, "writerScalingOptions is null");
         }
 
         @JsonProperty
@@ -767,12 +681,6 @@ public class TableWriterNode
             return schemaTableName;
         }
 
-        @JsonProperty
-        public WriterScalingOptions getWriterScalingOptions()
-        {
-            return writerScalingOptions;
-        }
-
         @Override
         public String toString()
         {
@@ -791,12 +699,6 @@ public class TableWriterNode
         public OptionalInt getMaxWriterTasks(Metadata metadata, Session session)
         {
             return metadata.getMaxWriterTasks(session, executeHandle.getCatalogHandle().getCatalogName());
-        }
-
-        @Override
-        public WriterScalingOptions getWriterScalingOptions(Metadata metadata, Session session)
-        {
-            return writerScalingOptions;
         }
     }
 
@@ -861,12 +763,6 @@ public class TableWriterNode
         public OptionalInt getMaxWriterTasks(Metadata metadata, Session session)
         {
             return OptionalInt.empty();
-        }
-
-        @Override
-        public WriterScalingOptions getWriterScalingOptions(Metadata metadata, Session session)
-        {
-            return WriterScalingOptions.DISABLED;
         }
     }
 

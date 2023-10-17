@@ -97,7 +97,7 @@ public final class SequenceFunction
 
         BlockBuilder blockBuilder = DATE.createBlockBuilder(null, length);
 
-        long value = 0;
+        int value = 0;
         for (int i = 0; i < length; ++i) {
             DATE.writeLong(blockBuilder, DateTimeOperators.datePlusIntervalYearToMonth(start, value));
             value += step;

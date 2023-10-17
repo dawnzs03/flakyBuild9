@@ -15,7 +15,7 @@ package io.trino.plugin.bigquery;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.ConfigurationException;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.URI;

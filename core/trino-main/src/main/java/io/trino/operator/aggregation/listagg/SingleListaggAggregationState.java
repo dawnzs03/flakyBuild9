@@ -13,83 +13,131 @@
  */
 package io.trino.operator.aggregation.listagg;
 
-import io.airlift.slice.SliceOutput;
-import io.trino.spi.block.SingleRowBlock;
-import io.trino.spi.block.VariableWidthBlockBuilder;
-import io.trino.spi.function.AccumulatorState;
+import io.airlift.slice.Slice;
+import io.trino.spi.block.Block;
+import io.trino.spi.block.BlockBuilder;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static java.lang.Math.toIntExact;
+import static com.google.common.base.Verify.verify;
+import static io.airlift.slice.SizeOf.instanceSize;
+import static io.trino.spi.type.VarcharType.VARCHAR;
 
 public class SingleListaggAggregationState
-        extends AbstractListaggAggregationState
+        implements ListaggAggregationState
 {
-    private SingleRowBlock tempSerializedState;
+    private static final int INSTANCE_SIZE = instanceSize(SingleListaggAggregationState.class);
+    private BlockBuilder blockBuilder;
+    private Slice separator;
+    private boolean overflowError;
+    private Slice overflowFiller;
+    private boolean showOverflowEntryCount;
 
-    public SingleListaggAggregationState()
+    @Override
+    public long getEstimatedSize()
     {
-        super(0);
-    }
-
-    private SingleListaggAggregationState(SingleListaggAggregationState state)
-    {
-        super(state);
-        checkArgument(state.tempSerializedState == null, "state.tempSerializedState is not null");
-        tempSerializedState = null;
+        long estimatedSize = INSTANCE_SIZE;
+        if (blockBuilder != null) {
+            estimatedSize += blockBuilder.getRetainedSizeInBytes();
+        }
+        return estimatedSize;
     }
 
     @Override
-    public void write(VariableWidthBlockBuilder blockBuilder)
+    public void setSeparator(Slice separator)
     {
-        if (size() == 0) {
-            blockBuilder.appendNull();
+        this.separator = separator;
+    }
+
+    @Override
+    public Slice getSeparator()
+    {
+        return separator;
+    }
+
+    @Override
+    public void setOverflowFiller(Slice overflowFiller)
+    {
+        this.overflowFiller = overflowFiller;
+    }
+
+    @Override
+    public Slice getOverflowFiller()
+    {
+        return overflowFiller;
+    }
+
+    @Override
+    public void setOverflowError(boolean overflowError)
+    {
+        this.overflowError = overflowError;
+    }
+
+    @Override
+    public boolean isOverflowError()
+    {
+        return overflowError;
+    }
+
+    @Override
+    public void setShowOverflowEntryCount(boolean showOverflowEntryCount)
+    {
+        this.showOverflowEntryCount = showOverflowEntryCount;
+    }
+
+    @Override
+    public boolean showOverflowEntryCount()
+    {
+        return showOverflowEntryCount;
+    }
+
+    @Override
+    public void add(Block block, int position)
+    {
+        if (blockBuilder == null) {
+            blockBuilder = VARCHAR.createBlockBuilder(null, 16);
+        }
+        VARCHAR.appendTo(block, position, blockBuilder);
+    }
+
+    @Override
+    public void forEach(ListaggAggregationStateConsumer consumer)
+    {
+        if (blockBuilder == null) {
             return;
         }
-        blockBuilder.buildEntry(this::writeNotGrouped);
-    }
 
-    private void writeNotGrouped(SliceOutput out)
-    {
-        int entryCount = toIntExact(size());
-        int emittedCount = 0;
-        for (byte[] records : closedRecordGroups) {
-            int recordOffset = 0;
-            for (int recordIndex = 0; recordIndex < RECORDS_PER_GROUP; recordIndex++) {
-                if (!writeEntry(records, recordOffset, out, entryCount, emittedCount)) {
-                    return;
-                }
-                emittedCount++;
-                recordOffset += recordSize;
+        for (int i = 0; i < blockBuilder.getPositionCount(); i++) {
+            if (!consumer.accept(blockBuilder, i)) {
+                break;
             }
-        }
-        int recordsInOpenGroup = entryCount & RECORDS_PER_GROUP_MASK;
-        int recordOffset = 0;
-        for (int recordIndex = 0; recordIndex < recordsInOpenGroup; recordIndex++) {
-            if (!writeEntry(openRecordGroup, recordOffset, out, entryCount, emittedCount)) {
-                return;
-            }
-            emittedCount++;
-            recordOffset += recordSize;
         }
     }
 
     @Override
-    public AccumulatorState copy()
+    public boolean isEmpty()
     {
-        return new SingleListaggAggregationState(this);
+        if (blockBuilder == null) {
+            return true;
+        }
+        verify(blockBuilder.getPositionCount() != 0);
+        return false;
     }
 
-    void setTempSerializedState(SingleRowBlock tempSerializedState)
+    @Override
+    public int getEntryCount()
     {
-        this.tempSerializedState = tempSerializedState;
+        if (blockBuilder == null) {
+            return 0;
+        }
+        return blockBuilder.getPositionCount();
     }
 
-    SingleRowBlock removeTempSerializedState()
+    @Override
+    public void reset()
     {
-        SingleRowBlock block = tempSerializedState;
-        checkState(block != null, "tempDeserializeBlock is null");
-        tempSerializedState = null;
-        return block;
+        separator = null;
+        overflowError = false;
+        overflowFiller = null;
+        showOverflowEntryCount = false;
+        blockBuilder = null;
     }
 }

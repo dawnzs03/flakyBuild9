@@ -19,10 +19,9 @@ import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.SchemaTableName;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.Optional;
 
@@ -42,9 +41,7 @@ import static io.trino.spi.type.VarcharType.createVarcharType;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.util.Locale.ENGLISH;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 public class TestJdbcClient
 {
     private static final ConnectorSession session = testSessionBuilder().build().toConnectorSession();
@@ -53,7 +50,7 @@ public class TestJdbcClient
     private String catalogName;
     private JdbcClient jdbcClient;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
             throws Exception
     {
@@ -62,7 +59,7 @@ public class TestJdbcClient
         jdbcClient = database.getJdbcClient();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
             throws Exception
     {
@@ -139,7 +136,7 @@ public class TestJdbcClient
         String schemaName = "test schema";
         jdbcClient.createSchema(session, schemaName);
         assertThat(jdbcClient.getSchemaNames(session)).contains(schemaName);
-        jdbcClient.dropSchema(session, schemaName, false);
+        jdbcClient.dropSchema(session, schemaName);
         assertThat(jdbcClient.getSchemaNames(session)).doesNotContain(schemaName);
     }
 
@@ -157,7 +154,7 @@ public class TestJdbcClient
         jdbcClient.createTable(session, tableMetadata);
         jdbcClient.renameTable(session, jdbcClient.getTableHandle(session, oldTable).get(), newTable);
         jdbcClient.dropTable(session, jdbcClient.getTableHandle(session, newTable).get());
-        jdbcClient.dropSchema(session, schemaName, false);
+        jdbcClient.dropSchema(session, schemaName);
         assertThat(jdbcClient.getTableNames(session, Optional.empty()))
                 .doesNotContain(oldTable)
                 .doesNotContain(newTable);

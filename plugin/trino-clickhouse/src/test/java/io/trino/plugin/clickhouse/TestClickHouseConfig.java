@@ -28,7 +28,7 @@ package io.trino.plugin.clickhouse;
  */
 
 import com.google.common.collect.ImmutableMap;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 

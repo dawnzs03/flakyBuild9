@@ -157,16 +157,6 @@ public class CreateTableTask
         String catalogName = tableName.getCatalogName();
         CatalogHandle catalogHandle = getRequiredCatalogHandle(plannerContext.getMetadata(), session, statement, catalogName);
 
-        Map<String, Object> properties = tablePropertyManager.getProperties(
-                catalogName,
-                catalogHandle,
-                statement.getProperties(),
-                session,
-                plannerContext,
-                accessControl,
-                parameterLookup,
-                true);
-
         LinkedHashMap<String, ColumnMetadata> columns = new LinkedHashMap<>();
         Map<String, Object> inheritedProperties = ImmutableMap.of();
         boolean includingProperties = false;
@@ -204,7 +194,7 @@ public class CreateTableTask
 
                 columns.put(name.getValue().toLowerCase(ENGLISH), ColumnMetadata.builder()
                         .setName(name.getValue().toLowerCase(ENGLISH))
-                        .setType(getSupportedType(session, catalogHandle, properties, type))
+                        .setType(type)
                         .setNullable(column.isNullable())
                         .setComment(column.getComment())
                         .setProperties(columnProperties)
@@ -217,11 +207,11 @@ public class CreateTableTask
                 }
 
                 RedirectionAwareTableHandle redirection = plannerContext.getMetadata().getRedirectionAwareTableHandle(session, originalLikeTableName);
-                TableHandle likeTable = redirection.tableHandle()
+                TableHandle likeTable = redirection.getTableHandle()
                         .orElseThrow(() -> semanticException(TABLE_NOT_FOUND, statement, "LIKE table '%s' does not exist", originalLikeTableName));
 
                 LikeClause.PropertiesOption propertiesOption = likeClause.getPropertiesOption().orElse(EXCLUDING);
-                QualifiedObjectName likeTableName = redirection.redirectedTableName().orElse(originalLikeTableName);
+                QualifiedObjectName likeTableName = redirection.getRedirectedTableName().orElse(originalLikeTableName);
                 if (propertiesOption == INCLUDING && !catalogName.equals(likeTableName.getCatalogName())) {
                     if (!originalLikeTableName.equals(likeTableName)) {
                         throw semanticException(
@@ -273,17 +263,22 @@ public class CreateTableTask
                             if (columns.containsKey(column.getName().toLowerCase(Locale.ENGLISH))) {
                                 throw semanticException(DUPLICATE_COLUMN_NAME, element, "Column name '%s' specified more than once", column.getName());
                             }
-                            columns.put(
-                                    column.getName().toLowerCase(Locale.ENGLISH),
-                                    ColumnMetadata.builderFrom(column)
-                                            .setType(getSupportedType(session, catalogHandle, properties, column.getType()))
-                                            .build());
+                            columns.put(column.getName().toLowerCase(Locale.ENGLISH), column);
                         });
             }
             else {
                 throw new TrinoException(GENERIC_INTERNAL_ERROR, "Invalid TableElement: " + element.getClass().getName());
             }
         }
+        Map<String, Object> properties = tablePropertyManager.getProperties(
+                catalogName,
+                catalogHandle,
+                statement.getProperties(),
+                session,
+                plannerContext,
+                accessControl,
+                parameterLookup,
+                true);
 
         Set<String> specifiedPropertyKeys = statement.getProperties().stream()
                 // property names are case-insensitive and normalized to lower case
@@ -315,13 +310,6 @@ public class CreateTableTask
                         .map(column -> new OutputColumn(new Column(column.getName(), column.getType().toString()), ImmutableSet.of()))
                         .collect(toImmutableList()))));
         return immediateVoidFuture();
-    }
-
-    private Type getSupportedType(Session session, CatalogHandle catalogHandle, Map<String, Object> tableProperties, Type type)
-    {
-        return plannerContext.getMetadata()
-                .getSupportedType(session, catalogHandle, tableProperties, type)
-                .orElse(type);
     }
 
     private static Map<String, Object> combineProperties(Set<String> specifiedPropertyKeys, Map<String, Object> defaultProperties, Map<String, Object> inheritedProperties)

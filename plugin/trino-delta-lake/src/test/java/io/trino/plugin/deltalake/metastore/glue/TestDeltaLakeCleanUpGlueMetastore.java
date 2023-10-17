@@ -21,7 +21,7 @@ import com.amazonaws.services.glue.model.GetDatabasesRequest;
 import com.amazonaws.services.glue.model.GetDatabasesResult;
 import io.airlift.log.Logger;
 import io.trino.plugin.hive.aws.AwsApiCallStats;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.List;
 

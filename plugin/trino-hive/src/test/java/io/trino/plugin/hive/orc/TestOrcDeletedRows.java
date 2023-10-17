@@ -24,7 +24,8 @@ import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.block.RunLengthEncodedBlock;
 import io.trino.spi.security.ConnectorIdentity;
 import org.apache.hadoop.hive.ql.io.AcidUtils;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -41,11 +42,12 @@ import static org.testng.Assert.assertEquals;
 
 public class TestOrcDeletedRows
 {
-    private final Location partitionDirectory;
-    private final Block rowIdBlock;
-    private final Block bucketBlock;
+    private Location partitionDirectory;
+    private Block rowIdBlock;
+    private Block bucketBlock;
 
-    public TestOrcDeletedRows()
+    @BeforeClass
+    public void setUp()
     {
         partitionDirectory = Location.of(getResource("fullacid_delete_delta_test").toString());
 

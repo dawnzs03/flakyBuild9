@@ -146,7 +146,7 @@ public class ExchangeNode
                 scope,
                 partitioningScheme,
                 ImmutableList.of(child),
-                ImmutableList.of(partitioningScheme.getOutputLayout()),
+                ImmutableList.of(partitioningScheme.getOutputLayout()).asList(),
                 Optional.empty());
     }
 

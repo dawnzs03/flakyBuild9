@@ -37,6 +37,8 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat;
+import org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe;
 import org.apache.hudi.client.HoodieJavaWriteClient;
 import org.apache.hudi.client.common.HoodieJavaEngineContext;
 import org.apache.hudi.common.bootstrap.index.NoOpBootstrapIndex;
@@ -73,16 +75,14 @@ import static io.trino.plugin.hive.HiveType.HIVE_DOUBLE;
 import static io.trino.plugin.hive.HiveType.HIVE_INT;
 import static io.trino.plugin.hive.HiveType.HIVE_LONG;
 import static io.trino.plugin.hive.HiveType.HIVE_STRING;
-import static io.trino.plugin.hive.TableType.EXTERNAL_TABLE;
 import static io.trino.plugin.hive.metastore.PrincipalPrivileges.NO_PRIVILEGES;
-import static io.trino.plugin.hive.util.HiveClassNames.HUDI_PARQUET_INPUT_FORMAT;
-import static io.trino.plugin.hive.util.HiveClassNames.MAPRED_PARQUET_OUTPUT_FORMAT_CLASS;
-import static io.trino.plugin.hive.util.HiveClassNames.PARQUET_HIVE_SERDE_CLASS;
+import static io.trino.plugin.hive.util.HiveUtil.HUDI_PARQUET_INPUT_FORMAT;
 import static io.trino.testing.TestingConnectorSession.SESSION;
 import static java.lang.String.format;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static org.apache.hadoop.hive.metastore.TableType.EXTERNAL_TABLE;
 
 public class TpchHudiTablesInitializer
         implements HudiTablesInitializer
@@ -172,9 +172,9 @@ public class TpchHudiTablesInitializer
                 .flatMap(Collection::stream)
                 .collect(toUnmodifiableList());
         StorageFormat storageFormat = StorageFormat.create(
-                PARQUET_HIVE_SERDE_CLASS,
+                ParquetHiveSerDe.class.getName(),
                 HUDI_PARQUET_INPUT_FORMAT,
-                MAPRED_PARQUET_OUTPUT_FORMAT_CLASS);
+                MapredParquetOutputFormat.class.getName());
 
         return Table.builder()
                 .setDatabaseName(schemaName)

@@ -20,7 +20,7 @@ import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.block.ColumnarArray;
 import io.trino.spi.block.RunLengthEncodedBlock;
 import io.trino.spi.type.ArrayType;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -53,12 +53,14 @@ public class TestColumnarArray
                 }
             }
         }
-        Block block = createBlockBuilderWithValues(expectedValues).build();
-        verifyBlock(block, expectedValues);
+        BlockBuilder blockBuilder = createBlockBuilderWithValues(expectedValues);
+        verifyBlock(blockBuilder, expectedValues);
+        verifyBlock(blockBuilder.build(), expectedValues);
 
         Slice[][] expectedValuesWithNull = alternatingNullValues(expectedValues);
-        Block blockWithNull = createBlockBuilderWithValues(expectedValuesWithNull).build();
-        verifyBlock(blockWithNull, expectedValuesWithNull);
+        BlockBuilder blockBuilderWithNull = createBlockBuilderWithValues(expectedValuesWithNull);
+        verifyBlock(blockBuilderWithNull, expectedValuesWithNull);
+        verifyBlock(blockBuilderWithNull.build(), expectedValuesWithNull);
     }
 
     private static <T> void verifyBlock(Block block, T[] expectedValues)

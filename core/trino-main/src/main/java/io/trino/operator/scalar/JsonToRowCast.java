@@ -65,8 +65,9 @@ public class JsonToRowCast
 
     private JsonToRowCast()
     {
-        super(FunctionMetadata.operatorBuilder(CAST)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .operatorType(CAST)
                         .typeVariableConstraint(
                                 // this is technically a recursive constraint for cast, but TypeRegistry.canCast has explicit handling for json to row cast
                                 TypeVariableConstraint.builder("T")
@@ -108,13 +109,12 @@ public class JsonToRowCast
                 return null;
             }
 
-            BlockBuilder blockBuilder = rowType.createBlockBuilder(null, 1);
-            rowAppender.append(jsonParser, blockBuilder);
+            BlockBuilder rowBlockBuilder = rowType.createBlockBuilder(null, 1);
+            rowAppender.append(jsonParser, rowBlockBuilder);
             if (jsonParser.nextToken() != null) {
                 throw new JsonCastException(format("Unexpected trailing token: %s", jsonParser.getText()));
             }
-            Block block = blockBuilder.build();
-            return rowType.getObject(block, 0);
+            return rowType.getObject(rowBlockBuilder, 0);
         }
         catch (TrinoException | JsonCastException e) {
             throw new TrinoException(INVALID_CAST_ARGUMENT, format("Cannot cast to %s. %s\n%s", rowType, e.getMessage(), truncateIfNecessaryForErrorMessage(json)), e);

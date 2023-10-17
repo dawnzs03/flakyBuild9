@@ -64,7 +64,7 @@ public class AllowAllSystemAccessControl
     }
 
     @Override
-    public void checkCanImpersonateUser(Identity identity, String userName)
+    public void checkCanImpersonateUser(SystemSecurityContext context, String userName)
     {
     }
 
@@ -74,38 +74,54 @@ public class AllowAllSystemAccessControl
     }
 
     @Override
-    public void checkCanReadSystemInformation(Identity identity)
+    public void checkCanReadSystemInformation(SystemSecurityContext context)
     {
     }
 
     @Override
-    public void checkCanWriteSystemInformation(Identity identity)
+    public void checkCanWriteSystemInformation(SystemSecurityContext context)
     {
     }
 
     @Override
-    public void checkCanExecuteQuery(Identity identity)
+    public void checkCanExecuteQuery(SystemSecurityContext context)
     {
     }
 
     @Override
-    public void checkCanViewQueryOwnedBy(Identity identity, Identity queryOwner)
+    public void checkCanViewQueryOwnedBy(SystemSecurityContext context, Identity queryOwner)
     {
     }
 
     @Override
-    public void checkCanKillQueryOwnedBy(Identity identity, Identity queryOwner)
+    public void checkCanViewQueryOwnedBy(SystemSecurityContext context, String queryOwner)
     {
     }
 
     @Override
-    public Collection<Identity> filterViewQueryOwnedBy(Identity identity, Collection<Identity> queryOwners)
+    public void checkCanKillQueryOwnedBy(SystemSecurityContext context, Identity queryOwner)
+    {
+    }
+
+    @Override
+    public void checkCanKillQueryOwnedBy(SystemSecurityContext context, String queryOwner)
+    {
+    }
+
+    @Override
+    public Collection<Identity> filterViewQueryOwnedBy(SystemSecurityContext context, Collection<Identity> queryOwners)
     {
         return queryOwners;
     }
 
     @Override
-    public void checkCanSetSystemSessionProperty(Identity identity, String propertyName)
+    public Set<String> filterViewQueryOwnedBy(SystemSecurityContext context, Set<String> queryOwners)
+    {
+        return queryOwners;
+    }
+
+    @Override
+    public void checkCanSetSystemSessionProperty(SystemSecurityContext context, String propertyName)
     {
     }
 
@@ -226,12 +242,6 @@ public class AllowAllSystemAccessControl
     public Set<String> filterColumns(SystemSecurityContext context, CatalogSchemaTableName tableName, Set<String> columns)
     {
         return columns;
-    }
-
-    @Override
-    public Map<SchemaTableName, Set<String>> filterColumns(SystemSecurityContext context, String catalogName, Map<SchemaTableName, Set<String>> tableColumns)
-    {
-        return tableColumns;
     }
 
     @Override
@@ -415,6 +425,11 @@ public class AllowAllSystemAccessControl
     }
 
     @Override
+    public void checkCanShowRoleAuthorizationDescriptors(SystemSecurityContext context)
+    {
+    }
+
+    @Override
     public void checkCanShowCurrentRoles(SystemSecurityContext context)
     {
     }
@@ -460,5 +475,11 @@ public class AllowAllSystemAccessControl
     public Optional<ViewExpression> getColumnMask(SystemSecurityContext context, CatalogSchemaTableName tableName, String columnName, Type type)
     {
         return Optional.empty();
+    }
+
+    @Override
+    public List<ViewExpression> getColumnMasks(SystemSecurityContext context, CatalogSchemaTableName tableName, String columnName, Type type)
+    {
+        return emptyList();
     }
 }

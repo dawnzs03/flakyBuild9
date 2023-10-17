@@ -81,13 +81,12 @@ public class PhoenixSplitManager
             List<JdbcColumnHandle> columns = tableHandle.getColumns()
                     .map(columnSet -> columnSet.stream().map(JdbcColumnHandle.class::cast).collect(toList()))
                     .orElseGet(() -> phoenixClient.getColumns(session, tableHandle));
-            PhoenixPreparedStatement inputQuery = phoenixClient.prepareStatement(
+            PhoenixPreparedStatement inputQuery = (PhoenixPreparedStatement) phoenixClient.prepareStatement(
                     session,
                     connection,
                     tableHandle,
                     columns,
-                    Optional.empty())
-                    .unwrap(PhoenixPreparedStatement.class);
+                    Optional.empty());
 
             int maxScansPerSplit = session.getProperty(PhoenixSessionProperties.MAX_SCANS_PER_SPLIT, Integer.class);
             List<ConnectorSplit> splits = getSplits(inputQuery, maxScansPerSplit).stream()

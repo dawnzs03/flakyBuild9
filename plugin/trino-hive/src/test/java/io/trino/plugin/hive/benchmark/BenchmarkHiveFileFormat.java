@@ -18,6 +18,7 @@ import io.airlift.slice.Slices;
 import io.trino.hadoop.HadoopNative;
 import io.trino.plugin.hive.HiveCompressionCodec;
 import io.trino.plugin.hive.HiveConfig;
+import io.trino.plugin.hive.parquet.ParquetReaderConfig;
 import io.trino.spi.Page;
 import io.trino.spi.PageBuilder;
 import io.trino.spi.block.ArrayBlockBuilder;
@@ -57,6 +58,7 @@ import static com.google.common.io.RecursiveDeleteOption.ALLOW_INSECURE;
 import static io.trino.jmh.Benchmarks.benchmark;
 import static io.trino.plugin.hive.HiveTestUtils.HDFS_ENVIRONMENT;
 import static io.trino.plugin.hive.HiveTestUtils.getHiveSession;
+import static io.trino.plugin.hive.benchmark.BenchmarkFileFormat.TRINO_OPTIMIZED_PARQUET;
 import static io.trino.plugin.hive.benchmark.BenchmarkFileFormatsUtils.MIN_DATA_SIZE;
 import static io.trino.plugin.hive.benchmark.BenchmarkFileFormatsUtils.createTempDir;
 import static io.trino.plugin.hive.benchmark.BenchmarkFileFormatsUtils.createTpchDataSet;
@@ -78,7 +80,11 @@ import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
 @SuppressWarnings({"UseOfSystemOutOrSystemErr", "ResultOfMethodCallIgnored"})
 public class BenchmarkHiveFileFormat
 {
-    private static final ConnectorSession SESSION = getHiveSession(new HiveConfig());
+    private static final ConnectorSession SESSION = getHiveSession(
+            new HiveConfig(), new ParquetReaderConfig().setOptimizedReaderEnabled(false));
+
+    private static final ConnectorSession SESSION_OPTIMIZED_PARQUET_READER = getHiveSession(
+            new HiveConfig(), new ParquetReaderConfig().setOptimizedReaderEnabled(true));
 
     static {
         HadoopNative.requireHadoopNative();
@@ -108,7 +114,8 @@ public class BenchmarkHiveFileFormat
             "TRINO_RCBINARY",
             "TRINO_RCTEXT",
             "TRINO_ORC",
-            "TRINO_PARQUET"})
+            "TRINO_PARQUET",
+            "TRINO_OPTIMIZED_PARQUET"})
     private BenchmarkFileFormat benchmarkFileFormat;
 
     private FileFormat fileFormat;
@@ -165,7 +172,7 @@ public class BenchmarkHiveFileFormat
         }
         List<Page> pages = new ArrayList<>(100);
         try (ConnectorPageSource pageSource = fileFormat.createFileFormatReader(
-                SESSION,
+                TRINO_OPTIMIZED_PARQUET.equals(benchmarkFileFormat) ? SESSION_OPTIMIZED_PARQUET_READER : SESSION,
                 HDFS_ENVIRONMENT,
                 dataFile,
                 data.getColumnNames(),

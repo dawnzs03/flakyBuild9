@@ -43,8 +43,9 @@ public final class InvokeFunction
 
     private InvokeFunction()
     {
-        super(FunctionMetadata.scalarBuilder("invoke")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("invoke")
                         .typeVariable("T")
                         .returnType(new TypeSignature("T"))
                         .argumentType(functionType(new TypeSignature("T")))

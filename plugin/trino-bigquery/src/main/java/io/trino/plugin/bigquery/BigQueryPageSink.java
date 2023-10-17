@@ -89,9 +89,7 @@ public class BigQueryPageSink
     @Override
     public CompletableFuture<Collection<Slice>> finish()
     {
-        Slice value = Slices.allocate(Long.BYTES);
-        value.setLong(0, pageSinkId.getId());
-        return completedFuture(ImmutableList.of(value));
+        return completedFuture(ImmutableList.of(Slices.wrappedLongArray(pageSinkId.getId())));
     }
 
     @Override

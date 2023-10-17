@@ -39,6 +39,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.SessionTestUtils.TEST_SESSION;
 import static io.trino.spi.StandardErrorCode.EXPRESSION_NOT_CONSTANT;
 import static io.trino.sql.ExpressionUtils.rewriteIdentifiersToSymbolReferences;
+import static io.trino.sql.ParsingUtil.createParsingOptions;
 import static io.trino.sql.analyzer.SemanticExceptions.semanticException;
 import static io.trino.sql.analyzer.TypeSignatureTranslator.toSqlType;
 import static io.trino.sql.planner.TypeAnalyzer.createTestingTypeAnalyzer;
@@ -77,7 +78,7 @@ public final class ExpressionTestUtils
 
     public static Expression createExpression(Session session, String expression, PlannerContext plannerContext, TypeProvider symbolTypes)
     {
-        Expression parsedExpression = SQL_PARSER.createExpression(expression);
+        Expression parsedExpression = SQL_PARSER.createExpression(expression, createParsingOptions(session));
         return planExpression(plannerContext, session, symbolTypes, parsedExpression);
     }
 

@@ -13,6 +13,8 @@
  */
 package io.trino.spi.block;
 
+import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
 import io.trino.spi.Experimental;
 import jakarta.annotation.Nullable;
 
@@ -224,6 +226,11 @@ public class IntArrayBlock
         sb.append("positionCount=").append(getPositionCount());
         sb.append('}');
         return sb.toString();
+    }
+
+    Slice getValuesSlice()
+    {
+        return Slices.wrappedIntArray(values, arrayOffset, positionCount);
     }
 
     @Experimental(eta = "2023-12-31")

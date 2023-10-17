@@ -15,9 +15,8 @@ package io.trino.parquet.writer;
 
 import io.airlift.slice.Slice;
 import io.airlift.slice.SliceOutput;
-import io.trino.plugin.base.io.ChunkedSliceOutput;
+import org.apache.parquet.bytes.BytesInput;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import static java.util.Objects.requireNonNull;
@@ -30,7 +29,7 @@ public interface ParquetDataOutput
         return new ParquetDataOutput()
         {
             @Override
-            public int size()
+            public long size()
             {
                 return slice.length();
             }
@@ -43,41 +42,22 @@ public interface ParquetDataOutput
         };
     }
 
-    static ParquetDataOutput createDataOutput(ChunkedSliceOutput chunkedSliceOutput)
+    static ParquetDataOutput createDataOutput(BytesInput bytesInput)
     {
-        requireNonNull(chunkedSliceOutput, "chunkedSliceOutput is null");
+        requireNonNull(bytesInput, "bytesInput is null");
         return new ParquetDataOutput()
         {
             @Override
-            public int size()
+            public long size()
             {
-                return chunkedSliceOutput.size();
-            }
-
-            @Override
-            public void writeData(SliceOutput sliceOutput)
-            {
-                chunkedSliceOutput.getSlices().forEach(sliceOutput::writeBytes);
-            }
-        };
-    }
-
-    static ParquetDataOutput createDataOutput(ByteArrayOutputStream byteArrayOutputStream)
-    {
-        requireNonNull(byteArrayOutputStream, "byteArrayOutputStream is null");
-        return new ParquetDataOutput()
-        {
-            @Override
-            public int size()
-            {
-                return byteArrayOutputStream.size();
+                return bytesInput.size();
             }
 
             @Override
             public void writeData(SliceOutput sliceOutput)
             {
                 try {
-                    byteArrayOutputStream.writeTo(sliceOutput);
+                    bytesInput.writeAllTo(sliceOutput);
                 }
                 catch (IOException e) {
                     throw new RuntimeException(e);
@@ -89,7 +69,7 @@ public interface ParquetDataOutput
     /**
      * Number of bytes that will be written.
      */
-    int size();
+    long size();
 
     /**
      * Writes data to the output. The output must be exactly

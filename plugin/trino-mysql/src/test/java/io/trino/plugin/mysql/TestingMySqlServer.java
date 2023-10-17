@@ -23,11 +23,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.ZoneId;
 
 import static io.trino.testing.containers.TestContainers.startOrReuse;
 import static java.lang.String.format;
-import static java.time.ZoneOffset.UTC;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 
 public class TestingMySqlServer
@@ -44,26 +42,15 @@ public class TestingMySqlServer
         this(false);
     }
 
-    public TestingMySqlServer(ZoneId zoneId)
-    {
-        this(DEFAULT_IMAGE, false, zoneId);
-    }
-
     public TestingMySqlServer(boolean globalTransactionEnable)
     {
-        this(DEFAULT_IMAGE, globalTransactionEnable, UTC);
+        this(DEFAULT_IMAGE, globalTransactionEnable);
     }
 
     public TestingMySqlServer(String dockerImageName, boolean globalTransactionEnable)
     {
-        this(dockerImageName, globalTransactionEnable, UTC);
-    }
-
-    public TestingMySqlServer(String dockerImageName, boolean globalTransactionEnable, ZoneId zoneId)
-    {
         MySQLContainer<?> container = new MySQLContainer<>(dockerImageName);
         container = container.withDatabaseName("tpch");
-        container.addEnv("TZ", zoneId.getId());
         if (globalTransactionEnable) {
             container = container.withCommand("--gtid-mode=ON", "--enforce-gtid-consistency=ON");
         }

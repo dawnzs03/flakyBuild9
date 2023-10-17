@@ -13,6 +13,7 @@
  */
 package io.trino.parquet.reader.decoders;
 
+import io.airlift.slice.Slices;
 import io.trino.parquet.reader.SimpleSliceInputStream;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -4275,7 +4276,7 @@ public final class LongBitUnpackers
         @Override
         public void unpack(long[] output, int outputOffset, SimpleSliceInputStream input, int length)
         {
-            input.readLongs(output, outputOffset, length);
+            input.readBytes(Slices.wrappedLongArray(output, outputOffset, length), 0, length * Long.BYTES);
         }
     }
 }

@@ -17,6 +17,7 @@ import com.mongodb.client.MongoClient;
 import io.trino.testing.datatype.ColumnSetup;
 import io.trino.testing.datatype.DataSetup;
 import io.trino.testing.sql.TemporaryRelation;
+import io.trino.testing.sql.TestTable;
 import io.trino.testing.sql.TrinoSqlExecutor;
 import org.bson.Document;
 
@@ -45,7 +46,7 @@ public final class MongoCreateAndInsertDataSetup
     @Override
     public TemporaryRelation setupTemporaryRelation(List<ColumnSetup> inputs)
     {
-        MongoTestTable testTable = new MongoTestTable(trinoSqlExecutor, tableNamePrefix);
+        TestTable testTable = new MongoTestTable(trinoSqlExecutor, tableNamePrefix);
         try {
             insertRows(testTable, inputs);
         }
@@ -56,7 +57,7 @@ public final class MongoCreateAndInsertDataSetup
         return testTable;
     }
 
-    private void insertRows(MongoTestTable testTable, List<ColumnSetup> inputs)
+    private void insertRows(TestTable testTable, List<ColumnSetup> inputs)
     {
         int i = 0;
         StringBuilder json = new StringBuilder("{");

@@ -35,8 +35,9 @@ public class GenericHashCodeOperator
 
     public GenericHashCodeOperator(TypeOperators typeOperators)
     {
-        super(FunctionMetadata.operatorBuilder(HASH_CODE)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .operatorType(HASH_CODE)
                         .comparableTypeParameter("T")
                         .returnType(BIGINT)
                         .argumentType(new TypeSignature("T"))

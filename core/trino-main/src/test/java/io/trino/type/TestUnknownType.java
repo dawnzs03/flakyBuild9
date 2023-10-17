@@ -13,10 +13,7 @@
  */
 package io.trino.type;
 
-import org.junit.jupiter.api.Test;
-
 import static io.trino.type.UnknownType.UNKNOWN;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestUnknownType
         extends AbstractTestType
@@ -38,17 +35,15 @@ public class TestUnknownType
         throw new UnsupportedOperationException();
     }
 
-    @Test
-    public void testRange()
+    @Override
+    public void testPreviousValue()
     {
-        assertThat(type.getRange())
-                .isEmpty();
+        // There is no value of this type, so getPreviousValue() cannot be invoked
     }
 
     @Override
-    public void testFlat()
-            throws Throwable
+    public void testNextValue()
     {
-        // unknown is always mull, so flat methods don't work
+        // There is no value of this type, so getNextValue() cannot be invoked
     }
 }

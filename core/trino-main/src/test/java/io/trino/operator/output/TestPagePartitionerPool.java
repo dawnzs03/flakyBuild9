@@ -36,10 +36,9 @@ import io.trino.spi.Page;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.testing.TestingTaskContext;
 import io.trino.type.BlockTypeOperators;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.List;
@@ -59,21 +58,19 @@ import static io.trino.spi.type.BigintType.BIGINT;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 
-@TestInstance(PER_CLASS)
 public class TestPagePartitionerPool
 {
     private ScheduledExecutorService driverYieldExecutor;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         driverYieldExecutor = newScheduledThreadPool(0, threadsNamed("TestPagePartitionerPool-driver-yield-%s"));
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void destroy()
     {
         driverYieldExecutor.shutdown();

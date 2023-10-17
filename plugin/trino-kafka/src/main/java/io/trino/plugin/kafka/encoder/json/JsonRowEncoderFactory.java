@@ -15,10 +15,13 @@ package io.trino.plugin.kafka.encoder.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import io.trino.plugin.kafka.encoder.EncoderColumnHandle;
 import io.trino.plugin.kafka.encoder.RowEncoder;
 import io.trino.plugin.kafka.encoder.RowEncoderFactory;
-import io.trino.plugin.kafka.encoder.RowEncoderSpec;
 import io.trino.spi.connector.ConnectorSession;
+
+import java.util.List;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -34,8 +37,8 @@ public class JsonRowEncoderFactory
     }
 
     @Override
-    public RowEncoder create(ConnectorSession session, RowEncoderSpec rowEncoderSpec)
+    public RowEncoder create(ConnectorSession session, Optional<String> dataSchema, List<EncoderColumnHandle> columnHandles)
     {
-        return new JsonRowEncoder(session, rowEncoderSpec.columnHandles(), objectMapper);
+        return new JsonRowEncoder(session, columnHandles, objectMapper);
     }
 }

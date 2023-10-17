@@ -20,7 +20,8 @@ import io.trino.spi.Page;
 import io.trino.spi.TrinoException;
 import io.trino.spi.type.ArrayType;
 import io.trino.sql.analyzer.TypeSignatureProvider;
-import org.junit.jupiter.api.Test;
+import io.trino.sql.tree.QualifiedName;
+import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -50,7 +51,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(DOUBLE, DOUBLE, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 Arrays.asList((Double) null),
                 createDoublesBlock(1.0, null),
@@ -59,7 +60,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 null,
                 createDoublesBlock(null, null),
@@ -68,7 +69,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 Arrays.asList(1.0),
                 createDoublesBlock(null, 1.0, null, null),
@@ -77,7 +78,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 Arrays.asList(1.0),
                 createDoublesBlock(1.0),
@@ -86,7 +87,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 null,
                 createDoublesBlock(),
@@ -95,7 +96,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of(2.5),
                 createDoublesBlock(2.5, 2.0, 5.0, 3.0),
@@ -104,7 +105,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of(2.5, 3.0),
                 createDoublesBlock(2.5, 2.0, 5.0, 3.0),
@@ -118,7 +119,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(DOUBLE, DOUBLE, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 Arrays.asList((Double) null),
                 createDoublesBlock(1.0, null),
@@ -127,7 +128,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 null,
                 createDoublesBlock(null, null),
@@ -136,7 +137,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of(2.0),
                 createDoublesBlock(2.5, 2.0, 5.0, 3.0),
@@ -145,7 +146,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of(2.0, 5.0),
                 createDoublesBlock(2.5, 2.0, 5.0, 3.0),
@@ -159,7 +160,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(VARCHAR, DOUBLE, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("z", "a"),
                 createStringsBlock("z", "a", "x", "b"),
@@ -168,7 +169,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "zz"),
                 createStringsBlock("zz", "hi", "bb", "a"),
@@ -177,7 +178,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "zz"),
                 createStringsBlock("zz", "hi", null, "a"),
@@ -186,7 +187,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("b", "c"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -195,7 +196,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "c"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -204,7 +205,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "b"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -213,7 +214,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "b"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -222,7 +223,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "b"),
                 createStringsBlock("a", "b"),
@@ -236,7 +237,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(VARCHAR, DOUBLE, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("a", "z"),
                 createStringsBlock("z", "a", null),
@@ -245,7 +246,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("bb", "hi"),
                 createStringsBlock("zz", "hi", "bb", "a"),
@@ -254,7 +255,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("hi", "zz"),
                 createStringsBlock("zz", "hi", null, "a"),
@@ -263,7 +264,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("d", "c"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -272,7 +273,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("d", "c"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -281,7 +282,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("d", "b"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -290,7 +291,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("c", "b"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -299,7 +300,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("a", "b"),
                 createStringsBlock("a", "b"),
@@ -313,7 +314,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(VARCHAR, REAL, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("z", "a"),
                 createStringsBlock("z", "a", "x", "b"),
@@ -322,7 +323,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "zz"),
                 createStringsBlock("zz", "hi", "bb", "a"),
@@ -331,7 +332,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "zz"),
                 createStringsBlock("zz", "hi", null, "a"),
@@ -340,7 +341,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("b", "c"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -349,7 +350,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "c"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -358,7 +359,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "b"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -367,7 +368,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "b"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -376,7 +377,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("a", "b"),
                 createStringsBlock("a", "b"),
@@ -390,7 +391,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(VARCHAR, REAL, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("a", "z"),
                 createStringsBlock("z", "a", null),
@@ -399,7 +400,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("bb", "hi"),
                 createStringsBlock("zz", "hi", "bb", "a"),
@@ -408,7 +409,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("hi", "zz"),
                 createStringsBlock("zz", "hi", null, "a"),
@@ -417,7 +418,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("d", "c"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -426,7 +427,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("d", "c"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -435,7 +436,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("d", "b"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -444,7 +445,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("c", "b"),
                 createStringsBlock("a", "b", "c", "d"),
@@ -453,7 +454,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("a", "b"),
                 createStringsBlock("a", "b"),
@@ -467,7 +468,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(DOUBLE, VARCHAR, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of(2.0, 3.0),
                 createDoublesBlock(1.0, 2.0, 2.0, 3.0),
@@ -476,7 +477,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of(-1.0, 2.0),
                 createDoublesBlock(0.0, 1.0, 2.0, -1.0),
@@ -485,7 +486,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of(-1.0, 1.0),
                 createDoublesBlock(0.0, 1.0, null, -1.0),
@@ -499,7 +500,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(DOUBLE, VARCHAR, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of(1.0, 2.0),
                 createDoublesBlock(1.0, 2.0, null),
@@ -508,7 +509,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of(0.0, 1.0),
                 createDoublesBlock(0.0, 1.0, 2.0, -1.0),
@@ -517,7 +518,7 @@ public class TestMinMaxByNAggregation
 
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of(0.0, 1.0),
                 createDoublesBlock(0.0, 1.0, null, -1.0),
@@ -531,7 +532,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(new ArrayType(BIGINT), VARCHAR, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of(ImmutableList.of(2L, 3L), ImmutableList.of(4L, 5L)),
                 createArrayBigintBlock(ImmutableList.of(ImmutableList.of(1L, 2L), ImmutableList.of(2L, 3L), ImmutableList.of(3L, 4L), ImmutableList.of(4L, 5L))),
@@ -545,7 +546,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(new ArrayType(BIGINT), VARCHAR, BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of(ImmutableList.of(1L, 2L), ImmutableList.of(3L, 4L)),
                 createArrayBigintBlock(ImmutableList.of(ImmutableList.of(1L, 2L), ImmutableList.of(2L, 3L), ImmutableList.of(3L, 4L), ImmutableList.of(4L, 5L))),
@@ -559,7 +560,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(VARCHAR, new ArrayType(BIGINT), BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "min_by",
+                QualifiedName.of("min_by"),
                 parameterTypes,
                 ImmutableList.of("b", "x", "z"),
                 createStringsBlock("z", "a", "x", "b"),
@@ -573,7 +574,7 @@ public class TestMinMaxByNAggregation
         List<TypeSignatureProvider> parameterTypes = fromTypes(VARCHAR, new ArrayType(BIGINT), BIGINT);
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "max_by",
+                QualifiedName.of("max_by"),
                 parameterTypes,
                 ImmutableList.of("a", "z", "x"),
                 createStringsBlock("z", "a", "x", "b"),
@@ -584,7 +585,7 @@ public class TestMinMaxByNAggregation
     @Test
     public void testOutOfBound()
     {
-        TestingAggregationFunction function = FUNCTION_RESOLUTION.getAggregateFunction("max_by", fromTypes(VARCHAR, BIGINT, BIGINT));
+        TestingAggregationFunction function = FUNCTION_RESOLUTION.getAggregateFunction(QualifiedName.of("max_by"), fromTypes(VARCHAR, BIGINT, BIGINT));
         try {
             groupedAggregation(function, new Page(createStringsBlock("z"), createLongsBlock(0), createLongsBlock(10001)));
         }

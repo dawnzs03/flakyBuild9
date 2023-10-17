@@ -21,6 +21,9 @@ import java.io.InputStream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.airlift.slice.SizeOf.SIZE_OF_LONG;
+import static io.airlift.slice.UnsafeSlice.getIntUnchecked;
+import static io.airlift.slice.UnsafeSlice.getLongUnchecked;
+import static io.airlift.slice.UnsafeSlice.getShortUnchecked;
 
 public final class LongBitPacker
 {
@@ -262,7 +265,7 @@ public final class LongBitPacker
             i += input.read(tmp, i, blockReadableBytes - i);
         }
         for (int i = 0; i < len; i++) {
-            buffer[offset + i] = 0xFFFFL & Short.reverseBytes(slice.getShortUnchecked(2 * i));
+            buffer[offset + i] = 0xFFFFL & Short.reverseBytes(getShortUnchecked(slice, 2 * i));
         }
     }
 
@@ -276,7 +279,7 @@ public final class LongBitPacker
         for (int i = 0; i < len; i++) {
             // It's safe to read 4-bytes at a time and shift, because slice is a view over tmp,
             // which has 8 bytes of buffer space for every position
-            buffer[offset + i] = 0xFF_FFFFL & (Integer.reverseBytes(slice.getIntUnchecked(3 * i)) >>> 8);
+            buffer[offset + i] = 0xFF_FFFFL & (Integer.reverseBytes(getIntUnchecked(slice, 3 * i)) >>> 8);
         }
     }
 
@@ -288,7 +291,7 @@ public final class LongBitPacker
             i += input.read(tmp, i, blockReadableBytes - i);
         }
         for (int i = 0; i < len; i++) {
-            buffer[offset + i] = 0xFFFF_FFFFL & Integer.reverseBytes(slice.getIntUnchecked(4 * i));
+            buffer[offset + i] = 0xFFFF_FFFFL & Integer.reverseBytes(getIntUnchecked(slice, 4 * i));
         }
     }
 
@@ -302,7 +305,7 @@ public final class LongBitPacker
         for (int i = 0; i < len; i++) {
             // It's safe to read 8-bytes at a time and shift, because slice is a view over tmp,
             // which has 8 bytes of buffer space for every position
-            buffer[offset + i] = Long.reverseBytes(slice.getLongUnchecked(5 * i)) >>> 24;
+            buffer[offset + i] = Long.reverseBytes(getLongUnchecked(slice, 5 * i)) >>> 24;
         }
     }
 
@@ -316,7 +319,7 @@ public final class LongBitPacker
         for (int i = 0; i < len; i++) {
             // It's safe to read 8-bytes at a time and shift, because slice is a view over tmp,
             // which has 8 bytes of buffer space for every position
-            buffer[offset + i] = Long.reverseBytes(slice.getLongUnchecked(6 * i)) >>> 16;
+            buffer[offset + i] = Long.reverseBytes(getLongUnchecked(slice, 6 * i)) >>> 16;
         }
     }
 
@@ -330,7 +333,7 @@ public final class LongBitPacker
         for (int i = 0; i < len; i++) {
             // It's safe to read 8-bytes at a time and shift, because slice is a view over tmp,
             // which has 8 bytes of buffer space for every position
-            buffer[offset + i] = Long.reverseBytes(slice.getLongUnchecked(7 * i)) >>> 8;
+            buffer[offset + i] = Long.reverseBytes(getLongUnchecked(slice, 7 * i)) >>> 8;
         }
     }
 
@@ -342,7 +345,7 @@ public final class LongBitPacker
             i += input.read(tmp, i, blockReadableBytes - i);
         }
         for (int i = 0; i < len; i++) {
-            buffer[offset + i] = Long.reverseBytes(slice.getLongUnchecked(8 * i));
+            buffer[offset + i] = Long.reverseBytes(getLongUnchecked(slice, 8 * i));
         }
     }
 }

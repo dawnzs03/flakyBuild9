@@ -40,7 +40,7 @@ final class NonEvictableLoadingCacheImpl<K, V>
     public ConcurrentMap<K, V> asMap()
     {
         ConcurrentMap<K, V> map = super.asMap();
-        return new ForwardingConcurrentMap<>()
+        return new ForwardingConcurrentMap<K, V>()
         {
             @Override
             protected ConcurrentMap<K, V> delegate()

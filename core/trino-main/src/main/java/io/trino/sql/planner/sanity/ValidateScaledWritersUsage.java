@@ -16,7 +16,6 @@ package io.trino.sql.planner.sanity;
 import com.google.common.collect.ImmutableList;
 import io.trino.Session;
 import io.trino.execution.warnings.WarningCollector;
-import io.trino.spi.connector.WriterScalingOptions;
 import io.trino.sql.PlannerContext;
 import io.trino.sql.planner.PartitioningHandle;
 import io.trino.sql.planner.TypeAnalyzer;
@@ -56,7 +55,7 @@ public class ValidateScaledWritersUsage
     }
 
     private static class Visitor
-            extends PlanVisitor<List<ExchangeNode>, Void>
+            extends PlanVisitor<List<PartitioningHandle>, Void>
     {
         private final Session session;
         private final PlannerContext plannerContext;
@@ -68,50 +67,39 @@ public class ValidateScaledWritersUsage
         }
 
         @Override
-        protected List<ExchangeNode> visitPlan(PlanNode node, Void context)
+        protected List<PartitioningHandle> visitPlan(PlanNode node, Void context)
         {
-            return collectExchanges(node.getSources());
+            return collectPartitioningHandles(node.getSources());
         }
 
         @Override
-        public List<ExchangeNode> visitTableWriter(TableWriterNode node, Void context)
+        public List<PartitioningHandle> visitTableWriter(TableWriterNode node, Void context)
         {
-            List<ExchangeNode> scaleWriterExchanges = collectExchanges(node.getSources()).stream()
-                    .filter(exchangeNode -> exchangeNode.getPartitioningScheme().getPartitioning().getHandle().isScaleWriters())
+            List<PartitioningHandle> children = collectPartitioningHandles(node.getSources());
+            List<PartitioningHandle> scaleWriterPartitioningHandle = children.stream()
+                    .filter(PartitioningHandle::isScaleWriters)
                     .collect(toImmutableList());
             TableWriterNode.WriterTarget target = node.getTarget();
 
-            scaleWriterExchanges.forEach(exchangeNode -> {
-                PartitioningHandle handle = exchangeNode.getPartitioningScheme().getPartitioning().getHandle();
-                WriterScalingOptions scalingOptions = target.getWriterScalingOptions(plannerContext.getMetadata(), session);
-                if (exchangeNode.getScope() == ExchangeNode.Scope.LOCAL) {
-                    checkState(scalingOptions.isPerTaskWriterScalingEnabled(),
-                            "The scaled writer per task partitioning scheme is set but writer target %s doesn't support it", target);
-                }
-
-                if (exchangeNode.getScope() == ExchangeNode.Scope.REMOTE) {
-                    checkState(scalingOptions.isWriterTasksScalingEnabled(),
-                            "The scaled writer across tasks partitioning scheme is set but writer target %s doesn't support it", target);
-                }
-
-                if (isScaledWriterHashDistribution(handle)) {
+            scaleWriterPartitioningHandle.forEach(partitioningHandle -> {
+                if (isScaledWriterHashDistribution(partitioningHandle)) {
                     checkState(target.supportsMultipleWritersPerPartition(plannerContext.getMetadata(), session),
                             "The hash scaled writer partitioning scheme is set for the partitioned write but writer target %s doesn't support multiple writers per partition", target);
                 }
             });
-            return scaleWriterExchanges;
+            return children;
         }
 
         @Override
-        public List<ExchangeNode> visitExchange(ExchangeNode node, Void context)
+        public List<PartitioningHandle> visitExchange(ExchangeNode node, Void context)
         {
-            return ImmutableList.<ExchangeNode>builder()
-                    .add(node)
-                    .addAll(collectExchanges(node.getSources()))
+            return ImmutableList.<PartitioningHandle>builder()
+                    .add(node.getPartitioningScheme().getPartitioning().getHandle())
+                    .addAll(collectPartitioningHandles(node.getSources()))
                     .build();
         }
 
-        private List<ExchangeNode> collectExchanges(List<PlanNode> nodes)
+        private List<PartitioningHandle> collectPartitioningHandles(List<PlanNode> nodes)
         {
             return nodes.stream()
                     .map(node -> node.accept(this, null))

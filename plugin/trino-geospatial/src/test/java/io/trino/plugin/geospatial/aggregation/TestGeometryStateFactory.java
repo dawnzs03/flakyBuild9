@@ -14,7 +14,7 @@
 package io.trino.plugin.geospatial.aggregation;
 
 import com.esri.core.geometry.ogc.OGCGeometry;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;

@@ -14,7 +14,7 @@
 package io.trino.plugin.kudu.schema;
 
 import io.trino.spi.connector.SchemaTableName;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 

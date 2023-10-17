@@ -19,7 +19,7 @@ import io.trino.spi.Experimental;
 
 import java.util.Objects;
 
-import static java.util.Locale.ROOT;
+import static java.util.Objects.requireNonNull;
 
 @Experimental(eta = "2022-10-31")
 public final class SchemaFunctionName
@@ -30,11 +30,11 @@ public final class SchemaFunctionName
     @JsonCreator
     public SchemaFunctionName(@JsonProperty("schemaName") String schemaName, @JsonProperty("functionName") String functionName)
     {
-        this.schemaName = schemaName.toLowerCase(ROOT);
+        this.schemaName = requireNonNull(schemaName, "schemaName is null");
         if (schemaName.isEmpty()) {
             throw new IllegalArgumentException("schemaName is empty");
         }
-        this.functionName = functionName.toLowerCase(ROOT);
+        this.functionName = requireNonNull(functionName, "functionName is null");
         if (functionName.isEmpty()) {
             throw new IllegalArgumentException("functionName is empty");
         }

@@ -44,7 +44,7 @@ class WindowFunctionValidator
         // pattern recognition functions are not resolved
         if (!analysis.isPatternRecognitionFunction(functionCall)) {
             ResolvedFunction resolvedFunction = analysis.getResolvedFunction(functionCall);
-            if (resolvedFunction != null && functionCall.getWindow().isEmpty() && resolvedFunction.getFunctionKind() == WINDOW) {
+            if (resolvedFunction != null && functionCall.getWindow().isEmpty() && metadata.getFunctionMetadata(session, resolvedFunction).getKind() == WINDOW) {
                 throw semanticException(MISSING_OVER, functionCall, "Window function %s requires an OVER clause", resolvedFunction.getSignature().getName());
             }
         }

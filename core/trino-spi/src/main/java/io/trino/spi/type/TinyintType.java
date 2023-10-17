@@ -21,9 +21,6 @@ import io.trino.spi.block.BlockBuilderStatus;
 import io.trino.spi.block.ByteArrayBlockBuilder;
 import io.trino.spi.block.PageBuilderStatus;
 import io.trino.spi.connector.ConnectorSession;
-import io.trino.spi.function.FlatFixed;
-import io.trino.spi.function.FlatFixedOffset;
-import io.trino.spi.function.FlatVariableWidth;
 import io.trino.spi.function.ScalarOperator;
 
 import java.util.Optional;
@@ -36,7 +33,6 @@ import static io.trino.spi.function.OperatorType.EQUAL;
 import static io.trino.spi.function.OperatorType.HASH_CODE;
 import static io.trino.spi.function.OperatorType.LESS_THAN;
 import static io.trino.spi.function.OperatorType.LESS_THAN_OR_EQUAL;
-import static io.trino.spi.function.OperatorType.READ_VALUE;
 import static io.trino.spi.function.OperatorType.XX_HASH_64;
 import static io.trino.spi.type.TypeOperatorDeclaration.extractOperatorDeclaration;
 import static java.lang.String.format;
@@ -195,12 +191,6 @@ public final class TinyintType
     }
 
     @Override
-    public int getFlatFixedSize()
-    {
-        return Byte.BYTES;
-    }
-
-    @Override
     public boolean equals(Object other)
     {
         return other == TINYINT;
@@ -210,26 +200,6 @@ public final class TinyintType
     public int hashCode()
     {
         return getClass().hashCode();
-    }
-
-    @ScalarOperator(READ_VALUE)
-    private static long readFlat(
-            @FlatFixed byte[] fixedSizeSlice,
-            @FlatFixedOffset int fixedSizeOffset,
-            @FlatVariableWidth byte[] unusedVariableSizeSlice)
-    {
-        return fixedSizeSlice[fixedSizeOffset];
-    }
-
-    @ScalarOperator(READ_VALUE)
-    private static void writeFlat(
-            long value,
-            byte[] fixedSizeSlice,
-            int fixedSizeOffset,
-            byte[] unusedVariableSizeSlice,
-            int unusedVariableSizeOffset)
-    {
-        fixedSizeSlice[fixedSizeOffset] = (byte) value;
     }
 
     @ScalarOperator(EQUAL)

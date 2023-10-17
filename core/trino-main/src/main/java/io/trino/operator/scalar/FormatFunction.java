@@ -21,11 +21,11 @@ import io.trino.spi.TrinoException;
 import io.trino.spi.block.Block;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.function.BoundSignature;
-import io.trino.spi.function.CatalogSchemaFunctionName;
 import io.trino.spi.function.FunctionDependencies;
 import io.trino.spi.function.FunctionDependencyDeclaration;
 import io.trino.spi.function.FunctionDependencyDeclaration.FunctionDependencyDeclarationBuilder;
 import io.trino.spi.function.FunctionMetadata;
+import io.trino.spi.function.QualifiedFunctionName;
 import io.trino.spi.function.Signature;
 import io.trino.spi.type.CharType;
 import io.trino.spi.type.DecimalType;
@@ -43,12 +43,11 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.IllegalFormatException;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.mapWithIndex;
 import static io.airlift.slice.Slices.utf8Slice;
-import static io.trino.metadata.GlobalFunctionCatalog.builtinFunctionName;
 import static io.trino.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 import static io.trino.spi.function.InvocationConvention.InvocationArgumentConvention.NEVER_NULL;
 import static io.trino.spi.function.InvocationConvention.InvocationReturnConvention.FAIL_ON_NULL;
@@ -81,12 +80,12 @@ public final class FormatFunction
 
     public static final FormatFunction FORMAT_FUNCTION = new FormatFunction();
     private static final MethodHandle METHOD_HANDLE = methodHandle(FormatFunction.class, "sqlFormat", List.class, ConnectorSession.class, Slice.class, Block.class);
-    private static final CatalogSchemaFunctionName JSON_FORMAT_NAME = builtinFunctionName("json_format");
 
     private FormatFunction()
     {
-        super(FunctionMetadata.scalarBuilder(NAME)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name(NAME)
                         .variadicTypeParameter("T", "row")
                         .argumentType(VARCHAR.getTypeSignature())
                         .argumentType(new TypeSignature("T"))
@@ -127,7 +126,7 @@ public final class FormatFunction
         }
 
         if (type.equals(JSON)) {
-            builder.addFunction(JSON_FORMAT_NAME, ImmutableList.of(JSON));
+            builder.addFunction(QualifiedFunctionName.of("json_format"), ImmutableList.of(JSON));
             return;
         }
         builder.addCast(type, VARCHAR);
@@ -138,7 +137,7 @@ public final class FormatFunction
     {
         Type rowType = boundSignature.getArgumentType(1);
 
-        List<Function<Block, Object>> converters = mapWithIndex(
+        List<BiFunction<ConnectorSession, Block, Object>> converters = mapWithIndex(
                 rowType.getTypeParameters().stream(),
                 (type, index) -> converter(functionDependencies, type, toIntExact(index)))
                 .collect(toImmutableList());
@@ -151,11 +150,11 @@ public final class FormatFunction
     }
 
     @UsedByGeneratedCode
-    public static Slice sqlFormat(List<Function<Block, Object>> converters, ConnectorSession session, Slice slice, Block row)
+    public static Slice sqlFormat(List<BiFunction<ConnectorSession, Block, Object>> converters, ConnectorSession session, Slice slice, Block row)
     {
         Object[] args = new Object[converters.size()];
         for (int i = 0; i < args.length; i++) {
-            args[i] = converters.get(i).apply(row);
+            args[i] = converters.get(i).apply(session, row);
         }
 
         return sqlFormat(session, slice.toStringUtf8(), args);
@@ -172,88 +171,88 @@ public final class FormatFunction
         }
     }
 
-    private static Function<Block, Object> converter(FunctionDependencies functionDependencies, Type type, int position)
+    private static BiFunction<ConnectorSession, Block, Object> converter(FunctionDependencies functionDependencies, Type type, int position)
     {
-        Function<Block, Object> converter = valueConverter(functionDependencies, type, position);
-        return block -> block.isNull(position) ? null : converter.apply(block);
+        BiFunction<ConnectorSession, Block, Object> converter = valueConverter(functionDependencies, type, position);
+        return (session, block) -> block.isNull(position) ? null : converter.apply(session, block);
     }
 
-    private static Function<Block, Object> valueConverter(FunctionDependencies functionDependencies, Type type, int position)
+    private static BiFunction<ConnectorSession, Block, Object> valueConverter(FunctionDependencies functionDependencies, Type type, int position)
     {
         if (type.equals(UNKNOWN)) {
-            return block -> null;
+            return (session, block) -> null;
         }
         if (type.equals(BOOLEAN)) {
-            return block -> BOOLEAN.getBoolean(block, position);
+            return (session, block) -> BOOLEAN.getBoolean(block, position);
         }
         if (type.equals(TINYINT)) {
-            return block -> (long) TINYINT.getByte(block, position);
+            return (session, block) -> (long) TINYINT.getByte(block, position);
         }
         if (type.equals(SMALLINT)) {
-            return block -> (long) SMALLINT.getShort(block, position);
+            return (session, block) -> (long) SMALLINT.getShort(block, position);
         }
         if (type.equals(INTEGER)) {
-            return block -> (long) INTEGER.getInt(block, position);
+            return (session, block) -> (long) INTEGER.getInt(block, position);
         }
         if (type.equals(BIGINT)) {
-            return block -> BIGINT.getLong(block, position);
+            return (session, block) -> BIGINT.getLong(block, position);
         }
         if (type.equals(REAL)) {
-            return block -> REAL.getFloat(block, position);
+            return (session, block) -> REAL.getFloat(block, position);
         }
         if (type.equals(DOUBLE)) {
-            return block -> DOUBLE.getDouble(block, position);
+            return (session, block) -> DOUBLE.getDouble(block, position);
         }
         if (type.equals(DATE)) {
-            return block -> LocalDate.ofEpochDay(DATE.getInt(block, position));
+            return (session, block) -> LocalDate.ofEpochDay(DATE.getInt(block, position));
         }
         if (type instanceof TimestampWithTimeZoneType timestampWithTimeZoneType) {
-            return block -> toZonedDateTime(timestampWithTimeZoneType, block, position);
+            return (session, block) -> toZonedDateTime(timestampWithTimeZoneType, block, position);
         }
         if (type instanceof TimestampType timestampType) {
-            return block -> toLocalDateTime(timestampType, block, position);
+            return (session, block) -> toLocalDateTime(timestampType, block, position);
         }
         if (type instanceof TimeType timeType) {
-            return block -> toLocalTime(timeType.getLong(block, position));
+            return (session, block) -> toLocalTime(timeType.getLong(block, position));
         }
         // TODO: support TIME WITH TIME ZONE by https://github.com/trinodb/trino/issues/191 + mapping to java.time.OffsetTime
         if (type.equals(JSON)) {
-            MethodHandle handle = functionDependencies.getScalarFunctionImplementation(JSON_FORMAT_NAME, ImmutableList.of(JSON), simpleConvention(FAIL_ON_NULL, NEVER_NULL)).getMethodHandle();
-            return block -> convertToString(handle, type.getSlice(block, position));
+            MethodHandle handle = functionDependencies.getScalarFunctionImplementation(QualifiedFunctionName.of("json_format"), ImmutableList.of(JSON), simpleConvention(FAIL_ON_NULL, NEVER_NULL)).getMethodHandle();
+            return (session, block) -> convertToString(handle, type.getSlice(block, position));
         }
         if (type instanceof DecimalType decimalType) {
             int scale = decimalType.getScale();
             if (decimalType.isShort()) {
-                return block -> BigDecimal.valueOf(decimalType.getLong(block, position), scale);
+                return (session, block) -> BigDecimal.valueOf(decimalType.getLong(block, position), scale);
             }
-            return block -> new BigDecimal(((Int128) decimalType.getObject(block, position)).toBigInteger(), scale);
+            return (session, block) -> new BigDecimal(((Int128) decimalType.getObject(block, position)).toBigInteger(), scale);
         }
         if (type instanceof VarcharType varcharType) {
-            return block -> varcharType.getSlice(block, position).toStringUtf8();
+            return (session, block) -> varcharType.getSlice(block, position).toStringUtf8();
         }
         if (type instanceof CharType charType) {
-            return block -> padSpaces(charType.getSlice(block, position), charType).toStringUtf8();
+            return (session, block) -> padSpaces(charType.getSlice(block, position), charType).toStringUtf8();
         }
 
-        Function<Block, Object> function;
+        BiFunction<ConnectorSession, Block, Object> function;
         if (type.getJavaType() == long.class) {
-            function = block -> type.getLong(block, position);
+            function = (session, block) -> type.getLong(block, position);
         }
         else if (type.getJavaType() == double.class) {
-            function = block -> type.getDouble(block, position);
+            function = (session, block) -> type.getDouble(block, position);
         }
         else if (type.getJavaType() == boolean.class) {
-            function = block -> type.getBoolean(block, position);
+            function = (session, block) -> type.getBoolean(block, position);
         }
         else if (type.getJavaType() == Slice.class) {
-            function = block -> type.getSlice(block, position);
+            function = (session, block) -> type.getSlice(block, position);
         }
         else {
-            function = block -> type.getObject(block, position);
+            function = (session, block) -> type.getObject(block, position);
         }
 
         MethodHandle handle = functionDependencies.getCastImplementation(type, VARCHAR, simpleConvention(FAIL_ON_NULL, NEVER_NULL)).getMethodHandle();
-        return block -> convertToString(handle, function.apply(block));
+        return (session, block) -> convertToString(handle, function.apply(session, block));
     }
 
     private static LocalTime toLocalTime(long value)

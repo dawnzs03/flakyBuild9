@@ -47,12 +47,12 @@ import io.trino.sql.planner.plan.UnionNode;
 import io.trino.sql.tree.Cast;
 import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.IsNullPredicate;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.SymbolReference;
 import io.trino.testing.LocalQueryRunner;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -78,11 +78,9 @@ import static io.trino.testing.TestingSession.testSessionBuilder;
 import static io.trino.transaction.TransactionBuilder.transaction;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_CLASS)
 public class TestCostCalculator
 {
     private static final int NUMBER_OF_NODES = 10;
@@ -95,7 +93,7 @@ public class TestCostCalculator
     private Session session;
     private LocalQueryRunner localQueryRunner;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         TaskCountEstimator taskCountEstimator = new TaskCountEstimator(() -> NUMBER_OF_NODES);
@@ -115,7 +113,7 @@ public class TestCostCalculator
                 new QueryManagerConfig());
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         costCalculatorUsingExchanges = null;
@@ -817,7 +815,7 @@ public class TestCostCalculator
     private AggregationNode aggregation(String id, PlanNode source)
     {
         AggregationNode.Aggregation aggregation = new AggregationNode.Aggregation(
-                new TestingFunctionResolution(localQueryRunner).resolveFunction("count", ImmutableList.of()),
+                new TestingFunctionResolution(localQueryRunner).resolveFunction(QualifiedName.of("count"), ImmutableList.of()),
                 ImmutableList.of(),
                 false,
                 Optional.empty(),

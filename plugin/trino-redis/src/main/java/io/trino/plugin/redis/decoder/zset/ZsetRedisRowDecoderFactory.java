@@ -15,11 +15,13 @@ package io.trino.plugin.redis.decoder.zset;
 
 import io.trino.decoder.DecoderColumnHandle;
 import io.trino.decoder.RowDecoderFactory;
-import io.trino.decoder.RowDecoderSpec;
 import io.trino.plugin.redis.decoder.RedisRowDecoder;
-import io.trino.spi.connector.ConnectorSession;
+
+import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 public class ZsetRedisRowDecoderFactory
         implements RowDecoderFactory
@@ -27,9 +29,10 @@ public class ZsetRedisRowDecoderFactory
     private static final RedisRowDecoder DECODER_INSTANCE = new ZsetRedisRowDecoder();
 
     @Override
-    public RedisRowDecoder create(ConnectorSession session, RowDecoderSpec rowDecoderSpec)
+    public RedisRowDecoder create(Map<String, String> decoderParams, Set<DecoderColumnHandle> columns)
     {
-        checkArgument(rowDecoderSpec.columns().stream().noneMatch(DecoderColumnHandle::isInternal), "unexpected internal column");
+        requireNonNull(columns, "columns is null");
+        checkArgument(columns.stream().noneMatch(DecoderColumnHandle::isInternal), "unexpected internal column");
         return DECODER_INSTANCE;
     }
 }

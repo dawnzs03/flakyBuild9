@@ -35,10 +35,9 @@ import io.trino.sql.planner.optimizations.PlanOptimizer;
 import io.trino.sql.planner.plan.ProjectNode;
 import io.trino.testing.LocalQueryRunner;
 import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -54,15 +53,13 @@ import static io.trino.testing.TestingHandles.TEST_CATALOG_NAME;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.IntStream.range;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.fail;
 
-@TestInstance(PER_CLASS)
 public class TestPlannerWarnings
 {
     private LocalQueryRunner queryRunner;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         queryRunner = LocalQueryRunner.create(testSessionBuilder()
@@ -76,7 +73,7 @@ public class TestPlannerWarnings
                 ImmutableMap.of());
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         queryRunner.close();

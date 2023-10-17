@@ -28,7 +28,7 @@ import io.trino.sql.relational.SqlToRowExpressionTranslator;
 import io.trino.sql.tree.Expression;
 import io.trino.testing.TestingSession;
 import io.trino.transaction.TransactionId;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.LinkedList;

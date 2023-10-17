@@ -14,7 +14,7 @@
 package io.trino.block;
 
 import com.google.common.base.VerifyException;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Objects;
 

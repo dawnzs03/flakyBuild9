@@ -22,6 +22,7 @@ import io.trino.spi.type.Int128;
 import io.trino.spi.type.SqlTimestampWithTimeZone;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.VarbinaryType;
+import io.trino.sql.parser.ParsingOptions;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.planner.ExpressionInterpreter;
 import io.trino.sql.planner.Symbol;
@@ -40,8 +41,7 @@ import org.intellij.lang.annotations.Language;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 import java.util.Optional;
@@ -70,6 +70,7 @@ import static io.trino.sql.ExpressionTestUtils.assertExpressionEquals;
 import static io.trino.sql.ExpressionTestUtils.getTypes;
 import static io.trino.sql.ExpressionTestUtils.resolveFunctionCalls;
 import static io.trino.sql.ExpressionUtils.rewriteIdentifiersToSymbolReferences;
+import static io.trino.sql.ParsingUtil.createParsingOptions;
 import static io.trino.sql.planner.TestingPlannerContext.PLANNER_CONTEXT;
 import static io.trino.sql.planner.TypeAnalyzer.createTestingTypeAnalyzer;
 import static io.trino.testing.assertions.TrinoExceptionAssert.assertTrinoExceptionThrownBy;
@@ -281,25 +282,6 @@ public class TestExpressionInterpreter
         assertOptimizedEquals("9876543210.9874561203 IS NOT NULL", "true");
         assertOptimizedEquals("bound_decimal_short IS NOT NULL", "true");
         assertOptimizedEquals("bound_decimal_long IS NOT NULL", "true");
-    }
-
-    @Test
-    public void testLambdaBody()
-    {
-        assertOptimizedEquals("transform(ARRAY[bound_long], n -> CAST(n as BIGINT))",
-                "transform(ARRAY[bound_long], n -> n)");
-        assertOptimizedEquals("transform(ARRAY[bound_long], n -> CAST(n as VARCHAR(5)))",
-                "transform(ARRAY[bound_long], n -> CAST(n as VARCHAR(5)))");
-        assertOptimizedEquals("transform(ARRAY[bound_long], n -> IF(false, 1, 0 / 0))",
-                "transform(ARRAY[bound_long], n -> 0 / 0)");
-        assertOptimizedEquals("transform(ARRAY[bound_long], n -> 5 / 0)",
-                "transform(ARRAY[bound_long], n -> 5 / 0)");
-        assertOptimizedEquals("transform(ARRAY[bound_long], n -> nullif(true, true))",
-                "transform(ARRAY[bound_long], n -> CAST(null AS Boolean))");
-        assertOptimizedEquals("transform(ARRAY[bound_long], n -> n + 10 * 10)",
-                "transform(ARRAY[bound_long], n -> n + 100)");
-        assertOptimizedEquals("reduce_agg(bound_long, 0, (a, b) -> IF(false, a, b), (a, b) -> IF(true, a, b))",
-                "reduce_agg(bound_long, 0, (a, b) -> b, (a, b) -> a)");
     }
 
     @Test
@@ -1872,8 +1854,7 @@ public class TestExpressionInterpreter
         optimize("MAP(ARRAY[ARRAY[1,1]], ARRAY['a'])[ARRAY[1,1]]");
     }
 
-    @Test
-    @Timeout(60)
+    @Test(timeOut = 60000)
     public void testLikeInvalidUtf8()
     {
         assertLike(new byte[] {'a', 'b', 'c'}, "%b%", true);
@@ -1923,7 +1904,7 @@ public class TestExpressionInterpreter
                         .map(Symbol::getName)
                         .collect(toImmutableMap(identity(), SymbolReference::new)));
 
-        Expression rewrittenExpected = rewriteIdentifiersToSymbolReferences(SQL_PARSER.createExpression(expected));
+        Expression rewrittenExpected = rewriteIdentifiersToSymbolReferences(SQL_PARSER.createExpression(expected, new ParsingOptions()));
         assertExpressionEquals(actualOptimized, rewrittenExpected, aliases.build());
     }
 
@@ -1947,7 +1928,7 @@ public class TestExpressionInterpreter
         return TransactionBuilder.transaction(new TestingTransactionManager(), new AllowAllAccessControl())
                 .singleStatement()
                 .execute(TEST_SESSION, transactionSession -> {
-                    Expression parsedExpression = SQL_PARSER.createExpression(expression);
+                    Expression parsedExpression = SQL_PARSER.createExpression(expression, createParsingOptions(transactionSession));
                     parsedExpression = rewriteIdentifiersToSymbolReferences(parsedExpression);
                     parsedExpression = resolveFunctionCalls(PLANNER_CONTEXT, transactionSession, SYMBOL_TYPES, parsedExpression);
                     parsedExpression = CanonicalizeExpressionRewriter.rewrite(
@@ -1976,9 +1957,10 @@ public class TestExpressionInterpreter
 
     private static void assertRoundTrip(String expression)
     {
-        Expression parsed = SQL_PARSER.createExpression(expression);
+        ParsingOptions parsingOptions = createParsingOptions(TEST_SESSION);
+        Expression parsed = SQL_PARSER.createExpression(expression, parsingOptions);
         String formatted = formatExpression(parsed);
-        assertEquals(parsed, SQL_PARSER.createExpression(formatted));
+        assertEquals(parsed, SQL_PARSER.createExpression(formatted, parsingOptions));
     }
 
     private static Object evaluate(Expression expression)

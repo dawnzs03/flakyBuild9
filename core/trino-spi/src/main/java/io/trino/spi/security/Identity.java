@@ -226,6 +226,7 @@ public class Identity
 
         public Builder withEnabledRoles(Set<String> enabledRoles)
         {
+            enabledRoles = new HashSet<>(requireNonNull(enabledRoles, "enabledRoles is null"));
             this.enabledRoles = new HashSet<>(requireNonNull(enabledRoles, "enabledRoles is null"));
             return this;
         }

@@ -14,7 +14,6 @@
 package io.trino.operator.aggregation.arrayagg;
 
 import io.trino.spi.block.Block;
-import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.function.AccumulatorState;
 import io.trino.spi.function.AccumulatorStateMetadata;
 
@@ -26,16 +25,19 @@ import io.trino.spi.function.AccumulatorStateMetadata;
 public interface ArrayAggregationState
         extends AccumulatorState
 {
-    void addAll(Block block);
-
     void add(Block block, int position);
 
-    void writeAll(BlockBuilder blockBuilder);
+    void forEach(ArrayAggregationStateConsumer consumer);
 
     boolean isEmpty();
 
     default void merge(ArrayAggregationState otherState)
     {
-        addAll(((SingleArrayAggregationState) otherState).removeTempDeserializeBlock());
+        otherState.forEach(this::add);
+    }
+
+    default void reset()
+    {
+        throw new UnsupportedOperationException();
     }
 }

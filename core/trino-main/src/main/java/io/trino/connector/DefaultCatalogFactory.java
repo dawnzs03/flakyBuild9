@@ -39,7 +39,6 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.type.TypeManager;
-import io.trino.sql.planner.OptimizerConfig;
 import io.trino.transaction.TransactionManager;
 
 import java.util.Map;
@@ -73,7 +72,6 @@ public class DefaultCatalogFactory
     private final TypeManager typeManager;
 
     private final boolean schedulerIncludeCoordinator;
-    private final int maxPrefetchedInformationSchemaPrefixes;
 
     private final ConcurrentMap<ConnectorName, InternalConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
 
@@ -90,8 +88,7 @@ public class DefaultCatalogFactory
             OpenTelemetry openTelemetry,
             TransactionManager transactionManager,
             TypeManager typeManager,
-            NodeSchedulerConfig nodeSchedulerConfig,
-            OptimizerConfig optimizerConfig)
+            NodeSchedulerConfig nodeSchedulerConfig)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
@@ -105,7 +102,6 @@ public class DefaultCatalogFactory
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
-        this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
     }
 
     @Override
@@ -168,7 +164,7 @@ public class DefaultCatalogFactory
         ConnectorServices informationSchemaConnector = new ConnectorServices(
                 tracer,
                 createInformationSchemaCatalogHandle(catalogHandle),
-                new InformationSchemaConnector(catalogHandle.getCatalogName(), nodeManager, metadata, accessControl, maxPrefetchedInformationSchemaPrefixes),
+                new InformationSchemaConnector(catalogHandle.getCatalogName(), nodeManager, metadata, accessControl),
                 () -> {});
 
         SystemTablesProvider systemTablesProvider;

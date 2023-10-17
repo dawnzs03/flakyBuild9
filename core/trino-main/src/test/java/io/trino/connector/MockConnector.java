@@ -72,7 +72,6 @@ import io.trino.spi.connector.JoinType;
 import io.trino.spi.connector.MaterializedViewFreshness;
 import io.trino.spi.connector.ProjectionApplicationResult;
 import io.trino.spi.connector.RecordPageSource;
-import io.trino.spi.connector.RelationColumnsMetadata;
 import io.trino.spi.connector.RetryMode;
 import io.trino.spi.connector.RowChangeParadigm;
 import io.trino.spi.connector.SchemaTableName;
@@ -83,7 +82,6 @@ import io.trino.spi.connector.TableFunctionApplicationResult;
 import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.connector.TableScanRedirectApplicationResult;
 import io.trino.spi.connector.TopNApplicationResult;
-import io.trino.spi.connector.WriterScalingOptions;
 import io.trino.spi.eventlistener.EventListener;
 import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.function.FunctionProvider;
@@ -113,7 +111,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -134,11 +131,9 @@ public class MockConnector
     private static final String UPDATE_ROW_ID = "update_row_id";
     private static final String MERGE_ROW_ID = "merge_row_id";
 
-    private final Function<ConnectorMetadata, ConnectorMetadata> metadataWrapper;
     private final Function<ConnectorSession, List<String>> listSchemaNames;
     private final BiFunction<ConnectorSession, String, List<String>> listTables;
     private final Optional<BiFunction<ConnectorSession, SchemaTablePrefix, Iterator<TableColumnsMetadata>>> streamTableColumns;
-    private final Optional<MockConnectorFactory.StreamRelationColumns> streamRelationColumns;
     private final BiFunction<ConnectorSession, SchemaTablePrefix, Map<SchemaTableName, ConnectorViewDefinition>> getViews;
     private final Supplier<List<PropertyMetadata<?>>> getMaterializedViewProperties;
     private final BiFunction<ConnectorSession, SchemaTablePrefix, Map<SchemaTableName, ConnectorMaterializedViewDefinition>> getMaterializedViews;
@@ -146,7 +141,6 @@ public class MockConnector
     private final BiFunction<ConnectorSession, SchemaTableName, CompletableFuture<?>> refreshMaterializedView;
     private final BiFunction<ConnectorSession, SchemaTableName, ConnectorTableHandle> getTableHandle;
     private final Function<SchemaTableName, List<ColumnMetadata>> getColumns;
-    private final Function<SchemaTableName, Optional<String>> getComment;
     private final Function<SchemaTableName, TableStatistics> getTableStatistics;
     private final Function<SchemaTableName, List<String>> checkConstraints;
     private final MockConnectorFactory.ApplyProjection applyProjection;
@@ -159,7 +153,6 @@ public class MockConnector
     private final BiFunction<ConnectorSession, SchemaTableName, Optional<CatalogSchemaTableName>> redirectTable;
     private final BiFunction<ConnectorSession, SchemaTableName, Optional<ConnectorTableLayout>> getInsertLayout;
     private final BiFunction<ConnectorSession, ConnectorTableMetadata, Optional<ConnectorTableLayout>> getNewTableLayout;
-    private final BiFunction<ConnectorSession, Type, Optional<Type>> getSupportedType;
     private final BiFunction<ConnectorSession, ConnectorTableHandle, ConnectorTableProperties> getTableProperties;
     private final BiFunction<ConnectorSession, SchemaTablePrefix, List<GrantInfo>> listTablePrivileges;
     private final Supplier<Iterable<EventListener>> eventListeners;
@@ -181,15 +174,12 @@ public class MockConnector
     private final Function<ConnectorTableFunctionHandle, ConnectorSplitSource> tableFunctionSplitsSources;
     private final OptionalInt maxWriterTasks;
     private final BiFunction<ConnectorSession, ConnectorTableExecuteHandle, Optional<ConnectorTableLayout>> getLayoutForTableExecute;
-    private final WriterScalingOptions writerScalingOptions;
 
     MockConnector(
-            Function<ConnectorMetadata, ConnectorMetadata> metadataWrapper,
             List<PropertyMetadata<?>> sessionProperties,
             Function<ConnectorSession, List<String>> listSchemaNames,
             BiFunction<ConnectorSession, String, List<String>> listTables,
             Optional<BiFunction<ConnectorSession, SchemaTablePrefix, Iterator<TableColumnsMetadata>>> streamTableColumns,
-            Optional<MockConnectorFactory.StreamRelationColumns> streamRelationColumns,
             BiFunction<ConnectorSession, SchemaTablePrefix, Map<SchemaTableName, ConnectorViewDefinition>> getViews,
             Supplier<List<PropertyMetadata<?>>> getMaterializedViewProperties,
             BiFunction<ConnectorSession, SchemaTablePrefix, Map<SchemaTableName, ConnectorMaterializedViewDefinition>> getMaterializedViews,
@@ -197,7 +187,6 @@ public class MockConnector
             BiFunction<ConnectorSession, SchemaTableName, CompletableFuture<?>> refreshMaterializedView,
             BiFunction<ConnectorSession, SchemaTableName, ConnectorTableHandle> getTableHandle,
             Function<SchemaTableName, List<ColumnMetadata>> getColumns,
-            Function<SchemaTableName, Optional<String>> getComment,
             Function<SchemaTableName, TableStatistics> getTableStatistics,
             Function<SchemaTableName, List<String>> checkConstraints,
             ApplyProjection applyProjection,
@@ -210,7 +199,6 @@ public class MockConnector
             BiFunction<ConnectorSession, SchemaTableName, Optional<CatalogSchemaTableName>> redirectTable,
             BiFunction<ConnectorSession, SchemaTableName, Optional<ConnectorTableLayout>> getInsertLayout,
             BiFunction<ConnectorSession, ConnectorTableMetadata, Optional<ConnectorTableLayout>> getNewTableLayout,
-            BiFunction<ConnectorSession, Type, Optional<Type>> getSupportedType,
             BiFunction<ConnectorSession, ConnectorTableHandle, ConnectorTableProperties> getTableProperties,
             BiFunction<ConnectorSession, SchemaTablePrefix, List<GrantInfo>> listTablePrivileges,
             Supplier<Iterable<EventListener>> eventListeners,
@@ -230,15 +218,12 @@ public class MockConnector
             Supplier<List<PropertyMetadata<?>>> columnProperties,
             Function<ConnectorTableFunctionHandle, ConnectorSplitSource> tableFunctionSplitsSources,
             OptionalInt maxWriterTasks,
-            BiFunction<ConnectorSession, ConnectorTableExecuteHandle, Optional<ConnectorTableLayout>> getLayoutForTableExecute,
-            WriterScalingOptions writerScalingOptions)
+            BiFunction<ConnectorSession, ConnectorTableExecuteHandle, Optional<ConnectorTableLayout>> getLayoutForTableExecute)
     {
-        this.metadataWrapper = requireNonNull(metadataWrapper, "metadataWrapper is null");
         this.sessionProperties = ImmutableList.copyOf(requireNonNull(sessionProperties, "sessionProperties is null"));
         this.listSchemaNames = requireNonNull(listSchemaNames, "listSchemaNames is null");
         this.listTables = requireNonNull(listTables, "listTables is null");
         this.streamTableColumns = requireNonNull(streamTableColumns, "streamTableColumns is null");
-        this.streamRelationColumns = requireNonNull(streamRelationColumns, "streamRelationColumns is null");
         this.getViews = requireNonNull(getViews, "getViews is null");
         this.getMaterializedViewProperties = requireNonNull(getMaterializedViewProperties, "getMaterializedViewProperties is null");
         this.getMaterializedViews = requireNonNull(getMaterializedViews, "getMaterializedViews is null");
@@ -246,7 +231,6 @@ public class MockConnector
         this.refreshMaterializedView = requireNonNull(refreshMaterializedView, "refreshMaterializedView is null");
         this.getTableHandle = requireNonNull(getTableHandle, "getTableHandle is null");
         this.getColumns = requireNonNull(getColumns, "getColumns is null");
-        this.getComment = requireNonNull(getComment, "getComment is null");
         this.getTableStatistics = requireNonNull(getTableStatistics, "getTableStatistics is null");
         this.checkConstraints = requireNonNull(checkConstraints, "checkConstraints is null");
         this.applyProjection = requireNonNull(applyProjection, "applyProjection is null");
@@ -259,7 +243,6 @@ public class MockConnector
         this.redirectTable = requireNonNull(redirectTable, "redirectTable is null");
         this.getInsertLayout = requireNonNull(getInsertLayout, "getInsertLayout is null");
         this.getNewTableLayout = requireNonNull(getNewTableLayout, "getNewTableLayout is null");
-        this.getSupportedType = requireNonNull(getSupportedType, "getSupportedType is null");
         this.getTableProperties = requireNonNull(getTableProperties, "getTableProperties is null");
         this.listTablePrivileges = requireNonNull(listTablePrivileges, "listTablePrivileges is null");
         this.eventListeners = requireNonNull(eventListeners, "eventListeners is null");
@@ -280,7 +263,6 @@ public class MockConnector
         this.tableFunctionSplitsSources = requireNonNull(tableFunctionSplitsSources, "tableFunctionSplitsSources is null");
         this.maxWriterTasks = requireNonNull(maxWriterTasks, "maxWriterTasks is null");
         this.getLayoutForTableExecute = requireNonNull(getLayoutForTableExecute, "getLayoutForTableExecute is null");
-        this.writerScalingOptions = requireNonNull(writerScalingOptions, "writerScalingOptions is null");
     }
 
     @Override
@@ -298,7 +280,7 @@ public class MockConnector
     @Override
     public ConnectorMetadata getMetadata(ConnectorSession session, ConnectorTransactionHandle transaction)
     {
-        return metadataWrapper.apply(new MockConnectorMetadata());
+        return new MockConnectorMetadata();
     }
 
     @Override
@@ -505,7 +487,7 @@ public class MockConnector
         public void setSchemaAuthorization(ConnectorSession session, String schemaName, TrinoPrincipal principal) {}
 
         @Override
-        public void dropSchema(ConnectorSession session, String schemaName, boolean cascade) {}
+        public void dropSchema(ConnectorSession session, String schemaName) {}
 
         @Override
         public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName)
@@ -521,7 +503,7 @@ public class MockConnector
                     table.getTableName(),
                     getColumns.apply(table.getTableName()),
                     ImmutableMap.of(),
-                    getComment.apply(table.getTableName()),
+                    Optional.empty(),
                     checkConstraints.apply(table.getTableName()));
         }
 
@@ -585,15 +567,6 @@ public class MockConnector
         }
 
         @Override
-        public Iterator<RelationColumnsMetadata> streamRelationColumns(ConnectorSession session, Optional<String> schemaName, UnaryOperator<Set<SchemaTableName>> relationFilter)
-        {
-            if (streamRelationColumns.isPresent()) {
-                return streamRelationColumns.get().apply(session, schemaName, relationFilter);
-            }
-            return ConnectorMetadata.super.streamRelationColumns(session, schemaName, relationFilter);
-        }
-
-        @Override
         public void createTable(ConnectorSession session, ConnectorTableMetadata tableMetadata, boolean ignoreExisting) {}
 
         @Override
@@ -624,22 +597,10 @@ public class MockConnector
         public void setColumnType(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle column, Type type) {}
 
         @Override
-        public void setFieldType(ConnectorSession session, ConnectorTableHandle tableHandle, List<String> fieldPath, Type type)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void setTableAuthorization(ConnectorSession session, SchemaTableName tableName, TrinoPrincipal principal) {}
 
         @Override
         public void renameColumn(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle source, String target) {}
-
-        @Override
-        public void renameField(ConnectorSession session, ConnectorTableHandle tableHandle, List<String> fieldPath, String target)
-        {
-            throw new UnsupportedOperationException();
-        }
 
         @Override
         public void dropColumn(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle column) {}
@@ -774,12 +735,6 @@ public class MockConnector
         }
 
         @Override
-        public Optional<Type> getSupportedType(ConnectorSession session, Map<String, Object> tableProperties, Type type)
-        {
-            return getSupportedType.apply(session, type);
-        }
-
-        @Override
         public RowChangeParadigm getRowChangeParadigm(ConnectorSession session, ConnectorTableHandle tableHandle)
         {
             return DELETE_ROW_AND_INSERT_ROW;
@@ -886,18 +841,6 @@ public class MockConnector
         public BeginTableExecuteResult<ConnectorTableExecuteHandle, ConnectorTableHandle> beginTableExecute(ConnectorSession session, ConnectorTableExecuteHandle tableExecuteHandle, ConnectorTableHandle updatedSourceTableHandle)
         {
             return new BeginTableExecuteResult<>(tableExecuteHandle, updatedSourceTableHandle);
-        }
-
-        @Override
-        public WriterScalingOptions getNewTableWriterScalingOptions(ConnectorSession session, SchemaTableName tableName, Map<String, Object> tableProperties)
-        {
-            return writerScalingOptions;
-        }
-
-        @Override
-        public WriterScalingOptions getInsertWriterScalingOptions(ConnectorSession session, ConnectorTableHandle tableHandle)
-        {
-            return writerScalingOptions;
         }
 
         private MockConnectorAccessControl getMockAccessControl()

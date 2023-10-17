@@ -41,7 +41,6 @@ import static com.google.common.collect.MoreCollectors.toOptional;
 import static io.trino.testng.services.Listeners.reportListenerFailure;
 import static io.trino.testng.services.ManageTestResources.Stage.AFTER_CLASS;
 import static io.trino.testng.services.ManageTestResources.Stage.BEFORE_CLASS;
-import static java.lang.System.getenv;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -89,10 +88,7 @@ public class ManageTestResources
         if (System.getProperty("ManageTestResources.enabled") != null) {
             return Boolean.getBoolean("ManageTestResources.enabled");
         }
-        if (getenv("DISABLE_REPORT_RESOURCE_HUNGRY_TESTS_CHECK") != null) {
-            return false;
-        }
-        if (getenv("TESTCONTAINERS_REUSE_ENABLE") != null) {
+        if (System.getenv("DISABLE_REPORT_RESOURCE_HUNGRY_TESTS_CHECK") != null) {
             return false;
         }
         return true;

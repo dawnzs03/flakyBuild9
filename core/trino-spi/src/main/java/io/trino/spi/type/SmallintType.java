@@ -21,14 +21,8 @@ import io.trino.spi.block.BlockBuilderStatus;
 import io.trino.spi.block.PageBuilderStatus;
 import io.trino.spi.block.ShortArrayBlockBuilder;
 import io.trino.spi.connector.ConnectorSession;
-import io.trino.spi.function.FlatFixed;
-import io.trino.spi.function.FlatFixedOffset;
-import io.trino.spi.function.FlatVariableWidth;
 import io.trino.spi.function.ScalarOperator;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
 import java.util.Optional;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -39,7 +33,6 @@ import static io.trino.spi.function.OperatorType.EQUAL;
 import static io.trino.spi.function.OperatorType.HASH_CODE;
 import static io.trino.spi.function.OperatorType.LESS_THAN;
 import static io.trino.spi.function.OperatorType.LESS_THAN_OR_EQUAL;
-import static io.trino.spi.function.OperatorType.READ_VALUE;
 import static io.trino.spi.function.OperatorType.XX_HASH_64;
 import static io.trino.spi.type.TypeOperatorDeclaration.extractOperatorDeclaration;
 import static java.lang.String.format;
@@ -50,7 +43,6 @@ public final class SmallintType
         implements FixedWidthType
 {
     private static final TypeOperatorDeclaration TYPE_OPERATOR_DECLARATION = extractOperatorDeclaration(SmallintType.class, lookup(), long.class);
-    private static final VarHandle SHORT_HANDLE = MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.LITTLE_ENDIAN);
 
     public static final SmallintType SMALLINT = new SmallintType();
 
@@ -199,12 +191,6 @@ public final class SmallintType
     }
 
     @Override
-    public int getFlatFixedSize()
-    {
-        return Short.BYTES;
-    }
-
-    @Override
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     public boolean equals(Object other)
     {
@@ -215,26 +201,6 @@ public final class SmallintType
     public int hashCode()
     {
         return getClass().hashCode();
-    }
-
-    @ScalarOperator(READ_VALUE)
-    private static long readFlat(
-            @FlatFixed byte[] fixedSizeSlice,
-            @FlatFixedOffset int fixedSizeOffset,
-            @FlatVariableWidth byte[] unusedVariableSizeSlice)
-    {
-        return (short) SHORT_HANDLE.get(fixedSizeSlice, fixedSizeOffset);
-    }
-
-    @ScalarOperator(READ_VALUE)
-    private static void writeFlat(
-            long value,
-            byte[] fixedSizeSlice,
-            int fixedSizeOffset,
-            byte[] unusedVariableSizeSlice,
-            int unusedVariableSizeOffset)
-    {
-        SHORT_HANDLE.set(fixedSizeSlice, fixedSizeOffset, (short) value);
     }
 
     @ScalarOperator(EQUAL)

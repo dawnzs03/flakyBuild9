@@ -16,7 +16,6 @@ package io.trino.security;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.CreationException;
-import io.opentelemetry.api.OpenTelemetry;
 import io.trino.metadata.QualifiedObjectName;
 import io.trino.plugin.base.security.DefaultSystemAccessControl;
 import io.trino.plugin.base.security.FileBasedSystemAccessControl;
@@ -28,14 +27,13 @@ import io.trino.spi.security.AccessDeniedException;
 import io.trino.spi.security.Identity;
 import io.trino.spi.security.TrinoPrincipal;
 import io.trino.transaction.TransactionManager;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
 
 import java.io.File;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -77,7 +75,6 @@ public class TestFileBasedSystemAccessControl
     private static final QualifiedObjectName staffView = new QualifiedObjectName("staff-catalog", "schema2", "view");
     private static final QualifiedObjectName staffMaterializedView = new QualifiedObjectName("staff-catalog", "schema2", "materialized-view");
     private static final QueryId queryId = new QueryId("query_id");
-    private static final Instant queryStart = Instant.now();
 
     @Test
     public void testCanImpersonateUserOperations()
@@ -136,7 +133,7 @@ public class TestFileBasedSystemAccessControl
     public void testDocsExample()
     {
         TransactionManager transactionManager = createTestTransactionManager();
-        AccessControlManager accessControlManager = new AccessControlManager(transactionManager, emptyEventListenerManager(), new AccessControlConfig(), OpenTelemetry.noop(), DefaultSystemAccessControl.NAME);
+        AccessControlManager accessControlManager = new AccessControlManager(transactionManager, emptyEventListenerManager(), new AccessControlConfig(), DefaultSystemAccessControl.NAME);
         accessControlManager.loadSystemAccessControl(
                 FileBasedSystemAccessControl.NAME,
                 ImmutableMap.of("security.config-file", new File("../../docs/src/main/sphinx/security/user-impersonation.json").getAbsolutePath()));
@@ -215,13 +212,13 @@ public class TestFileBasedSystemAccessControl
 
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, admin, queryId, queryStart), allCatalogs), allCatalogs);
+                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, admin, queryId), allCatalogs), allCatalogs);
                     Set<String> aliceCatalogs = ImmutableSet.of("open-to-all", "alice-catalog", "all-allowed", "staff-catalog");
-                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, alice, queryId, queryStart), allCatalogs), aliceCatalogs);
+                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, alice, queryId), allCatalogs), aliceCatalogs);
                     Set<String> bobCatalogs = ImmutableSet.of("open-to-all", "all-allowed", "staff-catalog");
-                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, bob, queryId, queryStart), allCatalogs), bobCatalogs);
+                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, bob, queryId), allCatalogs), bobCatalogs);
                     Set<String> nonAsciiUserCatalogs = ImmutableSet.of("open-to-all", "all-allowed", "\u0200\u0200\u0200");
-                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, nonAsciiUser, queryId, queryStart), allCatalogs), nonAsciiUserCatalogs);
+                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, nonAsciiUser, queryId), allCatalogs), nonAsciiUserCatalogs);
                 });
     }
 
@@ -233,13 +230,13 @@ public class TestFileBasedSystemAccessControl
 
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, admin, queryId, queryStart), allCatalogs), allCatalogs);
+                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, admin, queryId), allCatalogs), allCatalogs);
                     Set<String> aliceCatalogs = ImmutableSet.of("open-to-all", "alice-catalog", "all-allowed");
-                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, alice, queryId, queryStart), allCatalogs), aliceCatalogs);
+                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, alice, queryId), allCatalogs), aliceCatalogs);
                     Set<String> bobCatalogs = ImmutableSet.of("open-to-all", "all-allowed");
-                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, bob, queryId, queryStart), allCatalogs), bobCatalogs);
+                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, bob, queryId), allCatalogs), bobCatalogs);
                     Set<String> nonAsciiUserCatalogs = ImmutableSet.of("open-to-all", "all-allowed", "\u0200\u0200\u0200");
-                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, nonAsciiUser, queryId, queryStart), allCatalogs), nonAsciiUserCatalogs);
+                    assertEquals(accessControlManager.filterCatalogs(new SecurityContext(transactionId, nonAsciiUser, queryId), allCatalogs), nonAsciiUserCatalogs);
                 });
     }
 
@@ -252,16 +249,16 @@ public class TestFileBasedSystemAccessControl
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
                     Set<String> aliceSchemas = ImmutableSet.of("schema");
-                    assertEquals(accessControlManager.filterSchemas(new SecurityContext(transactionId, alice, queryId, queryStart), "alice-catalog", aliceSchemas), aliceSchemas);
-                    assertEquals(accessControlManager.filterSchemas(new SecurityContext(transactionId, bob, queryId, queryStart), "alice-catalog", aliceSchemas), ImmutableSet.of());
+                    assertEquals(accessControlManager.filterSchemas(new SecurityContext(transactionId, alice, queryId), "alice-catalog", aliceSchemas), aliceSchemas);
+                    assertEquals(accessControlManager.filterSchemas(new SecurityContext(transactionId, bob, queryId), "alice-catalog", aliceSchemas), ImmutableSet.of());
 
-                    accessControlManager.checkCanCreateSchema(new SecurityContext(transactionId, alice, queryId, queryStart), aliceSchema, ImmutableMap.of());
-                    accessControlManager.checkCanDropSchema(new SecurityContext(transactionId, alice, queryId, queryStart), aliceSchema);
-                    accessControlManager.checkCanRenameSchema(new SecurityContext(transactionId, alice, queryId, queryStart), aliceSchema, "new-schema");
-                    accessControlManager.checkCanShowSchemas(new SecurityContext(transactionId, alice, queryId, queryStart), "alice-catalog");
+                    accessControlManager.checkCanCreateSchema(new SecurityContext(transactionId, alice, queryId), aliceSchema, ImmutableMap.of());
+                    accessControlManager.checkCanDropSchema(new SecurityContext(transactionId, alice, queryId), aliceSchema);
+                    accessControlManager.checkCanRenameSchema(new SecurityContext(transactionId, alice, queryId), aliceSchema, "new-schema");
+                    accessControlManager.checkCanShowSchemas(new SecurityContext(transactionId, alice, queryId), "alice-catalog");
                 });
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanCreateSchema(new SecurityContext(transactionId, bob, queryId, queryStart), aliceSchema, ImmutableMap.of());
+            accessControlManager.checkCanCreateSchema(new SecurityContext(transactionId, bob, queryId), aliceSchema, ImmutableMap.of());
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot access catalog alice-catalog");
     }
@@ -275,29 +272,29 @@ public class TestFileBasedSystemAccessControl
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
                     Set<String> aliceSchemas = ImmutableSet.of("schema");
-                    assertEquals(accessControlManager.filterSchemas(new SecurityContext(transactionId, alice, queryId, queryStart), "alice-catalog", aliceSchemas), aliceSchemas);
-                    assertEquals(accessControlManager.filterSchemas(new SecurityContext(transactionId, bob, queryId, queryStart), "alice-catalog", aliceSchemas), ImmutableSet.of());
+                    assertEquals(accessControlManager.filterSchemas(new SecurityContext(transactionId, alice, queryId), "alice-catalog", aliceSchemas), aliceSchemas);
+                    assertEquals(accessControlManager.filterSchemas(new SecurityContext(transactionId, bob, queryId), "alice-catalog", aliceSchemas), ImmutableSet.of());
 
-                    accessControlManager.checkCanShowSchemas(new SecurityContext(transactionId, alice, queryId, queryStart), "alice-catalog");
+                    accessControlManager.checkCanShowSchemas(new SecurityContext(transactionId, alice, queryId), "alice-catalog");
                 });
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanCreateSchema(new SecurityContext(transactionId, alice, queryId, queryStart), aliceSchema, ImmutableMap.of());
+            accessControlManager.checkCanCreateSchema(new SecurityContext(transactionId, alice, queryId), aliceSchema, ImmutableMap.of());
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot create schema alice-catalog.schema");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanDropSchema(new SecurityContext(transactionId, alice, queryId, queryStart), aliceSchema);
+            accessControlManager.checkCanDropSchema(new SecurityContext(transactionId, alice, queryId), aliceSchema);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot drop schema alice-catalog.schema");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanRenameSchema(new SecurityContext(transactionId, alice, queryId, queryStart), aliceSchema, "new-schema");
+            accessControlManager.checkCanRenameSchema(new SecurityContext(transactionId, alice, queryId), aliceSchema, "new-schema");
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot rename schema from alice-catalog.schema to new-schema");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanCreateSchema(new SecurityContext(transactionId, bob, queryId, queryStart), aliceSchema, ImmutableMap.of());
+            accessControlManager.checkCanCreateSchema(new SecurityContext(transactionId, bob, queryId), aliceSchema, ImmutableMap.of());
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot access catalog alice-catalog");
     }
@@ -311,9 +308,9 @@ public class TestFileBasedSystemAccessControl
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
                     Set<SchemaTableName> aliceTables = ImmutableSet.of(new SchemaTableName("schema", "table"));
-                    SecurityContext aliceContext = new SecurityContext(transactionId, alice, queryId, queryStart);
-                    SecurityContext bobContext = new SecurityContext(transactionId, bob, queryId, queryStart);
-                    SecurityContext nonAsciiContext = new SecurityContext(transactionId, nonAsciiUser, queryId, queryStart);
+                    SecurityContext aliceContext = new SecurityContext(transactionId, alice, queryId);
+                    SecurityContext bobContext = new SecurityContext(transactionId, bob, queryId);
+                    SecurityContext nonAsciiContext = new SecurityContext(transactionId, nonAsciiUser, queryId);
 
                     assertEquals(accessControlManager.filterTables(aliceContext, "alice-catalog", aliceTables), aliceTables);
                     assertEquals(accessControlManager.filterTables(aliceContext, "staff-catalog", aliceTables), aliceTables);
@@ -459,54 +456,54 @@ public class TestFileBasedSystemAccessControl
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
                     Set<SchemaTableName> aliceTables = ImmutableSet.of(new SchemaTableName("schema", "table"));
-                    assertEquals(accessControlManager.filterTables(new SecurityContext(transactionId, alice, queryId, queryStart), "alice-catalog", aliceTables), aliceTables);
-                    assertEquals(accessControlManager.filterTables(new SecurityContext(transactionId, bob, queryId, queryStart), "alice-catalog", aliceTables), ImmutableSet.of());
+                    assertEquals(accessControlManager.filterTables(new SecurityContext(transactionId, alice, queryId), "alice-catalog", aliceTables), aliceTables);
+                    assertEquals(accessControlManager.filterTables(new SecurityContext(transactionId, bob, queryId), "alice-catalog", aliceTables), ImmutableSet.of());
 
-                    accessControlManager.checkCanSelectFromColumns(new SecurityContext(transactionId, alice, queryId, queryStart), aliceTable, ImmutableSet.of());
+                    accessControlManager.checkCanSelectFromColumns(new SecurityContext(transactionId, alice, queryId), aliceTable, ImmutableSet.of());
                 });
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanCreateTable(new SecurityContext(transactionId, alice, queryId, queryStart), aliceTable, Map.of());
+            accessControlManager.checkCanCreateTable(new SecurityContext(transactionId, alice, queryId), aliceTable, Map.of());
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot create table alice-catalog.schema.table");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanDropTable(new SecurityContext(transactionId, alice, queryId, queryStart), aliceTable);
+            accessControlManager.checkCanDropTable(new SecurityContext(transactionId, alice, queryId), aliceTable);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot drop table alice-catalog.schema.table");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanTruncateTable(new SecurityContext(transactionId, alice, queryId, queryStart), aliceTable);
+            accessControlManager.checkCanTruncateTable(new SecurityContext(transactionId, alice, queryId), aliceTable);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot truncate table alice-catalog.schema.table");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanInsertIntoTable(new SecurityContext(transactionId, alice, queryId, queryStart), aliceTable);
+            accessControlManager.checkCanInsertIntoTable(new SecurityContext(transactionId, alice, queryId), aliceTable);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot insert into table alice-catalog.schema.table");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanDeleteFromTable(new SecurityContext(transactionId, alice, queryId, queryStart), aliceTable);
+            accessControlManager.checkCanDeleteFromTable(new SecurityContext(transactionId, alice, queryId), aliceTable);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot delete from table alice-catalog.schema.table");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanSetTableProperties(new SecurityContext(transactionId, alice, queryId, queryStart), aliceTable, ImmutableMap.of());
+            accessControlManager.checkCanSetTableProperties(new SecurityContext(transactionId, alice, queryId), aliceTable, ImmutableMap.of());
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot set table properties to alice-catalog.schema.table");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanAddColumns(new SecurityContext(transactionId, alice, queryId, queryStart), aliceTable);
+            accessControlManager.checkCanAddColumns(new SecurityContext(transactionId, alice, queryId), aliceTable);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot add a column to table alice-catalog.schema.table");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanRenameColumn(new SecurityContext(transactionId, alice, queryId, queryStart), aliceTable);
+            accessControlManager.checkCanRenameColumn(new SecurityContext(transactionId, alice, queryId), aliceTable);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot rename a column in table alice-catalog.schema.table");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanCreateTable(new SecurityContext(transactionId, bob, queryId, queryStart), aliceTable, Map.of());
+            accessControlManager.checkCanCreateTable(new SecurityContext(transactionId, bob, queryId), aliceTable, Map.of());
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot access catalog alice-catalog");
     }
@@ -519,9 +516,9 @@ public class TestFileBasedSystemAccessControl
 
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    SecurityContext aliceContext = new SecurityContext(transactionId, alice, queryId, queryStart);
-                    SecurityContext bobContext = new SecurityContext(transactionId, bob, queryId, queryStart);
-                    SecurityContext nonAsciiContext = new SecurityContext(transactionId, nonAsciiUser, queryId, queryStart);
+                    SecurityContext aliceContext = new SecurityContext(transactionId, alice, queryId);
+                    SecurityContext bobContext = new SecurityContext(transactionId, bob, queryId);
+                    SecurityContext nonAsciiContext = new SecurityContext(transactionId, nonAsciiUser, queryId);
 
                     accessControlManager.checkCanCreateView(aliceContext, aliceView);
                     accessControlManager.checkCanDropView(aliceContext, aliceView);
@@ -635,33 +632,33 @@ public class TestFileBasedSystemAccessControl
 
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    SecurityContext context = new SecurityContext(transactionId, alice, queryId, queryStart);
+                    SecurityContext context = new SecurityContext(transactionId, alice, queryId);
                     accessControlManager.checkCanSelectFromColumns(context, aliceView, ImmutableSet.of());
                     accessControlManager.checkCanSetCatalogSessionProperty(context, "alice-catalog", "property");
                 });
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId, queryStart), aliceView);
+            accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId), aliceView);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot create view alice-catalog.schema.view");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanDropView(new SecurityContext(transactionId, alice, queryId, queryStart), aliceView);
+            accessControlManager.checkCanDropView(new SecurityContext(transactionId, alice, queryId), aliceView);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot drop view alice-catalog.schema.view");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanGrantTablePrivilege(new SecurityContext(transactionId, alice, queryId, queryStart), SELECT, aliceTable, new TrinoPrincipal(USER, "grantee"), true);
+            accessControlManager.checkCanGrantTablePrivilege(new SecurityContext(transactionId, alice, queryId), SELECT, aliceTable, new TrinoPrincipal(USER, "grantee"), true);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot grant privilege SELECT on table alice-catalog.schema.table");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanRevokeTablePrivilege(new SecurityContext(transactionId, alice, queryId, queryStart), SELECT, aliceTable, new TrinoPrincipal(USER, "revokee"), true);
+            accessControlManager.checkCanRevokeTablePrivilege(new SecurityContext(transactionId, alice, queryId), SELECT, aliceTable, new TrinoPrincipal(USER, "revokee"), true);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot revoke privilege SELECT on table alice-catalog.schema.table");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanCreateView(new SecurityContext(transactionId, bob, queryId, queryStart), aliceView);
+            accessControlManager.checkCanCreateView(new SecurityContext(transactionId, bob, queryId), aliceView);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot access catalog alice-catalog");
     }
@@ -674,9 +671,9 @@ public class TestFileBasedSystemAccessControl
 
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    SecurityContext aliceContext = new SecurityContext(transactionId, alice, queryId, queryStart);
-                    SecurityContext bobContext = new SecurityContext(transactionId, bob, queryId, queryStart);
-                    SecurityContext nonAsciiContext = new SecurityContext(transactionId, nonAsciiUser, queryId, queryStart);
+                    SecurityContext aliceContext = new SecurityContext(transactionId, alice, queryId);
+                    SecurityContext bobContext = new SecurityContext(transactionId, bob, queryId);
+                    SecurityContext nonAsciiContext = new SecurityContext(transactionId, nonAsciiUser, queryId);
 
                     // User alice is allowed access to alice-catalog
                     accessControlManager.checkCanCreateMaterializedView(aliceContext, aliceMaterializedView, Map.of());
@@ -732,43 +729,43 @@ public class TestFileBasedSystemAccessControl
 
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    SecurityContext context = new SecurityContext(transactionId, alice, queryId, queryStart);
+                    SecurityContext context = new SecurityContext(transactionId, alice, queryId);
                     accessControlManager.checkCanSelectFromColumns(context, aliceMaterializedView, ImmutableSet.of());
                     accessControlManager.checkCanSetCatalogSessionProperty(context, "alice-catalog", "property");
                 });
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanCreateMaterializedView(new SecurityContext(transactionId, alice, queryId, queryStart), aliceMaterializedView, Map.of());
+            accessControlManager.checkCanCreateMaterializedView(new SecurityContext(transactionId, alice, queryId), aliceMaterializedView, Map.of());
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot create materialized view alice-catalog.schema.materialized-view");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanDropMaterializedView(new SecurityContext(transactionId, alice, queryId, queryStart), aliceMaterializedView);
+            accessControlManager.checkCanDropMaterializedView(new SecurityContext(transactionId, alice, queryId), aliceMaterializedView);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot drop materialized view alice-catalog.schema.materialized-view");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanRefreshMaterializedView(new SecurityContext(transactionId, alice, queryId, queryStart), aliceMaterializedView);
+            accessControlManager.checkCanRefreshMaterializedView(new SecurityContext(transactionId, alice, queryId), aliceMaterializedView);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot refresh materialized view alice-catalog.schema.materialized-view");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanSetMaterializedViewProperties(new SecurityContext(transactionId, alice, queryId, queryStart), aliceMaterializedView, ImmutableMap.of());
+            accessControlManager.checkCanSetMaterializedViewProperties(new SecurityContext(transactionId, alice, queryId), aliceMaterializedView, ImmutableMap.of());
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot set properties of materialized view alice-catalog.schema.materialized-view");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanCreateMaterializedView(new SecurityContext(transactionId, bob, queryId, queryStart), aliceMaterializedView, Map.of());
+            accessControlManager.checkCanCreateMaterializedView(new SecurityContext(transactionId, bob, queryId), aliceMaterializedView, Map.of());
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot access catalog alice-catalog");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanRefreshMaterializedView(new SecurityContext(transactionId, bob, queryId, queryStart), aliceMaterializedView);
+            accessControlManager.checkCanRefreshMaterializedView(new SecurityContext(transactionId, bob, queryId), aliceMaterializedView);
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot access catalog alice-catalog");
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager).execute(transactionId -> {
-            accessControlManager.checkCanSetMaterializedViewProperties(new SecurityContext(transactionId, bob, queryId, queryStart), aliceMaterializedView, ImmutableMap.of());
+            accessControlManager.checkCanSetMaterializedViewProperties(new SecurityContext(transactionId, bob, queryId), aliceMaterializedView, ImmutableMap.of());
         })).isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot access catalog alice-catalog");
     }
@@ -778,7 +775,7 @@ public class TestFileBasedSystemAccessControl
             throws Exception
     {
         TransactionManager transactionManager = createTestTransactionManager();
-        AccessControlManager accessControlManager = new AccessControlManager(transactionManager, emptyEventListenerManager(), new AccessControlConfig(), OpenTelemetry.noop(), DefaultSystemAccessControl.NAME);
+        AccessControlManager accessControlManager = new AccessControlManager(transactionManager, emptyEventListenerManager(), new AccessControlConfig(), DefaultSystemAccessControl.NAME);
         File configFile = newTemporaryFile();
         configFile.deleteOnExit();
         copy(new File(getResourcePath("catalog.json")), configFile);
@@ -789,9 +786,9 @@ public class TestFileBasedSystemAccessControl
 
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId, queryStart), aliceView);
-                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId, queryStart), aliceView);
-                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId, queryStart), aliceView);
+                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId), aliceView);
+                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId), aliceView);
+                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId), aliceView);
                 });
 
         copy(new File(getResourcePath("security-config-file-with-unknown-rules.json")), configFile);
@@ -799,14 +796,14 @@ public class TestFileBasedSystemAccessControl
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId, queryStart), aliceView);
+                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId), aliceView);
                 }))
                 .isInstanceOf(UncheckedIOException.class)
                 .hasMessageStartingWith("Failed to convert JSON tree node");
         // test if file based cached control was not cached somewhere
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId, queryStart), aliceView);
+                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId), aliceView);
                 }))
                 .isInstanceOf(UncheckedIOException.class)
                 .hasMessageStartingWith("Failed to convert JSON tree node");
@@ -816,7 +813,7 @@ public class TestFileBasedSystemAccessControl
 
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId, queryStart), aliceView);
+                    accessControlManager.checkCanCreateView(new SecurityContext(transactionId, alice, queryId), aliceView);
                 });
     }
 
@@ -838,7 +835,7 @@ public class TestFileBasedSystemAccessControl
 
     private AccessControlManager newAccessControlManager(TransactionManager transactionManager, String resourceName)
     {
-        AccessControlManager accessControlManager = new AccessControlManager(transactionManager, emptyEventListenerManager(), new AccessControlConfig(), OpenTelemetry.noop(), DefaultSystemAccessControl.NAME);
+        AccessControlManager accessControlManager = new AccessControlManager(transactionManager, emptyEventListenerManager(), new AccessControlConfig(), DefaultSystemAccessControl.NAME);
 
         accessControlManager.loadSystemAccessControl(FileBasedSystemAccessControl.NAME, ImmutableMap.of("security.config-file", getResourcePath(resourceName)));
 
@@ -858,7 +855,7 @@ public class TestFileBasedSystemAccessControl
     @Test
     public void parseUnknownRules()
     {
-        assertThatThrownBy(() -> parse(getResourcePath("security-config-file-with-unknown-rules.json")))
+        assertThatThrownBy(() -> parse("src/test/resources/security-config-file-with-unknown-rules.json"))
                 .hasMessageContaining("Failed to convert JSON tree node");
     }
 

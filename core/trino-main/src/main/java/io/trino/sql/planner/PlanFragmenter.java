@@ -51,7 +51,6 @@ import io.trino.sql.planner.plan.TableFinishNode;
 import io.trino.sql.planner.plan.TableFunctionNode;
 import io.trino.sql.planner.plan.TableFunctionProcessorNode;
 import io.trino.sql.planner.plan.TableScanNode;
-import io.trino.sql.planner.plan.TableUpdateNode;
 import io.trino.sql.planner.plan.TableWriterNode;
 import io.trino.sql.planner.plan.ValuesNode;
 import io.trino.transaction.TransactionManager;
@@ -89,7 +88,7 @@ import static java.util.Objects.requireNonNull;
 public class PlanFragmenter
 {
     private static final String TOO_MANY_STAGES_MESSAGE = "" +
-            "If the query contains multiple aggregates with DISTINCT over different columns, please set the 'mark_distinct_strategy' session property to 'none'. " +
+            "If the query contains multiple aggregates with DISTINCT over different columns, please set the 'use_mark_distinct' session property to false. " +
             "If the query contains WITH clauses that are referenced more than once, please create temporary table(s) for the queries in those clauses.";
 
     private final Metadata metadata;
@@ -215,7 +214,7 @@ public class PlanFragmenter
         private final TypeProvider types;
         private final StatsAndCosts statsAndCosts;
         private final List<CatalogProperties> activeCatalogs;
-        private final PlanFragmentIdAllocator idAllocator = new PlanFragmentIdAllocator(ROOT_FRAGMENT_ID + 1);
+        private int nextFragmentId = ROOT_FRAGMENT_ID + 1;
 
         public Fragmenter(Session session, Metadata metadata, FunctionManager functionManager, TypeProvider types, StatsAndCosts statsAndCosts, List<CatalogProperties> activeCatalogs)
         {
@@ -230,6 +229,11 @@ public class PlanFragmenter
         public SubPlan buildRootFragment(PlanNode root, FragmentProperties properties)
         {
             return buildFragment(root, properties, new PlanFragmentId(String.valueOf(ROOT_FRAGMENT_ID)));
+        }
+
+        private PlanFragmentId nextFragmentId()
+        {
+            return new PlanFragmentId(String.valueOf(nextFragmentId++));
         }
 
         private SubPlan buildFragment(PlanNode root, FragmentProperties properties, PlanFragmentId fragmentId)
@@ -297,13 +301,6 @@ public class PlanFragmenter
 
         @Override
         public PlanNode visitTableDelete(TableDeleteNode node, RewriteContext<FragmentProperties> context)
-        {
-            context.get().setCoordinatorOnlyDistribution();
-            return context.defaultRewrite(node, context.get());
-        }
-
-        @Override
-        public PlanNode visitTableUpdate(TableUpdateNode node, RewriteContext<FragmentProperties> context)
         {
             context.get().setCoordinatorOnlyDistribution();
             return context.defaultRewrite(node, context.get());
@@ -436,7 +433,7 @@ public class PlanFragmenter
 
         private SubPlan buildSubPlan(PlanNode node, FragmentProperties properties, RewriteContext<FragmentProperties> context)
         {
-            PlanFragmentId planFragmentId = idAllocator.getNextId();
+            PlanFragmentId planFragmentId = nextFragmentId();
             PlanNode child = context.rewrite(node, properties);
             return buildFragment(child, properties, planFragmentId);
         }

@@ -14,7 +14,6 @@
 package io.trino.plugin.geospatial;
 
 import io.trino.jmh.Benchmarks;
-import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -26,6 +25,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.RunnerException;
+import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
 

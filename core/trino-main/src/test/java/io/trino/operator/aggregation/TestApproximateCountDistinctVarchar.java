@@ -16,6 +16,8 @@ package io.trino.operator.aggregation;
 import io.airlift.slice.Slices;
 import io.trino.spi.type.Type;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 import static io.trino.spi.type.VarcharType.VARCHAR;
 
 public class TestApproximateCountDistinctVarchar
@@ -30,6 +32,10 @@ public class TestApproximateCountDistinctVarchar
     @Override
     protected Object randomValue()
     {
-        return Slices.random(100);
+        int length = ThreadLocalRandom.current().nextInt(100);
+        byte[] bytes = new byte[length];
+        ThreadLocalRandom.current().nextBytes(bytes);
+
+        return Slices.wrappedBuffer(bytes);
     }
 }

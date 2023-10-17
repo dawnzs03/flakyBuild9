@@ -13,7 +13,7 @@
  */
 package io.trino.util;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static com.google.common.base.Throwables.propagateIfPossible;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

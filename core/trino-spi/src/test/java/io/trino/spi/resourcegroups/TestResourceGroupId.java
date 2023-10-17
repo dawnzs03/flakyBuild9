@@ -14,9 +14,11 @@
 package io.trino.spi.resourcegroups;
 
 import io.airlift.json.JsonCodec;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 public class TestResourceGroupId
 {
@@ -33,10 +35,10 @@ public class TestResourceGroupId
     {
         JsonCodec<ResourceGroupId> codec = JsonCodec.jsonCodec(ResourceGroupId.class);
         ResourceGroupId resourceGroupId = new ResourceGroupId(new ResourceGroupId("test.test"), "foo");
-        assertThat(codec.fromJson(codec.toJson(resourceGroupId))).isEqualTo(resourceGroupId);
+        assertEquals(codec.fromJson(codec.toJson(resourceGroupId)), resourceGroupId);
 
-        assertThat(codec.toJson(resourceGroupId)).isEqualTo("[ \"test.test\", \"foo\" ]");
-        assertThat(codec.fromJson("[\"test.test\", \"foo\"]")).isEqualTo(resourceGroupId);
+        assertEquals(codec.toJson(resourceGroupId), "[ \"test.test\", \"foo\" ]");
+        assertEquals(codec.fromJson("[\"test.test\", \"foo\"]"), resourceGroupId);
     }
 
     @Test
@@ -46,15 +48,15 @@ public class TestResourceGroupId
         ResourceGroupId rootA = new ResourceGroupId(root, "a");
         ResourceGroupId rootAFoo = new ResourceGroupId(rootA, "foo");
         ResourceGroupId rootBar = new ResourceGroupId(root, "bar");
-        assertThat(root.isAncestorOf(rootA)).isTrue();
-        assertThat(root.isAncestorOf(rootAFoo)).isTrue();
-        assertThat(root.isAncestorOf(rootBar)).isTrue();
-        assertThat(rootA.isAncestorOf(rootAFoo)).isTrue();
-        assertThat(rootA.isAncestorOf(rootBar)).isFalse();
-        assertThat(rootAFoo.isAncestorOf(rootBar)).isFalse();
-        assertThat(rootBar.isAncestorOf(rootAFoo)).isFalse();
-        assertThat(rootAFoo.isAncestorOf(root)).isFalse();
-        assertThat(root.isAncestorOf(root)).isFalse();
-        assertThat(rootAFoo.isAncestorOf(rootAFoo)).isFalse();
+        assertTrue(root.isAncestorOf(rootA));
+        assertTrue(root.isAncestorOf(rootAFoo));
+        assertTrue(root.isAncestorOf(rootBar));
+        assertTrue(rootA.isAncestorOf(rootAFoo));
+        assertFalse(rootA.isAncestorOf(rootBar));
+        assertFalse(rootAFoo.isAncestorOf(rootBar));
+        assertFalse(rootBar.isAncestorOf(rootAFoo));
+        assertFalse(rootAFoo.isAncestorOf(root));
+        assertFalse(root.isAncestorOf(root));
+        assertFalse(rootAFoo.isAncestorOf(rootAFoo));
     }
 }

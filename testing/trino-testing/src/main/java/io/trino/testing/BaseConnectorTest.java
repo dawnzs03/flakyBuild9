@@ -30,7 +30,9 @@ import io.trino.execution.QueryManager;
 import io.trino.metadata.FunctionManager;
 import io.trino.metadata.Metadata;
 import io.trino.metadata.QualifiedObjectName;
+import io.trino.security.AllowAllAccessControl;
 import io.trino.server.BasicQueryInfo;
+import io.trino.server.testing.TestingTrinoServer;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.MaterializedViewFreshness;
 import io.trino.spi.security.Identity;
@@ -112,7 +114,6 @@ import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_ADD_COLUMN_WITH
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_ADD_FIELD;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_ARRAY;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_COMMENT_ON_COLUMN;
-import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_COMMENT_ON_MATERIALIZED_VIEW_COLUMN;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_COMMENT_ON_TABLE;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_COMMENT_ON_VIEW;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_COMMENT_ON_VIEW_COLUMN;
@@ -137,24 +138,21 @@ import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_MULTI_STATEMENT
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_NEGATIVE_DATE;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_NOT_NULL_CONSTRAINT;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_RENAME_COLUMN;
-import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_RENAME_FIELD;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_RENAME_MATERIALIZED_VIEW;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_RENAME_MATERIALIZED_VIEW_ACROSS_SCHEMAS;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_RENAME_SCHEMA;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_RENAME_TABLE;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_RENAME_TABLE_ACROSS_SCHEMAS;
-import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_REPORTING_WRITTEN_BYTES;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_ROW_LEVEL_DELETE;
-import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_ROW_LEVEL_UPDATE;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_ROW_TYPE;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_SET_COLUMN_TYPE;
-import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_SET_FIELD_TYPE;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_TOPN_PUSHDOWN;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_TRUNCATE;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_UPDATE;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.testing.assertions.Assert.assertEventually;
 import static io.trino.testing.assertions.TestUtil.verifyResultOrFailure;
+import static io.trino.transaction.TransactionBuilder.transaction;
 import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.lang.Thread.currentThread;
@@ -207,6 +205,7 @@ public abstract class BaseConnectorTest
 
     /**
      * Make sure to group related behaviours together in the order and grouping they are declared in {@link TestingConnectorBehavior}.
+     * If required, annotate the method with {@code @SuppressWarnings("DuplicateBranchesInSwitch")}.
      */
     protected boolean hasBehavior(TestingConnectorBehavior connectorBehavior)
     {
@@ -1289,13 +1288,12 @@ public abstract class BaseConnectorTest
                     node(AggregationNode.class, // final
                             anyTree(// exchanges
                                     node(AggregationNode.class, // partial
-                                            node(ProjectNode.class, // format()
-                                                    tableScan(table.getName()))))));
+                                            anyTree(tableScan(table.getName()))))));
             PlanMatchPattern readFromStorageTable = node(OutputNode.class, node(TableScanNode.class));
 
             assertUpdate("CREATE MATERIALIZED VIEW " + viewName + " " +
                     "GRACE PERIOD INTERVAL '1' HOUR " +
-                    "AS SELECT DISTINCT regionkey, format('%s', name) name FROM " + table.getName());
+                    "AS SELECT DISTINCT regionkey, CAST(name AS varchar) name FROM " + table.getName());
 
             String initialResults = "SELECT DISTINCT regionkey, CAST(name AS varchar) FROM region";
 
@@ -1583,45 +1581,6 @@ public abstract class BaseConnectorTest
                         "AND schema_name = CURRENT_SCHEMA " +
                         "AND name = '" + materializedViewName + "'");
         return Optional.ofNullable(lastFreshTime);
-    }
-
-    @Test
-    public void testColumnCommentMaterializedView()
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_CREATE_MATERIALIZED_VIEW));
-
-        String viewName = "test_materialized_view_" + randomNameSuffix();
-        if (!hasBehavior(SUPPORTS_COMMENT_ON_MATERIALIZED_VIEW_COLUMN)) {
-            assertUpdate("CREATE MATERIALIZED VIEW " + viewName + " AS SELECT * FROM nation");
-            assertQueryFails("COMMENT ON COLUMN " + viewName + ".regionkey IS 'new region key comment'", "This connector does not support setting materialized view column comments");
-            assertUpdate("DROP MATERIALIZED VIEW " + viewName);
-            return;
-        }
-
-        assertUpdate("CREATE MATERIALIZED VIEW " + viewName + " AS SELECT * FROM nation");
-        try {
-            assertUpdate("COMMENT ON COLUMN " + viewName + ".name IS 'new comment'");
-            assertThat(getColumnComment(viewName, "name")).isEqualTo("new comment");
-
-            // comment deleted
-            assertUpdate("COMMENT ON COLUMN " + viewName + ".name IS NULL");
-            assertThat(getColumnComment(viewName, "name")).isEqualTo(null);
-
-            // comment set to non-empty value before verifying setting empty comment
-            assertUpdate("COMMENT ON COLUMN " + viewName + ".name IS 'updated comment'");
-            assertThat(getColumnComment(viewName, "name")).isEqualTo("updated comment");
-
-            // refresh materialized view
-            assertUpdate("REFRESH MATERIALIZED VIEW " + viewName, 25);
-            assertThat(getColumnComment(viewName, "name")).isEqualTo("updated comment");
-
-            // comment set to empty
-            assertUpdate("COMMENT ON COLUMN " + viewName + ".name IS ''");
-            assertThat(getColumnComment(viewName, "name")).isEmpty();
-        }
-        finally {
-            assertUpdate("DROP MATERIALIZED VIEW " + viewName);
-        }
     }
 
     @Test
@@ -2821,81 +2780,6 @@ public abstract class BaseConnectorTest
     }
 
     @Test
-    public void testRenameColumnWithComment()
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_RENAME_COLUMN) && hasBehavior(SUPPORTS_CREATE_TABLE_WITH_COLUMN_COMMENT));
-
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_rename_column_", "(col INT COMMENT 'test column comment')")) {
-            assertThat(getColumnComment(table.getName(), "col")).isEqualTo("test column comment");
-
-            assertUpdate("ALTER TABLE " + table.getName() + " RENAME COLUMN col TO renamed_col");
-            assertThat(getColumnComment(table.getName(), "renamed_col")).isEqualTo("test column comment");
-        }
-    }
-
-    @Test
-    public void testRenameRowField()
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA) && hasBehavior(SUPPORTS_ROW_TYPE));
-
-        if (!hasBehavior(SUPPORTS_RENAME_FIELD)) {
-            try (TestTable table = new TestTable(getQueryRunner()::execute, "test_rename_field_", "AS SELECT CAST(row(1) AS row(x integer)) AS col")) {
-                assertQueryFails(
-                        "ALTER TABLE " + table.getName() + " RENAME COLUMN col.x TO x_renamed",
-                        "This connector does not support renaming fields");
-            }
-            return;
-        }
-
-        try (TestTable table = new TestTable(getQueryRunner()::execute,
-                "test_add_field_",
-                "AS SELECT CAST(row(1, row(10)) AS row(a integer, b row(x integer))) AS col")) {
-            assertEquals(getColumnType(table.getName(), "col"), "row(a integer, b row(x integer))");
-
-            assertUpdate("ALTER TABLE " + table.getName() + " RENAME COLUMN col.a TO a_renamed");
-            assertEquals(getColumnType(table.getName(), "col"), "row(a_renamed integer, b row(x integer))");
-            assertThat(query("SELECT * FROM " + table.getName())).matches("SELECT CAST(row(1, row(10)) AS row(a_renamed integer, b row(x integer)))");
-
-            // Rename a nested field
-            assertUpdate("ALTER TABLE " + table.getName() + " RENAME COLUMN col.b.x TO x_renamed");
-            assertEquals(getColumnType(table.getName(), "col"), "row(a_renamed integer, b row(x_renamed integer))");
-            assertThat(query("SELECT * FROM " + table.getName())).matches("SELECT CAST(row(1, row(10)) AS row(a_renamed integer, b row(x_renamed integer)))");
-
-            // Specify not existing fields with IF EXISTS option
-            assertUpdate("ALTER TABLE " + table.getName() + " RENAME COLUMN IF EXISTS col.a_missing TO a_missing_renamed");
-            assertUpdate("ALTER TABLE " + table.getName() + " RENAME COLUMN IF EXISTS col.b.x_missing TO x_missing_renamed");
-            assertEquals(getColumnType(table.getName(), "col"), "row(a_renamed integer, b row(x_renamed integer))");
-
-            // Specify existing fields without IF EXISTS option
-            assertQueryFails("ALTER TABLE " + table.getName() + " RENAME COLUMN col.a_renamed TO a_renamed", ".* Field 'a_renamed' already exists");
-        }
-    }
-
-    @Test
-    public void testRenameRowFieldCaseSensitivity()
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_RENAME_FIELD));
-
-        try (TestTable table = new TestTable(getQueryRunner()::execute,
-                "test_add_row_field_case_sensitivity_",
-                "AS SELECT CAST(row(1, 2) AS row(lower integer, \"UPPER\" integer)) AS col")) {
-            assertEquals(getColumnType(table.getName(), "col"), "row(lower integer, UPPER integer)");
-
-            assertQueryFails("ALTER TABLE " + table.getName() + " RENAME COLUMN col.lower TO UPPER", ".* Field 'upper' already exists");
-            assertQueryFails("ALTER TABLE " + table.getName() + " RENAME COLUMN col.lower TO upper", ".* Field 'upper' already exists");
-
-            assertUpdate("ALTER TABLE " + table.getName() + " RENAME COLUMN col.lower TO LOWER_RENAMED");
-            assertEquals(getColumnType(table.getName(), "col"), "row(lower_renamed integer, UPPER integer)");
-
-            assertUpdate("ALTER TABLE " + table.getName() + " RENAME COLUMN col.\"UPPER\" TO upper_renamed");
-            assertEquals(getColumnType(table.getName(), "col"), "row(lower_renamed integer, upper_renamed integer)");
-
-            assertThat(query("SELECT * FROM " + table.getName()))
-                    .matches("SELECT CAST(row(1, 2) AS row(lower_renamed integer, upper_renamed integer))");
-        }
-    }
-
-    @Test
     public void testSetColumnType()
     {
         if (!hasBehavior(SUPPORTS_SET_COLUMN_TYPE)) {
@@ -3092,156 +2976,6 @@ public abstract class BaseConnectorTest
     protected void verifySetColumnTypeFailurePermissible(Throwable e)
     {
         throw new AssertionError("Unexpected set column type failure", e);
-    }
-
-    @Test
-    public void testSetFieldType()
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA) && hasBehavior(SUPPORTS_ROW_TYPE));
-
-        if (!hasBehavior(SUPPORTS_SET_FIELD_TYPE)) {
-            try (TestTable table = new TestTable(getQueryRunner()::execute, "test_set_field_type_", "(col row(field int))")) {
-                assertQueryFails(
-                        "ALTER TABLE " + table.getName() + " ALTER COLUMN col.field SET DATA TYPE bigint",
-                        "This connector does not support setting field types");
-            }
-            return;
-        }
-
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_set_field_type_", "AS SELECT CAST(row(123) AS row(field integer)) AS col")) {
-            assertEquals(getColumnType(table.getName(), "col"), "row(field integer)");
-
-            assertUpdate("ALTER TABLE " + table.getName() + " ALTER COLUMN col.field SET DATA TYPE bigint");
-
-            assertEquals(getColumnType(table.getName(), "col"), "row(field bigint)");
-            assertThat(query("SELECT * FROM " + table.getName()))
-                    .skippingTypesCheck()
-                    .matches("SELECT row(bigint '123')");
-        }
-    }
-
-    @Test(dataProvider = "setFieldTypesDataProvider")
-    public void testSetFieldTypes(SetColumnTypeSetup setup)
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_SET_FIELD_TYPE) && hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA));
-
-        TestTable table;
-        try {
-            table = new TestTable(
-                    getQueryRunner()::execute,
-                    "test_set_field_type_",
-                    " AS SELECT CAST(row(" + setup.sourceValueLiteral + ") AS row(field " + setup.sourceColumnType + ")) AS col");
-        }
-        catch (Exception e) {
-            verifyUnsupportedTypeException(e, setup.sourceColumnType);
-            throw new SkipException("Unsupported column type: " + setup.sourceColumnType);
-        }
-        try (table) {
-            Runnable setFieldType = () -> assertUpdate("ALTER TABLE " + table.getName() + " ALTER COLUMN col.field SET DATA TYPE " + setup.newColumnType);
-            if (setup.unsupportedType) {
-                assertThatThrownBy(setFieldType::run)
-                        .satisfies(this::verifySetFieldTypeFailurePermissible);
-                return;
-            }
-            setFieldType.run();
-
-            assertEquals(getColumnType(table.getName(), "col"), "row(field " + setup.newColumnType + ")");
-            assertThat(query("SELECT * FROM " + table.getName()))
-                    .skippingTypesCheck()
-                    .matches("SELECT row(" + setup.newValueLiteral + ")");
-        }
-    }
-
-    @DataProvider
-    public Object[][] setFieldTypesDataProvider()
-    {
-        return setColumnTypeSetupData().stream()
-                .map(this::filterSetFieldTypesDataProvider)
-                .flatMap(Optional::stream)
-                .collect(toDataProvider());
-    }
-
-    protected Optional<SetColumnTypeSetup> filterSetFieldTypesDataProvider(SetColumnTypeSetup setup)
-    {
-        return Optional.of(setup);
-    }
-
-    @Test
-    public void testSetFieldTypeCaseSensitivity()
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_SET_FIELD_TYPE) && hasBehavior(SUPPORTS_NOT_NULL_CONSTRAINT));
-
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_set_field_type_case_", " AS SELECT CAST(row(1) AS row(\"UPPER\" integer)) col")) {
-            assertEquals(getColumnType(table.getName(), "col"), "row(UPPER integer)");
-
-            assertUpdate("ALTER TABLE " + table.getName() + " ALTER COLUMN col.upper SET DATA TYPE bigint");
-            assertEquals(getColumnType(table.getName(), "col"), "row(UPPER bigint)");
-            assertThat(query("SELECT * FROM " + table.getName()))
-                    .matches("SELECT CAST(row(1) AS row(UPPER bigint))");
-        }
-    }
-
-    @Test
-    public void testSetFieldTypeWithNotNull()
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_SET_FIELD_TYPE) && hasBehavior(SUPPORTS_NOT_NULL_CONSTRAINT));
-
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_set_field_type_null_", "(col row(field int) NOT NULL)")) {
-            assertFalse(columnIsNullable(table.getName(), "col"));
-
-            assertUpdate("ALTER TABLE " + table.getName() + " ALTER COLUMN col.field SET DATA TYPE bigint");
-            assertFalse(columnIsNullable(table.getName(), "col"));
-        }
-    }
-
-    @Test
-    public void testSetFieldTypeWithComment()
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_SET_FIELD_TYPE) && hasBehavior(SUPPORTS_CREATE_TABLE_WITH_COLUMN_COMMENT));
-
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_set_field_type_comment_", "(col row(field int) COMMENT 'test comment')")) {
-            assertEquals(getColumnComment(table.getName(), "col"), "test comment");
-
-            assertUpdate("ALTER TABLE " + table.getName() + " ALTER COLUMN col.field SET DATA TYPE bigint");
-            assertEquals(getColumnComment(table.getName(), "col"), "test comment");
-        }
-    }
-
-    @Test
-    public void testSetFieldIncompatibleType()
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_SET_FIELD_TYPE) && hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA));
-
-        try (TestTable table = new TestTable(
-                getQueryRunner()::execute,
-                "test_set_invalid_field_type_",
-                "(row_col row(field varchar), nested_col row(field row(nested int)))")) {
-            assertThatThrownBy(() -> assertUpdate("ALTER TABLE " + table.getName() + " ALTER COLUMN row_col.field SET DATA TYPE row(nested integer)"))
-                    .satisfies(this::verifySetFieldTypeFailurePermissible);
-            assertThatThrownBy(() -> assertUpdate("ALTER TABLE " + table.getName() + " ALTER COLUMN row_col.field SET DATA TYPE integer"))
-                    .satisfies(this::verifySetFieldTypeFailurePermissible);
-            assertThatThrownBy(() -> assertUpdate("ALTER TABLE " + table.getName() + " ALTER COLUMN nested_col.field SET DATA TYPE integer"))
-                    .satisfies(this::verifySetFieldTypeFailurePermissible);
-        }
-    }
-
-    @Test
-    public void testSetFieldOutOfRangeType()
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_SET_FIELD_TYPE) && hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA));
-
-        try (TestTable table = new TestTable(
-                getQueryRunner()::execute,
-                "test_set_field_type_invalid_range_",
-                "AS SELECT CAST(row(9223372036854775807) AS row(field bigint)) AS col")) {
-            assertThatThrownBy(() -> assertUpdate("ALTER TABLE " + table.getName() + " ALTER COLUMN col.field SET DATA TYPE integer"))
-                    .satisfies(this::verifySetFieldTypeFailurePermissible);
-        }
-    }
-
-    protected void verifySetFieldTypeFailurePermissible(Throwable e)
-    {
-        throw new AssertionError("Unexpected set field type failure", e);
     }
 
     protected String getColumnType(String tableName, String columnName)
@@ -4630,7 +4364,7 @@ public abstract class BaseConnectorTest
     @Test
     public void testRowLevelDelete()
     {
-        skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA) && hasBehavior(SUPPORTS_ROW_LEVEL_DELETE));
+        skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE) && hasBehavior(SUPPORTS_ROW_LEVEL_DELETE));
         // TODO (https://github.com/trinodb/trino/issues/5901) Use longer table name once Oracle version is updated
         try (TestTable table = new TestTable(getQueryRunner()::execute, "test_row_delete", "AS SELECT * FROM region")) {
             assertUpdate("DELETE FROM " + table.getName() + " WHERE regionkey = 2", 1);
@@ -4639,52 +4373,9 @@ public abstract class BaseConnectorTest
     }
 
     @Test
-    public void verifySupportsUpdateDeclaration()
-    {
-        if (hasBehavior(SUPPORTS_UPDATE)) {
-            // Covered by testUpdate
-            return;
-        }
-
-        skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA));
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_supports_update", "AS SELECT * FROM nation")) {
-            assertQueryFails("UPDATE " + table.getName() + " SET nationkey = 100 WHERE regionkey = 2", MODIFYING_ROWS_MESSAGE);
-        }
-    }
-
-    @Test
-    public void verifySupportsRowLevelUpdateDeclaration()
-    {
-        if (hasBehavior(SUPPORTS_ROW_LEVEL_UPDATE)) {
-            // Covered by testRowLevelUpdate
-            return;
-        }
-
-        skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA));
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_supports_update", "AS SELECT * FROM nation")) {
-            assertQueryFails("UPDATE " + table.getName() + " SET nationkey = nationkey * 100 WHERE regionkey = 2", MODIFYING_ROWS_MESSAGE);
-        }
-    }
-
-    @Test
     public void testUpdate()
     {
         if (!hasBehavior(SUPPORTS_UPDATE)) {
-            // Note this change is a no-op, if actually run
-            assertQueryFails("UPDATE nation SET nationkey = nationkey + regionkey WHERE regionkey < 1", MODIFYING_ROWS_MESSAGE);
-            return;
-        }
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_row_update", "AS SELECT * FROM nation")) {
-            assertUpdate("UPDATE " + table.getName() + " SET nationkey = 100 WHERE regionkey = 2", 5);
-            assertQuery("SELECT count(*) FROM " + table.getName() + " WHERE nationkey = 100", "VALUES 5");
-        }
-    }
-
-    @Test
-    public void testRowLevelUpdate()
-    {
-        skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA));
-        if (!hasBehavior(SUPPORTS_ROW_LEVEL_UPDATE)) {
             // Note this change is a no-op, if actually run
             assertQueryFails("UPDATE nation SET nationkey = nationkey + regionkey WHERE regionkey < 1", MODIFYING_ROWS_MESSAGE);
             return;
@@ -5138,14 +4829,41 @@ public abstract class BaseConnectorTest
     @Test
     public void testWrittenDataSize()
     {
-        skipTestUnless(hasBehavior(SUPPORTS_REPORTING_WRITTEN_BYTES));
+        skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA));
+
+        AtomicBoolean isReportingWrittenBytesSupported = new AtomicBoolean();
+        transaction(getQueryRunner().getTransactionManager(), getQueryRunner().getAccessControl())
+                .singleStatement()
+                .execute(getSession(), session -> {
+                    String catalogName = session.getCatalog().orElseThrow();
+                    TestingTrinoServer coordinator = getDistributedQueryRunner().getCoordinator();
+                    Map<String, Object> properties = coordinator.getTablePropertyManager().getProperties(
+                            catalogName,
+                            coordinator.getMetadata().getCatalogHandle(session, catalogName).orElseThrow(),
+                            List.of(),
+                            session,
+                            null,
+                            new AllowAllAccessControl(),
+                            Map.of(),
+                            true);
+                    QualifiedObjectName fullTableName = new QualifiedObjectName(catalogName, "any", "any");
+                    isReportingWrittenBytesSupported.set(coordinator.getMetadata().supportsReportingWrittenBytes(session, fullTableName, properties));
+                });
+
         String tableName = "write_stats_" + randomNameSuffix();
         try {
             String query = "CREATE TABLE " + tableName + " AS SELECT * FROM tpch.tiny.nation";
             assertQueryStats(
                     getSession(),
                     query,
-                    queryStats -> assertThat(queryStats.getPhysicalWrittenDataSize().toBytes()).isPositive(),
+                    queryStats -> {
+                        if (isReportingWrittenBytesSupported.get()) {
+                            assertThat(queryStats.getPhysicalWrittenDataSize().toBytes()).isPositive();
+                        }
+                        else {
+                            assertThat(queryStats.getPhysicalWrittenDataSize().toBytes()).isZero();
+                        }
+                    },
                     results -> {});
         }
         finally {
@@ -6160,8 +5878,7 @@ public abstract class BaseConnectorTest
 
         assertUpdate(format("INSERT INTO %s VALUES ('ALGERIA', 'AFRICA'), ('FRANCE', 'EUROPE'), ('EGYPT', 'MIDDLE EAST'), ('RUSSIA', 'EUROPE')", sourceTable), 4);
 
-        assertUpdate(
-                format("MERGE INTO %s t USING %s s", targetTable, sourceTable) +
+        assertUpdate(format("MERGE INTO %s t USING %s s", targetTable, sourceTable) +
                         "    ON (t.nation_name = s.nation_name)" +
                         "    WHEN MATCHED AND t.nation_name > (SELECT name FROM tpch.tiny.region WHERE name = t.region_name AND name LIKE ('A%'))" +
                         "        THEN DELETE" +
@@ -6299,7 +6016,7 @@ public abstract class BaseConnectorTest
                         .isFullyPushedDown();
 
                 // With Projection Pushdown disabled
-                Session sessionWithoutPushdown = sessionWithProjectionPushdownDisabled(getSession());
+                Session sessionWithoutPushdown = sessionWithProjectionPushdownDisabled();
                 assertThat(query(sessionWithoutPushdown, selectQuery))
                         .matches(expectedResult)
                         .isNotFullyPushedDown(ProjectNode.class);
@@ -6423,11 +6140,10 @@ public abstract class BaseConnectorTest
                 "AS SELECT val AS id, CAST(ROW(val + 1, val + 2) AS ROW(leaf1 BIGINT, leaf2 BIGINT)) AS root FROM UNNEST(SEQUENCE(1, 10)) AS t(val)")) {
             MaterializedResult expectedResult = computeActual("SELECT val + 2 FROM UNNEST(SEQUENCE(1, 10)) AS t(val)");
             String selectQuery = "SELECT root.leaf2 FROM " + testTable.getName();
-            Session sessionWithoutSmallFileThreshold = withoutSmallFileThreshold(getSession());
-            Session sessionWithoutPushdown = sessionWithProjectionPushdownDisabled(sessionWithoutSmallFileThreshold);
+            Session sessionWithoutPushdown = sessionWithProjectionPushdownDisabled();
 
             assertQueryStats(
-                    sessionWithoutSmallFileThreshold,
+                    getSession(),
                     selectQuery,
                     statsWithPushdown -> {
                         DataSize physicalInputDataSizeWithPushdown = statsWithPushdown.getPhysicalInputDataSize();
@@ -6461,13 +6177,12 @@ public abstract class BaseConnectorTest
                 "test_projection_pushdown_physical_input_size_",
                 "AS SELECT val AS id, CAST(ROW(val + 1, val + 2) AS ROW(leaf1 BIGINT, leaf2 BIGINT)) AS root FROM UNNEST(SEQUENCE(1, 10)) AS t(val)")) {
             // Verify that the physical input size is smaller when reading the root.leaf1 field compared to reading the root field
-            Session sessionWithoutSmallFileThreshold = withoutSmallFileThreshold(getSession());
             assertQueryStats(
-                    sessionWithoutSmallFileThreshold,
+                    getSession(),
                     "SELECT root FROM " + testTable.getName(),
                     statsWithSelectRootField -> {
                         assertQueryStats(
-                                sessionWithoutSmallFileThreshold,
+                                getSession(),
                                 "SELECT root.leaf1 FROM " + testTable.getName(),
                                 statsWithSelectLeafField -> {
                                     if (supportsPhysicalPushdown()) {
@@ -6484,11 +6199,11 @@ public abstract class BaseConnectorTest
 
             // Verify that the physical input size is the same when reading the root field compared to reading both the root and root.leaf1 fields
             assertQueryStats(
-                    sessionWithoutSmallFileThreshold,
+                    getSession(),
                     "SELECT root FROM " + testTable.getName(),
                     statsWithSelectRootField -> {
                         assertQueryStats(
-                                sessionWithoutSmallFileThreshold,
+                                getSession(),
                                 "SELECT root, root.leaf1 FROM " + testTable.getName(),
                                 statsWithSelectRootAndLeafField -> {
                                     assertThat(statsWithSelectRootAndLeafField.getPhysicalInputDataSize()).isEqualTo(statsWithSelectRootField.getPhysicalInputDataSize());
@@ -6543,16 +6258,11 @@ public abstract class BaseConnectorTest
         return true;
     }
 
-    protected Session sessionWithProjectionPushdownDisabled(Session session)
+    protected Session sessionWithProjectionPushdownDisabled()
     {
-        return Session.builder(session)
+        return Session.builder(getSession())
                 .setCatalogSessionProperty(getSession().getCatalog().orElseThrow(), "projection_pushdown_enabled", "false")
                 .build();
-    }
-
-    protected Session withoutSmallFileThreshold(Session session)
-    {
-        return session;
     }
 
     protected static final class DataMappingTestSetup

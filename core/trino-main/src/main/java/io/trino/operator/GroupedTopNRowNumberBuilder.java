@@ -41,7 +41,6 @@ public class GroupedTopNRowNumberBuilder
 
     private final List<Type> sourceTypes;
     private final boolean produceRowNumber;
-    private final int[] groupByChannels;
     private final GroupByHash groupByHash;
     private final RowReferencePageManager pageManager = new RowReferencePageManager();
     private final GroupedTopNRowNumberAccumulator groupedTopNRowNumberAccumulator;
@@ -52,13 +51,11 @@ public class GroupedTopNRowNumberBuilder
             PageWithPositionComparator comparator,
             int topN,
             boolean produceRowNumber,
-            int[] groupByChannels,
             GroupByHash groupByHash)
     {
         this.sourceTypes = requireNonNull(sourceTypes, "sourceTypes is null");
         checkArgument(topN > 0, "topN must be > 0");
         this.produceRowNumber = produceRowNumber;
-        this.groupByChannels = groupByChannels;
         this.groupByHash = requireNonNull(groupByHash, "groupByHash is null");
 
         this.comparator = requireNonNull(comparator, "comparator is null");
@@ -78,7 +75,7 @@ public class GroupedTopNRowNumberBuilder
     public Work<?> processPage(Page page)
     {
         return new TransformWork<>(
-                groupByHash.getGroupIds(page.getColumns(groupByChannels)),
+                groupByHash.getGroupIds(page),
                 groupIds -> {
                     processPage(page, groupByHash.getGroupCount(), groupIds);
                     return null;

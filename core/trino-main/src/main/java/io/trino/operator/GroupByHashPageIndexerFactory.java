@@ -19,6 +19,7 @@ import io.trino.spi.PageIndexer;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.type.Type;
 import io.trino.sql.gen.JoinCompiler;
+import io.trino.type.BlockTypeOperators;
 
 import java.util.List;
 
@@ -28,20 +29,22 @@ public class GroupByHashPageIndexerFactory
         implements PageIndexerFactory
 {
     private final JoinCompiler joinCompiler;
+    private final BlockTypeOperators blockTypeOperators;
 
     @Inject
-    public GroupByHashPageIndexerFactory(JoinCompiler joinCompiler)
+    public GroupByHashPageIndexerFactory(JoinCompiler joinCompiler, BlockTypeOperators blockTypeOperators)
     {
         this.joinCompiler = requireNonNull(joinCompiler, "joinCompiler is null");
+        this.blockTypeOperators = requireNonNull(blockTypeOperators, "blockTypeOperators is null");
     }
 
     @Override
-    public PageIndexer createPageIndexer(List<Type> types)
+    public PageIndexer createPageIndexer(List<? extends Type> types)
     {
         if (types.isEmpty()) {
             return new NoHashPageIndexer();
         }
-        return new GroupByHashPageIndexer(types, joinCompiler);
+        return new GroupByHashPageIndexer(types, joinCompiler, blockTypeOperators);
     }
 
     private static class NoHashPageIndexer

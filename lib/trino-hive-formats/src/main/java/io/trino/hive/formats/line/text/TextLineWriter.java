@@ -41,7 +41,7 @@ public class TextLineWriter
             this.outputStream = compressionKind.get().createCodec().createStreamCompressor(countingOutputStream);
         }
         else {
-            this.outputStream = countingOutputStream;
+            this.outputStream = outputStream;
         }
     }
 

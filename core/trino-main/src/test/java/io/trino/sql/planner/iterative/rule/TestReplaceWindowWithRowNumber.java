@@ -22,6 +22,7 @@ import io.trino.sql.planner.Symbol;
 import io.trino.sql.planner.iterative.rule.test.BaseRuleTest;
 import io.trino.sql.planner.plan.DataOrganizationSpecification;
 import io.trino.sql.planner.plan.WindowNode;
+import io.trino.sql.tree.QualifiedName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -37,7 +38,7 @@ public class TestReplaceWindowWithRowNumber
     @Test
     public void test()
     {
-        ResolvedFunction rowNumberFunction = tester().getMetadata().resolveBuiltinFunction("row_number", fromTypes());
+        ResolvedFunction rowNumberFunction = tester().getMetadata().resolveFunction(tester().getSession(), QualifiedName.of("row_number"), fromTypes());
         tester().assertThat(new ReplaceWindowWithRowNumber(tester().getMetadata()))
                 .on(p -> {
                     Symbol a = p.symbol("a");
@@ -72,7 +73,7 @@ public class TestReplaceWindowWithRowNumber
     @Test
     public void testDoNotFire()
     {
-        ResolvedFunction rank = tester().getMetadata().resolveBuiltinFunction("rank", fromTypes());
+        ResolvedFunction rank = tester().getMetadata().resolveFunction(tester().getSession(), QualifiedName.of("rank"), fromTypes());
         tester().assertThat(new ReplaceWindowWithRowNumber(tester().getMetadata()))
                 .on(p -> {
                     Symbol a = p.symbol("a");
@@ -84,7 +85,7 @@ public class TestReplaceWindowWithRowNumber
                 })
                 .doesNotFire();
 
-        ResolvedFunction rowNumber = tester().getMetadata().resolveBuiltinFunction("row_number", fromTypes());
+        ResolvedFunction rowNumber = tester().getMetadata().resolveFunction(tester().getSession(), QualifiedName.of("row_number"), fromTypes());
         tester().assertThat(new ReplaceWindowWithRowNumber(tester().getMetadata()))
                 .on(p -> {
                     Symbol a = p.symbol("a");

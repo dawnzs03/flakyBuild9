@@ -27,10 +27,9 @@ import io.trino.sql.planner.plan.JoinNode;
 import io.trino.sql.planner.plan.OutputNode;
 import io.trino.sql.planner.plan.PlanFragmentId;
 import io.trino.testing.LocalQueryRunner;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 import java.util.Optional;
@@ -43,16 +42,14 @@ import static io.trino.testing.TestingHandles.TEST_CATALOG_NAME;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static io.trino.transaction.TransactionBuilder.transaction;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 public class TestPlanFragmentPartitionCount
 {
     private PlanFragmenter planFragmenter;
     private Session session;
     private LocalQueryRunner localQueryRunner;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         session = testSessionBuilder().setCatalog(TEST_CATALOG_NAME).build();
@@ -67,7 +64,7 @@ public class TestPlanFragmentPartitionCount
                 new QueryManagerConfig());
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         planFragmenter = null;
@@ -79,7 +76,7 @@ public class TestPlanFragmentPartitionCount
     @Test
     public void testPartitionCountInPlanFragment()
     {
-        PlanBuilder p = new PlanBuilder(new PlanNodeIdAllocator(), localQueryRunner.getPlannerContext(), session);
+        PlanBuilder p = new PlanBuilder(new PlanNodeIdAllocator(), localQueryRunner.getMetadata(), session);
         Symbol a = p.symbol("a", VARCHAR);
         Symbol b = p.symbol("b", VARCHAR);
         Symbol c = p.symbol("c", VARCHAR);
@@ -138,7 +135,7 @@ public class TestPlanFragmentPartitionCount
                 new PlanFragmentId("4"), Optional.empty(),
                 new PlanFragmentId("5"), Optional.empty());
 
-        assertThat(actualPartitionCount.buildOrThrow()).isEqualTo(expectedPartitionCount);
+        assertThat(expectedPartitionCount).isEqualTo(actualPartitionCount.buildOrThrow());
     }
 
     private SubPlan fragment(Plan plan)

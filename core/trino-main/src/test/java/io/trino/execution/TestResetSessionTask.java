@@ -28,10 +28,9 @@ import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.ResetSession;
 import io.trino.testing.LocalQueryRunner;
 import io.trino.transaction.TransactionManager;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.Optional;
@@ -46,10 +45,8 @@ import static io.trino.spi.session.PropertyMetadata.stringProperty;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 
-@TestInstance(PER_CLASS)
 public class TestResetSessionTask
 {
     private static final String CATALOG_NAME = "my_catalog";
@@ -60,7 +57,7 @@ public class TestResetSessionTask
     private Metadata metadata;
     private SessionPropertyManager sessionPropertyManager;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         queryRunner = LocalQueryRunner.builder(TEST_SESSION)
@@ -89,7 +86,7 @@ public class TestResetSessionTask
         sessionPropertyManager = queryRunner.getSessionPropertyManager();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         executor.shutdownNow();

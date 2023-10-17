@@ -60,7 +60,10 @@ public final class VarbinaryFunctions
     @SqlType(StandardTypes.VARCHAR)
     public static Slice toBase64(@SqlType(StandardTypes.VARBINARY) Slice slice)
     {
-        return Slices.wrappedHeapBuffer(Base64.getEncoder().encode(slice.toByteBuffer()));
+        if (slice.hasByteArray()) {
+            return Slices.wrappedBuffer(Base64.getEncoder().encode(slice.toByteBuffer()));
+        }
+        return Slices.wrappedBuffer(Base64.getEncoder().encode(slice.getBytes()));
     }
 
     @Description("Decode base64 encoded binary data")
@@ -70,7 +73,10 @@ public final class VarbinaryFunctions
     public static Slice fromBase64Varchar(@SqlType("varchar(x)") Slice slice)
     {
         try {
-            return Slices.wrappedHeapBuffer(Base64.getDecoder().decode(slice.toByteBuffer()));
+            if (slice.hasByteArray()) {
+                return Slices.wrappedBuffer(Base64.getDecoder().decode(slice.toByteBuffer()));
+            }
+            return Slices.wrappedBuffer(Base64.getDecoder().decode(slice.getBytes()));
         }
         catch (IllegalArgumentException e) {
             throw new TrinoException(INVALID_FUNCTION_ARGUMENT, e);
@@ -83,7 +89,10 @@ public final class VarbinaryFunctions
     public static Slice fromBase64Varbinary(@SqlType(StandardTypes.VARBINARY) Slice slice)
     {
         try {
-            return Slices.wrappedHeapBuffer(Base64.getDecoder().decode(slice.toByteBuffer()));
+            if (slice.hasByteArray()) {
+                return Slices.wrappedBuffer(Base64.getDecoder().decode(slice.toByteBuffer()));
+            }
+            return Slices.wrappedBuffer(Base64.getDecoder().decode(slice.getBytes()));
         }
         catch (IllegalArgumentException e) {
             throw new TrinoException(INVALID_FUNCTION_ARGUMENT, e);
@@ -95,7 +104,10 @@ public final class VarbinaryFunctions
     @SqlType(StandardTypes.VARCHAR)
     public static Slice toBase64Url(@SqlType(StandardTypes.VARBINARY) Slice slice)
     {
-        return Slices.wrappedHeapBuffer(Base64.getUrlEncoder().encode(slice.toByteBuffer()));
+        if (slice.hasByteArray()) {
+            return Slices.wrappedBuffer(Base64.getUrlEncoder().encode(slice.toByteBuffer()));
+        }
+        return Slices.wrappedBuffer(Base64.getUrlEncoder().encode(slice.getBytes()));
     }
 
     @Description("Decode URL safe base64 encoded binary data")
@@ -105,7 +117,10 @@ public final class VarbinaryFunctions
     public static Slice fromBase64UrlVarchar(@SqlType("varchar(x)") Slice slice)
     {
         try {
-            return Slices.wrappedHeapBuffer(Base64.getUrlDecoder().decode(slice.toByteBuffer()));
+            if (slice.hasByteArray()) {
+                return Slices.wrappedBuffer(Base64.getUrlDecoder().decode(slice.toByteBuffer()));
+            }
+            return Slices.wrappedBuffer(Base64.getUrlDecoder().decode(slice.getBytes()));
         }
         catch (IllegalArgumentException e) {
             throw new TrinoException(INVALID_FUNCTION_ARGUMENT, e);
@@ -118,7 +133,10 @@ public final class VarbinaryFunctions
     public static Slice fromBase64UrlVarbinary(@SqlType(StandardTypes.VARBINARY) Slice slice)
     {
         try {
-            return Slices.wrappedHeapBuffer(Base64.getUrlDecoder().decode(slice.toByteBuffer()));
+            if (slice.hasByteArray()) {
+                return Slices.wrappedBuffer(Base64.getUrlDecoder().decode(slice.toByteBuffer()));
+            }
+            return Slices.wrappedBuffer(Base64.getUrlDecoder().decode(slice.getBytes()));
         }
         catch (IllegalArgumentException e) {
             throw new TrinoException(INVALID_FUNCTION_ARGUMENT, e);
@@ -130,7 +148,13 @@ public final class VarbinaryFunctions
     @SqlType(StandardTypes.VARCHAR)
     public static Slice toBase32(@SqlType(StandardTypes.VARBINARY) Slice slice)
     {
-        String encoded = BaseEncoding.base32().encode(slice.byteArray(), slice.byteArrayOffset(), slice.length());
+        String encoded;
+        if (slice.hasByteArray()) {
+            encoded = BaseEncoding.base32().encode(slice.byteArray(), slice.byteArrayOffset(), slice.length());
+        }
+        else {
+            encoded = BaseEncoding.base32().encode(slice.getBytes());
+        }
         return Slices.utf8Slice(encoded);
     }
 
@@ -172,11 +196,20 @@ public final class VarbinaryFunctions
     public static Slice toHex(@SqlType(StandardTypes.VARBINARY) Slice slice)
     {
         byte[] result = new byte[slice.length() * 2];
-        byte[] source = slice.byteArray();
-        for (int sourceIndex = slice.byteArrayOffset(), resultIndex = 0; resultIndex < result.length; sourceIndex++, resultIndex += 2) {
-            int value = source[sourceIndex] & 0xFF;
-            result[resultIndex] = UPPERCASE_HEX_DIGITS[(value & 0xF0) >>> 4];
-            result[resultIndex + 1] = UPPERCASE_HEX_DIGITS[(value & 0x0F)];
+        if (slice.hasByteArray()) {
+            byte[] source = slice.byteArray();
+            for (int sourceIndex = slice.byteArrayOffset(), resultIndex = 0; resultIndex < result.length; sourceIndex++, resultIndex += 2) {
+                int value = source[sourceIndex] & 0xFF;
+                result[resultIndex] = UPPERCASE_HEX_DIGITS[(value & 0xF0) >>> 4];
+                result[resultIndex + 1] = UPPERCASE_HEX_DIGITS[(value & 0x0F)];
+            }
+        }
+        else {
+            for (int sourceIndex = 0, resultIndex = 0; resultIndex < result.length; sourceIndex++, resultIndex += 2) {
+                int value = slice.getByte(sourceIndex) & 0xFF;
+                result[resultIndex] = UPPERCASE_HEX_DIGITS[(value & 0xF0) >>> 4];
+                result[resultIndex + 1] = UPPERCASE_HEX_DIGITS[(value & 0x0F)];
+            }
         }
         return Slices.wrappedBuffer(result);
     }
@@ -194,11 +227,20 @@ public final class VarbinaryFunctions
 
         try {
             byte[] result = new byte[resultLength];
-            byte[] source = slice.byteArray();
-            for (int sourceIndex = slice.byteArrayOffset(), resultIndex = 0; resultIndex < result.length; resultIndex++, sourceIndex += 2) {
-                int high = HexFormat.fromHexDigit(source[sourceIndex]);
-                int low = HexFormat.fromHexDigit(source[sourceIndex + 1]);
-                result[resultIndex] = (byte) ((high << 4) | low);
+            if (slice.hasByteArray()) {
+                byte[] source = slice.byteArray();
+                for (int sourceIndex = slice.byteArrayOffset(), resultIndex = 0; resultIndex < result.length; resultIndex++, sourceIndex += 2) {
+                    int high = HexFormat.fromHexDigit(source[sourceIndex]);
+                    int low = HexFormat.fromHexDigit(source[sourceIndex + 1]);
+                    result[resultIndex] = (byte) ((high << 4) | low);
+                }
+            }
+            else {
+                for (int sourceIndex = 0, resultIndex = 0; resultIndex < result.length; resultIndex++, sourceIndex += 2) {
+                    int high = HexFormat.fromHexDigit(slice.getByte(sourceIndex));
+                    int low = HexFormat.fromHexDigit(slice.getByte(sourceIndex + 1));
+                    result[resultIndex] = (byte) ((high << 4) | low);
+                }
             }
             return Slices.wrappedBuffer(result);
         }
@@ -375,7 +417,12 @@ public final class VarbinaryFunctions
     public static long crc32(@SqlType(StandardTypes.VARBINARY) Slice slice)
     {
         CRC32 crc32 = new CRC32();
-        crc32.update(slice.byteArray(), slice.byteArrayOffset(), slice.length());
+        if (slice.hasByteArray()) {
+            crc32.update(slice.byteArray(), slice.byteArrayOffset(), slice.length());
+        }
+        else {
+            crc32.update(slice.toByteBuffer());
+        }
         return crc32.getValue();
     }
 

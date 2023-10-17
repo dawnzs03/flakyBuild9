@@ -32,11 +32,9 @@ import io.trino.spi.session.PropertyMetadata;
 import io.trino.spi.statistics.Estimate;
 import io.trino.spi.statistics.TableStatistics;
 import io.trino.testing.TestingConnectorSession;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.Timeout;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -76,9 +74,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.function.Function.identity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 
-@TestInstance(PER_METHOD)
+@Test(singleThreaded = true)
 public class TestCachingJdbcClient
 {
     private static final Duration FOREVER = Duration.succinctDuration(1, DAYS);
@@ -107,7 +104,7 @@ public class TestCachingJdbcClient
     private String schema;
     private ExecutorService executor;
 
-    @BeforeEach
+    @BeforeMethod
     public void setUp()
             throws Exception
     {
@@ -149,7 +146,7 @@ public class TestCachingJdbcClient
         return createCachingJdbcClient(FOREVER, cacheMissing, cacheMaximumSize);
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void tearDown()
             throws Exception
     {
@@ -171,7 +168,7 @@ public class TestCachingJdbcClient
                 .afterRunning(() -> {
                     assertThat(cachingJdbcClient.getSchemaNames(SESSION)).contains(phantomSchema);
                 });
-        jdbcClient.dropSchema(SESSION, phantomSchema, false);
+        jdbcClient.dropSchema(SESSION, phantomSchema);
 
         assertThat(jdbcClient.getSchemaNames(SESSION)).doesNotContain(phantomSchema);
         assertSchemaNamesCache(cachingJdbcClient)
@@ -655,8 +652,7 @@ public class TestCachingJdbcClient
                 Optional.empty(),
                 Optional.of(Set.of(new SchemaTableName(schema, "first"))),
                 0,
-                Optional.empty(),
-                ImmutableList.of());
+                Optional.empty());
 
         // load
         assertStatisticsCacheStats(cachingJdbcClient).loads(1).misses(1).afterRunning(() -> {
@@ -845,8 +841,7 @@ public class TestCachingJdbcClient
         jdbcClient.dropTable(SESSION, first);
     }
 
-    @Test
-    @Timeout(60)
+    @Test(timeOut = 60_000)
     public void testConcurrentSchemaCreateAndDrop()
     {
         CachingJdbcClient cachingJdbcClient = cachingStatisticsAwareJdbcClient(FOREVER, true, 10000);
@@ -858,7 +853,7 @@ public class TestCachingJdbcClient
                 assertThat(cachingJdbcClient.getSchemaNames(session)).doesNotContain(schemaName);
                 cachingJdbcClient.createSchema(session, schemaName);
                 assertThat(cachingJdbcClient.getSchemaNames(session)).contains(schemaName);
-                cachingJdbcClient.dropSchema(session, schemaName, false);
+                cachingJdbcClient.dropSchema(session, schemaName);
                 assertThat(cachingJdbcClient.getSchemaNames(session)).doesNotContain(schemaName);
                 return null;
             }));
@@ -867,8 +862,7 @@ public class TestCachingJdbcClient
         futures.forEach(Futures::getUnchecked);
     }
 
-    @Test
-    @Timeout(60)
+    @Test(timeOut = 60_000)
     public void testLoadFailureNotSharedWhenDisabled()
             throws Exception
     {
@@ -1032,7 +1026,7 @@ public class TestCachingJdbcClient
 
         jdbcClient.dropTable(SESSION, first);
         jdbcClient.dropTable(SESSION, second);
-        jdbcClient.dropSchema(SESSION, secondSchema, false);
+        jdbcClient.dropSchema(SESSION, secondSchema);
     }
 
     private JdbcTableHandle getAnyTable(String schema)

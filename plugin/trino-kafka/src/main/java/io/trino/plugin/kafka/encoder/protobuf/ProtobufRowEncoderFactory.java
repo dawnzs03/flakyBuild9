@@ -15,11 +15,14 @@ package io.trino.plugin.kafka.encoder.protobuf;
 
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
+import io.trino.plugin.kafka.encoder.EncoderColumnHandle;
 import io.trino.plugin.kafka.encoder.RowEncoder;
 import io.trino.plugin.kafka.encoder.RowEncoderFactory;
-import io.trino.plugin.kafka.encoder.RowEncoderSpec;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ConnectorSession;
+
+import java.util.List;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.decoder.protobuf.ProtobufErrorCode.INVALID_PROTO_FILE;
@@ -32,14 +35,14 @@ public class ProtobufRowEncoderFactory
         implements RowEncoderFactory
 {
     @Override
-    public RowEncoder create(ConnectorSession session, RowEncoderSpec rowEncoderSpec)
+    public RowEncoder create(ConnectorSession session, Optional<String> dataSchema, List<EncoderColumnHandle> columnHandles)
     {
-        checkArgument(rowEncoderSpec.dataSchema().isPresent(), "dataSchema for Protobuf format is not present");
+        checkArgument(dataSchema.isPresent(), "dataSchema for Protobuf format is not present");
 
         try {
-            Descriptor descriptor = getFileDescriptor(rowEncoderSpec.dataSchema().get()).findMessageTypeByName(DEFAULT_MESSAGE);
+            Descriptor descriptor = getFileDescriptor(dataSchema.get()).findMessageTypeByName(DEFAULT_MESSAGE);
             if (descriptor != null) {
-                return new ProtobufRowEncoder(descriptor, session, rowEncoderSpec.columnHandles());
+                return new ProtobufRowEncoder(descriptor, session, columnHandles);
             }
         }
         catch (DescriptorValidationException descriptorValidationException) {

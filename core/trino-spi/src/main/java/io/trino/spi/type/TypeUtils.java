@@ -60,13 +60,6 @@ public final class TypeUtils
         return type.getObject(block, position);
     }
 
-    public static Block writeNativeValue(Type type, @Nullable Object value)
-    {
-        BlockBuilder blockBuilder = type.createBlockBuilder(null, 1);
-        writeNativeValue(type, blockBuilder, value);
-        return blockBuilder.build();
-    }
-
     /**
      * Write a native value object to the current entry of {@code blockBuilder}.
      */

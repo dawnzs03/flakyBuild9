@@ -32,7 +32,6 @@ import io.trino.matching.Pattern;
 import io.trino.metadata.FunctionManager;
 import io.trino.metadata.Metadata;
 import io.trino.security.AccessControl;
-import io.trino.sql.PlannerContext;
 import io.trino.sql.planner.Plan;
 import io.trino.sql.planner.PlanNodeIdAllocator;
 import io.trino.sql.planner.SymbolAllocator;
@@ -67,7 +66,6 @@ public class RuleAssert
     private final FunctionManager functionManager;
     private final TestingStatsCalculator statsCalculator;
     private final CostCalculator costCalculator;
-    private final PlannerContext plannerContext;
     private Session session;
     private final Rule<?> rule;
 
@@ -79,7 +77,8 @@ public class RuleAssert
     private final AccessControl accessControl;
 
     public RuleAssert(
-            PlannerContext plannerContext,
+            Metadata metadata,
+            FunctionManager functionManager,
             StatsCalculator statsCalculator,
             CostCalculator costCalculator,
             Session session,
@@ -87,9 +86,8 @@ public class RuleAssert
             TransactionManager transactionManager,
             AccessControl accessControl)
     {
-        this.plannerContext = plannerContext;
-        this.metadata = plannerContext.getMetadata();
-        this.functionManager = plannerContext.getFunctionManager();
+        this.metadata = metadata;
+        this.functionManager = functionManager;
         this.statsCalculator = new TestingStatsCalculator(statsCalculator);
         this.costCalculator = costCalculator;
         this.session = session;
@@ -121,7 +119,7 @@ public class RuleAssert
     {
         checkArgument(plan == null, "plan has already been set");
 
-        PlanBuilder builder = new PlanBuilder(idAllocator, plannerContext, session);
+        PlanBuilder builder = new PlanBuilder(idAllocator, metadata, session);
         plan = planProvider.apply(builder);
         types = builder.getTypes();
         return this;

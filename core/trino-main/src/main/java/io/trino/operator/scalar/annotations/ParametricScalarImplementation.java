@@ -220,6 +220,17 @@ public class ParametricScalarImplementation
         return choices;
     }
 
+    @Override
+    public ParametricScalarImplementation withAlias(String alias)
+    {
+        return new ParametricScalarImplementation(
+                signature.withName(alias),
+                argumentNativeContainerTypes,
+                specializedTypeParameters,
+                choices,
+                returnNativeContainerType);
+    }
+
     private static MethodType javaMethodType(ParametricScalarImplementationChoice choice, BoundSignature signature)
     {
         // This method accomplishes two purposes:
@@ -486,9 +497,10 @@ public class ParametricScalarImplementation
 
         private final ParametricScalarImplementationChoice choice;
 
-        Parser(Method method, Optional<Constructor<?>> constructor)
+        Parser(String functionName, Method method, Optional<Constructor<?>> constructor)
         {
             Signature.Builder signatureBuilder = Signature.builder();
+            signatureBuilder.name(requireNonNull(functionName, "functionName is null"));
             boolean nullable = method.getAnnotation(SqlNullable.class) != null;
             checkArgument(nullable || !containsLegacyNullable(method.getAnnotations()), "Method [%s] is annotated with @Nullable but not @SqlNullable", method);
 

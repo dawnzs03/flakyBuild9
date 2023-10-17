@@ -22,7 +22,8 @@ import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.SqlDate;
-import org.junit.jupiter.api.Test;
+import io.trino.sql.tree.QualifiedName;
+import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,7 +54,7 @@ public class TestArrayAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "array_agg",
+                QualifiedName.of("array_agg"),
                 fromTypes(BIGINT),
                 null,
                 createLongsBlock(new Long[] {}));
@@ -64,7 +65,7 @@ public class TestArrayAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "array_agg",
+                QualifiedName.of("array_agg"),
                 fromTypes(BIGINT),
                 Arrays.asList(null, null, null),
                 createLongsBlock(new Long[] {null, null, null}));
@@ -75,7 +76,7 @@ public class TestArrayAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "array_agg",
+                QualifiedName.of("array_agg"),
                 fromTypes(BIGINT),
                 Arrays.asList(null, 2L, null, 3L, null),
                 createLongsBlock(new Long[] {null, 2L, null, 3L, null}));
@@ -86,7 +87,7 @@ public class TestArrayAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "array_agg",
+                QualifiedName.of("array_agg"),
                 fromTypes(BOOLEAN),
                 Arrays.asList(true, false),
                 createBooleansBlock(new Boolean[] {true, false}));
@@ -97,7 +98,7 @@ public class TestArrayAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "array_agg",
+                QualifiedName.of("array_agg"),
                 fromTypes(BIGINT),
                 Arrays.asList(2L, 1L, 2L),
                 createLongsBlock(new Long[] {2L, 1L, 2L}));
@@ -108,7 +109,7 @@ public class TestArrayAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "array_agg",
+                QualifiedName.of("array_agg"),
                 fromTypes(VARCHAR),
                 Arrays.asList("hello", "world"),
                 createStringsBlock(new String[] {"hello", "world"}));
@@ -119,7 +120,7 @@ public class TestArrayAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "array_agg",
+                QualifiedName.of("array_agg"),
                 fromTypes(DATE),
                 Arrays.asList(new SqlDate(1), new SqlDate(2), new SqlDate(4)),
                 createTypedLongsBlock(DATE, ImmutableList.of(1L, 2L, 4L)));
@@ -130,7 +131,7 @@ public class TestArrayAggregation
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "array_agg",
+                QualifiedName.of("array_agg"),
                 fromTypes(new ArrayType(BIGINT)),
                 Arrays.asList(Arrays.asList(1L), Arrays.asList(1L, 2L), Arrays.asList(1L, 2L, 3L)),
                 createArrayBigintBlock(ImmutableList.of(ImmutableList.of(1L), ImmutableList.of(1L, 2L), ImmutableList.of(1L, 2L, 3L))));
@@ -139,19 +140,19 @@ public class TestArrayAggregation
     @Test
     public void testEmptyStateOutputsNull()
     {
-        TestingAggregationFunction bigIntAgg = FUNCTION_RESOLUTION.getAggregateFunction("array_agg", fromTypes(BIGINT));
+        TestingAggregationFunction bigIntAgg = FUNCTION_RESOLUTION.getAggregateFunction(QualifiedName.of("array_agg"), fromTypes(BIGINT));
         GroupedAggregator groupedAggregator = bigIntAgg.createAggregatorFactory(SINGLE, ImmutableList.of(), OptionalInt.empty())
                 .createGroupedAggregator();
         BlockBuilder blockBuilder = bigIntAgg.getFinalType().createBlockBuilder(null, 1000);
 
         groupedAggregator.evaluate(0, blockBuilder);
-        assertTrue(blockBuilder.build().isNull(0));
+        assertTrue(blockBuilder.isNull(0));
     }
 
     @Test
     public void testWithMultiplePages()
     {
-        TestingAggregationFunction varcharAgg = FUNCTION_RESOLUTION.getAggregateFunction("array_agg", fromTypes(VARCHAR));
+        TestingAggregationFunction varcharAgg = FUNCTION_RESOLUTION.getAggregateFunction(QualifiedName.of("array_agg"), fromTypes(VARCHAR));
 
         AggregationTestInputBuilder testInputBuilder = new AggregationTestInputBuilder(
                 new Block[] {
@@ -166,7 +167,7 @@ public class TestArrayAggregation
     @Test
     public void testMultipleGroupsWithMultiplePages()
     {
-        TestingAggregationFunction varcharAgg = FUNCTION_RESOLUTION.getAggregateFunction("array_agg", fromTypes(VARCHAR));
+        TestingAggregationFunction varcharAgg = FUNCTION_RESOLUTION.getAggregateFunction(QualifiedName.of("array_agg"), fromTypes(VARCHAR));
 
         Block block1 = createStringsBlock("a", "b", "c", "d", "e");
         Block block2 = createStringsBlock("f", "g", "h", "i", "j");
@@ -191,7 +192,7 @@ public class TestArrayAggregation
     public void testManyValues()
     {
         // Test many values so multiple BlockBuilders will be used to store group state.
-        TestingAggregationFunction varcharAgg = FUNCTION_RESOLUTION.getAggregateFunction("array_agg", fromTypes(VARCHAR));
+        TestingAggregationFunction varcharAgg = FUNCTION_RESOLUTION.getAggregateFunction(QualifiedName.of("array_agg"), fromTypes(VARCHAR));
 
         int numGroups = 50000;
         int arraySize = 30;

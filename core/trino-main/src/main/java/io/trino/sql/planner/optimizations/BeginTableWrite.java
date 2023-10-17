@@ -208,8 +208,7 @@ public class BeginTableWrite
                 return new TableExecuteTarget(
                         target.getExecuteHandle(),
                         findTableScanHandleForTableExecute(((TableExecuteNode) node).getSource()),
-                        target.getSchemaTableName(),
-                        target.getWriterScalingOptions());
+                        target.getSchemaTableName());
             }
 
             if (node instanceof MergeWriterNode mergeWriterNode) {
@@ -245,16 +244,14 @@ public class BeginTableWrite
                         metadata.beginCreateTable(session, create.getCatalog(), create.getTableMetadata(), create.getLayout()),
                         create.getTableMetadata().getTable(),
                         target.supportsMultipleWritersPerPartition(metadata, session),
-                        target.getMaxWriterTasks(metadata, session),
-                        target.getWriterScalingOptions(metadata, session));
+                        target.getMaxWriterTasks(metadata, session));
             }
             if (target instanceof InsertReference insert) {
                 return new InsertTarget(
                         metadata.beginInsert(session, insert.getHandle(), insert.getColumns()),
                         metadata.getTableName(session, insert.getHandle()).getSchemaTableName(),
                         target.supportsMultipleWritersPerPartition(metadata, session),
-                        target.getMaxWriterTasks(metadata, session),
-                        target.getWriterScalingOptions(metadata, session));
+                        target.getMaxWriterTasks(metadata, session));
             }
             if (target instanceof MergeTarget merge) {
                 MergeHandle mergeHandle = metadata.beginMerge(session, merge.getHandle());
@@ -269,12 +266,11 @@ public class BeginTableWrite
                         refreshMV.getStorageTableHandle(),
                         metadata.beginRefreshMaterializedView(session, refreshMV.getStorageTableHandle(), refreshMV.getSourceTableHandles()),
                         metadata.getTableName(session, refreshMV.getStorageTableHandle()).getSchemaTableName(),
-                        refreshMV.getSourceTableHandles(),
-                        refreshMV.getWriterScalingOptions(metadata, session));
+                        refreshMV.getSourceTableHandles());
             }
             if (target instanceof TableExecuteTarget tableExecute) {
                 BeginTableExecuteResult<TableExecuteHandle, TableHandle> result = metadata.beginTableExecute(session, tableExecute.getExecuteHandle(), tableExecute.getMandatorySourceHandle());
-                return new TableExecuteTarget(result.getTableExecuteHandle(), Optional.of(result.getSourceHandle()), tableExecute.getSchemaTableName(), tableExecute.getWriterScalingOptions());
+                return new TableExecuteTarget(result.getTableExecuteHandle(), Optional.of(result.getSourceHandle()), tableExecute.getSchemaTableName());
             }
             throw new IllegalArgumentException("Unhandled target type: " + target.getClass().getSimpleName());
         }

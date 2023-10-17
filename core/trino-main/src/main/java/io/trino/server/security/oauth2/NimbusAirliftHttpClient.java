@@ -81,10 +81,10 @@ public class NimbusAirliftHttpClient
 
         UriBuilder url = UriBuilder.fromUri(httpRequest.getURI());
         if (method.equals(GET) || method.equals(DELETE)) {
-            httpRequest.getQueryStringParameters().forEach((key, value) -> url.queryParam(key, value.toArray()));
+            httpRequest.getQueryParameters().forEach((key, value) -> url.queryParam(key, value.toArray()));
         }
 
-        url.fragment(httpRequest.getURL().getRef());
+        url.fragment(httpRequest.getFragment());
 
         request.setUri(url.build());
 
@@ -93,9 +93,9 @@ public class NimbusAirliftHttpClient
         request.addHeaders(headers.build());
 
         if (method.equals(POST) || method.equals(PUT)) {
-            String query = httpRequest.getBody();
+            String query = httpRequest.getQuery();
             if (query != null) {
-                request.setBodyGenerator(createStaticBodyGenerator(query, UTF_8));
+                request.setBodyGenerator(createStaticBodyGenerator(httpRequest.getQuery(), UTF_8));
             }
         }
         return httpClient.execute(request.build(), new NimbusResponseHandler<>(parser));
@@ -124,7 +124,7 @@ public class NimbusAirliftHttpClient
             StringResponseHandler.StringResponse stringResponse = handler.handle(request, response);
             HTTPResponse nimbusResponse = new HTTPResponse(response.getStatusCode());
             response.getHeaders().asMap().forEach((name, values) -> nimbusResponse.setHeader(name.toString(), values.toArray(new String[0])));
-            nimbusResponse.setBody(stringResponse.getBody());
+            nimbusResponse.setContent(stringResponse.getBody());
             try {
                 return parser.parse(nimbusResponse);
             }

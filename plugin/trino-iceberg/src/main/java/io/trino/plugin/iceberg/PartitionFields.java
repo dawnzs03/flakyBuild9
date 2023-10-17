@@ -72,14 +72,17 @@ public final class PartitionFields
 
     public static void parsePartitionField(PartitionSpec.Builder builder, String field)
     {
-        boolean matched = tryMatch(field, IDENTITY_PATTERN, match -> builder.identity(fromIdentifierToColumn(match.group()))) ||
+        @SuppressWarnings("PointlessBooleanExpression")
+        boolean matched = false ||
+                tryMatch(field, IDENTITY_PATTERN, match -> builder.identity(fromIdentifierToColumn(match.group()))) ||
                 tryMatch(field, YEAR_PATTERN, match -> builder.year(fromIdentifierToColumn(match.group(1)))) ||
                 tryMatch(field, MONTH_PATTERN, match -> builder.month(fromIdentifierToColumn(match.group(1)))) ||
                 tryMatch(field, DAY_PATTERN, match -> builder.day(fromIdentifierToColumn(match.group(1)))) ||
                 tryMatch(field, HOUR_PATTERN, match -> builder.hour(fromIdentifierToColumn(match.group(1)))) ||
                 tryMatch(field, BUCKET_PATTERN, match -> builder.bucket(fromIdentifierToColumn(match.group(1)), parseInt(match.group(2)))) ||
                 tryMatch(field, TRUNCATE_PATTERN, match -> builder.truncate(fromIdentifierToColumn(match.group(1)), parseInt(match.group(2)))) ||
-                tryMatch(field, VOID_PATTERN, match -> builder.alwaysNull(fromIdentifierToColumn(match.group(1))));
+                tryMatch(field, VOID_PATTERN, match -> builder.alwaysNull(fromIdentifierToColumn(match.group(1)))) ||
+                false;
         if (!matched) {
             throw new IllegalArgumentException("Invalid partition field declaration: " + field);
         }

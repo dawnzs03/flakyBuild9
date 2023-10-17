@@ -14,10 +14,11 @@
 package io.trino.spi.block;
 
 import com.google.common.collect.ImmutableList;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static io.trino.spi.type.BigintType.BIGINT;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class TestRowBlockBuilder
 {
@@ -32,6 +33,11 @@ public class TestRowBlockBuilder
 
         // multiple nulls
         assertIsAllNulls(blockBuilder().appendNull().appendNull().build(), 2);
+
+        BlockBuilder blockBuilder = blockBuilder().appendNull().appendNull();
+        assertIsAllNulls(blockBuilder.copyPositions(new int[] {0}, 0, 1), 1);
+        assertIsAllNulls(blockBuilder.getRegion(0, 1), 1);
+        assertIsAllNulls(blockBuilder.copyRegion(0, 1), 1);
     }
 
     private static BlockBuilder blockBuilder()
@@ -41,16 +47,16 @@ public class TestRowBlockBuilder
 
     private static void assertIsAllNulls(Block block, int expectedPositionCount)
     {
-        assertThat(block.getPositionCount()).isEqualTo(expectedPositionCount);
+        assertEquals(block.getPositionCount(), expectedPositionCount);
         if (expectedPositionCount <= 1) {
-            assertThat(block.getClass()).isEqualTo(RowBlock.class);
+            assertEquals(block.getClass(), RowBlock.class);
         }
         else {
-            assertThat(block.getClass()).isEqualTo(RunLengthEncodedBlock.class);
-            assertThat(((RunLengthEncodedBlock) block).getValue().getClass()).isEqualTo(RowBlock.class);
+            assertEquals(block.getClass(), RunLengthEncodedBlock.class);
+            assertEquals(((RunLengthEncodedBlock) block).getValue().getClass(), RowBlock.class);
         }
         if (expectedPositionCount > 0) {
-            assertThat(block.isNull(0)).isTrue();
+            assertTrue(block.isNull(0));
         }
     }
 }

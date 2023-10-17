@@ -33,9 +33,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -44,11 +43,9 @@ import java.util.Optional;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.VarcharType.VARCHAR;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 
-@TestInstance(PER_CLASS)
 public class TestIndexer
 {
     private static final LexicoderRowSerializer SERIALIZER = new LexicoderRowSerializer();
@@ -78,7 +75,7 @@ public class TestIndexer
     private Mutation m2v;
     private AccumuloTable table;
 
-    @BeforeAll
+    @BeforeClass
     public void setupClass()
     {
         AccumuloColumnHandle c1 = new AccumuloColumnHandle("id", Optional.empty(), Optional.empty(), VARCHAR, 0, "", Optional.empty(), false);

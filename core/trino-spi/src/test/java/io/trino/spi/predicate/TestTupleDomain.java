@@ -30,7 +30,7 @@ import io.trino.spi.connector.TestingColumnHandle;
 import io.trino.spi.type.TestingTypeDeserializer;
 import io.trino.spi.type.TestingTypeManager;
 import io.trino.spi.type.Type;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,6 +48,10 @@ import static io.trino.spi.type.VarcharType.VARCHAR;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class TestTupleDomain
 {
@@ -60,21 +64,25 @@ public class TestTupleDomain
     @Test
     public void testNone()
     {
-        assertThat(TupleDomain.none().isNone()).isTrue();
-        assertThat(TupleDomain.<ColumnHandle>none()).isEqualTo(TupleDomain.withColumnDomains(ImmutableMap.of(
-                A, Domain.none(BIGINT))));
-        assertThat(TupleDomain.<ColumnHandle>none()).isEqualTo(TupleDomain.withColumnDomains(ImmutableMap.of(
-                A, Domain.all(BIGINT),
-                B, Domain.none(VARCHAR))));
+        assertTrue(TupleDomain.none().isNone());
+        assertEquals(TupleDomain.<ColumnHandle>none(),
+                TupleDomain.withColumnDomains(ImmutableMap.of(
+                        A, Domain.none(BIGINT))));
+        assertEquals(TupleDomain.<ColumnHandle>none(),
+                TupleDomain.withColumnDomains(ImmutableMap.of(
+                        A, Domain.all(BIGINT),
+                        B, Domain.none(VARCHAR))));
     }
 
     @Test
     public void testAll()
     {
-        assertThat(all().isAll()).isTrue();
-        assertThat(TupleDomain.<ColumnHandle>all()).isEqualTo(TupleDomain.withColumnDomains(ImmutableMap.of(
-                A, Domain.all(BIGINT))));
-        assertThat(TupleDomain.<ColumnHandle>all()).isEqualTo(TupleDomain.withColumnDomains(ImmutableMap.<ColumnHandle, Domain>of()));
+        assertTrue(TupleDomain.all().isAll());
+        assertEquals(TupleDomain.<ColumnHandle>all(),
+                TupleDomain.withColumnDomains(ImmutableMap.of(
+                        A, Domain.all(BIGINT))));
+        assertEquals(TupleDomain.<ColumnHandle>all(),
+                TupleDomain.withColumnDomains(ImmutableMap.<ColumnHandle, Domain>of()));
     }
 
     @Test
@@ -104,12 +112,12 @@ public class TestTupleDomain
                         .put(D, Domain.create(ValueSet.ofRanges(Range.range(DOUBLE, 0.0, true, 10.0, false)), false))
                         .buildOrThrow());
 
-        assertThat(tupleDomain1.intersect(tupleDomain2)).isEqualTo(expectedTupleDomain);
-        assertThat(tupleDomain2.intersect(tupleDomain1)).isEqualTo(expectedTupleDomain);
+        assertEquals(tupleDomain1.intersect(tupleDomain2), expectedTupleDomain);
+        assertEquals(tupleDomain2.intersect(tupleDomain1), expectedTupleDomain);
 
-        assertThat(TupleDomain.intersect(ImmutableList.of())).isEqualTo(all());
-        assertThat(TupleDomain.intersect(ImmutableList.of(tupleDomain1))).isEqualTo(tupleDomain1);
-        assertThat(TupleDomain.intersect(ImmutableList.of(tupleDomain1, tupleDomain2))).isEqualTo(expectedTupleDomain);
+        assertEquals(TupleDomain.intersect(ImmutableList.of()), all());
+        assertEquals(TupleDomain.intersect(ImmutableList.of(tupleDomain1)), tupleDomain1);
+        assertEquals(TupleDomain.intersect(ImmutableList.of(tupleDomain1, tupleDomain2)), expectedTupleDomain);
 
         TupleDomain<ColumnHandle> tupleDomain3 = TupleDomain.withColumnDomains(ImmutableMap.of(
                 C, Domain.singleValue(BIGINT, 1L),
@@ -120,17 +128,19 @@ public class TestTupleDomain
                         B, Domain.singleValue(DOUBLE, 0.0),
                         C, Domain.singleValue(BIGINT, 1L),
                         D, Domain.create(ValueSet.ofRanges(Range.range(DOUBLE, 5.0, true, 10.0, false)), false)));
-        assertThat(TupleDomain.intersect(ImmutableList.of(tupleDomain1, tupleDomain2, tupleDomain3))).isEqualTo(expectedTupleDomain);
+        assertEquals(TupleDomain.intersect(ImmutableList.of(tupleDomain1, tupleDomain2, tupleDomain3)), expectedTupleDomain);
     }
 
     @Test
     public void testNoneIntersection()
     {
-        assertThat(TupleDomain.none().intersect(all())).isEqualTo(TupleDomain.none());
-        assertThat(all().intersect(TupleDomain.none())).isEqualTo(TupleDomain.none());
-        assertThat(TupleDomain.none().intersect(TupleDomain.none())).isEqualTo(TupleDomain.none());
-        assertThat(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.onlyNull(BIGINT)))
-                .intersect(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.notNull(BIGINT))))).isEqualTo(TupleDomain.<ColumnHandle>none());
+        assertEquals(TupleDomain.none().intersect(TupleDomain.all()), TupleDomain.none());
+        assertEquals(TupleDomain.all().intersect(TupleDomain.none()), TupleDomain.none());
+        assertEquals(TupleDomain.none().intersect(TupleDomain.none()), TupleDomain.none());
+        assertEquals(
+                TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.onlyNull(BIGINT)))
+                        .intersect(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.notNull(BIGINT)))),
+                TupleDomain.<ColumnHandle>none());
     }
 
     @Test
@@ -151,7 +161,7 @@ public class TestTupleDomain
                 B, Domain.singleValue(VARCHAR, utf8Slice("value")),
                 C, Domain.singleValue(BIGINT, 1L)));
 
-        assertThat(tupleDomain1.intersect(tupleDomain2)).isEqualTo(expectedTupleDomain);
+        assertEquals(tupleDomain1.intersect(tupleDomain2), expectedTupleDomain);
     }
 
     @Test
@@ -161,12 +171,12 @@ public class TestTupleDomain
         TupleDomain<Integer> integerDomain = TupleDomain.withColumnDomains(Map.of(10, Domain.multipleValues(BIGINT, List.of(41L, 42L, 42L))));
         // Declare explicit variable to verify assignability from the derived type of TupleDomain.intersect
         TupleDomain<Number> intersection = numberDomain.intersect(integerDomain);
-        assertThat(intersection).isEqualTo(numberDomain);
+        assertEquals(intersection, numberDomain);
         // Sadly, this cannot be made to work:
         //   intersection = integerDomain.intersect(numberDomain)
         // but this can:
         intersection = TupleDomain.intersect(List.of(integerDomain, numberDomain));
-        assertThat(intersection).isEqualTo(numberDomain);
+        assertEquals(intersection, numberDomain);
     }
 
     @Test
@@ -199,18 +209,20 @@ public class TestTupleDomain
                         .put(E, Domain.all(DOUBLE))
                         .buildOrThrow());
 
-        assertThat(columnWiseUnion(tupleDomain1, tupleDomain2)).isEqualTo(expectedTupleDomain);
+        assertEquals(columnWiseUnion(tupleDomain1, tupleDomain2), expectedTupleDomain);
     }
 
     @Test
     public void testNoneColumnWiseUnion()
     {
-        assertThat(columnWiseUnion(TupleDomain.none(), all())).isEqualTo(all());
-        assertThat(columnWiseUnion(all(), TupleDomain.none())).isEqualTo(all());
-        assertThat(columnWiseUnion(TupleDomain.none(), TupleDomain.none())).isEqualTo(TupleDomain.none());
-        assertThat(columnWiseUnion(
-                TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.onlyNull(BIGINT))),
-                TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.notNull(BIGINT))))).isEqualTo(TupleDomain.<ColumnHandle>all());
+        assertEquals(columnWiseUnion(TupleDomain.none(), TupleDomain.all()), TupleDomain.all());
+        assertEquals(columnWiseUnion(TupleDomain.all(), TupleDomain.none()), TupleDomain.all());
+        assertEquals(columnWiseUnion(TupleDomain.none(), TupleDomain.none()), TupleDomain.none());
+        assertEquals(
+                columnWiseUnion(
+                        TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.onlyNull(BIGINT))),
+                        TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.notNull(BIGINT)))),
+                TupleDomain.<ColumnHandle>all());
     }
 
     @Test
@@ -228,7 +240,7 @@ public class TestTupleDomain
 
         TupleDomain<ColumnHandle> expectedTupleDomain = TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.all(DOUBLE)));
 
-        assertThat(columnWiseUnion(tupleDomain1, tupleDomain2)).isEqualTo(expectedTupleDomain);
+        assertEquals(columnWiseUnion(tupleDomain1, tupleDomain2), expectedTupleDomain);
     }
 
     @Test
@@ -325,324 +337,328 @@ public class TestTupleDomain
     @Test
     public void testContains()
     {
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(),
-                ImmutableMap.of())).isTrue();
+                ImmutableMap.of()));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(),
-                ImmutableMap.of(A, Domain.none(BIGINT)))).isTrue();
+                ImmutableMap.of(A, Domain.none(BIGINT))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(),
-                ImmutableMap.of(A, Domain.all(BIGINT)))).isTrue();
+                ImmutableMap.of(A, Domain.all(BIGINT))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(),
-                ImmutableMap.of(A, Domain.singleValue(DOUBLE, 0.0)))).isTrue();
+                ImmutableMap.of(A, Domain.singleValue(DOUBLE, 0.0))));
 
-        assertThat(contains(
+        assertFalse(contains(
                 ImmutableMap.of(A, Domain.none(BIGINT)),
-                ImmutableMap.of())).isFalse();
+                ImmutableMap.of()));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(A, Domain.none(BIGINT)),
-                ImmutableMap.of(A, Domain.none(BIGINT)))).isTrue();
+                ImmutableMap.of(A, Domain.none(BIGINT))));
 
-        assertThat(contains(
+        assertFalse(contains(
                 ImmutableMap.of(A, Domain.none(BIGINT)),
-                ImmutableMap.of(A, Domain.all(BIGINT)))).isFalse();
+                ImmutableMap.of(A, Domain.all(BIGINT))));
 
-        assertThat(contains(
+        assertFalse(contains(
                 ImmutableMap.of(A, Domain.none(BIGINT)),
-                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)))).isFalse();
+                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(A, Domain.all(BIGINT)),
-                ImmutableMap.of())).isTrue();
+                ImmutableMap.of()));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(A, Domain.all(BIGINT)),
-                ImmutableMap.of(A, Domain.none(BIGINT)))).isTrue();
+                ImmutableMap.of(A, Domain.none(BIGINT))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(A, Domain.all(BIGINT)),
-                ImmutableMap.of(A, Domain.all(BIGINT)))).isTrue();
+                ImmutableMap.of(A, Domain.all(BIGINT))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(A, Domain.all(BIGINT)),
-                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)))).isTrue();
+                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L))));
 
-        assertThat(contains(
+        assertFalse(contains(
                 ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)),
-                ImmutableMap.of())).isFalse();
+                ImmutableMap.of()));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)),
-                ImmutableMap.of(A, Domain.none(BIGINT)))).isTrue();
+                ImmutableMap.of(A, Domain.none(BIGINT))));
 
-        assertThat(contains(
+        assertFalse(contains(
                 ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)),
-                ImmutableMap.of(A, Domain.all(BIGINT)))).isFalse();
+                ImmutableMap.of(A, Domain.all(BIGINT))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)),
-                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)))).isTrue();
+                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L))));
 
-        assertThat(contains(
+        assertFalse(contains(
                 ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)),
-                ImmutableMap.of(B, Domain.singleValue(VARCHAR, utf8Slice("value"))))).isFalse();
+                ImmutableMap.of(B, Domain.singleValue(VARCHAR, utf8Slice("value")))));
 
-        assertThat(contains(
+        assertFalse(contains(
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
                         B, Domain.singleValue(VARCHAR, utf8Slice("value"))),
-                ImmutableMap.of(B, Domain.singleValue(VARCHAR, utf8Slice("value"))))).isFalse();
+                ImmutableMap.of(B, Domain.singleValue(VARCHAR, utf8Slice("value")))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
                         B, Domain.singleValue(VARCHAR, utf8Slice("value"))),
-                ImmutableMap.of(B, Domain.none(VARCHAR)))).isTrue();
+                ImmutableMap.of(B, Domain.none(VARCHAR))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
                         B, Domain.singleValue(VARCHAR, utf8Slice("value"))),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 1L),
-                        B, Domain.none(VARCHAR)))).isTrue();
+                        B, Domain.none(VARCHAR))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(
                         B, Domain.singleValue(VARCHAR, utf8Slice("value"))),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
-                        B, Domain.singleValue(VARCHAR, utf8Slice("value"))))).isTrue();
+                        B, Domain.singleValue(VARCHAR, utf8Slice("value")))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(
                         A, Domain.all(BIGINT),
                         B, Domain.singleValue(VARCHAR, utf8Slice("value"))),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
-                        B, Domain.singleValue(VARCHAR, utf8Slice("value"))))).isTrue();
+                        B, Domain.singleValue(VARCHAR, utf8Slice("value")))));
 
-        assertThat(contains(
+        assertFalse(contains(
                 ImmutableMap.of(
                         A, Domain.all(BIGINT),
                         B, Domain.singleValue(VARCHAR, utf8Slice("value"))),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
-                        B, Domain.singleValue(VARCHAR, utf8Slice("value2"))))).isFalse();
+                        B, Domain.singleValue(VARCHAR, utf8Slice("value2")))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(
                         A, Domain.all(BIGINT),
                         B, Domain.singleValue(VARCHAR, utf8Slice("value"))),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
                         B, Domain.singleValue(VARCHAR, utf8Slice("value2")),
-                        C, Domain.none(VARCHAR)))).isTrue();
+                        C, Domain.none(VARCHAR))));
 
-        assertThat(contains(
+        assertFalse(contains(
                 ImmutableMap.of(
                         A, Domain.all(BIGINT),
                         B, Domain.singleValue(VARCHAR, utf8Slice("value")),
                         C, Domain.none(VARCHAR)),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
-                        B, Domain.singleValue(VARCHAR, utf8Slice("value2"))))).isFalse();
+                        B, Domain.singleValue(VARCHAR, utf8Slice("value2")))));
 
-        assertThat(contains(
+        assertTrue(contains(
                 ImmutableMap.of(
                         A, Domain.all(BIGINT),
                         B, Domain.singleValue(VARCHAR, utf8Slice("value")),
                         C, Domain.none(VARCHAR)),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
-                        B, Domain.none(VARCHAR)))).isTrue();
+                        B, Domain.none(VARCHAR))));
     }
 
     @Test
     public void testEquals()
     {
-        assertThat(equals(
+        assertTrue(equals(
                 ImmutableMap.of(),
-                ImmutableMap.of())).isTrue();
+                ImmutableMap.of()));
 
-        assertThat(equals(
+        assertTrue(equals(
                 ImmutableMap.of(),
-                ImmutableMap.of(A, Domain.all(BIGINT)))).isTrue();
+                ImmutableMap.of(A, Domain.all(BIGINT))));
 
-        assertThat(equals(
+        assertFalse(equals(
                 ImmutableMap.of(),
-                ImmutableMap.of(A, Domain.none(BIGINT)))).isFalse();
+                ImmutableMap.of(A, Domain.none(BIGINT))));
 
-        assertThat(equals(
+        assertFalse(equals(
                 ImmutableMap.of(),
-                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)))).isFalse();
+                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L))));
 
-        assertThat(equals(
+        assertTrue(equals(
                 ImmutableMap.of(A, Domain.all(BIGINT)),
-                ImmutableMap.of(A, Domain.all(BIGINT)))).isTrue();
+                ImmutableMap.of(A, Domain.all(BIGINT))));
 
-        assertThat(equals(
+        assertFalse(equals(
                 ImmutableMap.of(A, Domain.all(BIGINT)),
-                ImmutableMap.of(A, Domain.none(BIGINT)))).isFalse();
+                ImmutableMap.of(A, Domain.none(BIGINT))));
 
-        assertThat(equals(
+        assertFalse(equals(
                 ImmutableMap.of(A, Domain.all(BIGINT)),
-                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)))).isFalse();
+                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L))));
 
-        assertThat(equals(
+        assertTrue(equals(
                 ImmutableMap.of(A, Domain.none(BIGINT)),
-                ImmutableMap.of(A, Domain.none(BIGINT)))).isTrue();
+                ImmutableMap.of(A, Domain.none(BIGINT))));
 
-        assertThat(equals(
+        assertFalse(equals(
                 ImmutableMap.of(A, Domain.none(BIGINT)),
-                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)))).isFalse();
+                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L))));
 
-        assertThat(equals(
+        assertTrue(equals(
                 ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)),
-                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)))).isTrue();
+                ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L))));
 
-        assertThat(equals(
+        assertFalse(equals(
                 ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)),
-                ImmutableMap.of(B, Domain.singleValue(BIGINT, 0L)))).isFalse();
+                ImmutableMap.of(B, Domain.singleValue(BIGINT, 0L))));
 
-        assertThat(equals(
+        assertFalse(equals(
                 ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L)),
-                ImmutableMap.of(A, Domain.singleValue(BIGINT, 1L)))).isFalse();
+                ImmutableMap.of(A, Domain.singleValue(BIGINT, 1L))));
 
-        assertThat(equals(
+        assertTrue(equals(
                 ImmutableMap.of(A, Domain.all(BIGINT)),
-                ImmutableMap.of(B, Domain.all(VARCHAR)))).isTrue();
+                ImmutableMap.of(B, Domain.all(VARCHAR))));
 
-        assertThat(equals(
+        assertTrue(equals(
                 ImmutableMap.of(A, Domain.none(BIGINT)),
-                ImmutableMap.of(B, Domain.none(VARCHAR)))).isTrue();
+                ImmutableMap.of(B, Domain.none(VARCHAR))));
 
-        assertThat(equals(
+        assertTrue(equals(
                 ImmutableMap.of(A, Domain.none(BIGINT)),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
-                        B, Domain.none(VARCHAR)))).isTrue();
+                        B, Domain.none(VARCHAR))));
 
-        assertThat(equals(
+        assertFalse(equals(
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 1L)),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
-                        B, Domain.none(VARCHAR)))).isFalse();
+                        B, Domain.none(VARCHAR))));
 
-        assertThat(equals(
+        assertTrue(equals(
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 1L),
                         C, Domain.none(DOUBLE)),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
-                        B, Domain.none(VARCHAR)))).isTrue();
+                        B, Domain.none(VARCHAR))));
 
-        assertThat(equals(
+        assertTrue(equals(
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
                         B, Domain.all(DOUBLE)),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
-                        B, Domain.all(DOUBLE)))).isTrue();
+                        B, Domain.all(DOUBLE))));
 
-        assertThat(equals(
+        assertTrue(equals(
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
                         B, Domain.all(VARCHAR)),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
-                        C, Domain.all(DOUBLE)))).isTrue();
+                        C, Domain.all(DOUBLE))));
 
-        assertThat(equals(
+        assertFalse(equals(
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
                         B, Domain.all(VARCHAR)),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 1L),
-                        C, Domain.all(DOUBLE)))).isFalse();
+                        C, Domain.all(DOUBLE))));
 
-        assertThat(equals(
+        assertFalse(equals(
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
                         B, Domain.all(VARCHAR)),
                 ImmutableMap.of(
                         A, Domain.singleValue(BIGINT, 0L),
-                        C, Domain.singleValue(DOUBLE, 0.0)))).isFalse();
+                        C, Domain.singleValue(DOUBLE, 0.0))));
     }
 
     @Test
     public void testIsNone()
     {
-        assertThat(TupleDomain.withColumnDomains(ImmutableMap.<ColumnHandle, Domain>of()).isNone()).isFalse();
-        assertThat(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L))).isNone()).isFalse();
-        assertThat(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.none(BIGINT))).isNone()).isTrue();
-        assertThat(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.all(BIGINT))).isNone()).isFalse();
-        assertThat(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.all(BIGINT), B, Domain.none(BIGINT))).isNone()).isTrue();
+        assertFalse(TupleDomain.withColumnDomains(ImmutableMap.<ColumnHandle, Domain>of()).isNone());
+        assertFalse(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L))).isNone());
+        assertTrue(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.none(BIGINT))).isNone());
+        assertFalse(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.all(BIGINT))).isNone());
+        assertTrue(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.all(BIGINT), B, Domain.none(BIGINT))).isNone());
     }
 
     @Test
     public void testIsAll()
     {
-        assertThat(TupleDomain.withColumnDomains(ImmutableMap.<ColumnHandle, Domain>of()).isAll()).isTrue();
-        assertThat(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L))).isAll()).isFalse();
-        assertThat(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.all(BIGINT))).isAll()).isTrue();
-        assertThat(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L), B, Domain.all(BIGINT))).isAll()).isFalse();
+        assertTrue(TupleDomain.withColumnDomains(ImmutableMap.<ColumnHandle, Domain>of()).isAll());
+        assertFalse(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L))).isAll());
+        assertTrue(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.all(BIGINT))).isAll());
+        assertFalse(TupleDomain.withColumnDomains(ImmutableMap.of(A, Domain.singleValue(BIGINT, 0L), B, Domain.all(BIGINT))).isAll());
     }
 
     @Test
     public void testExtractFixedValues()
     {
-        assertThat(TupleDomain.extractFixedValues(TupleDomain.withColumnDomains(
-                ImmutableMap.<ColumnHandle, Domain>builder()
-                        .put(A, Domain.all(DOUBLE))
-                        .put(B, Domain.singleValue(VARCHAR, utf8Slice("value")))
-                        .put(C, Domain.onlyNull(BIGINT))
-                        .put(D, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L)), true))
-                        .buildOrThrow())).get()).isEqualTo(ImmutableMap.of(
-                B, NullableValue.of(VARCHAR, utf8Slice("value")),
-                C, NullableValue.asNull(BIGINT)));
+        assertEquals(
+                TupleDomain.extractFixedValues(TupleDomain.withColumnDomains(
+                        ImmutableMap.<ColumnHandle, Domain>builder()
+                                .put(A, Domain.all(DOUBLE))
+                                .put(B, Domain.singleValue(VARCHAR, utf8Slice("value")))
+                                .put(C, Domain.onlyNull(BIGINT))
+                                .put(D, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L)), true))
+                                .buildOrThrow())).get(),
+                ImmutableMap.of(
+                        B, NullableValue.of(VARCHAR, utf8Slice("value")),
+                        C, NullableValue.asNull(BIGINT)));
     }
 
     @Test
     public void testExtractFixedValuesFromNone()
     {
-        assertThat(TupleDomain.extractFixedValues(TupleDomain.none()).isPresent()).isFalse();
+        assertFalse(TupleDomain.extractFixedValues(TupleDomain.none()).isPresent());
     }
 
     @Test
     public void testExtractFixedValuesFromAll()
     {
-        assertThat(TupleDomain.extractFixedValues(all()).get()).isEqualTo(ImmutableMap.of());
+        assertEquals(TupleDomain.extractFixedValues(TupleDomain.all()).get(), ImmutableMap.of());
     }
 
     @Test
     public void testSingleValuesMapToDomain()
     {
-        assertThat(TupleDomain.fromFixedValues(
-                ImmutableMap.<ColumnHandle, NullableValue>builder()
-                        .put(A, NullableValue.of(BIGINT, 1L))
-                        .put(B, NullableValue.of(VARCHAR, utf8Slice("value")))
-                        .put(C, NullableValue.of(DOUBLE, 0.01))
-                        .put(D, NullableValue.asNull(BOOLEAN))
-                        .buildOrThrow())).isEqualTo(TupleDomain.withColumnDomains(ImmutableMap.<ColumnHandle, Domain>builder()
-                .put(A, Domain.singleValue(BIGINT, 1L))
-                .put(B, Domain.singleValue(VARCHAR, utf8Slice("value")))
-                .put(C, Domain.singleValue(DOUBLE, 0.01))
-                .put(D, Domain.onlyNull(BOOLEAN))
-                .buildOrThrow()));
+        assertEquals(
+                TupleDomain.fromFixedValues(
+                        ImmutableMap.<ColumnHandle, NullableValue>builder()
+                                .put(A, NullableValue.of(BIGINT, 1L))
+                                .put(B, NullableValue.of(VARCHAR, utf8Slice("value")))
+                                .put(C, NullableValue.of(DOUBLE, 0.01))
+                                .put(D, NullableValue.asNull(BOOLEAN))
+                                .buildOrThrow()),
+                TupleDomain.withColumnDomains(ImmutableMap.<ColumnHandle, Domain>builder()
+                        .put(A, Domain.singleValue(BIGINT, 1L))
+                        .put(B, Domain.singleValue(VARCHAR, utf8Slice("value")))
+                        .put(C, Domain.singleValue(DOUBLE, 0.01))
+                        .put(D, Domain.onlyNull(BOOLEAN))
+                        .buildOrThrow()));
     }
 
     @Test
     public void testEmptySingleValuesMapToDomain()
     {
-        assertThat(TupleDomain.fromFixedValues(ImmutableMap.of())).isEqualTo(all());
+        assertEquals(TupleDomain.fromFixedValues(ImmutableMap.of()), TupleDomain.all());
     }
 
     @Test
@@ -668,13 +684,13 @@ public class TestTupleDomain
                         .addDeserializer(Block.class, new TestingBlockJsonSerde.Deserializer(blockEncodingSerde)));
 
         TupleDomain<ColumnHandle> tupleDomain = TupleDomain.all();
-        assertThat(tupleDomain).isEqualTo(mapper.readValue(mapper.writeValueAsString(tupleDomain), new TypeReference<TupleDomain<ColumnHandle>>() { }));
+        assertEquals(tupleDomain, mapper.readValue(mapper.writeValueAsString(tupleDomain), new TypeReference<TupleDomain<ColumnHandle>>() {}));
 
         tupleDomain = TupleDomain.none();
-        assertThat(tupleDomain).isEqualTo(mapper.readValue(mapper.writeValueAsString(tupleDomain), new TypeReference<TupleDomain<ColumnHandle>>() { }));
+        assertEquals(tupleDomain, mapper.readValue(mapper.writeValueAsString(tupleDomain), new TypeReference<TupleDomain<ColumnHandle>>() {}));
 
         tupleDomain = TupleDomain.fromFixedValues(ImmutableMap.of(A, NullableValue.of(BIGINT, 1L), B, NullableValue.asNull(VARCHAR)));
-        assertThat(tupleDomain).isEqualTo(mapper.readValue(mapper.writeValueAsString(tupleDomain), new TypeReference<TupleDomain<ColumnHandle>>() { }));
+        assertEquals(tupleDomain, mapper.readValue(mapper.writeValueAsString(tupleDomain), new TypeReference<TupleDomain<ColumnHandle>>() {}));
     }
 
     @Test
@@ -695,7 +711,7 @@ public class TestTupleDomain
                 .put("3", Domain.singleValue(BIGINT, 3L))
                 .buildOrThrow();
 
-        assertThat(transformed.getDomains().get()).isEqualTo(expected);
+        assertEquals(transformed.getDomains().get(), expected);
     }
 
     @Test
@@ -813,9 +829,9 @@ public class TestTupleDomain
     {
         Predicate<Map<ColumnHandle, NullableValue>> predicate = tupleDomain.asPredicate();
         boolean result = predicate.test(bindings);
-        assertThat(expected)
-                .withFailMessage(() -> format("asPredicate(%s).test(%s) returned %s instead of %s", tupleDomain, bindings, result, expected))
-                .isEqualTo(result);
+        if (result != expected) {
+            fail(format("asPredicate(%s).test(%s) returned %s instead of %s", tupleDomain, bindings, result, expected));
+        }
     }
 
     private void verifyOverlaps(Map<ColumnHandle, Domain> domains1, Map<ColumnHandle, Domain> domains2, boolean expected)

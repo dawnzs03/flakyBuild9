@@ -13,9 +13,9 @@
  */
 package io.trino.plugin.base.security;
 
-import io.trino.spi.security.Identity;
 import io.trino.spi.security.SystemAccessControl;
 import io.trino.spi.security.SystemAccessControlFactory;
+import io.trino.spi.security.SystemSecurityContext;
 
 import java.util.Map;
 
@@ -52,13 +52,13 @@ public class DefaultSystemAccessControl
     }
 
     @Override
-    public void checkCanImpersonateUser(Identity identity, String userName)
+    public void checkCanImpersonateUser(SystemSecurityContext context, String userName)
     {
-        denyImpersonateUser(identity.getUser(), userName);
+        denyImpersonateUser(context.getIdentity().getUser(), userName);
     }
 
     @Override
-    public void checkCanWriteSystemInformation(Identity identity)
+    public void checkCanWriteSystemInformation(SystemSecurityContext context)
     {
         denyWriteSystemInformationAccess();
     }

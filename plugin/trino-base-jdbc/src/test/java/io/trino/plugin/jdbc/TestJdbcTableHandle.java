@@ -19,7 +19,7 @@ import io.airlift.testing.EquivalenceTester;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.IntegerType;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.sql.Types;
 import java.util.Optional;
@@ -73,8 +73,7 @@ public class TestJdbcTableHandle
                 Optional.of(ImmutableList.of(new JdbcColumnHandle("i", type, IntegerType.INTEGER))),
                 Optional.of(ImmutableSet.of()),
                 0,
-                Optional.empty(),
-                ImmutableList.of());
+                Optional.empty());
     }
 
     private JdbcTableHandle createNamedHandle()
@@ -92,7 +91,6 @@ public class TestJdbcTableHandle
                 Optional.of(ImmutableList.of(new JdbcColumnHandle("i", type, IntegerType.INTEGER))),
                 Optional.of(ImmutableSet.of()),
                 0,
-                Optional.empty(),
-                ImmutableList.of());
+                Optional.empty());
     }
 }

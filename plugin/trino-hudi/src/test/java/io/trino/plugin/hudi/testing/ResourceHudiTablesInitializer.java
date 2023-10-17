@@ -27,6 +27,9 @@ import io.trino.plugin.hive.metastore.PrincipalPrivileges;
 import io.trino.plugin.hive.metastore.StorageFormat;
 import io.trino.plugin.hive.metastore.Table;
 import io.trino.testing.QueryRunner;
+import org.apache.hadoop.hive.metastore.TableType;
+import org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat;
+import org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,10 +51,7 @@ import static io.trino.plugin.hive.HiveType.HIVE_DOUBLE;
 import static io.trino.plugin.hive.HiveType.HIVE_INT;
 import static io.trino.plugin.hive.HiveType.HIVE_LONG;
 import static io.trino.plugin.hive.HiveType.HIVE_STRING;
-import static io.trino.plugin.hive.TableType.EXTERNAL_TABLE;
-import static io.trino.plugin.hive.util.HiveClassNames.HUDI_PARQUET_INPUT_FORMAT;
-import static io.trino.plugin.hive.util.HiveClassNames.MAPRED_PARQUET_OUTPUT_FORMAT_CLASS;
-import static io.trino.plugin.hive.util.HiveClassNames.PARQUET_HIVE_SERDE_CLASS;
+import static io.trino.plugin.hive.util.HiveUtil.HUDI_PARQUET_INPUT_FORMAT;
 
 public class ResourceHudiTablesInitializer
         implements HudiTablesInitializer
@@ -94,14 +94,14 @@ public class ResourceHudiTablesInitializer
             Map<String, String> partitions)
     {
         StorageFormat storageFormat = StorageFormat.create(
-                PARQUET_HIVE_SERDE_CLASS,
+                ParquetHiveSerDe.class.getName(),
                 HUDI_PARQUET_INPUT_FORMAT,
-                MAPRED_PARQUET_OUTPUT_FORMAT_CLASS);
+                MapredParquetOutputFormat.class.getName());
 
         Table table = Table.builder()
                 .setDatabaseName(schemaName)
                 .setTableName(tableName)
-                .setTableType(EXTERNAL_TABLE.name())
+                .setTableType(TableType.EXTERNAL_TABLE.name())
                 .setOwner(Optional.of("public"))
                 .setDataColumns(dataColumns)
                 .setPartitionColumns(partitionColumns)

@@ -27,6 +27,7 @@ import io.trino.execution.warnings.WarningCollector;
 import io.trino.metadata.ResolvedFunction;
 import io.trino.metadata.ResolvedIndex;
 import io.trino.spi.connector.ColumnHandle;
+import io.trino.spi.function.BoundSignature;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.sql.PlannerContext;
 import io.trino.sql.planner.DomainTranslator;
@@ -50,6 +51,7 @@ import io.trino.sql.planner.plan.WindowNode;
 import io.trino.sql.planner.plan.WindowNode.Function;
 import io.trino.sql.tree.BooleanLiteral;
 import io.trino.sql.tree.Expression;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.SymbolReference;
 import io.trino.sql.tree.WindowFrame;
 
@@ -64,7 +66,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static io.trino.spi.function.FunctionKind.AGGREGATE;
 import static io.trino.sql.ExpressionUtils.combineConjuncts;
 import static io.trino.sql.tree.BooleanLiteral.TRUE_LITERAL;
 import static java.util.Objects.requireNonNull;
@@ -342,7 +343,7 @@ public class IndexJoinOptimizer
 
             Expression resultingPredicate = combineConjuncts(
                     plannerContext.getMetadata(),
-                    domainTranslator.toPredicate(resolvedIndex.getUnresolvedTupleDomain().transformKeys(inverseAssignments::get)),
+                    domainTranslator.toPredicate(session, resolvedIndex.getUnresolvedTupleDomain().transformKeys(inverseAssignments::get)),
                     decomposedPredicate.getRemainingExpression());
 
             if (!resultingPredicate.equals(TRUE_LITERAL)) {
@@ -385,8 +386,10 @@ public class IndexJoinOptimizer
         {
             if (!node.getWindowFunctions().values().stream()
                     .map(Function::getResolvedFunction)
-                    .map(ResolvedFunction::getFunctionKind)
-                    .allMatch(AGGREGATE::equals)) {
+                    .map(ResolvedFunction::getSignature)
+                    .map(BoundSignature::getName)
+                    .map(QualifiedName::of)
+                    .allMatch(name -> plannerContext.getMetadata().isAggregationFunction(session, name))) {
                 return node;
             }
 

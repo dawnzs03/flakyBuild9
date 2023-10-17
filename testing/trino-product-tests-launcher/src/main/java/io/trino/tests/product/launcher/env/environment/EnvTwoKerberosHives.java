@@ -132,9 +132,6 @@ public final class EnvTwoKerberosHives
                 .withFileSystemBind(keytabsHostDirectory, "/presto_keytabs", READ_WRITE)
                 .withCopyFileToContainer(
                         forHostPath(configDir.getPath("hadoop-master-2-copy-keytabs.sh")),
-                        CONTAINER_HADOOP_INIT_D + "copy-kerberos.sh")
-                .withCopyFileToContainer(
-                        forHostPath(configDir.getPath("update-location.sh")),
-                        CONTAINER_HADOOP_INIT_D + "update-location.sh");
+                        CONTAINER_HADOOP_INIT_D + "copy-kerberos.sh");
     }
 }

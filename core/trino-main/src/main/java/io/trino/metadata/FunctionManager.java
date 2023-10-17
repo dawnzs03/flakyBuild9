@@ -42,7 +42,6 @@ import io.trino.type.BlockTypeOperators;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -190,7 +189,7 @@ public class FunctionManager
         checkArgument(convention.getArgumentConventions().size() == boundSignature.getArgumentTypes().size(),
                 "Expected %s arguments, but got %s", boundSignature.getArgumentTypes().size(), convention.getArgumentConventions().size());
 
-        long expectedParameterCount = convention.getArgumentConventions().stream()
+        int expectedParameterCount = convention.getArgumentConventions().stream()
                 .mapToInt(InvocationArgumentConvention::getParameterCount)
                 .sum();
         expectedParameterCount += methodType.parameterList().stream().filter(ConnectorSession.class::equals).count();
@@ -240,12 +239,6 @@ public class FunctionManager
                     verifyFunctionSignature(parameterType.equals(Block.class) && methodType.parameterType(parameterIndex + 1).equals(int.class),
                             "Expected %s argument types to be Block and int".formatted(argumentConvention));
                     break;
-                case FLAT:
-                    verifyFunctionSignature(parameterType.equals(byte[].class) &&
-                                    methodType.parameterType(parameterIndex + 1).equals(int.class) &&
-                                    methodType.parameterType(parameterIndex + 2).equals(byte[].class),
-                            "Expected FLAT argument types to be byte[], int, byte[]");
-                    break;
                 case IN_OUT:
                     verifyFunctionSignature(parameterType.equals(InOut.class), "Expected IN_OUT argument type to be InOut");
                     break;
@@ -274,14 +267,6 @@ public class FunctionManager
             case BLOCK_BUILDER:
                 verifyFunctionSignature(methodType.lastParameterType().equals(BlockBuilder.class),
                         "Expected last argument type to be BlockBuilder, but is %s", methodType.lastParameterType());
-                verifyFunctionSignature(methodType.returnType().equals(void.class),
-                        "Expected return type to be void, but is %s", methodType.returnType());
-                break;
-            case FLAT_RETURN:
-                List<Class<?>> parameters = methodType.parameterList();
-                parameters = parameters.subList(parameters.size() - 4, parameters.size());
-                verifyFunctionSignature(parameters.equals(List.of(byte[].class, int.class, byte[].class, int.class)),
-                        "Expected last argument types to be (byte[], int, byte[], int), but is %s", methodType);
                 verifyFunctionSignature(methodType.returnType().equals(void.class),
                         "Expected return type to be void, but is %s", methodType.returnType());
                 break;

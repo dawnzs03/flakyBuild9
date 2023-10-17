@@ -70,6 +70,7 @@ import io.trino.sql.tree.LongLiteral;
 import io.trino.sql.tree.NodeRef;
 import io.trino.sql.tree.NullLiteral;
 import io.trino.sql.tree.Parameter;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.Row;
 import io.trino.sql.tree.RowDataType;
 import io.trino.sql.tree.SubscriptExpression;
@@ -386,8 +387,8 @@ class TranslationMap
                         .map(element -> treeRewriter.rewrite(element, context))
                         .collect(toImmutableList());
 
-                FunctionCall call = BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                        .setName(ArrayConstructor.NAME)
+                FunctionCall call = FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                        .setName(QualifiedName.of(ArrayConstructor.NAME))
                         .setArguments(types, values)
                         .build();
 
@@ -404,7 +405,7 @@ class TranslationMap
 
                 return coerceIfNecessary(node, new FunctionCall(
                         plannerContext.getMetadata()
-                                .resolveBuiltinFunction("$current_catalog", ImmutableList.of())
+                                .resolveFunction(session, QualifiedName.of("$current_catalog"), ImmutableList.of())
                                 .toQualifiedName(),
                         ImmutableList.of()));
             }
@@ -419,7 +420,7 @@ class TranslationMap
 
                 return coerceIfNecessary(node, new FunctionCall(
                         plannerContext.getMetadata()
-                                .resolveBuiltinFunction("$current_schema", ImmutableList.of())
+                                .resolveFunction(session, QualifiedName.of("$current_schema"), ImmutableList.of())
                                 .toQualifiedName(),
                         ImmutableList.of()));
             }
@@ -434,7 +435,7 @@ class TranslationMap
 
                 return coerceIfNecessary(node, new FunctionCall(
                         plannerContext.getMetadata()
-                                .resolveBuiltinFunction("$current_path", ImmutableList.of())
+                                .resolveFunction(session, QualifiedName.of("$current_path"), ImmutableList.of())
                                 .toQualifiedName(),
                         ImmutableList.of()));
             }
@@ -449,7 +450,7 @@ class TranslationMap
 
                 return coerceIfNecessary(node, new FunctionCall(
                         plannerContext.getMetadata()
-                                .resolveBuiltinFunction("$current_user", ImmutableList.of())
+                                .resolveFunction(session, QualifiedName.of("$current_user"), ImmutableList.of())
                                 .toQualifiedName(),
                         ImmutableList.of()));
             }
@@ -463,23 +464,23 @@ class TranslationMap
                 }
 
                 FunctionCall call = switch (node.getFunction()) {
-                    case DATE -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("current_date")
+                    case DATE -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("current_date"))
                             .build();
-                    case TIME -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("$current_time")
+                    case TIME -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("$current_time"))
                             .setArguments(ImmutableList.of(analysis.getType(node)), ImmutableList.of(new NullLiteral()))
                             .build();
-                    case LOCALTIME -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("$localtime")
+                    case LOCALTIME -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("$localtime"))
                             .setArguments(ImmutableList.of(analysis.getType(node)), ImmutableList.of(new NullLiteral()))
                             .build();
-                    case TIMESTAMP -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("$current_timestamp")
+                    case TIMESTAMP -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("$current_timestamp"))
                             .setArguments(ImmutableList.of(analysis.getType(node)), ImmutableList.of(new NullLiteral()))
                             .build();
-                    case LOCALTIMESTAMP -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("$localtimestamp")
+                    case LOCALTIMESTAMP -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("$localtimestamp"))
                             .setArguments(ImmutableList.of(analysis.getType(node)), ImmutableList.of(new NullLiteral()))
                             .build();
                 };
@@ -499,56 +500,56 @@ class TranslationMap
                 Type type = analysis.getType(node.getExpression());
 
                 FunctionCall call = switch (node.getField()) {
-                    case YEAR -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("year")
+                    case YEAR -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("year"))
                             .addArgument(type, value)
                             .build();
-                    case QUARTER -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("quarter")
+                    case QUARTER -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("quarter"))
                             .addArgument(type, value)
                             .build();
-                    case MONTH -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("month")
+                    case MONTH -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("month"))
                             .addArgument(type, value)
                             .build();
-                    case WEEK -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("week")
+                    case WEEK -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("week"))
                             .addArgument(type, value)
                             .build();
-                    case DAY, DAY_OF_MONTH -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("day")
+                    case DAY, DAY_OF_MONTH -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("day"))
                             .addArgument(type, value)
                             .build();
-                    case DAY_OF_WEEK, DOW -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("day_of_week")
+                    case DAY_OF_WEEK, DOW -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("day_of_week"))
                             .addArgument(type, value)
                             .build();
-                    case DAY_OF_YEAR, DOY -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("day_of_year")
+                    case DAY_OF_YEAR, DOY -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("day_of_year"))
                             .addArgument(type, value)
                             .build();
-                    case YEAR_OF_WEEK, YOW -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("year_of_week")
+                    case YEAR_OF_WEEK, YOW -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("year_of_week"))
                             .addArgument(type, value)
                             .build();
-                    case HOUR -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("hour")
+                    case HOUR -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("hour"))
                             .addArgument(type, value)
                             .build();
-                    case MINUTE -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("minute")
+                    case MINUTE -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("minute"))
                             .addArgument(type, value)
                             .build();
-                    case SECOND -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("second")
+                    case SECOND -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("second"))
                             .addArgument(type, value)
                             .build();
-                    case TIMEZONE_MINUTE -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("timezone_minute")
+                    case TIMEZONE_MINUTE -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("timezone_minute"))
                             .addArgument(type, value)
                             .build();
-                    case TIMEZONE_HOUR -> BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("timezone_hour")
+                    case TIMEZONE_HOUR -> FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("timezone_hour"))
                             .addArgument(type, value)
                             .build();
                 };
@@ -572,29 +573,29 @@ class TranslationMap
 
                 FunctionCall call;
                 if (valueType instanceof TimeType type) {
-                    call = BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("$at_timezone")
+                    call = FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("$at_timezone"))
                             .addArgument(createTimeWithTimeZoneType(type.getPrecision()), new Cast(value, toSqlType(createTimeWithTimeZoneType(((TimeType) valueType).getPrecision()))))
                             .addArgument(timeZoneType, timeZone)
                             .build();
                 }
                 else if (valueType instanceof TimeWithTimeZoneType) {
-                    call = BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("$at_timezone")
+                    call = FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("$at_timezone"))
                             .addArgument(valueType, value)
                             .addArgument(timeZoneType, timeZone)
                             .build();
                 }
                 else if (valueType instanceof TimestampType type) {
-                    call = BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("at_timezone")
+                    call = FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("at_timezone"))
                             .addArgument(createTimestampWithTimeZoneType(type.getPrecision()), new Cast(value, toSqlType(createTimestampWithTimeZoneType(((TimestampType) valueType).getPrecision()))))
                             .addArgument(timeZoneType, timeZone)
                             .build();
                 }
                 else if (valueType instanceof TimestampWithTimeZoneType) {
-                    call = BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName("at_timezone")
+                    call = FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of("at_timezone"))
                             .addArgument(valueType, value)
                             .addArgument(timeZoneType, timeZone)
                             .build();
@@ -621,8 +622,8 @@ class TranslationMap
                         .map(analysis::getType)
                         .collect(toImmutableList());
 
-                FunctionCall call = BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                        .setName(FormatFunction.NAME)
+                FunctionCall call = FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                        .setName(QualifiedName.of(FormatFunction.NAME))
                         .addArgument(VARCHAR, arguments.get(0))
                         .addArgument(RowType.anonymous(argumentTypes.subList(1, arguments.size())), new Row(arguments.subList(1, arguments.size())))
                         .build();
@@ -641,8 +642,8 @@ class TranslationMap
                 Type type = analysis.getType(node);
                 Expression expression = treeRewriter.rewrite(node.getInnerExpression(), context);
 
-                FunctionCall call = BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                        .setName(TryFunction.NAME)
+                FunctionCall call = FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                        .setName(QualifiedName.of(TryFunction.NAME))
                         .addArgument(new FunctionType(ImmutableList.of(), type), new LambdaExpression(ImmutableList.of(), expression))
                         .build();
 
@@ -663,21 +664,21 @@ class TranslationMap
 
                 FunctionCall patternCall;
                 if (escape.isPresent()) {
-                    patternCall = BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName(LIKE_PATTERN_FUNCTION_NAME)
+                    patternCall = FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of(LIKE_PATTERN_FUNCTION_NAME))
                             .addArgument(analysis.getType(node.getPattern()), pattern)
                             .addArgument(analysis.getType(node.getEscape().get()), escape.get())
                             .build();
                 }
                 else {
-                    patternCall = BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                            .setName(LIKE_PATTERN_FUNCTION_NAME)
+                    patternCall = FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                            .setName(QualifiedName.of(LIKE_PATTERN_FUNCTION_NAME))
                             .addArgument(analysis.getType(node.getPattern()), pattern)
                             .build();
                 }
 
-                FunctionCall call = BuiltinFunctionCallBuilder.resolve(plannerContext.getMetadata())
-                        .setName(LIKE_FUNCTION_NAME)
+                FunctionCall call = FunctionCallBuilder.resolve(session, plannerContext.getMetadata())
+                        .setName(QualifiedName.of(LIKE_FUNCTION_NAME))
                         .addArgument(analysis.getType(node.getValue()), value)
                         .addArgument(LIKE_PATTERN, patternCall)
                         .build();
@@ -794,7 +795,7 @@ class TranslationMap
                         failOnError);
 
                 IrJsonPath path = new JsonPathTranslator(session, plannerContext).rewriteToIr(analysis.getJsonPathAnalysis(node), orderedParameters.getParametersOrder());
-                Expression pathExpression = new LiteralEncoder(plannerContext).toExpression(path, plannerContext.getTypeManager().getType(TypeId.of(JsonPath2016Type.NAME)));
+                Expression pathExpression = new LiteralEncoder(plannerContext).toExpression(session, path, plannerContext.getTypeManager().getType(TypeId.of(JsonPath2016Type.NAME)));
 
                 ImmutableList.Builder<Expression> arguments = ImmutableList.<Expression>builder()
                         .add(input)
@@ -836,7 +837,7 @@ class TranslationMap
                         failOnError);
 
                 IrJsonPath path = new JsonPathTranslator(session, plannerContext).rewriteToIr(analysis.getJsonPathAnalysis(node), orderedParameters.getParametersOrder());
-                Expression pathExpression = new LiteralEncoder(plannerContext).toExpression(path, plannerContext.getTypeManager().getType(TypeId.of(JsonPath2016Type.NAME)));
+                Expression pathExpression = new LiteralEncoder(plannerContext).toExpression(session, path, plannerContext.getTypeManager().getType(TypeId.of(JsonPath2016Type.NAME)));
 
                 ImmutableList.Builder<Expression> arguments = ImmutableList.<Expression>builder()
                         .add(input)
@@ -881,7 +882,7 @@ class TranslationMap
                         failOnError);
 
                 IrJsonPath path = new JsonPathTranslator(session, plannerContext).rewriteToIr(analysis.getJsonPathAnalysis(node), orderedParameters.getParametersOrder());
-                Expression pathExpression = new LiteralEncoder(plannerContext).toExpression(path, plannerContext.getTypeManager().getType(TypeId.of(JsonPath2016Type.NAME)));
+                Expression pathExpression = new LiteralEncoder(plannerContext).toExpression(session, path, plannerContext.getTypeManager().getType(TypeId.of(JsonPath2016Type.NAME)));
 
                 ImmutableList.Builder<Expression> arguments = ImmutableList.<Expression>builder()
                         .add(input)
@@ -1124,7 +1125,9 @@ class TranslationMap
 
     private static void verifyAstExpression(Expression astExpression)
     {
-        verify(AstUtils.preOrder(astExpression).noneMatch(expression -> expression instanceof SymbolReference), "symbol references are not allowed");
+        verify(AstUtils.preOrder(astExpression).noneMatch(expression ->
+                expression instanceof SymbolReference ||
+                        expression instanceof FunctionCall && ResolvedFunction.isResolved(((FunctionCall) expression).getName())));
     }
 
     public Scope getScope()

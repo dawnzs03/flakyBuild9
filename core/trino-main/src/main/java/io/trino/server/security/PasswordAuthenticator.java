@@ -94,7 +94,7 @@ public class PasswordAuthenticator
     {
         String userHeader;
         try {
-            userHeader = getUserHeader(headers);
+            userHeader = detectProtocol(alternateHeaderName, headers.keySet()).requestUser();
         }
         catch (ProtocolDetectionException ignored) {
             // this shouldn't fail here, but ignore and it will be handled elsewhere
@@ -103,17 +103,6 @@ public class PasswordAuthenticator
         if (basicAuthCredentials.getUser().equals(headers.getFirst(userHeader))) {
             headers.putSingle(userHeader, authenticatedUser);
         }
-    }
-
-    // Extract this out in a method so that the logic of preferring originalUser and fallback on user remains in one place
-    private String getUserHeader(MultivaluedMap<String, String> headers)
-            throws ProtocolDetectionException
-    {
-        String userHeader = detectProtocol(alternateHeaderName, headers.keySet()).requestOriginalUser();
-        if (headers.getFirst(userHeader) == null || headers.getFirst(userHeader).isEmpty()) {
-            userHeader = detectProtocol(alternateHeaderName, headers.keySet()).requestUser();
-        }
-        return userHeader;
     }
 
     private static AuthenticationException needAuthentication(String message)

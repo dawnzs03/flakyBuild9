@@ -38,7 +38,6 @@ import io.trino.sql.tree.Expression;
 import io.trino.testing.TestingMetadata.TestingColumnHandle;
 import io.trino.testing.TestingSession;
 import io.trino.testing.TestingTaskContext;
-import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -52,6 +51,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.RunnerException;
+import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.List;

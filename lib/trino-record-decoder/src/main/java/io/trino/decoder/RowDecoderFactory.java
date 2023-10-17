@@ -13,9 +13,10 @@
  */
 package io.trino.decoder;
 
-import io.trino.spi.connector.ConnectorSession;
+import java.util.Map;
+import java.util.Set;
 
 public interface RowDecoderFactory
 {
-    RowDecoder create(ConnectorSession session, RowDecoderSpec rowDecoderSpec);
+    RowDecoder create(Map<String, String> decoderParams, Set<DecoderColumnHandle> columns);
 }

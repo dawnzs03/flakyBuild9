@@ -14,7 +14,7 @@
 package io.trino.operator;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 

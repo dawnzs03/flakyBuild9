@@ -23,7 +23,6 @@ import static io.trino.spi.type.RealType.REAL;
 import static java.lang.Float.floatToIntBits;
 import static java.lang.Float.floatToRawIntBits;
 import static java.lang.Float.intBitsToFloat;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.testng.Assert.assertEquals;
 
 public class TestRealType
@@ -69,33 +68,11 @@ public class TestRealType
         // the following two are the integer values of a float NaN
         REAL.writeInt(blockBuilder, -0x400000);
         REAL.writeInt(blockBuilder, 0x7fc00000);
-        Block block = blockBuilder.build();
 
         BlockPositionHashCode hashCodeOperator = blockTypeOperators.getHashCodeOperator(REAL);
-        assertEquals(hashCodeOperator.hashCode(block, 0), hashCodeOperator.hashCode(block, 1));
-        assertEquals(hashCodeOperator.hashCode(block, 0), hashCodeOperator.hashCode(block, 2));
-        assertEquals(hashCodeOperator.hashCode(block, 0), hashCodeOperator.hashCode(block, 3));
-        assertEquals(hashCodeOperator.hashCode(block, 0), hashCodeOperator.hashCode(block, 4));
-    }
-
-    @Test
-    public void testRange()
-    {
-        assertThat(type.getRange())
-                .isEmpty();
-    }
-
-    @Test
-    public void testPreviousValue()
-    {
-        assertThat(type.getPreviousValue(getSampleValue()))
-                .isEmpty();
-    }
-
-    @Test
-    public void testNextValue()
-    {
-        assertThat(type.getNextValue(getSampleValue()))
-                .isEmpty();
+        assertEquals(hashCodeOperator.hashCode(blockBuilder, 0), hashCodeOperator.hashCode(blockBuilder, 1));
+        assertEquals(hashCodeOperator.hashCode(blockBuilder, 0), hashCodeOperator.hashCode(blockBuilder, 2));
+        assertEquals(hashCodeOperator.hashCode(blockBuilder, 0), hashCodeOperator.hashCode(blockBuilder, 3));
+        assertEquals(hashCodeOperator.hashCode(blockBuilder, 0), hashCodeOperator.hashCode(blockBuilder, 4));
     }
 }

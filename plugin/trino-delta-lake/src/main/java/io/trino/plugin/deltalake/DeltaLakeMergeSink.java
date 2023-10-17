@@ -25,6 +25,7 @@ import io.trino.filesystem.TrinoInputFile;
 import io.trino.parquet.ParquetReaderOptions;
 import io.trino.parquet.writer.ParquetWriterOptions;
 import io.trino.plugin.hive.FileFormatDataSourceStats;
+import io.trino.plugin.hive.FileWriter;
 import io.trino.plugin.hive.ReaderPageSource;
 import io.trino.plugin.hive.parquet.ParquetFileWriter;
 import io.trino.plugin.hive.parquet.ParquetPageSourceFactory;
@@ -54,7 +55,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -332,9 +332,10 @@ public class DeltaLakeMergeSink
 
             Location targetLocation = sourceLocation.sibling(session.getQueryId() + "_" + randomUUID());
             String targetRelativePath = relativePath(tablePath, targetLocation.toString());
-            ParquetFileWriter fileWriter = createParquetFileWriter(targetLocation, dataColumns);
+            FileWriter fileWriter = createParquetFileWriter(targetLocation, dataColumns);
 
             DeltaLakeWriter writer = new DeltaLakeWriter(
+                    fileSystem,
                     fileWriter,
                     rootTableLocation,
                     targetRelativePath,
@@ -353,7 +354,7 @@ public class DeltaLakeMergeSink
         }
     }
 
-    private ParquetFileWriter createParquetFileWriter(Location path, List<DeltaLakeColumnHandle> dataColumns)
+    private FileWriter createParquetFileWriter(Location path, List<DeltaLakeColumnHandle> dataColumns)
     {
         ParquetWriterOptions parquetWriterOptions = ParquetWriterOptions.builder()
                 .setMaxBlockSize(getParquetWriterBlockSize(session))
@@ -383,6 +384,7 @@ public class DeltaLakeMergeSink
                     IntStream.range(0, dataColumns.size()).toArray(),
                     compressionCodec,
                     trinoVersion,
+                    false,
                     Optional.empty(),
                     Optional.empty());
         }
@@ -496,11 +498,11 @@ public class DeltaLakeMergeSink
             throws IOException
     {
         TrinoInputFile inputFile = fileSystem.newInputFile(path);
-        long fileSize = inputFile.length();
+
         return ParquetPageSourceFactory.createPageSource(
                 inputFile,
                 0,
-                fileSize,
+                inputFile.length(),
                 dataColumns.stream()
                         .map(DeltaLakeColumnHandle::toHiveColumnHandle)
                         .collect(toImmutableList()),
@@ -510,8 +512,7 @@ public class DeltaLakeMergeSink
                 new FileFormatDataSourceStats(),
                 new ParquetReaderOptions().withBloomFilter(false),
                 Optional.empty(),
-                domainCompactionThreshold,
-                OptionalLong.of(fileSize));
+                domainCompactionThreshold);
     }
 
     @Override

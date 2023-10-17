@@ -76,8 +76,9 @@ public abstract class AbstractGreatestLeast
 
     protected AbstractGreatestLeast(boolean min, String description)
     {
-        super(FunctionMetadata.scalarBuilder(min ? "least" : "greatest")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name(min ? "least" : "greatest")
                         .orderableTypeParameter("E")
                         .returnType(new TypeSignature("E"))
                         .argumentType(new TypeSignature("E"))
@@ -108,7 +109,8 @@ public abstract class AbstractGreatestLeast
                 .mapToObj(i -> wrap(type.getJavaType()))
                 .collect(toImmutableList());
 
-        MethodHandle methodHandle = generate(boundSignature.getName().getFunctionName(), javaTypes, compareMethod);
+        Class<?> clazz = generate(javaTypes, compareMethod);
+        MethodHandle methodHandle = methodHandle(clazz, getFunctionMetadata().getSignature().getName(), javaTypes.toArray(new Class<?>[0]));
 
         return new ChoicesSpecializedSqlScalarFunction(
                 boundSignature,
@@ -117,16 +119,17 @@ public abstract class AbstractGreatestLeast
                 methodHandle);
     }
 
-    private MethodHandle generate(String functionName, List<Class<?>> javaTypes, MethodHandle compareMethod)
+    private Class<?> generate(List<Class<?>> javaTypes, MethodHandle compareMethod)
     {
-        checkCondition(javaTypes.size() <= 127, NOT_SUPPORTED, "Too many arguments for function call %s()", functionName);
+        Signature signature = getFunctionMetadata().getSignature();
+        checkCondition(javaTypes.size() <= 127, NOT_SUPPORTED, "Too many arguments for function call %s()", signature.getName());
         String javaTypeName = javaTypes.stream()
                 .map(Class::getSimpleName)
                 .collect(joining());
 
         ClassDefinition definition = new ClassDefinition(
                 a(PUBLIC, FINAL),
-                makeClassName(javaTypeName + "$" + functionName),
+                makeClassName(javaTypeName + "$" + signature.getName()),
                 type(Object.class));
 
         definition.declareDefaultConstructor(a(PRIVATE));
@@ -137,7 +140,7 @@ public abstract class AbstractGreatestLeast
 
         MethodDefinition method = definition.declareMethod(
                 a(PUBLIC, STATIC),
-                functionName,
+                signature.getName(),
                 type(wrap(javaTypes.get(0))),
                 parameters);
 
@@ -177,7 +180,6 @@ public abstract class AbstractGreatestLeast
 
         body.append(value.ret());
 
-        Class<?> clazz = defineClass(definition, Object.class, binder.getBindings(), new DynamicClassLoader(getClass().getClassLoader()));
-        return methodHandle(clazz, method.getName(), javaTypes.toArray(new Class<?>[0]));
+        return defineClass(definition, Object.class, binder.getBindings(), new DynamicClassLoader(getClass().getClassLoader()));
     }
 }

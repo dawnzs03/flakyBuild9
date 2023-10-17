@@ -19,6 +19,7 @@ import io.trino.spi.predicate.NullableValue;
 
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class LookupSymbolResolver
@@ -40,8 +41,9 @@ public class LookupSymbolResolver
     public Object getValue(Symbol symbol)
     {
         ColumnHandle column = assignments.get(symbol);
+        checkArgument(column != null, "Missing column assignment for %s", symbol);
 
-        if (column == null || !bindings.containsKey(column)) {
+        if (!bindings.containsKey(column)) {
             return symbol.toSymbolReference();
         }
 

@@ -25,10 +25,9 @@ import io.trino.execution.QueryInfo;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.server.testing.TestingTrinoServer;
 import io.trino.spi.QueryId;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.List;
@@ -58,14 +57,13 @@ import static io.trino.tracing.TracingJsonCodec.tracingJsonCodecFactory;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-@TestInstance(PER_METHOD)
+@Test(singleThreaded = true)
 public class TestQueryResource
 {
     private static final JsonCodec<List<BasicQueryInfo>> BASIC_QUERY_INFO_CODEC = tracingJsonCodecFactory().listJsonCodec(BasicQueryInfo.class);
@@ -73,7 +71,7 @@ public class TestQueryResource
     private HttpClient client;
     private TestingTrinoServer server;
 
-    @BeforeEach
+    @BeforeMethod
     public void setup()
     {
         client = new JettyHttpClient();
@@ -82,7 +80,7 @@ public class TestQueryResource
         server.createCatalog("tpch", "tpch");
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void teardown()
             throws Exception
     {

@@ -219,6 +219,7 @@ public class HudiCompactionOperation
             return this;
         }
 
+        @SuppressWarnings("unchecked")
         public HudiCompactionOperation build()
         {
             return new HudiCompactionOperation(

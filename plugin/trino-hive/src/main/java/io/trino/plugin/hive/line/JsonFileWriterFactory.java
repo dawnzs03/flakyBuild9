@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.hive.formats.line.json.JsonSerializerFactory;
 import io.trino.hive.formats.line.text.TextLineWriterFactory;
+import io.trino.plugin.hive.HiveSessionProperties;
 import io.trino.spi.type.TypeManager;
 
 public class JsonFileWriterFactory
@@ -29,6 +30,7 @@ public class JsonFileWriterFactory
                 typeManager,
                 new JsonSerializerFactory(),
                 new TextLineWriterFactory(),
+                HiveSessionProperties::isJsonNativeWriterEnabled,
                 false);
     }
 }

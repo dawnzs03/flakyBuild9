@@ -21,7 +21,7 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 
-import static io.trino.plugin.hive.HiveTestUtils.HDFS_FILE_SYSTEM_FACTORY;
+import static io.trino.plugin.hive.HiveTestUtils.HDFS_ENVIRONMENT;
 
 // staging directory is shared mutable state
 @Test(singleThreaded = true)
@@ -34,7 +34,7 @@ public class TestHiveFileMetastore
         File baseDir = new File(tempDir, "metastore");
         return new FileHiveMetastore(
                 new NodeVersion("test_version"),
-                HDFS_FILE_SYSTEM_FACTORY,
+                HDFS_ENVIRONMENT,
                 true,
                 new FileHiveMetastoreConfig()
                         .setCatalogDirectory(baseDir.toURI().toString())

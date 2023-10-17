@@ -105,8 +105,7 @@ import static io.trino.plugin.hive.HiveErrorCode.HIVE_TABLE_DROPPED_DURING_QUERY
 import static io.trino.plugin.hive.HiveMetadata.PRESTO_QUERY_ID_NAME;
 import static io.trino.plugin.hive.LocationHandle.WriteMode.DIRECT_TO_TARGET_NEW_DIRECTORY;
 import static io.trino.plugin.hive.TableType.MANAGED_TABLE;
-import static io.trino.plugin.hive.ViewReaderUtil.isTrinoMaterializedView;
-import static io.trino.plugin.hive.ViewReaderUtil.isTrinoView;
+import static io.trino.plugin.hive.ViewReaderUtil.isPrestoView;
 import static io.trino.plugin.hive.acid.AcidTransaction.NO_ACID_TRANSACTION;
 import static io.trino.plugin.hive.metastore.HivePrivilegeInfo.HivePrivilege.OWNERSHIP;
 import static io.trino.plugin.hive.metastore.MetastoreUtil.buildInitialPrivilegeSet;
@@ -471,32 +470,28 @@ public class SemiTransactionalHiveMetastore
 
     public synchronized void dropDatabase(ConnectorSession session, String schemaName)
     {
-        setExclusive((delegate, hdfsEnvironment) -> {
-            boolean deleteData = shouldDeleteDatabaseData(session, schemaName);
-            delegate.dropDatabase(schemaName, deleteData);
-        });
-    }
-
-    public boolean shouldDeleteDatabaseData(ConnectorSession session, String schemaName)
-    {
         Optional<Path> location = delegate.getDatabase(schemaName)
                 .orElseThrow(() -> new SchemaNotFoundException(schemaName))
                 .getLocation()
                 .map(Path::new);
 
-        // If we see files in the schema location, don't delete it.
-        // If we see no files, request deletion.
-        // If we fail to check the schema location, behave according to fallback.
-        return location.map(path -> {
-            try {
-                return !hdfsEnvironment.getFileSystem(new HdfsContext(session), path)
-                        .listLocatedStatus(path).hasNext();
-            }
-            catch (IOException | RuntimeException e) {
-                log.warn(e, "Could not check schema directory '%s'", path);
-                return deleteSchemaLocationsFallback;
-            }
-        }).orElse(deleteSchemaLocationsFallback);
+        setExclusive((delegate, hdfsEnvironment) -> {
+            // If we see files in the schema location, don't delete it.
+            // If we see no files, request deletion.
+            // If we fail to check the schema location, behave according to fallback.
+            boolean deleteData = location.map(path -> {
+                try {
+                    return !hdfsEnvironment.getFileSystem(new HdfsContext(session), path)
+                            .listLocatedStatus(path).hasNext();
+                }
+                catch (IOException | RuntimeException e) {
+                    log.warn(e, "Could not check schema directory '%s'", path);
+                    return deleteSchemaLocationsFallback;
+                }
+            }).orElse(deleteSchemaLocationsFallback);
+
+            delegate.dropDatabase(schemaName, deleteData);
+        });
     }
 
     public synchronized void renameDatabase(String source, String target)
@@ -684,7 +679,7 @@ public class SemiTransactionalHiveMetastore
             ConnectorSession session,
             String databaseName,
             String tableName,
-            Location currentLocation,
+            Path currentLocation,
             List<String> fileNames,
             PartitionStatistics statisticsUpdate,
             boolean cleanExtraOutputFilesOnCommit)
@@ -709,7 +704,7 @@ public class SemiTransactionalHiveMetastore
                             new TableAndMore(
                                     table,
                                     Optional.empty(),
-                                    Optional.of(new Path(currentLocation.toString())),
+                                    Optional.of(currentLocation),
                                     Optional.of(fileNames),
                                     false,
                                     merge(currentStatistics, statisticsUpdate),
@@ -972,7 +967,7 @@ public class SemiTransactionalHiveMetastore
             String databaseName,
             String tableName,
             Partition partition,
-            Location currentLocation,
+            Path currentLocation,
             Optional<List<String>> files,
             PartitionStatistics statistics,
             boolean cleanExtraOutputFilesOnCommit)
@@ -1924,7 +1919,7 @@ public class SemiTransactionalHiveMetastore
                 }
             }
 
-            Path currentPath = new Path(partitionAndMore.getCurrentLocation().toString());
+            Path currentPath = partitionAndMore.getCurrentLocation();
             Path targetPath = new Path(targetLocation);
             if (!targetPath.equals(currentPath)) {
                 renameDirectory(
@@ -1958,7 +1953,7 @@ public class SemiTransactionalHiveMetastore
             }
             Path tableLocation = tableAndMore.getCurrentLocation().orElseThrow(() -> new IllegalArgumentException("currentLocation expected to be set if isCleanExtraOutputFilesOnCommit is true"));
             List<String> files = tableAndMore.getFileNames().orElseThrow(() -> new IllegalArgumentException("fileNames expected to be set if isCleanExtraOutputFilesOnCommit is true"));
-            SemiTransactionalHiveMetastore.cleanExtraOutputFiles(hdfsEnvironment, hdfsContext, queryId, Location.of(tableLocation.toString()), ImmutableSet.copyOf(files));
+            SemiTransactionalHiveMetastore.cleanExtraOutputFiles(hdfsEnvironment, hdfsContext, queryId, tableLocation, ImmutableSet.copyOf(files));
         }
 
         private PartitionStatistics getExistingPartitionStatistics(Partition partition, String partitionName)
@@ -1993,7 +1988,7 @@ public class SemiTransactionalHiveMetastore
 
             Partition partition = partitionAndMore.getPartition();
             String targetLocation = partition.getStorage().getLocation();
-            Path currentPath = new Path(partitionAndMore.getCurrentLocation().toString());
+            Path currentPath = partitionAndMore.getCurrentLocation();
             Path targetPath = new Path(targetLocation);
 
             cleanExtraOutputFiles(hdfsContext, queryId, partitionAndMore);
@@ -2033,7 +2028,7 @@ public class SemiTransactionalHiveMetastore
             Partition partition = partitionAndMore.getPartition();
             partitionsToInvalidate.add(partition);
             Path targetPath = new Path(partition.getStorage().getLocation());
-            Path currentPath = new Path(partitionAndMore.getCurrentLocation().toString());
+            Path currentPath = partitionAndMore.getCurrentLocation();
             cleanUpTasksForAbort.add(new DirectoryCleanUpTask(hdfsContext, targetPath, false));
 
             if (!targetPath.equals(currentPath)) {
@@ -2955,13 +2950,13 @@ public class SemiTransactionalHiveMetastore
     private static class PartitionAndMore
     {
         private final Partition partition;
-        private final Location currentLocation;
+        private final Path currentLocation;
         private final Optional<List<String>> fileNames;
         private final PartitionStatistics statistics;
         private final PartitionStatistics statisticsUpdate;
         private final boolean cleanExtraOutputFilesOnCommit;
 
-        public PartitionAndMore(Partition partition, Location currentLocation, Optional<List<String>> fileNames, PartitionStatistics statistics, PartitionStatistics statisticsUpdate, boolean cleanExtraOutputFilesOnCommit)
+        public PartitionAndMore(Partition partition, Path currentLocation, Optional<List<String>> fileNames, PartitionStatistics statistics, PartitionStatistics statisticsUpdate, boolean cleanExtraOutputFilesOnCommit)
         {
             this.partition = requireNonNull(partition, "partition is null");
             this.currentLocation = requireNonNull(currentLocation, "currentLocation is null");
@@ -2976,7 +2971,7 @@ public class SemiTransactionalHiveMetastore
             return partition;
         }
 
-        public Location getCurrentLocation()
+        public Path getCurrentLocation()
         {
             return currentLocation;
         }
@@ -3297,7 +3292,7 @@ public class SemiTransactionalHiveMetastore
             }
             tableCreated = true;
 
-            if (created && !isTrinoView(newTable) && !isTrinoMaterializedView(newTable)) {
+            if (created && !isPrestoView(newTable)) {
                 metastore.updateTableStatistics(newTable.getDatabaseName(), newTable.getTableName(), transaction, ignored -> statistics);
             }
         }
@@ -3649,9 +3644,8 @@ public class SemiTransactionalHiveMetastore
         delegate.commitTransaction(transactionId);
     }
 
-    public static void cleanExtraOutputFiles(HdfsEnvironment hdfsEnvironment, HdfsContext hdfsContext, String queryId, Location location, Set<String> filesToKeep)
+    public static void cleanExtraOutputFiles(HdfsEnvironment hdfsEnvironment, HdfsContext hdfsContext, String queryId, Path path, Set<String> filesToKeep)
     {
-        Path path = new Path(location.toString());
         List<String> filesToDelete = new LinkedList<>();
         try {
             log.debug("Deleting failed attempt files from %s for query %s", path, queryId);
@@ -3709,14 +3703,14 @@ public class SemiTransactionalHiveMetastore
         }
     }
 
-    public record PartitionUpdateInfo(List<String> partitionValues, Location currentLocation, List<String> fileNames, PartitionStatistics statisticsUpdate)
+    public record PartitionUpdateInfo(List<String> partitionValues, Path currentLocation, List<String> fileNames, PartitionStatistics statisticsUpdate)
     {
-        public PartitionUpdateInfo
+        public PartitionUpdateInfo(List<String> partitionValues, Path currentLocation, List<String> fileNames, PartitionStatistics statisticsUpdate)
         {
-            requireNonNull(partitionValues, "partitionValues is null");
-            requireNonNull(currentLocation, "currentLocation is null");
-            requireNonNull(fileNames, "fileNames is null");
-            requireNonNull(statisticsUpdate, "statisticsUpdate is null");
+            this.partitionValues = requireNonNull(partitionValues, "partitionValues is null");
+            this.currentLocation = requireNonNull(currentLocation, "currentLocation is null");
+            this.fileNames = requireNonNull(fileNames, "fileNames is null");
+            this.statisticsUpdate = requireNonNull(statisticsUpdate, "statisticsUpdate is null");
         }
     }
 }

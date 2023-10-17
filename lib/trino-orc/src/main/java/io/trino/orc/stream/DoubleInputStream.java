@@ -59,6 +59,6 @@ public class DoubleInputStream
     public void next(long[] values, int items)
             throws IOException
     {
-        input.readFully(values, 0, items);
+        input.readFully(Slices.wrappedLongArray(values), 0, items * SIZE_OF_DOUBLE);
     }
 }

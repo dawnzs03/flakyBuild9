@@ -16,7 +16,7 @@ package io.trino.plugin.hive.orc;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.units.DataSize;
 import io.airlift.units.DataSize.Unit;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 

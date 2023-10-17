@@ -15,10 +15,11 @@ package io.trino.plugin.jmx;
 
 import com.google.common.collect.ImmutableList;
 import io.trino.spi.HostAddress;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static io.trino.plugin.jmx.MetadataUtil.SPLIT_CODEC;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
 
 public class TestJmxSplit
 {
@@ -28,9 +29,9 @@ public class TestJmxSplit
     @Test
     public void testSplit()
     {
-        assertThat(SPLIT.getAddresses()).isEqualTo(ADDRESSES);
-        assertThat(SPLIT.getInfo()).isSameAs(SPLIT);
-        assertThat(SPLIT.isRemotelyAccessible()).isFalse();
+        assertEquals(SPLIT.getAddresses(), ADDRESSES);
+        assertSame(SPLIT.getInfo(), SPLIT);
+        assertEquals(SPLIT.isRemotelyAccessible(), false);
     }
 
     @Test
@@ -39,8 +40,8 @@ public class TestJmxSplit
         String json = SPLIT_CODEC.toJson(SPLIT);
         JmxSplit copy = SPLIT_CODEC.fromJson(json);
 
-        assertThat(copy.getAddresses()).isEqualTo(SPLIT.getAddresses());
-        assertThat(copy.getInfo()).isSameAs(copy);
-        assertThat(copy.isRemotelyAccessible()).isFalse();
+        assertEquals(copy.getAddresses(), SPLIT.getAddresses());
+        assertSame(copy.getInfo(), copy);
+        assertEquals(copy.isRemotelyAccessible(), false);
     }
 }

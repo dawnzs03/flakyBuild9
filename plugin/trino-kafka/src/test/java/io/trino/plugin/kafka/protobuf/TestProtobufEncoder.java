@@ -22,8 +22,6 @@ import io.trino.decoder.protobuf.ProtobufDataProviders;
 import io.trino.plugin.kafka.KafkaColumnHandle;
 import io.trino.plugin.kafka.encoder.EncoderColumnHandle;
 import io.trino.plugin.kafka.encoder.RowEncoder;
-import io.trino.plugin.kafka.encoder.RowEncoderSpec;
-import io.trino.plugin.kafka.encoder.protobuf.ProtobufRowEncoder;
 import io.trino.plugin.kafka.encoder.protobuf.ProtobufRowEncoderFactory;
 import io.trino.spi.block.ArrayBlockBuilder;
 import io.trino.spi.block.Block;
@@ -46,7 +44,6 @@ import static io.airlift.slice.Slices.wrappedBuffer;
 import static io.trino.decoder.protobuf.ProtobufRowDecoderFactory.DEFAULT_MESSAGE;
 import static io.trino.decoder.protobuf.ProtobufUtils.getFileDescriptor;
 import static io.trino.decoder.protobuf.ProtobufUtils.getProtoFile;
-import static io.trino.plugin.kafka.encoder.KafkaFieldType.MESSAGE;
 import static io.trino.spi.block.ArrayBlock.fromElementBlock;
 import static io.trino.spi.block.RowBlock.fromFieldBlocks;
 import static io.trino.spi.predicate.Utils.nativeValueToBlock;
@@ -292,7 +289,7 @@ public class TestProtobufEncoder
                 new Block[]{listBlockBuilder.build(), mapBlockBuilder.build(), rowBlockBuilder.build()});
         nestedRowType.appendTo(rowBlock, 0, nestedBlockBuilder);
 
-        rowEncoder.appendColumnValue(nestedBlockBuilder.build(), 0);
+        rowEncoder.appendColumnValue(nestedBlockBuilder, 0);
 
         assertEquals(messageBuilder.build().toByteArray(), rowEncoder.toByteArray());
     }
@@ -354,7 +351,7 @@ public class TestProtobufEncoder
     private RowEncoder createRowEncoder(String fileName, List<EncoderColumnHandle> columns)
             throws Exception
     {
-        return ENCODER_FACTORY.create(TestingConnectorSession.SESSION, new RowEncoderSpec(ProtobufRowEncoder.NAME, Optional.of(getProtoFile("decoder/protobuf/" + fileName)), columns, "ignored", MESSAGE));
+        return ENCODER_FACTORY.create(TestingConnectorSession.SESSION, Optional.of(getProtoFile("decoder/protobuf/" + fileName)), columns);
     }
 
     private Descriptor getDescriptor(String fileName)

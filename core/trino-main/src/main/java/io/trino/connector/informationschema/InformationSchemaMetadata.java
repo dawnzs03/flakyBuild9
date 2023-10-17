@@ -13,6 +13,7 @@
  */
 package io.trino.connector.informationschema;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -22,6 +23,7 @@ import io.trino.Session;
 import io.trino.metadata.Metadata;
 import io.trino.metadata.QualifiedObjectName;
 import io.trino.metadata.QualifiedTablePrefix;
+import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorMetadata;
@@ -63,6 +65,7 @@ import static io.trino.connector.informationschema.InformationSchemaTable.TABLES
 import static io.trino.connector.informationschema.InformationSchemaTable.TABLE_PRIVILEGES;
 import static io.trino.connector.informationschema.InformationSchemaTable.VIEWS;
 import static io.trino.metadata.MetadataUtil.findColumnMetadata;
+import static io.trino.spi.StandardErrorCode.TABLE_REDIRECTION_ERROR;
 import static io.trino.spi.type.VarcharType.createUnboundedVarcharType;
 import static java.util.Collections.emptyList;
 import static java.util.Locale.ENGLISH;
@@ -77,16 +80,16 @@ public class InformationSchemaMetadata
     private static final InformationSchemaColumnHandle TABLE_NAME_COLUMN_HANDLE = new InformationSchemaColumnHandle("table_name");
     private static final InformationSchemaColumnHandle ROLE_NAME_COLUMN_HANDLE = new InformationSchemaColumnHandle("role_name");
     private static final InformationSchemaColumnHandle GRANTEE_COLUMN_HANDLE = new InformationSchemaColumnHandle("grantee");
+    @VisibleForTesting
+    public static final int MAX_PREFIXES_COUNT = 100;
 
     private final String catalogName;
     private final Metadata metadata;
-    private final int maxPrefetchedInformationSchemaPrefixes;
 
-    public InformationSchemaMetadata(String catalogName, Metadata metadata, int maxPrefetchedInformationSchemaPrefixes)
+    public InformationSchemaMetadata(String catalogName, Metadata metadata)
     {
         this.catalogName = requireNonNull(catalogName, "catalogName is null");
         this.metadata = requireNonNull(metadata, "metadata is null");
-        this.maxPrefetchedInformationSchemaPrefixes = maxPrefetchedInformationSchemaPrefixes;
     }
 
     @Override
@@ -218,7 +221,7 @@ public class InformationSchemaMetadata
         InformationSchemaTable informationSchemaTable = table.getTable();
         Set<QualifiedTablePrefix> schemaPrefixes = calculatePrefixesWithSchemaName(session, constraint.getSummary(), constraint.predicate());
         Set<QualifiedTablePrefix> tablePrefixes = calculatePrefixesWithTableName(informationSchemaTable, session, schemaPrefixes, constraint.getSummary(), constraint.predicate());
-        verify(tablePrefixes.size() <= maxPrefetchedInformationSchemaPrefixes, "calculatePrefixesWithTableName returned too many prefixes: %s", tablePrefixes.size());
+        verify(tablePrefixes.size() <= MAX_PREFIXES_COUNT, "calculatePrefixesWithTableName returned too many prefixes: %s", tablePrefixes.size());
         return tablePrefixes;
     }
 
@@ -249,7 +252,7 @@ public class InformationSchemaMetadata
         Set<QualifiedTablePrefix> schemaPrefixes = listSchemaNames(session)
                 .filter(prefix -> predicate.get().test(schemaAsFixedValues(prefix.getSchemaName().get())))
                 .collect(toImmutableSet());
-        if (schemaPrefixes.size() > maxPrefetchedInformationSchemaPrefixes) {
+        if (schemaPrefixes.size() > MAX_PREFIXES_COUNT) {
             // in case of high number of prefixes it is better to populate all data and then filter
             // TODO this may cause re-running the above filtering upon next applyFilter
             return defaultPrefixes(catalogName);
@@ -276,13 +279,36 @@ public class InformationSchemaMetadata
                     .flatMap(prefix -> tables.get().stream()
                             .filter(this::isLowerCase)
                             .map(table -> new QualifiedObjectName(catalogName, prefix.getSchemaName().get(), table)))
+                    .filter(objectName -> {
+                        if (!isColumnsEnumeratingTable(informationSchemaTable) ||
+                                metadata.isMaterializedView(session, objectName) ||
+                                metadata.isView(session, objectName)) {
+                            return true;
+                        }
+
+                        // This is a columns enumerating table and the object is not a view
+                        try {
+                            // Table redirection to enumerate columns from target table happens later in
+                            // MetadataListing#listTableColumns, but also applying it here to avoid incorrect
+                            // filtering in case the source table does not exist or there is a problem with redirection.
+                            return metadata.getRedirectionAwareTableHandle(session, objectName).getTableHandle().isPresent();
+                        }
+                        catch (TrinoException e) {
+                            if (e.getErrorCode().equals(TABLE_REDIRECTION_ERROR.toErrorCode())) {
+                                // Ignore redirection errors for listing, treat as if the table does not exist
+                                return false;
+                            }
+
+                            throw e;
+                        }
+                    })
                     .filter(objectName -> predicate.isEmpty() || predicate.get().test(asFixedValues(objectName)))
                     .map(QualifiedObjectName::asQualifiedTablePrefix)
                     .distinct()
-                    .limit(maxPrefetchedInformationSchemaPrefixes + 1)
+                    .limit(MAX_PREFIXES_COUNT + 1)
                     .collect(toImmutableSet());
 
-            if (tablePrefixes.size() > maxPrefetchedInformationSchemaPrefixes) {
+            if (tablePrefixes.size() > MAX_PREFIXES_COUNT) {
                 // in case of high number of prefixes it is better to populate all data and then filter
                 // TODO this may cause re-running the above filtering upon next applyFilter
                 return defaultPrefixes(catalogName);
@@ -299,9 +325,9 @@ public class InformationSchemaMetadata
                 .filter(objectName -> predicate.get().test(asFixedValues(objectName)))
                 .map(QualifiedObjectName::asQualifiedTablePrefix)
                 .distinct()
-                .limit(maxPrefetchedInformationSchemaPrefixes + 1)
+                .limit(MAX_PREFIXES_COUNT + 1)
                 .collect(toImmutableSet());
-        if (tablePrefixes.size() > maxPrefetchedInformationSchemaPrefixes) {
+        if (tablePrefixes.size() > MAX_PREFIXES_COUNT) {
             // in case of high number of prefixes it is better to populate all data and then filter
             // TODO this may cause re-running the above filtering upon next applyFilter
             return defaultPrefixes(catalogName);

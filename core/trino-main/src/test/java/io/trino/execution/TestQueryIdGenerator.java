@@ -14,7 +14,7 @@
 package io.trino.execution;
 
 import io.trino.spi.QueryId;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.time.LocalDateTime;
 

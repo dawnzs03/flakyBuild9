@@ -24,7 +24,7 @@ import org.apache.hadoop.hive.common.ValidReaderWriteIdList;
 import org.apache.hadoop.hive.ql.exec.Utilities;
 import org.apache.hadoop.hive.ql.io.AcidUtils;
 import org.apache.hadoop.hive.shims.HadoopShims.HdfsFileStatusWithId;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.List;
 

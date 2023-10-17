@@ -69,11 +69,11 @@ public class SetTableAuthorizationTask
 
         getRequiredCatalogHandle(metadata, session, statement, tableName.getCatalogName());
         RedirectionAwareTableHandle redirection = metadata.getRedirectionAwareTableHandle(session, tableName);
-        if (redirection.tableHandle().isEmpty()) {
+        if (redirection.getTableHandle().isEmpty()) {
             throw semanticException(TABLE_NOT_FOUND, statement, "Table '%s' does not exist", tableName);
         }
-        if (redirection.redirectedTableName().isPresent()) {
-            throw semanticException(NOT_SUPPORTED, statement, "Table %s is redirected to %s and SET TABLE AUTHORIZATION is not supported with table redirections", tableName, redirection.redirectedTableName().get());
+        if (redirection.getRedirectedTableName().isPresent()) {
+            throw semanticException(NOT_SUPPORTED, statement, "Table %s is redirected to %s and SET TABLE AUTHORIZATION is not supported with table redirections", tableName, redirection.getRedirectedTableName().get());
         }
 
         TrinoPrincipal principal = createPrincipal(statement.getPrincipal());

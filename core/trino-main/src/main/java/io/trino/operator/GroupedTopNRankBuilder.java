@@ -41,7 +41,6 @@ public class GroupedTopNRankBuilder
 
     private final List<Type> sourceTypes;
     private final boolean produceRanking;
-    private final int[] groupByChannels;
     private final GroupByHash groupByHash;
     private final PageWithPositionComparator comparator;
     private final RowReferencePageManager pageManager = new RowReferencePageManager();
@@ -53,13 +52,11 @@ public class GroupedTopNRankBuilder
             PageWithPositionEqualsAndHash equalsAndHash,
             int topN,
             boolean produceRanking,
-            int[] groupByChannels,
             GroupByHash groupByHash)
     {
         this.sourceTypes = requireNonNull(sourceTypes, "sourceTypes is null");
         checkArgument(topN > 0, "topN must be > 0");
         this.produceRanking = produceRanking;
-        this.groupByChannels = requireNonNull(groupByChannels, "groupByChannels is null");
         this.groupByHash = requireNonNull(groupByHash, "groupByHash is null");
 
         this.comparator = requireNonNull(comparator, "comparator is null");
@@ -103,7 +100,7 @@ public class GroupedTopNRankBuilder
     public Work<?> processPage(Page page)
     {
         return new TransformWork<>(
-                groupByHash.getGroupIds(page.getColumns(groupByChannels)),
+                groupByHash.getGroupIds(page),
                 groupIds -> {
                     processPage(page, groupByHash.getGroupCount(), groupIds);
                     return null;

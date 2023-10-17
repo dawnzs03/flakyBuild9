@@ -14,33 +14,30 @@
 package io.trino.operator;
 
 import io.trino.memory.context.LocalMemoryContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_CLASS)
 public class TestOperatorMemoryRevocation
 {
     private ScheduledExecutorService scheduledExecutor;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         scheduledExecutor = newSingleThreadScheduledExecutor();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         scheduledExecutor.shutdownNow();

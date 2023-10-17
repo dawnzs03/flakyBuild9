@@ -33,9 +33,9 @@ import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeId;
 import io.trino.sql.relational.CallExpression;
 import io.trino.sql.relational.RowExpression;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.testing.TestingSession;
 import io.trino.type.JsonPath2016Type;
-import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -49,6 +49,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.options.WarmupMode;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Optional;
@@ -180,7 +181,7 @@ public class BenchmarkJsonFunctions
             }
             List<RowExpression> jsonValueProjection = ImmutableList.of(new CallExpression(
                     functionResolution.resolveFunction(
-                            JSON_VALUE_FUNCTION_NAME,
+                            QualifiedName.of(JSON_VALUE_FUNCTION_NAME),
                             fromTypes(ImmutableList.of(
                                     JSON_2016,
                                     jsonPath2016Type,
@@ -191,7 +192,7 @@ public class BenchmarkJsonFunctions
                                     VARCHAR))),
                     ImmutableList.of(
                             new CallExpression(
-                                    functionResolution.resolveFunction(VARCHAR_TO_JSON, fromTypes(VARCHAR, BOOLEAN)),
+                                    functionResolution.resolveFunction(QualifiedName.of(VARCHAR_TO_JSON), fromTypes(VARCHAR, BOOLEAN)),
                                     ImmutableList.of(field(0, VARCHAR), constant(true, BOOLEAN))),
                             constant(new IrJsonPath(false, pathRoot), jsonPath2016Type),
                             constantNull(JSON_NO_PARAMETERS_ROW_TYPE),
@@ -215,7 +216,7 @@ public class BenchmarkJsonFunctions
             }
             Type boundedVarcharType = createVarcharType(100);
             List<RowExpression> jsonExtractScalarProjection = ImmutableList.of(new CallExpression(
-                    functionResolution.resolveFunction("json_extract_scalar", fromTypes(ImmutableList.of(boundedVarcharType, JSON_PATH))),
+                    functionResolution.resolveFunction(QualifiedName.of("json_extract_scalar"), fromTypes(ImmutableList.of(boundedVarcharType, JSON_PATH))),
                     ImmutableList.of(field(0, boundedVarcharType), constant(new JsonPath(pathString.toString()), JSON_PATH))));
 
             return functionResolution.getExpressionCompiler()
@@ -231,7 +232,7 @@ public class BenchmarkJsonFunctions
             }
             List<RowExpression> jsonQueryProjection = ImmutableList.of(new CallExpression(
                     functionResolution.resolveFunction(
-                            JSON_QUERY_FUNCTION_NAME,
+                            QualifiedName.of(JSON_QUERY_FUNCTION_NAME),
                             fromTypes(ImmutableList.of(
                                     JSON_2016,
                                     jsonPath2016Type,
@@ -241,7 +242,7 @@ public class BenchmarkJsonFunctions
                                     TINYINT))),
                     ImmutableList.of(
                             new CallExpression(
-                                    functionResolution.resolveFunction(VARCHAR_TO_JSON, fromTypes(VARCHAR, BOOLEAN)),
+                                    functionResolution.resolveFunction(QualifiedName.of(VARCHAR_TO_JSON), fromTypes(VARCHAR, BOOLEAN)),
                                     ImmutableList.of(field(0, VARCHAR), constant(true, BOOLEAN))),
                             constant(new IrJsonPath(false, pathRoot), jsonPath2016Type),
                             constantNull(JSON_NO_PARAMETERS_ROW_TYPE),
@@ -264,7 +265,7 @@ public class BenchmarkJsonFunctions
             }
             Type boundedVarcharType = createVarcharType(100);
             List<RowExpression> jsonExtractScalarProjection = ImmutableList.of(new CallExpression(
-                    functionResolution.resolveFunction("json_extract", fromTypes(ImmutableList.of(boundedVarcharType, JSON_PATH))),
+                    functionResolution.resolveFunction(QualifiedName.of("json_extract"), fromTypes(ImmutableList.of(boundedVarcharType, JSON_PATH))),
                     ImmutableList.of(field(0, boundedVarcharType), constant(new JsonPath(pathString.toString()), JSON_PATH))));
 
             return functionResolution.getExpressionCompiler()

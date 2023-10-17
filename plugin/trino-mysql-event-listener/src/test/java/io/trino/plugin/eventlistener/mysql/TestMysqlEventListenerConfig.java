@@ -13,7 +13,7 @@
  */
 package io.trino.plugin.eventlistener.mysql;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 

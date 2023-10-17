@@ -23,6 +23,7 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import com.google.common.reflect.ClassPath;
 import io.trino.plugin.hive.containers.HiveHadoop;
+import io.trino.plugin.hive.containers.HiveMinioDataLake;
 import io.trino.testing.QueryRunner;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Parameters;
@@ -43,13 +44,11 @@ import java.util.regex.Pattern;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.trino.plugin.deltalake.DeltaLakeQueryRunner.requiredNonEmptySystemProperty;
-import static io.trino.plugin.hive.containers.HiveHadoop.HIVE3_IMAGE;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.regex.Matcher.quoteReplacement;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.testcontainers.containers.Network.newNetwork;
 
 public class TestDeltaLakeAdlsConnectorSmokeTest
         extends BaseDeltaLakeConnectorSmokeTest
@@ -77,7 +76,7 @@ public class TestDeltaLakeAdlsConnectorSmokeTest
     }
 
     @Override
-    protected HiveHadoop createHiveHadoop()
+    protected HiveMinioDataLake createHiveMinioDataLake()
             throws Exception
     {
         String abfsSpecificCoreSiteXmlContent = Resources.toString(Resources.getResource("io/trino/plugin/deltalake/hdp3.1-core-site.xml.abfs-template"), UTF_8)
@@ -89,13 +88,12 @@ public class TestDeltaLakeAdlsConnectorSmokeTest
         hadoopCoreSiteXmlTempFile.toFile().deleteOnExit();
         Files.writeString(hadoopCoreSiteXmlTempFile, abfsSpecificCoreSiteXmlContent);
 
-        HiveHadoop hiveHadoop = HiveHadoop.builder()
-                .withImage(HIVE3_IMAGE)
-                .withNetwork(closeAfterClass(newNetwork()))
-                .withFilesToMount(ImmutableMap.of("/etc/hadoop/conf/core-site.xml", hadoopCoreSiteXmlTempFile.normalize().toAbsolutePath().toString()))
-                .build();
-        hiveHadoop.start();
-        return hiveHadoop; // closed by superclass
+        HiveMinioDataLake hiveMinioDataLake = new HiveMinioDataLake(
+                bucketName,
+                ImmutableMap.of("/etc/hadoop/conf/core-site.xml", hadoopCoreSiteXmlTempFile.normalize().toAbsolutePath().toString()),
+                HiveHadoop.HIVE3_IMAGE);
+        hiveMinioDataLake.start();
+        return hiveMinioDataLake;  // closed by superclass
     }
 
     @Override
@@ -117,7 +115,7 @@ public class TestDeltaLakeAdlsConnectorSmokeTest
     public void removeTestData()
     {
         if (adlsDirectory != null) {
-            hiveHadoop.executeInContainerFailOnError("hadoop", "fs", "-rm", "-f", "-r", adlsDirectory);
+            hiveMinioDataLake.getHiveHadoop().executeInContainerFailOnError("hadoop", "fs", "-rm", "-f", "-r", adlsDirectory);
         }
         assertThat(azureContainerClient.listBlobsByHierarchy(bucketName + "/").stream()).hasSize(0);
     }
@@ -159,9 +157,10 @@ public class TestDeltaLakeAdlsConnectorSmokeTest
     }
 
     @Override
-    protected List<String> listFiles(String directory)
+    protected List<String> listCheckpointFiles(String transactionLogDirectory)
     {
-        return listAllFilesRecursive(directory).stream()
+        return listAllFilesRecursive(transactionLogDirectory).stream()
+                .filter(path -> path.contains("checkpoint.parquet"))
                 .collect(toImmutableList());
     }
 
@@ -181,14 +180,6 @@ public class TestDeltaLakeAdlsConnectorSmokeTest
         return allPaths.stream()
                 .filter(path -> !path.endsWith("/") && !directories.contains(path))
                 .collect(toImmutableList());
-    }
-
-    @Override
-    protected void deleteFile(String filePath)
-    {
-        String blobName = bucketName + "/" + filePath.substring(bucketUrl().length());
-        azureContainerClient.getBlobClient(blobName)
-                .delete();
     }
 
     @Override

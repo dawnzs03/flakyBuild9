@@ -22,6 +22,7 @@ import io.airlift.event.client.EventClient;
 import io.airlift.json.JsonCodec;
 import io.airlift.units.DataSize;
 import io.trino.filesystem.TrinoFileSystemFactory;
+import io.trino.hdfs.HdfsEnvironment;
 import io.trino.plugin.hive.metastore.HiveMetastoreFactory;
 import io.trino.plugin.hive.metastore.HivePageSinkMetadataProvider;
 import io.trino.plugin.hive.metastore.SortingColumn;
@@ -39,6 +40,7 @@ import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorTableExecuteHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.type.TypeManager;
+import org.joda.time.DateTimeZone;
 
 import java.util.List;
 import java.util.Map;
@@ -58,6 +60,7 @@ public class HivePageSinkProvider
 {
     private final Set<HiveFileWriterFactory> fileWriterFactories;
     private final TrinoFileSystemFactory fileSystemFactory;
+    private final HdfsEnvironment hdfsEnvironment;
     private final PageSorter pageSorter;
     private final HiveMetastoreFactory metastoreFactory;
     private final PageIndexerFactory pageIndexerFactory;
@@ -73,6 +76,7 @@ public class HivePageSinkProvider
     private final HiveSessionProperties hiveSessionProperties;
     private final HiveWriterStats hiveWriterStats;
     private final long perTransactionMetastoreCacheMaximumSize;
+    private final DateTimeZone parquetTimeZone;
     private final boolean temporaryStagingDirectoryDirectoryEnabled;
     private final String temporaryStagingDirectoryPath;
 
@@ -80,6 +84,7 @@ public class HivePageSinkProvider
     public HivePageSinkProvider(
             Set<HiveFileWriterFactory> fileWriterFactories,
             TrinoFileSystemFactory fileSystemFactory,
+            HdfsEnvironment hdfsEnvironment,
             PageSorter pageSorter,
             HiveMetastoreFactory metastoreFactory,
             PageIndexerFactory pageIndexerFactory,
@@ -95,6 +100,7 @@ public class HivePageSinkProvider
     {
         this.fileWriterFactories = ImmutableSet.copyOf(requireNonNull(fileWriterFactories, "fileWriterFactories is null"));
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
+        this.hdfsEnvironment = requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.metastoreFactory = requireNonNull(metastoreFactory, "metastoreFactory is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
@@ -110,6 +116,7 @@ public class HivePageSinkProvider
         this.hiveSessionProperties = requireNonNull(hiveSessionProperties, "hiveSessionProperties is null");
         this.hiveWriterStats = requireNonNull(hiveWriterStats, "hiveWriterStats is null");
         this.perTransactionMetastoreCacheMaximumSize = config.getPerTransactionMetastoreCacheMaximumSize();
+        this.parquetTimeZone = config.getParquetDateTimeZone();
         this.temporaryStagingDirectoryDirectoryEnabled = config.isTemporaryStagingDirectoryEnabled();
         this.temporaryStagingDirectoryPath = config.getTemporaryStagingDirectoryPath();
     }
@@ -174,9 +181,11 @@ public class HivePageSinkProvider
                         handle.getPageSinkMetadata(),
                         new HiveMetastoreClosure(memoizeMetastore(metastoreFactory.createMetastore(Optional.of(session.getIdentity())), perTransactionMetastoreCacheMaximumSize))),
                 typeManager,
+                hdfsEnvironment,
                 pageSorter,
                 writerSortBufferSize,
                 maxOpenSortFiles,
+                parquetTimeZone,
                 session,
                 nodeManager,
                 eventClient,
@@ -192,6 +201,7 @@ public class HivePageSinkProvider
                 handle.isTransactional(),
                 handle.getBucketProperty(),
                 pageIndexerFactory,
+                hdfsEnvironment,
                 maxOpenPartitions,
                 writeVerificationExecutor,
                 partitionUpdateCodec,

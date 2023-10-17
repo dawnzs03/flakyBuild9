@@ -66,6 +66,7 @@ public abstract class AbstractTestHiveFileSystemAbfs
                 checkParameter(host, "host"),
                 port,
                 checkParameter(databaseName, "database name"),
+                false,
                 createHdfsConfiguration());
     }
 

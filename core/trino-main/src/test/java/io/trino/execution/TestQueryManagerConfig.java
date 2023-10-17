@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableMap;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.trino.operator.RetryPolicy;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 
@@ -28,7 +28,6 @@ import static io.airlift.units.DataSize.Unit.GIGABYTE;
 import static io.airlift.units.DataSize.Unit.KILOBYTE;
 import static io.airlift.units.DataSize.Unit.MEGABYTE;
 import static io.trino.execution.QueryManagerConfig.AVAILABLE_HEAP_MEMORY;
-import static io.trino.execution.QueryManagerConfig.FAULT_TOLERANT_EXECUTION_MAX_PARTITION_COUNT_LIMIT;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -99,15 +98,12 @@ public class TestQueryManagerConfig
                 .setFaultTolerantExecutionMaxPartitionCount(50)
                 .setFaultTolerantExecutionMinPartitionCount(4)
                 .setFaultTolerantExecutionMinPartitionCountForWrite(50)
-                .setFaultTolerantExecutionRuntimeAdaptivePartitioningEnabled(false)
-                .setFaultTolerantExecutionRuntimeAdaptivePartitioningMaxTaskSize(DataSize.of(12, GIGABYTE))
-                .setFaultTolerantExecutionRuntimeAdaptivePartitioningPartitionCount(FAULT_TOLERANT_EXECUTION_MAX_PARTITION_COUNT_LIMIT)
+                .setFaultTolerantExecutionForcePreferredWritePartitioningEnabled(true)
                 .setFaultTolerantExecutionMinSourceStageProgress(0.2)
                 .setFaultTolerantExecutionSmallStageEstimationEnabled(true)
                 .setFaultTolerantExecutionSmallStageEstimationThreshold(DataSize.of(20, GIGABYTE))
                 .setFaultTolerantExecutionSmallStageSourceSizeMultiplier(1.2)
                 .setFaultTolerantExecutionSmallStageRequireNoMorePartitions(false)
-                .setFaultTolerantExecutionStageEstimationForEagerParentEnabled(true)
                 .setMaxWriterTasksCount(100));
     }
 
@@ -174,16 +170,13 @@ public class TestQueryManagerConfig
                 .put("fault-tolerant-execution-max-partition-count", "123")
                 .put("fault-tolerant-execution-min-partition-count", "12")
                 .put("fault-tolerant-execution-min-partition-count-for-write", "99")
-                .put("fault-tolerant-execution-runtime-adaptive-partitioning-enabled", "true")
-                .put("fault-tolerant-execution-runtime-adaptive-partitioning-partition-count", "888")
-                .put("fault-tolerant-execution-runtime-adaptive-partitioning-max-task-size", "18GB")
+                .put("experimental.fault-tolerant-execution-force-preferred-write-partitioning-enabled", "false")
                 .put("fault-tolerant-execution-min-source-stage-progress", "0.3")
                 .put("query.max-writer-task-count", "101")
                 .put("fault-tolerant-execution-small-stage-estimation-enabled", "false")
                 .put("fault-tolerant-execution-small-stage-estimation-threshold", "6GB")
                 .put("fault-tolerant-execution-small-stage-source-size-multiplier", "1.6")
                 .put("fault-tolerant-execution-small-stage-require-no-more-partitions", "true")
-                .put("fault-tolerant-execution-stage-estimation-for-eager-parent-enabled", "false")
                 .buildOrThrow();
 
         QueryManagerConfig expected = new QueryManagerConfig()
@@ -246,15 +239,12 @@ public class TestQueryManagerConfig
                 .setFaultTolerantExecutionMaxPartitionCount(123)
                 .setFaultTolerantExecutionMinPartitionCount(12)
                 .setFaultTolerantExecutionMinPartitionCountForWrite(99)
-                .setFaultTolerantExecutionRuntimeAdaptivePartitioningEnabled(true)
-                .setFaultTolerantExecutionRuntimeAdaptivePartitioningPartitionCount(888)
-                .setFaultTolerantExecutionRuntimeAdaptivePartitioningMaxTaskSize(DataSize.of(18, GIGABYTE))
+                .setFaultTolerantExecutionForcePreferredWritePartitioningEnabled(false)
                 .setFaultTolerantExecutionMinSourceStageProgress(0.3)
                 .setFaultTolerantExecutionSmallStageEstimationEnabled(false)
                 .setFaultTolerantExecutionSmallStageEstimationThreshold(DataSize.of(6, GIGABYTE))
                 .setFaultTolerantExecutionSmallStageSourceSizeMultiplier(1.6)
                 .setFaultTolerantExecutionSmallStageRequireNoMorePartitions(true)
-                .setFaultTolerantExecutionStageEstimationForEagerParentEnabled(false)
                 .setMaxWriterTasksCount(101);
 
         assertFullMapping(properties, expected);

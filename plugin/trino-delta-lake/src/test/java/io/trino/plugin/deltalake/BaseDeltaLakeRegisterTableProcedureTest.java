@@ -20,9 +20,8 @@ import io.trino.plugin.hive.metastore.HiveMetastore;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,10 +44,8 @@ import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertFalse;
 
-@TestInstance(PER_CLASS)
 public abstract class BaseDeltaLakeRegisterTableProcedureTest
         extends AbstractTestQueryFramework
 {
@@ -86,7 +83,7 @@ public abstract class BaseDeltaLakeRegisterTableProcedureTest
 
     protected abstract HiveMetastore createTestMetastore(Path dataDirectory);
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
             throws IOException
     {

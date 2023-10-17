@@ -17,11 +17,18 @@ package io.trino.sql.planner;
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.log.Logger;
+import io.trino.hdfs.DynamicHdfsConfiguration;
+import io.trino.hdfs.HdfsConfig;
+import io.trino.hdfs.HdfsConfigurationInitializer;
+import io.trino.hdfs.HdfsEnvironment;
+import io.trino.hdfs.authentication.NoHdfsAuthentication;
+import io.trino.hdfs.s3.HiveS3Config;
+import io.trino.hdfs.s3.TrinoS3ConfigurationInitializer;
+import io.trino.plugin.hive.NodeVersion;
 import io.trino.plugin.hive.metastore.Database;
-import io.trino.plugin.hive.metastore.HiveMetastore;
-import io.trino.plugin.hive.metastore.HiveMetastoreFactory;
 import io.trino.plugin.hive.metastore.Table;
-import io.trino.plugin.iceberg.IcebergConnector;
+import io.trino.plugin.hive.metastore.file.FileHiveMetastore;
+import io.trino.plugin.hive.metastore.file.FileHiveMetastoreConfig;
 import io.trino.plugin.iceberg.IcebergConnectorFactory;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
@@ -40,6 +47,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verify;
@@ -52,7 +60,6 @@ import static io.trino.plugin.iceberg.IcebergConfig.EXTENDED_STATISTICS_CONFIG;
 import static io.trino.plugin.iceberg.IcebergUtil.METADATA_FILE_EXTENSION;
 import static io.trino.plugin.iceberg.catalog.AbstractIcebergTableOperations.ICEBERG_METASTORE_STORAGE_FORMAT;
 import static io.trino.testing.containers.Minio.MINIO_ACCESS_KEY;
-import static io.trino.testing.containers.Minio.MINIO_REGION;
 import static io.trino.testing.containers.Minio.MINIO_SECRET_KEY;
 import static java.nio.file.Files.createTempDirectory;
 import static java.util.Locale.ENGLISH;
@@ -78,7 +85,7 @@ public abstract class BaseIcebergCostBasedPlanTest
 
     protected Minio minio;
     private Path temporaryMetastoreDirectory;
-    private HiveMetastore hiveMetastore;
+    private FileHiveMetastore fileMetastore;
     private Map<String, String> connectorConfiguration;
 
     protected BaseIcebergCostBasedPlanTest(String schemaName, String fileFormatName, boolean partitioned)
@@ -111,15 +118,34 @@ public abstract class BaseIcebergCostBasedPlanTest
             throw new UncheckedIOException(e);
         }
 
+        HdfsConfig hdfsConfig = new HdfsConfig();
+        HiveS3Config s3Config = new HiveS3Config()
+                .setS3Endpoint(minio.getMinioAddress())
+                .setS3AwsAccessKey(MINIO_ACCESS_KEY)
+                .setS3AwsSecretKey(MINIO_SECRET_KEY)
+                .setS3PathStyleAccess(true);
+        HdfsEnvironment hdfsEnvironment = new HdfsEnvironment(
+                new DynamicHdfsConfiguration(
+                        new HdfsConfigurationInitializer(hdfsConfig, Set.of(new TrinoS3ConfigurationInitializer(s3Config))),
+                        Set.of()),
+                hdfsConfig,
+                new NoHdfsAuthentication());
+
+        fileMetastore = new FileHiveMetastore(
+                // Must match the version picked by the LocalQueryRunner
+                new NodeVersion("<unknown>"),
+                hdfsEnvironment,
+                false,
+                new FileHiveMetastoreConfig()
+                        .setCatalogDirectory(temporaryMetastoreDirectory.toString()));
+
         connectorConfiguration = ImmutableMap.<String, String>builder()
                 .put("iceberg.catalog.type", TESTING_FILE_METASTORE.name())
                 .put("hive.metastore.catalog.dir", temporaryMetastoreDirectory.toString())
-                .put("fs.native-s3.enabled", "true")
-                .put("s3.aws-access-key", MINIO_ACCESS_KEY)
-                .put("s3.aws-secret-key", MINIO_SECRET_KEY)
-                .put("s3.region", MINIO_REGION)
-                .put("s3.endpoint", minio.getMinioAddress())
-                .put("s3.path-style-access", "true")
+                .put("hive.s3.endpoint", minio.getMinioAddress())
+                .put("hive.s3.aws-access-key", MINIO_ACCESS_KEY)
+                .put("hive.s3.aws-secret-key", MINIO_SECRET_KEY)
+                .put("hive.s3.path-style-access", "true")
                 .put(EXTENDED_STATISTICS_CONFIG, "true")
                 .buildOrThrow();
 
@@ -129,11 +155,7 @@ public abstract class BaseIcebergCostBasedPlanTest
             public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
             {
                 checkArgument(config.isEmpty(), "Unexpected configuration %s", config);
-                Connector connector = super.create(catalogName, connectorConfiguration, context);
-                hiveMetastore = ((IcebergConnector) connector).getInjector()
-                        .getInstance(HiveMetastoreFactory.class)
-                        .createMetastore(Optional.empty());
-                return connector;
+                return super.create(catalogName, connectorConfiguration, context);
             }
         };
     }
@@ -143,7 +165,7 @@ public abstract class BaseIcebergCostBasedPlanTest
     public void prepareTables()
     {
         String schema = getQueryRunner().getDefaultSession().getSchema().orElseThrow();
-        hiveMetastore.createDatabase(
+        fileMetastore.createDatabase(
                 Database.builder()
                         .setDatabaseName(schema)
                         .setOwnerName(Optional.empty())
@@ -172,7 +194,7 @@ public abstract class BaseIcebergCostBasedPlanTest
         }
 
         log.info("Registering table %s using metadata location %s", tableName, metadataLocation);
-        hiveMetastore.createTable(
+        fileMetastore.createTable(
                 Table.builder()
                         .setDatabaseName(schema)
                         .setTableName(tableName)
@@ -205,7 +227,7 @@ public abstract class BaseIcebergCostBasedPlanTest
             deleteRecursively(temporaryMetastoreDirectory, ALLOW_INSECURE);
         }
 
-        hiveMetastore = null;
+        fileMetastore = null;
         connectorConfiguration = null;
     }
 

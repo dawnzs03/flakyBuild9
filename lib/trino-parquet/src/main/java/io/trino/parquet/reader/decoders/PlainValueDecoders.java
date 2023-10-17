@@ -54,7 +54,7 @@ public final class PlainValueDecoders
         @Override
         public void read(long[] values, int offset, int length)
         {
-            input.readLongs(values, offset, length);
+            input.readBytes(Slices.wrappedLongArray(values), offset * Long.BYTES, length * Long.BYTES);
         }
 
         @Override
@@ -78,7 +78,7 @@ public final class PlainValueDecoders
         @Override
         public void read(int[] values, int offset, int length)
         {
-            input.readInts(values, offset, length);
+            input.readBytes(Slices.wrappedIntArray(values), offset * Integer.BYTES, length * Integer.BYTES);
         }
 
         @Override

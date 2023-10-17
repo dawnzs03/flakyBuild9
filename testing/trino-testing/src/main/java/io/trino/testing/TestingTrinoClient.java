@@ -326,11 +326,11 @@ public class TestingTrinoClient
         }
         if (type.getBaseName().equals("Geometry")) {
             //noinspection RedundantCast
-            return (String) value;
+            return (byte[]) value;
         }
         if (type.getBaseName().equals("SphericalGeography")) {
             //noinspection RedundantCast
-            return (String) value;
+            return (byte[]) value;
         }
         if (type.getBaseName().equals("ObjectId")) {
             //noinspection RedundantCast

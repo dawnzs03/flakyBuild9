@@ -14,8 +14,6 @@
 
 grammar SparkExpressionBase;
 
-options { caseInsensitive = true; }
-
 tokens {
     DELIMITER
 }

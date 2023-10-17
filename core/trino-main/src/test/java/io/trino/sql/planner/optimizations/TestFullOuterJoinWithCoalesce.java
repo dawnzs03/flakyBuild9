@@ -131,17 +131,18 @@ public class TestFullOuterJoinWithCoalesce
                                 aggregation(
                                         ImmutableMap.of(),
                                         PARTIAL,
-                                        project(
-                                                ImmutableMap.of("expr", expression("coalesce(l, m, r)")),
-                                                join(FULL, builder -> builder
-                                                        .equiCriteria("l", "r")
-                                                        .left(
-                                                                anyTree(
-                                                                        join(FULL, leftJoinBuilder -> leftJoinBuilder
-                                                                                .equiCriteria("l", "m")
-                                                                                .left(anyTree(values(ImmutableList.of("l"))))
-                                                                                .right(anyTree(values(ImmutableList.of("m")))))))
-                                                        .right(anyTree(values(ImmutableList.of("r"))))))))));
+                                        anyTree(
+                                                project(
+                                                        ImmutableMap.of("expr", expression("coalesce(l, m, r)")),
+                                                        join(FULL, builder -> builder
+                                                                .equiCriteria("l", "r")
+                                                                .left(
+                                                                        anyTree(
+                                                                                join(FULL, leftJoinBuilder -> leftJoinBuilder
+                                                                                        .equiCriteria("l", "m")
+                                                                                        .left(anyTree(values(ImmutableList.of("l"))))
+                                                                                        .right(anyTree(values(ImmutableList.of("m")))))))
+                                                                .right(anyTree(values(ImmutableList.of("r")))))))))));
     }
 
     @Test
@@ -160,16 +161,17 @@ public class TestFullOuterJoinWithCoalesce
                                 aggregation(
                                         ImmutableMap.of(),
                                         PARTIAL,
-                                        project(
-                                                ImmutableMap.of("expr", expression("coalesce(l, m + 1, r)")),
-                                                join(FULL, builder -> builder
-                                                        .equiCriteria("l", "r")
-                                                        .left(
-                                                                anyTree(
-                                                                        join(FULL, leftJoinBuilder -> leftJoinBuilder
-                                                                                .equiCriteria("l", "m")
-                                                                                .left(anyTree(values(ImmutableList.of("l"))))
-                                                                                .right(anyTree(values(ImmutableList.of("m")))))))
-                                                        .right(anyTree(values(ImmutableList.of("r"))))))))));
+                                        anyTree(
+                                                project(
+                                                        ImmutableMap.of("expr", expression("coalesce(l, m + 1, r)")),
+                                                        join(FULL, builder -> builder
+                                                                .equiCriteria("l", "r")
+                                                                .left(
+                                                                        anyTree(
+                                                                                join(FULL, leftJoinBuilder -> leftJoinBuilder
+                                                                                        .equiCriteria("l", "m")
+                                                                                        .left(anyTree(values(ImmutableList.of("l"))))
+                                                                                        .right(anyTree(values(ImmutableList.of("m")))))))
+                                                                .right(anyTree(values(ImmutableList.of("r")))))))))));
     }
 }

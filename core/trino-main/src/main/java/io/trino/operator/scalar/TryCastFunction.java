@@ -41,8 +41,9 @@ public class TryCastFunction
 
     public TryCastFunction()
     {
-        super(FunctionMetadata.scalarBuilder("TRY_CAST")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("TRY_CAST")
                         .castableToTypeParameter("F", new TypeSignature("T"))
                         .typeVariable("T")
                         .returnType(new TypeSignature("T"))

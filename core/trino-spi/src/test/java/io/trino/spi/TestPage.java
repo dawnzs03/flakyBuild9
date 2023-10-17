@@ -20,7 +20,7 @@ import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.block.DictionaryBlock;
 import io.trino.spi.block.DictionaryId;
 import io.trino.spi.block.LazyBlock;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verifyNotNull;
@@ -29,8 +29,11 @@ import static io.trino.spi.block.DictionaryBlock.createProjectedDictionaryBlock;
 import static io.trino.spi.block.DictionaryId.randomDictionaryId;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.VarbinaryType.VARBINARY;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
 public class TestPage
 {
@@ -38,15 +41,15 @@ public class TestPage
     public void testGetRegion()
     {
         Page page = new Page(10);
-        assertThat(page.getRegion(5, 5).getPositionCount()).isEqualTo(5);
-        assertThat(page.getRegion(0, 10)).isSameAs(page);
+        assertEquals(page.getRegion(5, 5).getPositionCount(), 5);
+        assertSame(page.getRegion(0, 10), page);
     }
 
     @Test
     public void testGetEmptyRegion()
     {
-        assertThat(new Page(0).getRegion(0, 0).getPositionCount()).isEqualTo(0);
-        assertThat(new Page(10).getRegion(5, 0).getPositionCount()).isEqualTo(0);
+        assertEquals(new Page(0).getRegion(0, 0).getPositionCount(), 0);
+        assertEquals(new Page(10).getRegion(5, 0).getPositionCount(), 0);
     }
 
     @Test
@@ -60,16 +63,16 @@ public class TestPage
     @Test
     public void testGetRegionFromNoColumnPage()
     {
-        assertThat(new Page(100).getRegion(0, 10).getPositionCount()).isEqualTo(10);
+        assertEquals(new Page(100).getRegion(0, 10).getPositionCount(), 10);
     }
 
     @Test
     public void testSizesForNoColumnPage()
     {
         Page page = new Page(100);
-        assertThat(page.getSizeInBytes()).isEqualTo(0);
-        assertThat(page.getLogicalSizeInBytes()).isEqualTo(0);
-        assertThat(page.getRetainedSizeInBytes()).isEqualTo(Page.INSTANCE_SIZE); // does not include the blocks array
+        assertEquals(page.getSizeInBytes(), 0);
+        assertEquals(page.getLogicalSizeInBytes(), 0);
+        assertEquals(page.getRetainedSizeInBytes(), Page.INSTANCE_SIZE); // does not include the blocks array
     }
 
     @Test
@@ -104,19 +107,16 @@ public class TestPage
         page.compact();
 
         // dictionary blocks should all be compact
-        assertThat(((DictionaryBlock) page.getBlock(0)).isCompact()).isTrue();
-        assertThat(((DictionaryBlock) page.getBlock(1)).isCompact()).isTrue();
-        assertThat(((DictionaryBlock) page.getBlock(2)).isCompact()).isTrue();
-        assertThat(((DictionaryBlock) page.getBlock(0)).getDictionary().getPositionCount()).isEqualTo(commonDictionaryUsedPositions);
-        assertThat(((DictionaryBlock) page.getBlock(1)).getDictionary().getPositionCount()).isEqualTo(otherDictionaryUsedPositions);
-        assertThat(((DictionaryBlock) page.getBlock(2)).getDictionary().getPositionCount()).isEqualTo(commonDictionaryUsedPositions);
+        assertTrue(((DictionaryBlock) page.getBlock(0)).isCompact());
+        assertTrue(((DictionaryBlock) page.getBlock(1)).isCompact());
+        assertTrue(((DictionaryBlock) page.getBlock(2)).isCompact());
+        assertEquals(((DictionaryBlock) page.getBlock(0)).getDictionary().getPositionCount(), commonDictionaryUsedPositions);
+        assertEquals(((DictionaryBlock) page.getBlock(1)).getDictionary().getPositionCount(), otherDictionaryUsedPositions);
+        assertEquals(((DictionaryBlock) page.getBlock(2)).getDictionary().getPositionCount(), commonDictionaryUsedPositions);
 
         // Blocks that had the same source id before compacting page should have the same source id after compacting page
-        assertThat(((DictionaryBlock) page.getBlock(0)).getDictionarySourceId())
-                .isNotEqualTo(((DictionaryBlock) page.getBlock(1)).getDictionarySourceId());
-
-        assertThat(((DictionaryBlock) page.getBlock(0)).getDictionarySourceId())
-                .isEqualTo(((DictionaryBlock) page.getBlock(2)).getDictionarySourceId());
+        assertNotEquals(((DictionaryBlock) page.getBlock(0)).getDictionarySourceId(), ((DictionaryBlock) page.getBlock(1)).getDictionarySourceId());
+        assertEquals(((DictionaryBlock) page.getBlock(0)).getDictionarySourceId(), ((DictionaryBlock) page.getBlock(2)).getDictionarySourceId());
     }
 
     @Test
@@ -130,13 +130,13 @@ public class TestPage
         Block block = blockBuilder.build();
 
         Page page = new Page(block, block, block).getPositions(new int[] {0, 1, 1, 1, 2, 5, 5}, 1, 5);
-        assertThat(page.getPositionCount()).isEqualTo(5);
+        assertEquals(page.getPositionCount(), 5);
         for (int i = 0; i < 3; i++) {
-            assertThat(page.getBlock(i).getLong(0, 0)).isEqualTo(1);
-            assertThat(page.getBlock(i).getLong(1, 0)).isEqualTo(1);
-            assertThat(page.getBlock(i).getLong(2, 0)).isEqualTo(1);
-            assertThat(page.getBlock(i).getLong(3, 0)).isEqualTo(2);
-            assertThat(page.getBlock(i).getLong(4, 0)).isEqualTo(5);
+            assertEquals(page.getBlock(i).getLong(0, 0), 1);
+            assertEquals(page.getBlock(i).getLong(1, 0), 1);
+            assertEquals(page.getBlock(i).getLong(2, 0), 1);
+            assertEquals(page.getBlock(i).getLong(3, 0), 2);
+            assertEquals(page.getBlock(i).getLong(4, 0), 5);
         }
     }
 
@@ -153,21 +153,21 @@ public class TestPage
         LazyBlock lazyBlock = lazyWrapper(block);
         Page page = new Page(lazyBlock);
         long lazyPageRetainedSize = Page.INSTANCE_SIZE + sizeOf(new Block[] {block}) + lazyBlock.getRetainedSizeInBytes();
-        assertThat(page.getRetainedSizeInBytes()).isEqualTo(lazyPageRetainedSize);
+        assertEquals(page.getRetainedSizeInBytes(), lazyPageRetainedSize);
         Page loadedPage = page.getLoadedPage();
         // Retained size of page remains the same
-        assertThat(page.getRetainedSizeInBytes()).isEqualTo(lazyPageRetainedSize);
+        assertEquals(page.getRetainedSizeInBytes(), lazyPageRetainedSize);
         long loadedPageRetainedSize = Page.INSTANCE_SIZE + sizeOf(new Block[] {block}) + block.getRetainedSizeInBytes();
         // Retained size of loaded page depends on the loaded block
-        assertThat(loadedPage.getRetainedSizeInBytes()).isEqualTo(loadedPageRetainedSize);
+        assertEquals(loadedPage.getRetainedSizeInBytes(), loadedPageRetainedSize);
 
         lazyBlock = lazyWrapper(block);
         page = new Page(lazyBlock);
-        assertThat(page.getRetainedSizeInBytes()).isEqualTo(lazyPageRetainedSize);
+        assertEquals(page.getRetainedSizeInBytes(), lazyPageRetainedSize);
         loadedPage = page.getLoadedPage(new int[] {0}, new int[] {0});
         // Retained size of page is updated based on loaded block
-        assertThat(page.getRetainedSizeInBytes()).isEqualTo(loadedPageRetainedSize);
-        assertThat(loadedPage.getRetainedSizeInBytes()).isEqualTo(loadedPageRetainedSize);
+        assertEquals(page.getRetainedSizeInBytes(), loadedPageRetainedSize);
+        assertEquals(loadedPage.getRetainedSizeInBytes(), loadedPageRetainedSize);
     }
 
     private static LazyBlock lazyWrapper(Block block)

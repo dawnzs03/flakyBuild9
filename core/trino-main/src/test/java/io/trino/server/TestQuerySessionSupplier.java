@@ -34,7 +34,7 @@ import io.trino.sql.SqlPathElement;
 import io.trino.sql.tree.Identifier;
 import io.trino.transaction.TransactionManager;
 import jakarta.ws.rs.core.MultivaluedMap;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Locale;

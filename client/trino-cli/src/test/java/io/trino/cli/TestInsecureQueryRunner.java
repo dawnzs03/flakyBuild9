@@ -15,10 +15,9 @@ package io.trino.cli;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -38,15 +37,14 @@ import static io.trino.cli.TestQueryRunner.createQueryRunner;
 import static io.trino.cli.TestQueryRunner.createResults;
 import static io.trino.cli.TestQueryRunner.createTrinoUri;
 import static io.trino.cli.TestQueryRunner.nullPrintStream;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 import static org.testng.Assert.assertEquals;
 
-@TestInstance(PER_METHOD)
+@Test(singleThreaded = true)
 public class TestInsecureQueryRunner
 {
     private MockWebServer server;
 
-    @BeforeEach
+    @BeforeMethod
     public void setup()
             throws Exception
     {
@@ -56,7 +54,7 @@ public class TestInsecureQueryRunner
         server.start();
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void teardown()
             throws Exception
     {

@@ -38,6 +38,7 @@ import io.trino.sql.relational.LambdaDefinitionExpression;
 import io.trino.sql.relational.RowExpression;
 import io.trino.sql.relational.SpecialForm;
 import io.trino.sql.relational.VariableReferenceExpression;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.type.FunctionType;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -147,7 +148,7 @@ public class BenchmarkArrayFilter
                 Type elementType = TYPES.get(i);
                 ArrayType arrayType = new ArrayType(elementType);
                 ResolvedFunction resolvedFunction = functionResolution.resolveFunction(
-                        name,
+                        QualifiedName.of(name),
                         fromTypes(arrayType, new FunctionType(ImmutableList.of(BIGINT), BOOLEAN)));
                 ResolvedFunction lessThan = functionResolution.resolveOperator(LESS_THAN, ImmutableList.of(BIGINT, BIGINT));
                 projectionsBuilder.add(new CallExpression(resolvedFunction, ImmutableList.of(
@@ -213,7 +214,9 @@ public class BenchmarkArrayFilter
             for (int i = 0; i < ROW_TYPES.size(); i++) {
                 Type elementType = ROW_TYPES.get(i);
                 ArrayType arrayType = new ArrayType(elementType);
-                ResolvedFunction resolvedFunction = functionResolution.resolveFunction(name, fromTypes(arrayType, new FunctionType(ROW_TYPES, BOOLEAN)));
+                ResolvedFunction resolvedFunction = functionResolution.resolveFunction(
+                        QualifiedName.of(name),
+                        fromTypes(arrayType, new FunctionType(ROW_TYPES, BOOLEAN)));
                 ResolvedFunction lessThan = functionResolution.resolveOperator(LESS_THAN, ImmutableList.of(BIGINT, BIGINT));
 
                 projectionsBuilder.add(new CallExpression(resolvedFunction, ImmutableList.of(
@@ -281,8 +284,9 @@ public class BenchmarkArrayFilter
 
         private ExactArrayFilterFunction()
         {
-            super(FunctionMetadata.scalarBuilder("exact_filter")
+            super(FunctionMetadata.scalarBuilder()
                     .signature(Signature.builder()
+                            .name("exact_filter")
                             .typeVariable("T")
                             .returnType(arrayType(new TypeSignature("T")))
                             .argumentType(arrayType(new TypeSignature("T")))
@@ -335,8 +339,9 @@ public class BenchmarkArrayFilter
 
         private ExactArrayFilterObjectFunction()
         {
-            super(FunctionMetadata.scalarBuilder("exact_filter")
+            super(FunctionMetadata.scalarBuilder()
                     .signature(Signature.builder()
+                            .name("exact_filter")
                             .typeVariable("T")
                             .returnType(arrayType(new TypeSignature("T")))
                             .argumentType(arrayType(new TypeSignature("T")))

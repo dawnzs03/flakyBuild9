@@ -66,8 +66,9 @@ public class JsonExistsFunction
 
     public JsonExistsFunction(FunctionManager functionManager, Metadata metadata, TypeManager typeManager)
     {
-        super(FunctionMetadata.scalarBuilder(JSON_EXISTS_FUNCTION_NAME)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name(JSON_EXISTS_FUNCTION_NAME)
                         .typeVariable("T")
                         .returnType(BOOLEAN)
                         .argumentTypes(ImmutableList.of(new TypeSignature(JSON_2016), new TypeSignature(JsonPath2016Type.NAME), new TypeSignature("T"), new TypeSignature(TINYINT)))

@@ -24,6 +24,7 @@ import io.trino.spi.function.InvocationConvention;
 import io.trino.spi.function.LiteralParameter;
 import io.trino.spi.function.OperatorDependency;
 import io.trino.spi.function.OperatorType;
+import io.trino.spi.function.QualifiedFunctionName;
 import io.trino.spi.function.TypeParameter;
 import io.trino.spi.type.TypeSignature;
 import io.trino.spi.type.TypeSignatureParameter;
@@ -40,7 +41,6 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static io.trino.metadata.GlobalFunctionCatalog.builtinFunctionName;
 import static io.trino.operator.annotations.FunctionsParserHelper.containsImplementationDependencyAnnotation;
 import static io.trino.sql.analyzer.TypeSignatureTranslator.parseTypeSignature;
 
@@ -110,7 +110,7 @@ public interface ImplementationDependency
 
             if (annotation instanceof FunctionDependency functionDependency) {
                 return new FunctionImplementationDependency(
-                        builtinFunctionName(functionDependency.name()),
+                        QualifiedFunctionName.of(functionDependency.name()),
                         Arrays.stream(functionDependency.argumentTypes())
                                 .map(signature -> parseTypeSignature(signature, literalParameters))
                                 .collect(toImmutableList()),

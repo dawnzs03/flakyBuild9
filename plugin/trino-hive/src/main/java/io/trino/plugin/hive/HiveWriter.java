@@ -99,6 +99,11 @@ public class HiveWriter
         return fileWriter.getValidationCpuNanos();
     }
 
+    public Optional<Runnable> getVerificationTask()
+    {
+        return fileWriter.getVerificationTask();
+    }
+
     public void rollback()
     {
         fileWriter.rollback();

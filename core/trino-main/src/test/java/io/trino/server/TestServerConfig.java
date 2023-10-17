@@ -15,7 +15,7 @@ package io.trino.server;
 
 import com.google.common.collect.ImmutableMap;
 import io.airlift.units.Duration;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 

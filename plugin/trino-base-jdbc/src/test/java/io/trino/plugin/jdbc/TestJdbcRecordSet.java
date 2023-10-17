@@ -18,10 +18,9 @@ import com.google.common.collect.ImmutableMap;
 import io.trino.spi.connector.RecordCursor;
 import io.trino.spi.connector.RecordSet;
 import io.trino.spi.connector.SchemaTableName;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,9 +36,7 @@ import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.spi.type.VarcharType.createVarcharType;
 import static io.trino.testing.TestingConnectorSession.SESSION;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 public class TestJdbcRecordSet
 {
     private TestingDatabase database;
@@ -49,7 +46,7 @@ public class TestJdbcRecordSet
     private Map<String, JdbcColumnHandle> columnHandles;
     private ExecutorService executor;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
             throws Exception
     {
@@ -61,7 +58,7 @@ public class TestJdbcRecordSet
         executor = newDirectExecutorService();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
             throws Exception
     {

@@ -23,8 +23,9 @@ import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.SqlVarbinary;
 import io.trino.spi.type.Type;
+import io.trino.sql.tree.QualifiedName;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,7 +78,7 @@ public abstract class AbstractTestApproximateSetGeneric
         List<Object> justNulls = Collections.nCopies(100, null);
         assertNull(estimateSet(justNulls));
         assertNull(estimateSetPartial(justNulls));
-        assertNull(estimateSetGrouped(justNulls));
+        assertNull(esitmateSetGrouped(justNulls));
     }
 
     @Test
@@ -94,7 +95,7 @@ public abstract class AbstractTestApproximateSetGeneric
             mixed.add(ThreadLocalRandom.current().nextBoolean() ? null : iterator.next());
         }
 
-        assertCount(mixed, estimateSetGrouped(baseline).cardinality());
+        assertCount(mixed, esitmateSetGrouped(baseline).cardinality());
     }
 
     @Test
@@ -106,7 +107,7 @@ public abstract class AbstractTestApproximateSetGeneric
             int uniques = ThreadLocalRandom.current().nextInt(getUniqueValuesCount()) + 1;
 
             List<Object> values = createRandomSample(uniques, (int) (uniques * 1.5));
-            long actualCount = estimateSetGrouped(values).cardinality();
+            long actualCount = esitmateSetGrouped(values).cardinality();
             double error = (actualCount - uniques) * 1.0 / uniques;
 
             stats.addValue(error);
@@ -122,7 +123,7 @@ public abstract class AbstractTestApproximateSetGeneric
         for (int i = 0; i < 100; ++i) {
             int uniques = ThreadLocalRandom.current().nextInt(getUniqueValuesCount()) + 1;
             List<Object> values = createRandomSample(uniques, (int) (uniques * 1.5));
-            assertEquals(estimateSetPartial(values).cardinality(), estimateSetGrouped(values).cardinality());
+            assertEquals(estimateSetPartial(values).cardinality(), esitmateSetGrouped(values).cardinality());
         }
     }
 
@@ -134,7 +135,7 @@ public abstract class AbstractTestApproximateSetGeneric
             shuffle(sample);
             assertEquals(base16().encode(estimateSet(sample).serialize().getBytes()), getResultStabilityExpected());
             assertEquals(base16().encode(estimateSetPartial(sample).serialize().getBytes()), getResultStabilityExpected());
-            assertEquals(base16().encode(estimateSetGrouped(sample).serialize().getBytes()), getResultStabilityExpected());
+            assertEquals(base16().encode(esitmateSetGrouped(sample).serialize().getBytes()), getResultStabilityExpected());
         }
     }
 
@@ -145,14 +146,14 @@ public abstract class AbstractTestApproximateSetGeneric
     protected void assertCount(List<?> values, long expectedCount)
     {
         if (!values.isEmpty()) {
-            HyperLogLog actualSet = estimateSetGrouped(values);
+            HyperLogLog actualSet = esitmateSetGrouped(values);
             assertEquals(actualSet.cardinality(), expectedCount);
         }
         assertEquals(estimateSet(values).cardinality(), expectedCount);
         assertEquals(estimateSetPartial(values).cardinality(), expectedCount);
     }
 
-    private HyperLogLog estimateSetGrouped(List<?> values)
+    private HyperLogLog esitmateSetGrouped(List<?> values)
     {
         SqlVarbinary hllSerialized = (SqlVarbinary) AggregationTestUtils.groupedAggregation(getAggregationFunction(), createPage(values));
         if (hllSerialized == null) {
@@ -181,7 +182,7 @@ public abstract class AbstractTestApproximateSetGeneric
 
     private TestingAggregationFunction getAggregationFunction()
     {
-        return FUNCTION_RESOLUTION.getAggregateFunction("$approx_set", fromTypes(getValueType()));
+        return FUNCTION_RESOLUTION.getAggregateFunction(QualifiedName.of("$approx_set"), fromTypes(getValueType()));
     }
 
     private Page createPage(List<?> values)

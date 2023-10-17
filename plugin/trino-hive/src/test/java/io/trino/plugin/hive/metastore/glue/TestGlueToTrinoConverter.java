@@ -25,9 +25,8 @@ import io.trino.plugin.hive.metastore.Storage;
 import io.trino.plugin.hive.metastore.glue.converter.GlueToTrinoConverter;
 import io.trino.plugin.hive.metastore.glue.converter.GlueToTrinoConverter.GluePartitionConverter;
 import io.trino.spi.security.PrincipalType;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,7 +50,6 @@ import static io.trino.plugin.hive.util.HiveUtil.ICEBERG_TABLE_TYPE_NAME;
 import static io.trino.plugin.hive.util.HiveUtil.ICEBERG_TABLE_TYPE_VALUE;
 import static io.trino.plugin.hive.util.HiveUtil.SPARK_TABLE_PROVIDER_KEY;
 import static org.apache.hadoop.hive.metastore.TableType.EXTERNAL_TABLE;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNotSame;
@@ -59,7 +57,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_METHOD)
+@Test(singleThreaded = true)
 public class TestGlueToTrinoConverter
 {
     private static final String PUBLIC_OWNER = "PUBLIC";
@@ -68,7 +66,7 @@ public class TestGlueToTrinoConverter
     private Table testTable;
     private Partition testPartition;
 
-    @BeforeEach
+    @BeforeMethod
     public void setup()
     {
         testDatabase = getGlueTestDatabase();

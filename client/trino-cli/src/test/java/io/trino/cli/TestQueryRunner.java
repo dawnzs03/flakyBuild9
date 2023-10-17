@@ -26,10 +26,9 @@ import io.trino.client.uri.TrinoUri;
 import okhttp3.logging.HttpLoggingInterceptor;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -50,18 +49,17 @@ import static io.trino.cli.TerminalUtils.getTerminal;
 import static io.trino.client.ClientStandardTypes.BIGINT;
 import static io.trino.client.auth.external.ExternalRedirectStrategy.PRINT;
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 
-@TestInstance(PER_METHOD)
+@Test(singleThreaded = true)
 public class TestQueryRunner
 {
     private static final JsonCodec<QueryResults> QUERY_RESULTS_CODEC = jsonCodec(QueryResults.class);
 
     private MockWebServer server;
 
-    @BeforeEach
+    @BeforeMethod
     public void setup()
             throws IOException
     {
@@ -69,7 +67,7 @@ public class TestQueryRunner
         server.start();
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void teardown()
             throws IOException
     {

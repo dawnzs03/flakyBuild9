@@ -26,7 +26,6 @@ public abstract class BaseClickHouseConnectorSmokeTest
     protected boolean hasBehavior(TestingConnectorBehavior connectorBehavior)
     {
         switch (connectorBehavior) {
-            case SUPPORTS_UPDATE:
             case SUPPORTS_DELETE:
                 return false;
             case SUPPORTS_TRUNCATE:

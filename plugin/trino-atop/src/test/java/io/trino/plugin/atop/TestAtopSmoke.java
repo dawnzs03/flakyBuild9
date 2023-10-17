@@ -18,27 +18,24 @@ import io.trino.testing.MaterializedResult;
 import io.trino.testing.MaterializedRow;
 import io.trino.testing.QueryRunner;
 import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import static io.trino.plugin.atop.LocalAtopQueryRunner.createQueryRunner;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.testng.Assert.assertEquals;
 
-@TestInstance(PER_CLASS)
 public class TestAtopSmoke
 {
     private QueryRunner queryRunner;
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         queryRunner = createQueryRunner();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         queryRunner.close();
@@ -68,9 +65,8 @@ public class TestAtopSmoke
     {
         MaterializedResult rows = queryRunner.execute(sql);
         MaterializedRow materializedRow = Iterables.getOnlyElement(rows);
-        assertThat(materializedRow.getFieldCount())
-                .as("column count")
-                .isEqualTo(1);
-        assertThat(materializedRow.getField(0)).isEqualTo(expected);
+        assertEquals(materializedRow.getFieldCount(), 1, "column count");
+        Object value = materializedRow.getField(0);
+        assertEquals(value, expected);
     }
 }

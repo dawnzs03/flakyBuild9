@@ -26,7 +26,6 @@ public final class ProtocolHeaders
 
     private final String name;
     private final String requestUser;
-    private final String requestOriginalUser;
     private final String requestSource;
     private final String requestCatalog;
     private final String requestSchema;
@@ -53,8 +52,6 @@ public final class ProtocolHeaders
     private final String responseDeallocatedPrepare;
     private final String responseStartedTransactionId;
     private final String responseClearTransactionId;
-    private final String responseSetAuthorizationUser;
-    private final String responseResetAuthorizationUser;
 
     public static ProtocolHeaders createProtocolHeaders(String name)
     {
@@ -72,7 +69,6 @@ public final class ProtocolHeaders
         this.name = name;
         String prefix = "X-" + name + "-";
         requestUser = prefix + "User";
-        requestOriginalUser = prefix + "Original-User";
         requestSource = prefix + "Source";
         requestCatalog = prefix + "Catalog";
         requestSchema = prefix + "Schema";
@@ -99,8 +95,6 @@ public final class ProtocolHeaders
         responseDeallocatedPrepare = prefix + "Deallocated-Prepare";
         responseStartedTransactionId = prefix + "Started-Transaction-Id";
         responseClearTransactionId = prefix + "Clear-Transaction-Id";
-        responseSetAuthorizationUser = prefix + "Set-Authorization-User";
-        responseResetAuthorizationUser = prefix + "Reset-Authorization-User";
     }
 
     public String getProtocolName()
@@ -111,11 +105,6 @@ public final class ProtocolHeaders
     public String requestUser()
     {
         return requestUser;
-    }
-
-    public String requestOriginalUser()
-    {
-        return requestOriginalUser;
     }
 
     public String requestSource()
@@ -246,16 +235,6 @@ public final class ProtocolHeaders
     public String responseClearTransactionId()
     {
         return responseClearTransactionId;
-    }
-
-    public String responseSetAuthorizationUser()
-    {
-        return responseSetAuthorizationUser;
-    }
-
-    public String responseResetAuthorizationUser()
-    {
-        return responseResetAuthorizationUser;
     }
 
     public static ProtocolHeaders detectProtocol(Optional<String> alternateHeaderName, Set<String> headerNames)

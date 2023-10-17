@@ -125,6 +125,11 @@ public final class HiveBucketing
         return getBucketNumber(bucketingVersion.getBucketHashCode(types, page, position), bucketCount);
     }
 
+    public static int getHiveBucket(BucketingVersion bucketingVersion, int bucketCount, List<TypeInfo> types, Object[] values)
+    {
+        return getBucketNumber(bucketingVersion.getBucketHashCode(types, values), bucketCount);
+    }
+
     @VisibleForTesting
     static Optional<Set<Integer>> getHiveBuckets(BucketingVersion bucketingVersion, int bucketCount, List<TypeInfo> types, List<List<NullableValue>> values)
     {

@@ -103,29 +103,24 @@ public class MaterializedViewSystemTable
         listCatalogNames(session, metadata, accessControl, catalogFilter).forEach(catalogName -> {
             QualifiedTablePrefix tablePrefix = tablePrefix(catalogName, schemaFilter, tableFilter);
 
-            addMaterializedViewForCatalog(session, displayTable, tablePrefix);
+            getMaterializedViews(session, metadata, accessControl, tablePrefix).forEach((tableName, definition) -> {
+                QualifiedObjectName name = new QualifiedObjectName(tablePrefix.getCatalogName(), tableName.getSchemaName(), tableName.getTableName());
+                MaterializedViewFreshness freshness;
+
+                try {
+                    freshness = metadata.getMaterializedViewFreshness(session, name);
+                }
+                catch (MaterializedViewNotFoundException e) {
+                    // Ignore materialized view that was dropped during query execution (race condition)
+                    return;
+                }
+
+                Object[] materializedViewRow = createMaterializedViewRow(name, freshness, definition);
+                displayTable.addRow(materializedViewRow);
+            });
         });
 
         return displayTable.build().cursor();
-    }
-
-    private void addMaterializedViewForCatalog(Session session, InMemoryRecordSet.Builder displayTable, QualifiedTablePrefix tablePrefix)
-    {
-        getMaterializedViews(session, metadata, accessControl, tablePrefix).forEach((tableName, definition) -> {
-            QualifiedObjectName name = new QualifiedObjectName(tablePrefix.getCatalogName(), tableName.getSchemaName(), tableName.getTableName());
-            MaterializedViewFreshness freshness;
-
-            try {
-                freshness = metadata.getMaterializedViewFreshness(session, name);
-            }
-            catch (MaterializedViewNotFoundException e) {
-                // Ignore materialized view that was dropped during query execution (race condition)
-                return;
-            }
-
-            Object[] materializedViewRow = createMaterializedViewRow(name, freshness, definition);
-            displayTable.addRow(materializedViewRow);
-        });
     }
 
     private static Object[] createMaterializedViewRow(

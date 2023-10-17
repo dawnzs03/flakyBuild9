@@ -84,8 +84,9 @@ public final class MapToMapCast
 
     public MapToMapCast(BlockTypeOperators blockTypeOperators)
     {
-        super(FunctionMetadata.operatorBuilder(CAST)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .operatorType(CAST)
                         .castableToTypeParameter("FK", new TypeSignature("TK"))
                         .castableToTypeParameter("FV", new TypeSignature("TV"))
                         .typeVariable("TK")

@@ -18,7 +18,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.math.Stats;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import com.google.inject.Inject;
-import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
 import io.airlift.units.DataSize;
 import io.trino.annotation.NotThreadSafe;
@@ -33,7 +32,6 @@ import org.weakref.jmx.Managed;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -56,7 +54,6 @@ public class TaskDescriptorStorage
     private static final Logger log = Logger.get(TaskDescriptorStorage.class);
 
     private final long maxMemoryInBytes;
-    private final JsonCodec<Split> splitJsonCodec;
 
     @GuardedBy("this")
     private final Map<QueryId, TaskDescriptors> storages = new HashMap<>();
@@ -64,17 +61,14 @@ public class TaskDescriptorStorage
     private long reservedBytes;
 
     @Inject
-    public TaskDescriptorStorage(
-            QueryManagerConfig config,
-            JsonCodec<Split> splitJsonCodec)
+    public TaskDescriptorStorage(QueryManagerConfig config)
     {
-        this(config.getFaultTolerantExecutionTaskDescriptorStorageMaxMemory(), splitJsonCodec);
+        this(config.getFaultTolerantExecutionTaskDescriptorStorageMaxMemory());
     }
 
-    public TaskDescriptorStorage(DataSize maxMemory, JsonCodec<Split> splitJsonCodec)
+    public TaskDescriptorStorage(DataSize maxMemory)
     {
         this.maxMemoryInBytes = maxMemory.toBytes();
-        this.splitJsonCodec = requireNonNull(splitJsonCodec, "splitJsonCodec is null");
     }
 
     /**
@@ -176,9 +170,7 @@ public class TaskDescriptorStorage
             TaskDescriptors storage = storages.get(killCandidate);
             long previousReservedBytes = storage.getReservedBytes();
 
-            if (log.isInfoEnabled()) {
-                log.info("Failing query %s; reclaiming %s of %s task descriptor memory from %s queries; extraStorageInfo=%s", killCandidate, storage.getReservedBytes(), succinctBytes(reservedBytes), storages.size(), storage.getDebugInfo());
-            }
+            log.info("Failing query %s; reclaiming %s of %s task descriptor memory from %s queries; extraStorageInfo=%s", killCandidate, storage.getReservedBytes(), succinctBytes(reservedBytes), storages.size(), storage.getDebugInfo());
 
             storage.fail(new TrinoException(
                     EXCEEDED_TASK_DESCRIPTOR_STORAGE_CAPACITY,
@@ -195,7 +187,7 @@ public class TaskDescriptorStorage
     }
 
     @NotThreadSafe
-    private class TaskDescriptors
+    private static class TaskDescriptors
     {
         private final Map<TaskDescriptorKey, TaskDescriptor> descriptors = new HashMap<>();
         private long reservedBytes;
@@ -248,14 +240,7 @@ public class TaskDescriptorStorage
                             Map.Entry::getKey,
                             entry -> getDebugInfo(entry.getValue())));
 
-            List<String> biggestSplits = descriptorsByStageId.entries().stream()
-                    .flatMap(entry -> entry.getValue().getSplits().entries().stream().map(splitEntry -> Map.entry("%s/%s".formatted(entry.getKey(), splitEntry.getKey()), splitEntry.getValue())))
-                    .sorted(Comparator.<Map.Entry<String, Split>>comparingLong(entry -> entry.getValue().getRetainedSizeInBytes()).reversed())
-                    .limit(3)
-                    .map(entry -> "{nodeId=%s, size=%s, split=%s}".formatted(entry.getKey(), entry.getValue().getRetainedSizeInBytes(), splitJsonCodec.toJson(entry.getValue())))
-                    .toList();
-
-            return "stagesInfo=%s; biggestSplits=%s".formatted(debugInfoByStageId, biggestSplits);
+            return String.valueOf(debugInfoByStageId);
         }
 
         private String getDebugInfo(Collection<TaskDescriptor> taskDescriptors)

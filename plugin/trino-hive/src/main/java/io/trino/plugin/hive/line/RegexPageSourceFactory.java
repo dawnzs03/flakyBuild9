@@ -17,7 +17,9 @@ import com.google.inject.Inject;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.hive.formats.line.regex.RegexDeserializerFactory;
 import io.trino.hive.formats.line.text.TextLineReaderFactory;
+import io.trino.plugin.hive.FileFormatDataSourceStats;
 import io.trino.plugin.hive.HiveConfig;
+import io.trino.plugin.hive.HiveSessionProperties;
 
 import static java.lang.Math.toIntExact;
 
@@ -25,10 +27,12 @@ public class RegexPageSourceFactory
         extends LinePageSourceFactory
 {
     @Inject
-    public RegexPageSourceFactory(TrinoFileSystemFactory trinoFileSystemFactory, HiveConfig config)
+    public RegexPageSourceFactory(TrinoFileSystemFactory trinoFileSystemFactory, FileFormatDataSourceStats stats, HiveConfig config)
     {
         super(trinoFileSystemFactory,
+                stats,
                 new RegexDeserializerFactory(),
-                new TextLineReaderFactory(1024, 1024, toIntExact(config.getTextMaxLineLength().toBytes())));
+                new TextLineReaderFactory(1024, 1024, toIntExact(config.getTextMaxLineLength().toBytes())),
+                HiveSessionProperties::isRegexNativeReaderEnabled);
     }
 }

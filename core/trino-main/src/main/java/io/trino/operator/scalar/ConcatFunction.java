@@ -46,8 +46,9 @@ public final class ConcatFunction
 
     private ConcatFunction(TypeSignature type, String description)
     {
-        super(FunctionMetadata.scalarBuilder("concat")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("concat")
                         .returnType(type)
                         .argumentType(type)
                         .variableArity()

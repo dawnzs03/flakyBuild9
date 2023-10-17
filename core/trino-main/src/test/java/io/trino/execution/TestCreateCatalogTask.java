@@ -28,10 +28,9 @@ import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.Property;
 import io.trino.sql.tree.StringLiteral;
 import io.trino.testing.LocalQueryRunner;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.Map;
@@ -45,7 +44,7 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(TestInstance.Lifecycle.PER_METHOD)
+@Test(singleThreaded = true)
 public class TestCreateCatalogTask
 {
     private static final String TEST_CATALOG = "test_catalog";
@@ -54,7 +53,7 @@ public class TestCreateCatalogTask
     protected LocalQueryRunner queryRunner;
     private QueryStateMachine queryStateMachine;
 
-    @BeforeEach
+    @BeforeMethod
     public void setUp()
     {
         queryRunner = LocalQueryRunner.create(TEST_SESSION);
@@ -79,7 +78,7 @@ public class TestCreateCatalogTask
                 new NodeVersion("test"));
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void tearDown()
     {
         if (queryRunner != null) {

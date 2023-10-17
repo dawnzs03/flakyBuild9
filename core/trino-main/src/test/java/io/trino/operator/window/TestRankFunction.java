@@ -13,7 +13,7 @@
  */
 package io.trino.operator.window;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import static io.trino.SessionTestUtils.TEST_SESSION;
 import static io.trino.spi.type.BigintType.BIGINT;

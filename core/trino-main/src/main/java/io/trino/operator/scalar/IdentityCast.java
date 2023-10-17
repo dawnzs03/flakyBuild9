@@ -35,8 +35,9 @@ public class IdentityCast
 
     private IdentityCast()
     {
-        super(FunctionMetadata.operatorBuilder(CAST)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .operatorType(CAST)
                         .typeVariable("T")
                         .returnType(new TypeSignature("T"))
                         .argumentType(new TypeSignature("T"))

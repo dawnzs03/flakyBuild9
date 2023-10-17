@@ -85,11 +85,7 @@ public class HudiActiveTimeline
 
     private Location getInstantFileNamePath(String fileName)
     {
-        Location metaPath = metaClient.getMetaPath();
-        if (fileName.contains(SCHEMA_COMMIT_ACTION)) {
-            return metaPath.appendPath(HudiTableMetaClient.SCHEMA_FOLDER_NAME).appendPath(fileName);
-        }
-        return metaPath.appendPath(fileName);
+        return Location.of(fileName.contains(SCHEMA_COMMIT_ACTION) ? metaClient.getSchemaFolderName() : metaClient.getMetaPath().path()).appendPath(fileName);
     }
 
     private Optional<byte[]> readDataFromPath(Location detailPath)

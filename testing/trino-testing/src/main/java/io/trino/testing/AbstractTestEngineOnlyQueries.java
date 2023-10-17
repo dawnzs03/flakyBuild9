@@ -33,9 +33,10 @@ import io.trino.tpch.TpchTable;
 import io.trino.type.SqlIntervalDayTime;
 import io.trino.type.SqlIntervalYearMonth;
 import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -60,12 +61,15 @@ import static io.trino.SystemSessionProperties.JOIN_REORDERING_STRATEGY;
 import static io.trino.SystemSessionProperties.LATE_MATERIALIZATION;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.BooleanType.BOOLEAN;
+import static io.trino.spi.type.DecimalType.createDecimalType;
+import static io.trino.spi.type.DoubleType.DOUBLE;
 import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.sql.planner.OptimizerConfig.JoinDistributionType.BROADCAST;
 import static io.trino.sql.planner.OptimizerConfig.JoinReorderingStrategy.NONE;
 import static io.trino.sql.tree.ExplainType.Type.DISTRIBUTED;
 import static io.trino.sql.tree.ExplainType.Type.IO;
 import static io.trino.sql.tree.ExplainType.Type.LOGICAL;
+import static io.trino.testing.DataProviders.toDataProvider;
 import static io.trino.testing.MaterializedResult.resultBuilder;
 import static io.trino.testing.QueryAssertions.assertContains;
 import static io.trino.testing.QueryAssertions.assertEqualsIgnoreOrder;
@@ -852,11 +856,17 @@ public abstract class AbstractTestEngineOnlyQueries
         assertQuery("SELECT CAST(1 AS decimal(3,2)) <> ANY(SELECT CAST(1 AS decimal(3,1)))");
     }
 
-    @Test
-    public void testQuantifiedComparisonCornerCases()
+    @Test(dataProvider = "quantified_comparisons_corner_cases")
+    public void testQuantifiedComparisonCornerCases(String query)
+    {
+        assertQuery(query);
+    }
+
+    @DataProvider(name = "quantified_comparisons_corner_cases")
+    public Object[][] qualifiedComparisonsCornerCases()
     {
         //the %subquery% is wrapped in a SELECT so that H2 does not blow up on the VALUES subquery
-        queryTemplate("SELECT %value% %operator% %quantifier% (SELECT * FROM (%subquery%))")
+        return queryTemplate("SELECT %value% %operator% %quantifier% (SELECT * FROM (%subquery%))")
                 .replaceAll(
                         parameter("subquery").of(
                                 "SELECT 1 WHERE false",
@@ -865,7 +875,7 @@ public abstract class AbstractTestEngineOnlyQueries
                         parameter("quantifier").of("ALL", "ANY"),
                         parameter("value").of("1", "NULL"),
                         parameter("operator").of("=", "!=", "<", ">", "<=", ">="))
-                .forEach(this::assertQuery);
+                .collect(toDataProvider());
     }
 
     @Test
@@ -911,6 +921,28 @@ public abstract class AbstractTestEngineOnlyQueries
     {
         assertQuery("SELECT TRY(CAST('a' AS BIGINT))",
                 "SELECT NULL");
+    }
+
+    @Test
+    public void testDefaultDecimalLiteralSwitch()
+    {
+        Session decimalLiteral = Session.builder(getSession())
+                .setSystemProperty(SystemSessionProperties.PARSE_DECIMAL_LITERALS_AS_DOUBLE, "false")
+                .build();
+        MaterializedResult decimalColumnResult = computeActual(decimalLiteral, "SELECT 1.0");
+
+        assertEquals(decimalColumnResult.getRowCount(), 1);
+        assertEquals(decimalColumnResult.getTypes().get(0), createDecimalType(2, 1));
+        assertEquals(decimalColumnResult.getMaterializedRows().get(0).getField(0), new BigDecimal("1.0"));
+
+        Session doubleLiteral = Session.builder(getSession())
+                .setSystemProperty(SystemSessionProperties.PARSE_DECIMAL_LITERALS_AS_DOUBLE, "true")
+                .build();
+        MaterializedResult doubleColumnResult = computeActual(doubleLiteral, "SELECT 1.0");
+
+        assertEquals(doubleColumnResult.getRowCount(), 1);
+        assertEquals(doubleColumnResult.getTypes().get(0), DOUBLE);
+        assertEquals(doubleColumnResult.getMaterializedRows().get(0).getField(0), 1.0);
     }
 
     @Test
@@ -5322,7 +5354,6 @@ public abstract class AbstractTestEngineOnlyQueries
                 Optional.empty(),
                 getSession().isClientTransactionSupport(),
                 getSession().getIdentity(),
-                getSession().getOriginalIdentity(),
                 getSession().getSource(),
                 getSession().getCatalog(),
                 getSession().getSchema(),
@@ -6229,8 +6260,7 @@ public abstract class AbstractTestEngineOnlyQueries
         return format("SELECT * FROM (SELECT %s FROM region LIMIT 1) a(%s) INNER JOIN unnest(ARRAY[%s], ARRAY[%2$s]) b(b1, b2) ON true", fields, columns, literals);
     }
 
-    @Test
-    @Timeout(30)
+    @Test(timeOut = 30_000)
     public void testLateMaterializationOuterJoin()
     {
         Session session = Session.builder(getSession())

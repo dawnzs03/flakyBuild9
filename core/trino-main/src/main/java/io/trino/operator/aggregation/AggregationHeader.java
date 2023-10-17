@@ -13,10 +13,7 @@
  */
 package io.trino.operator.aggregation;
 
-import com.google.common.collect.ImmutableSet;
-
 import java.util.Optional;
-import java.util.Set;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
@@ -24,17 +21,15 @@ import static java.util.Objects.requireNonNull;
 public class AggregationHeader
 {
     private final String name;
-    private final Set<String> aliases;
     private final Optional<String> description;
     private final boolean decomposable;
     private final boolean orderSensitive;
     private final boolean hidden;
     private final boolean deprecated;
 
-    public AggregationHeader(String name, Set<String> aliases, Optional<String> description, boolean decomposable, boolean orderSensitive, boolean hidden, boolean deprecated)
+    public AggregationHeader(String name, Optional<String> description, boolean decomposable, boolean orderSensitive, boolean hidden, boolean deprecated)
     {
         this.name = requireNonNull(name, "name cannot be null");
-        this.aliases = ImmutableSet.copyOf(aliases);
         this.description = requireNonNull(description, "description cannot be null");
         this.decomposable = decomposable;
         this.orderSensitive = orderSensitive;
@@ -45,11 +40,6 @@ public class AggregationHeader
     public String getName()
     {
         return name;
-    }
-
-    public Set<String> getAliases()
-    {
-        return aliases;
     }
 
     public Optional<String> getDescription()
@@ -82,7 +72,6 @@ public class AggregationHeader
     {
         return toStringHelper(this)
                 .add("name", name)
-                .add("aliases", aliases)
                 .add("description", description)
                 .add("decomposable", decomposable)
                 .add("orderSensitive", orderSensitive)

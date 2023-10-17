@@ -35,8 +35,9 @@ public class GenericLessThanOperator
 
     public GenericLessThanOperator(TypeOperators typeOperators)
     {
-        super(FunctionMetadata.operatorBuilder(LESS_THAN)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .operatorType(LESS_THAN)
                         .orderableTypeParameter("T")
                         .returnType(BOOLEAN)
                         .argumentType(new TypeSignature("T"))

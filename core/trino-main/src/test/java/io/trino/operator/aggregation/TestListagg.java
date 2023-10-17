@@ -14,7 +14,8 @@
 package io.trino.operator.aggregation;
 
 import io.trino.metadata.TestingFunctionResolution;
-import org.junit.jupiter.api.Test;
+import io.trino.sql.tree.QualifiedName;
+import org.testng.annotations.Test;
 
 import java.util.Collections;
 
@@ -34,7 +35,7 @@ public class TestListagg
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "listagg",
+                QualifiedName.of("listagg"),
                 fromTypes(VARCHAR, VARCHAR, BOOLEAN, VARCHAR, BOOLEAN),
                 null,
                 createStringsBlock(new String[] {null}),
@@ -49,7 +50,7 @@ public class TestListagg
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "listagg",
+                QualifiedName.of("listagg"),
                 fromTypes(VARCHAR, VARCHAR, BOOLEAN, VARCHAR, BOOLEAN),
                 null,
                 createStringsBlock(null, null, null),
@@ -64,7 +65,7 @@ public class TestListagg
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "listagg",
+                QualifiedName.of("listagg"),
                 fromTypes(VARCHAR, VARCHAR, BOOLEAN, VARCHAR, BOOLEAN),
                 "value",
                 createStringsBlock("value"),
@@ -79,7 +80,7 @@ public class TestListagg
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "listagg",
+                QualifiedName.of("listagg"),
                 fromTypes(VARCHAR, VARCHAR, BOOLEAN, VARCHAR, BOOLEAN),
                 "value1,value2",
                 createStringsBlock("value1", "value2"),
@@ -94,7 +95,7 @@ public class TestListagg
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "listagg",
+                QualifiedName.of("listagg"),
                 fromTypes(VARCHAR, VARCHAR, BOOLEAN, VARCHAR, BOOLEAN),
                 "value1,value2",
                 createStringsBlock(null, "value1", null, "value2", null),
@@ -109,7 +110,7 @@ public class TestListagg
     {
         assertAggregation(
                 FUNCTION_RESOLUTION,
-                "listagg",
+                QualifiedName.of("listagg"),
                 fromTypes(VARCHAR, VARCHAR, BOOLEAN, VARCHAR, BOOLEAN),
                 "value1value2",
                 createStringsBlock("value1", "value2"),

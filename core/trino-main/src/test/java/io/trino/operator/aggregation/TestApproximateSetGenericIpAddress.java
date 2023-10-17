@@ -18,6 +18,7 @@ import io.airlift.slice.Slices;
 import io.trino.spi.type.Type;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static io.trino.type.IpAddressType.IPADDRESS;
 import static java.lang.Byte.MAX_VALUE;
@@ -35,7 +36,9 @@ public class TestApproximateSetGenericIpAddress
     @Override
     protected Object randomValue()
     {
-        return Slices.random(16);
+        byte[] bytes = new byte[16];
+        ThreadLocalRandom.current().nextBytes(bytes);
+        return Slices.wrappedBuffer(bytes);
     }
 
     @Override

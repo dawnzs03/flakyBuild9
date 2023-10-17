@@ -23,7 +23,8 @@ import io.trino.spi.type.SqlVarbinary;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeSignature;
 import io.trino.spi.type.TypeSignatureParameter;
-import org.junit.jupiter.api.Test;
+import io.trino.sql.tree.QualifiedName;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.function.BiFunction;
@@ -102,7 +103,7 @@ public class TestMergeQuantileDigestFunction
     {
         assertAggregation(
                 functionResolution,
-                getFunctionName(),
+                QualifiedName.of(getFunctionName()),
                 fromTypes(getFunctionParameterTypes()),
                 QDIGEST_EQUALITY,
                 "test multiple positions",
@@ -116,7 +117,7 @@ public class TestMergeQuantileDigestFunction
     {
         assertAggregation(
                 functionResolution,
-                getFunctionName(),
+                QualifiedName.of(getFunctionName()),
                 fromTypes(getFunctionParameterTypes()),
                 QDIGEST_EQUALITY,
                 "test mixed null and nonnull position",

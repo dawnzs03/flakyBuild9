@@ -96,9 +96,7 @@ public class TestDeterminePartitionCount
                 .setCatalog(catalogName)
                 .setSchema("default")
                 .build();
-        LocalQueryRunner queryRunner = LocalQueryRunner.builder(session)
-                .withNodeCountForStats(100)
-                .build();
+        LocalQueryRunner queryRunner = LocalQueryRunner.create(session);
         queryRunner.createCatalog(
                 catalogName,
                 connectorFactory,
@@ -140,8 +138,8 @@ public class TestDeterminePartitionCount
                         .build(),
                 output(
                         project(
-                                filter("column_b IS NULL",
-                                        tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a", "column_b", "column_b"))))));
+                            filter("column_b IS NULL",
+                                    tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a", "column_b", "column_b"))))));
     }
 
     @Test
@@ -177,7 +175,7 @@ public class TestDeterminePartitionCount
         assertDistributedPlan(
                 query,
                 Session.builder(getQueryRunner().getDefaultSession())
-                        .setSystemProperty(MAX_HASH_PARTITION_COUNT, "21")
+                        .setSystemProperty(MAX_HASH_PARTITION_COUNT, "20")
                         .setSystemProperty(MIN_HASH_PARTITION_COUNT, "4")
                         .setSystemProperty(MIN_INPUT_SIZE_PER_TASK, "20MB")
                         .setSystemProperty(MIN_INPUT_ROWS_PER_TASK, "400")
@@ -188,33 +186,8 @@ public class TestDeterminePartitionCount
                                         exchange(LOCAL,
                                                 exchange(REMOTE, REPARTITION, Optional.of(10),
                                                         node(AggregationNode.class,
-                                                                node(TableScanNode.class))))))));
-    }
-
-    @Test
-    public void testDoesNotSetPartitionCountWhenNodeCountIsSmall()
-    {
-        @Language("SQL") String query = """
-                SELECT count(column_a) FROM table_with_stats_a group by column_b
-                """;
-
-        // DeterminePartitionCount shouldn't put partition count when 2 * "determined partition count"
-        // is greater or equal to number of workers.
-        assertDistributedPlan(
-                query,
-                Session.builder(getQueryRunner().getDefaultSession())
-                        .setSystemProperty(MAX_HASH_PARTITION_COUNT, "20")
-                        .setSystemProperty(MIN_HASH_PARTITION_COUNT, "4")
-                        .setSystemProperty(MIN_INPUT_SIZE_PER_TASK, "20MB")
-                        .setSystemProperty(MIN_INPUT_ROWS_PER_TASK, "400")
-                        .build(),
-                output(
-                        project(
-                                node(AggregationNode.class,
-                                        exchange(LOCAL,
-                                                exchange(REMOTE, REPARTITION, Optional.empty(),
-                                                        node(AggregationNode.class,
-                                                                node(TableScanNode.class))))))));
+                                                                project(
+                                                                        node(TableScanNode.class)))))))));
     }
 
     @Test
@@ -238,10 +211,12 @@ public class TestDeterminePartitionCount
                                 .equiCriteria("column_a", "column_a_0")
                                 .right(exchange(LOCAL,
                                         exchange(REMOTE, Optional.empty(),
-                                                tableScan("table_without_stats_b", ImmutableMap.of("column_a_0", "column_a", "column_b_1", "column_b")))))
+                                                project(
+                                                        tableScan("table_without_stats_b", ImmutableMap.of("column_a_0", "column_a", "column_b_1", "column_b"))))))
                                 .left(exchange(REMOTE, Optional.empty(),
-                                        node(FilterNode.class,
-                                                tableScan("table_without_stats_a", ImmutableMap.of("column_a", "column_a", "column_b", "column_b"))))))));
+                                        project(
+                                                node(FilterNode.class,
+                                                        tableScan("table_without_stats_a", ImmutableMap.of("column_a", "column_a", "column_b", "column_b")))))))));
     }
 
     @Test
@@ -318,10 +293,12 @@ public class TestDeterminePartitionCount
                                 .equiCriteria("column_b", "column_b_1")
                                 .right(exchange(LOCAL,
                                         exchange(REMOTE, Optional.empty(),
-                                                tableScan("table_with_stats_b", ImmutableMap.of("column_a_0", "column_a", "column_b_1", "column_b")))))
+                                                project(
+                                                        tableScan("table_with_stats_b", ImmutableMap.of("column_a_0", "column_a", "column_b_1", "column_b"))))))
                                 .left(exchange(REMOTE, Optional.empty(),
-                                        node(FilterNode.class,
-                                                tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a", "column_b", "column_b"))))))));
+                                        project(
+                                                node(FilterNode.class,
+                                                        tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a", "column_b", "column_b")))))))));
     }
 
     @Test
@@ -346,10 +323,12 @@ public class TestDeterminePartitionCount
                                 .right(exchange(LOCAL,
                                         // partition count should be more than 5 because of the presence of expanding join operation
                                         exchange(REMOTE, Optional.of(10),
-                                                tableScan("table_with_stats_b", ImmutableMap.of("column_a_0", "column_a")))))
+                                                project(
+                                                        tableScan("table_with_stats_b", ImmutableMap.of("column_a_0", "column_a"))))))
                                 .left(exchange(REMOTE, Optional.of(10),
-                                        node(FilterNode.class,
-                                                tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a"))))))));
+                                        project(
+                                                node(FilterNode.class,
+                                                        tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a")))))))));
     }
 
     @Test
@@ -373,10 +352,12 @@ public class TestDeterminePartitionCount
                                 .equiCriteria("column_a", "column_a_0")
                                 .right(exchange(LOCAL,
                                         exchange(REMOTE, Optional.empty(),
-                                                tableScan("table_with_stats_b", ImmutableMap.of("column_a_0", "column_a", "column_b_1", "column_b")))))
+                                                project(
+                                                        tableScan("table_with_stats_b", ImmutableMap.of("column_a_0", "column_a", "column_b_1", "column_b"))))))
                                 .left(exchange(REMOTE, Optional.empty(),
-                                        node(FilterNode.class,
-                                                tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a", "column_b", "column_b"))))))));
+                                        project(
+                                                node(FilterNode.class,
+                                                        tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a", "column_b", "column_b")))))))));
     }
 
     @Test
@@ -390,7 +371,7 @@ public class TestDeterminePartitionCount
         assertDistributedPlan(
                 query,
                 Session.builder(getQueryRunner().getDefaultSession())
-                        .setSystemProperty(MAX_HASH_PARTITION_COUNT, "40")
+                        .setSystemProperty(MAX_HASH_PARTITION_COUNT, "20")
                         .setSystemProperty(MIN_HASH_PARTITION_COUNT, "15")
                         .setSystemProperty(MIN_INPUT_SIZE_PER_TASK, "20MB")
                         .setSystemProperty(MIN_INPUT_ROWS_PER_TASK, "400")
@@ -400,10 +381,12 @@ public class TestDeterminePartitionCount
                                 .equiCriteria("column_a", "column_a_0")
                                 .right(exchange(LOCAL,
                                         exchange(REMOTE, Optional.of(15),
-                                                tableScan("table_with_stats_b", ImmutableMap.of("column_a_0", "column_a")))))
+                                                project(
+                                                        tableScan("table_with_stats_b", ImmutableMap.of("column_a_0", "column_a"))))))
                                 .left(exchange(REMOTE, Optional.of(15),
-                                        node(FilterNode.class,
-                                                tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a"))))))));
+                                        project(
+                                                node(FilterNode.class,
+                                                        tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a")))))))));
     }
 
     @Test
@@ -435,11 +418,13 @@ public class TestDeterminePartitionCount
                                         .right(exchange(LOCAL,
                                                 // partition count should be 15 with just join node but since we also have union, it should be 20
                                                 exchange(REMOTE, REPARTITION, Optional.of(20),
-                                                        tableScan("table_with_stats_b", ImmutableMap.of("column_a_1", "column_a")))))
+                                                        project(
+                                                                tableScan("table_with_stats_b", ImmutableMap.of("column_a_1", "column_a"))))))
                                         // partition count should be 15 with just join node but since we also have union, it should be 20
                                         .left(exchange(REMOTE, REPARTITION, Optional.of(20),
-                                                node(FilterNode.class,
-                                                        tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a", "column_b_0", "column_b")))))),
+                                                project(
+                                                        node(FilterNode.class,
+                                                                tableScan("table_with_stats_a", ImmutableMap.of("column_a", "column_a", "column_b_0", "column_b"))))))),
                                 tableScan("table_with_stats_b", ImmutableMap.of("column_b_4", "column_b")))));
     }
 
@@ -466,6 +451,7 @@ public class TestDeterminePartitionCount
                                         exchange(LOCAL,
                                                 exchange(REMOTE, REPARTITION, Optional.of(10),
                                                         node(AggregationNode.class,
-                                                                node(TableScanNode.class))))))));
+                                                                project(
+                                                                        node(TableScanNode.class)))))))));
     }
 }

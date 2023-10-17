@@ -58,14 +58,12 @@ import static org.apache.avro.Schema.Type.UNION;
 
 public class AvroSchemaConverter
 {
-    public static final String DUMMY_FIELD_NAME = "$empty_field_marker";
-
-    public static final RowType DUMMY_ROW_TYPE = RowType.from(ImmutableList.of(new RowType.Field(Optional.of(DUMMY_FIELD_NAME), BooleanType.BOOLEAN)));
+    public static final String DUMMY_FIELD_NAME = "dummy";
 
     public enum EmptyFieldStrategy
     {
         IGNORE,
-        MARK,
+        ADD_DUMMY,
         FAIL,
     }
 
@@ -209,8 +207,8 @@ public class AvroSchemaConverter
             switch (emptyFieldStrategy) {
                 case IGNORE:
                     return Optional.empty();
-                case MARK:
-                    return Optional.of(DUMMY_ROW_TYPE);
+                case ADD_DUMMY:
+                    return Optional.of(RowType.from(ImmutableList.of(new RowType.Field(Optional.of(DUMMY_FIELD_NAME), BooleanType.BOOLEAN))));
                 case FAIL:
                     throw new IllegalStateException(format("Struct type has no valid fields for schema: '%s'", schema));
             }

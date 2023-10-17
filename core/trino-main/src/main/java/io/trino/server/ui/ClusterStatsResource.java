@@ -30,9 +30,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-import static com.google.common.math.DoubleMath.roundToLong;
 import static io.trino.server.security.ResourceSecurity.AccessType.WEB_UI;
-import static java.math.RoundingMode.HALF_UP;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -93,7 +91,7 @@ public class ClusterStatsResource
             if (!query.getState().isDone()) {
                 totalInputBytes += query.getQueryStats().getRawInputDataSize().toBytes();
                 totalInputRows += query.getQueryStats().getRawInputPositions();
-                totalCpuTimeSecs += roundToLong(query.getQueryStats().getTotalCpuTime().getValue(SECONDS), HALF_UP);
+                totalCpuTimeSecs += query.getQueryStats().getTotalCpuTime().getValue(SECONDS);
 
                 memoryReservation += query.getQueryStats().getUserMemoryReservation().toBytes();
                 runningDrivers += query.getQueryStats().getRunningDrivers();

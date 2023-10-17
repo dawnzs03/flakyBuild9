@@ -13,6 +13,7 @@
  */
 package io.trino.sql;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import io.trino.sql.tree.AllColumns;
@@ -111,8 +112,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.PrimitiveIterator;
 import java.util.function.Function;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static io.trino.sql.ReservedIdentifiers.reserved;
@@ -462,10 +465,14 @@ public final class ExpressionFormatter
             builder.append(')');
 
             node.getNullTreatment().ifPresent(nullTreatment -> {
-                builder.append(switch (nullTreatment) {
-                    case IGNORE -> " IGNORE NULLS";
-                    case RESPECT -> " RESPECT NULLS";
-                });
+                switch (nullTreatment) {
+                    case IGNORE:
+                        builder.append(" IGNORE NULLS");
+                        break;
+                    case RESPECT:
+                        builder.append(" RESPECT NULLS");
+                        break;
+                }
             });
 
             if (node.getFilter().isPresent()) {
@@ -585,12 +592,15 @@ public final class ExpressionFormatter
         {
             String value = process(node.getValue(), context);
 
-            return switch (node.getSign()) {
-                // Unary is ambiguous with respect to negative numbers. "-1" parses as a number, but "-(1)" parses as "unaryMinus(number)"
-                // The parentheses are needed to ensure the parsing roundtrips properly.
-                case MINUS -> "-(" + value + ")";
-                case PLUS -> "+" + value;
-            };
+            switch (node.getSign()) {
+                case MINUS:
+                    // Unary is ambiguous with respect to negative numbers. "-1" parses as a number, but "-(1)" parses as "unaryMinus(number)"
+                    // The parentheses are needed to ensure the parsing roundtrips properly.
+                    return "-(" + value + ")";
+                case PLUS:
+                    return "+" + value;
+            }
+            throw new UnsupportedOperationException("Unsupported sign: " + node.getSign());
         }
 
         @Override
@@ -884,17 +894,31 @@ public final class ExpressionFormatter
                         .append(node.getOutputFormat().map(string -> " FORMAT " + string).orElse(""));
             }
 
-            builder.append(switch (node.getWrapperBehavior()) {
-                case WITHOUT -> " WITHOUT ARRAY WRAPPER";
-                case CONDITIONAL -> " WITH CONDITIONAL ARRAY WRAPPER";
-                case UNCONDITIONAL -> (" WITH UNCONDITIONAL ARRAY WRAPPER");
-            });
+            switch (node.getWrapperBehavior()) {
+                case WITHOUT:
+                    builder.append(" WITHOUT ARRAY WRAPPER");
+                    break;
+                case CONDITIONAL:
+                    builder.append(" WITH CONDITIONAL ARRAY WRAPPER");
+                    break;
+                case UNCONDITIONAL:
+                    builder.append((" WITH UNCONDITIONAL ARRAY WRAPPER"));
+                    break;
+                default:
+                    throw new IllegalStateException("unexpected array wrapper behavior: " + node.getWrapperBehavior());
+            }
 
             if (node.getQuotesBehavior().isPresent()) {
-                builder.append(switch (node.getQuotesBehavior().get()) {
-                    case KEEP -> " KEEP QUOTES ON SCALAR STRING";
-                    case OMIT -> " OMIT QUOTES ON SCALAR STRING";
-                });
+                switch (node.getQuotesBehavior().get()) {
+                    case KEEP:
+                        builder.append(" KEEP QUOTES ON SCALAR STRING");
+                        break;
+                    case OMIT:
+                        builder.append(" OMIT QUOTES ON SCALAR STRING");
+                        break;
+                    default:
+                        throw new IllegalStateException("unexpected quotes behavior: " + node.getQuotesBehavior());
+                }
             }
 
             builder.append(" ")
@@ -1029,7 +1053,35 @@ public final class ExpressionFormatter
 
     static String formatStringLiteral(String s)
     {
-        return "'" + s.replace("'", "''") + "'";
+        s = s.replace("'", "''");
+        if (CharMatcher.inRange((char) 0x20, (char) 0x7E).matchesAllOf(s)) {
+            return "'" + s + "'";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("U&'");
+        PrimitiveIterator.OfInt iterator = s.codePoints().iterator();
+        while (iterator.hasNext()) {
+            int codePoint = iterator.nextInt();
+            checkArgument(codePoint >= 0, "Invalid UTF-8 encoding in characters: %s", s);
+            if (isAsciiPrintable(codePoint)) {
+                char ch = (char) codePoint;
+                if (ch == '\\') {
+                    builder.append(ch);
+                }
+                builder.append(ch);
+            }
+            else if (codePoint <= 0xFFFF) {
+                builder.append('\\');
+                builder.append(format("%04X", codePoint));
+            }
+            else {
+                builder.append("\\+");
+                builder.append(format("%06X", codePoint));
+            }
+        }
+        builder.append("'");
+        return builder.toString();
     }
 
     public static String formatOrderBy(OrderBy orderBy)
@@ -1129,29 +1181,37 @@ public final class ExpressionFormatter
 
     private static String formatFrameBound(FrameBound frameBound)
     {
-        return switch (frameBound.getType()) {
-            case UNBOUNDED_PRECEDING -> "UNBOUNDED PRECEDING";
-            case PRECEDING -> formatExpression(frameBound.getValue().get()) + " PRECEDING";
-            case CURRENT_ROW -> "CURRENT ROW";
-            case FOLLOWING -> formatExpression(frameBound.getValue().get()) + " FOLLOWING";
-            case UNBOUNDED_FOLLOWING -> "UNBOUNDED FOLLOWING";
-        };
+        switch (frameBound.getType()) {
+            case UNBOUNDED_PRECEDING:
+                return "UNBOUNDED PRECEDING";
+            case PRECEDING:
+                return formatExpression(frameBound.getValue().get()) + " PRECEDING";
+            case CURRENT_ROW:
+                return "CURRENT ROW";
+            case FOLLOWING:
+                return formatExpression(frameBound.getValue().get()) + " FOLLOWING";
+            case UNBOUNDED_FOLLOWING:
+                return "UNBOUNDED FOLLOWING";
+        }
+        throw new IllegalArgumentException("unhandled type: " + frameBound.getType());
     }
 
     public static String formatSkipTo(SkipTo skipTo)
     {
-        return switch (skipTo.getPosition()) {
-            case PAST_LAST -> "AFTER MATCH SKIP PAST LAST ROW";
-            case NEXT -> "AFTER MATCH SKIP TO NEXT ROW";
-            case LAST -> {
+        switch (skipTo.getPosition()) {
+            case PAST_LAST:
+                return "AFTER MATCH SKIP PAST LAST ROW";
+            case NEXT:
+                return "AFTER MATCH SKIP TO NEXT ROW";
+            case LAST:
                 checkState(skipTo.getIdentifier().isPresent(), "missing identifier in AFTER MATCH SKIP TO LAST");
-                yield "AFTER MATCH SKIP TO LAST " + formatExpression(skipTo.getIdentifier().get());
-            }
-            case FIRST -> {
+                return "AFTER MATCH SKIP TO LAST " + formatExpression(skipTo.getIdentifier().get());
+            case FIRST:
                 checkState(skipTo.getIdentifier().isPresent(), "missing identifier in AFTER MATCH SKIP TO FIRST");
-                yield "AFTER MATCH SKIP TO FIRST " + formatExpression(skipTo.getIdentifier().get());
-            }
-        };
+                return "AFTER MATCH SKIP TO FIRST " + formatExpression(skipTo.getIdentifier().get());
+            default:
+                throw new IllegalStateException("unexpected skipTo: " + skipTo);
+        }
     }
 
     static String formatGroupBy(List<GroupingElement> groupingElements)
@@ -1167,14 +1227,23 @@ public final class ExpressionFormatter
                     result = formatGroupingSet(columns);
                 }
             }
-            else if (groupingElement instanceof GroupingSets groupingSets) {
-                String type = switch (groupingSets.getType()) {
-                    case EXPLICIT -> "GROUPING SETS";
-                    case CUBE -> "CUBE";
-                    case ROLLUP -> "ROLLUP";
-                };
+            else if (groupingElement instanceof GroupingSets) {
+                String type;
+                switch (((GroupingSets) groupingElement).getType()) {
+                    case EXPLICIT:
+                        type = "GROUPING SETS";
+                        break;
+                    case CUBE:
+                        type = "CUBE";
+                        break;
+                    case ROLLUP:
+                        type = "ROLLUP";
+                        break;
+                    default:
+                        throw new UnsupportedOperationException();
+                }
 
-                result = groupingSets.getSets().stream()
+                result = ((GroupingSets) groupingElement).getSets().stream()
                         .map(ExpressionFormatter::formatGroupingSet)
                         .collect(joining(", ", type + " (", ")"));
             }
@@ -1202,16 +1271,30 @@ public final class ExpressionFormatter
 
             builder.append(formatExpression(input.getSortKey()));
 
-            builder.append(switch (input.getOrdering()) {
-                case ASCENDING -> " ASC";
-                case DESCENDING -> " DESC";
-            });
+            switch (input.getOrdering()) {
+                case ASCENDING:
+                    builder.append(" ASC");
+                    break;
+                case DESCENDING:
+                    builder.append(" DESC");
+                    break;
+                default:
+                    throw new UnsupportedOperationException("unknown ordering: " + input.getOrdering());
+            }
 
-            builder.append(switch (input.getNullOrdering()) {
-                case FIRST -> " NULLS FIRST";
-                case LAST -> " NULLS LAST";
-                case UNDEFINED -> "";
-            });
+            switch (input.getNullOrdering()) {
+                case FIRST:
+                    builder.append(" NULLS FIRST");
+                    break;
+                case LAST:
+                    builder.append(" NULLS LAST");
+                    break;
+                case UNDEFINED:
+                    // no op
+                    break;
+                default:
+                    throw new UnsupportedOperationException("unknown null ordering: " + input.getNullOrdering());
+            }
 
             return builder.toString();
         };

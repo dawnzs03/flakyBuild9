@@ -15,6 +15,7 @@ package io.trino.spi.block;
 
 import io.airlift.slice.SliceInput;
 import io.airlift.slice.SliceOutput;
+import io.airlift.slice.Slices;
 
 import java.util.Optional;
 
@@ -48,7 +49,7 @@ public class DictionaryBlockEncoding
         blockEncodingSerde.writeBlock(sliceOutput, dictionary);
 
         // ids
-        sliceOutput.writeInts(dictionaryBlock.getRawIds(), dictionaryBlock.getRawIdsOffset(), dictionaryBlock.getPositionCount());
+        sliceOutput.writeBytes(dictionaryBlock.getIds());
     }
 
     @Override
@@ -62,7 +63,7 @@ public class DictionaryBlockEncoding
 
         // ids
         int[] ids = new int[positionCount];
-        sliceInput.readInts(ids);
+        sliceInput.readBytes(Slices.wrappedIntArray(ids));
 
         // flatten the dictionary
         return dictionaryBlock.copyPositions(ids, 0, ids.length);

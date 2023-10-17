@@ -17,6 +17,7 @@ import io.airlift.compress.Compressor;
 import io.airlift.compress.snappy.SnappyCompressor;
 import io.airlift.compress.zstd.ZstdCompressor;
 import io.airlift.slice.Slices;
+import org.apache.parquet.bytes.BytesInput;
 import org.apache.parquet.format.CompressionCodec;
 
 import java.io.ByteArrayOutputStream;
@@ -67,7 +68,7 @@ interface ParquetCompressor
             try (GZIPOutputStream outputStream = new GZIPOutputStream(byteArrayOutputStream)) {
                 outputStream.write(input, 0, input.length);
             }
-            return createDataOutput(byteArrayOutputStream);
+            return createDataOutput(BytesInput.from(byteArrayOutputStream));
         }
     }
 

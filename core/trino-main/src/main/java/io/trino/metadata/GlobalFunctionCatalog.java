@@ -18,13 +18,11 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.errorprone.annotations.ThreadSafe;
-import io.trino.connector.system.GlobalSystemConnector;
 import io.trino.operator.table.ExcludeColumns.ExcludeColumnsFunctionHandle;
 import io.trino.operator.table.Sequence.SequenceFunctionHandle;
 import io.trino.spi.function.AggregationFunctionMetadata;
 import io.trino.spi.function.AggregationImplementation;
 import io.trino.spi.function.BoundSignature;
-import io.trino.spi.function.CatalogSchemaFunctionName;
 import io.trino.spi.function.FunctionDependencies;
 import io.trino.spi.function.FunctionDependencyDeclaration;
 import io.trino.spi.function.FunctionId;
@@ -33,6 +31,7 @@ import io.trino.spi.function.FunctionProvider;
 import io.trino.spi.function.InvocationConvention;
 import io.trino.spi.function.OperatorType;
 import io.trino.spi.function.ScalarFunctionImplementation;
+import io.trino.spi.function.SchemaFunctionName;
 import io.trino.spi.function.Signature;
 import io.trino.spi.function.WindowFunctionSupplier;
 import io.trino.spi.function.table.ConnectorTableFunctionHandle;
@@ -49,7 +48,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static io.trino.metadata.OperatorNameUtil.isOperatorName;
-import static io.trino.metadata.OperatorNameUtil.mangleOperatorName;
 import static io.trino.metadata.OperatorNameUtil.unmangleOperator;
 import static io.trino.operator.table.ExcludeColumns.getExcludeColumnsFunctionProcessorProvider;
 import static io.trino.operator.table.Sequence.getSequenceFunctionProcessorProvider;
@@ -69,16 +67,12 @@ public class GlobalFunctionCatalog
     public final synchronized void addFunctions(FunctionBundle functionBundle)
     {
         for (FunctionMetadata functionMetadata : functionBundle.getFunctions()) {
-            checkArgument(!functions.getFunctionsById().containsKey(functionMetadata.getFunctionId()), "Function already registered: %s", functionMetadata.getFunctionId());
-
-            for (String alias : functionMetadata.getNames()) {
-                checkArgument(!alias.contains("|"), "Function name cannot contain '|' character: %s(%s)", alias, functionMetadata.getSignature());
-                checkArgument(!alias.contains("@"), "Function name cannot contain '@' character: %s(%s)", alias, functionMetadata.getSignature());
-                checkNotSpecializedTypeOperator(alias, functionMetadata.getSignature());
-
-                for (FunctionMetadata existingFunction : this.functions.get(alias)) {
-                    checkArgument(!functionMetadata.getSignature().equals(existingFunction.getSignature()), "Function already registered: %s(%s)", alias, functionMetadata.getSignature());
-                }
+            checkArgument(!functionMetadata.getSignature().getName().contains("|"), "Function name cannot contain '|' character: %s", functionMetadata.getSignature());
+            checkArgument(!functionMetadata.getSignature().getName().contains("@"), "Function name cannot contain '@' character: %s", functionMetadata.getSignature());
+            checkNotSpecializedTypeOperator(functionMetadata.getSignature());
+            for (FunctionMetadata existingFunction : this.functions.list()) {
+                checkArgument(!functionMetadata.getFunctionId().equals(existingFunction.getFunctionId()), "Function already registered: %s", functionMetadata.getFunctionId());
+                checkArgument(!functionMetadata.getSignature().equals(existingFunction.getSignature()), "Function already registered: %s", functionMetadata.getSignature());
             }
         }
         this.functions = new FunctionMap(this.functions, functionBundle);
@@ -88,18 +82,20 @@ public class GlobalFunctionCatalog
      * Type operators are handled automatically by the engine, so custom operator implementations
      * cannot be registered for these.
      */
-    private static void checkNotSpecializedTypeOperator(String alias, Signature signature)
+    private static void checkNotSpecializedTypeOperator(Signature signature)
     {
-        if (!isOperatorName(alias)) {
+        String name = signature.getName();
+        if (!isOperatorName(name)) {
             return;
         }
 
-        OperatorType operatorType = unmangleOperator(alias);
+        OperatorType operatorType = unmangleOperator(name);
 
         // The trick here is the Generic*Operator implementations implement these exact signatures,
         // so we only these exact signatures to be registered.  Since, only a single function with
         // a specific signature can be registered, it prevents others from being registered.
         Signature.Builder expectedSignature = Signature.builder()
+                .name(signature.getName())
                 .argumentTypes(Collections.nCopies(operatorType.getArgumentCount(), new TypeSignature("T")));
 
         switch (operatorType) {
@@ -136,9 +132,12 @@ public class GlobalFunctionCatalog
         return functions.list();
     }
 
-    public Collection<FunctionMetadata> getBuiltInFunctions(String functionName)
+    public Collection<FunctionMetadata> getFunctions(SchemaFunctionName name)
     {
-        return functions.get(functionName);
+        if (!BUILTIN_SCHEMA.equals(name.getSchemaName())) {
+            return ImmutableList.of();
+        }
+        return functions.get(name.getFunctionName());
     }
 
     public FunctionMetadata getFunctionMetadata(FunctionId functionId)
@@ -191,16 +190,6 @@ public class GlobalFunctionCatalog
         return null;
     }
 
-    public static CatalogSchemaFunctionName builtinFunctionName(OperatorType operatorType)
-    {
-        return builtinFunctionName(mangleOperatorName(operatorType));
-    }
-
-    public static CatalogSchemaFunctionName builtinFunctionName(String functionName)
-    {
-        return new CatalogSchemaFunctionName(GlobalSystemConnector.NAME, BUILTIN_SCHEMA, functionName);
-    }
-
     private static class FunctionMap
     {
         private final Map<FunctionId, FunctionBundle> functionBundlesById;
@@ -231,11 +220,8 @@ public class GlobalFunctionCatalog
 
             ImmutableListMultimap.Builder<String, FunctionMetadata> functionsByName = ImmutableListMultimap.<String, FunctionMetadata>builder()
                     .putAll(map.functionsByLowerCaseName);
-            for (FunctionMetadata function : functionBundle.getFunctions()) {
-                for (String alias : function.getNames()) {
-                    functionsByName.put(alias.toLowerCase(ENGLISH), function);
-                }
-            }
+            functionBundle.getFunctions()
+                    .forEach(functionMetadata -> functionsByName.put(functionMetadata.getSignature().getName().toLowerCase(ENGLISH), functionMetadata));
             this.functionsByLowerCaseName = functionsByName.build();
 
             // Make sure all functions with the same name are aggregations or none of them are
@@ -252,11 +238,6 @@ public class GlobalFunctionCatalog
         public List<FunctionMetadata> list()
         {
             return ImmutableList.copyOf(functionsByLowerCaseName.values());
-        }
-
-        public Map<FunctionId, FunctionMetadata> getFunctionsById()
-        {
-            return functionsById;
         }
 
         public Collection<FunctionMetadata> get(String functionName)

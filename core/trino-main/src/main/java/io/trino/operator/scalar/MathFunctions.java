@@ -28,6 +28,7 @@ import io.trino.spi.function.LiteralParameter;
 import io.trino.spi.function.LiteralParameters;
 import io.trino.spi.function.OperatorDependency;
 import io.trino.spi.function.ScalarFunction;
+import io.trino.spi.function.Signature;
 import io.trino.spi.function.SqlNullable;
 import io.trino.spi.function.SqlType;
 import io.trino.spi.type.Decimals;
@@ -61,6 +62,7 @@ import static io.trino.spi.type.Int128Math.rescaleTruncate;
 import static io.trino.spi.type.Int128Math.subtract;
 import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.type.DecimalOperators.modulusScalarFunction;
+import static io.trino.type.DecimalOperators.modulusSignatureBuilder;
 import static io.trino.util.Failures.checkCondition;
 import static java.lang.Character.MAX_RADIX;
 import static java.lang.Character.MIN_RADIX;
@@ -71,7 +73,7 @@ import static java.lang.String.format;
 
 public final class MathFunctions
 {
-    public static final SqlScalarFunction DECIMAL_MOD_FUNCTION = modulusScalarFunction();
+    public static final SqlScalarFunction DECIMAL_MOD_FUNCTION = decimalModFunction();
 
     private static final Int128[] DECIMAL_HALF_UNSCALED_FOR_SCALE;
     private static final Int128[] DECIMAL_ALMOST_HALF_UNSCALED_FOR_SCALE;
@@ -535,7 +537,10 @@ public final class MathFunctions
 
     private static SqlScalarFunction decimalModFunction()
     {
-        return modulusScalarFunction();
+        Signature signature = modulusSignatureBuilder()
+                .name("mod")
+                .build();
+        return modulusScalarFunction(signature);
     }
 
     @Description("Remainder of given quotient")

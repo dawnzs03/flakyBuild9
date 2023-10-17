@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
+import static io.trino.SessionTestUtils.TEST_SESSION;
 import static io.trino.metadata.MetadataManager.createTestMetadataManager;
 import static io.trino.spi.type.IntegerType.INTEGER;
 import static io.trino.sql.analyzer.TypeSignatureProvider.fromTypes;
@@ -89,7 +90,7 @@ public class TestWindowClause
                                         .addFunction(
                                                 "max_result",
                                                 functionCall("max", ImmutableList.of("b")),
-                                                createTestMetadataManager().resolveBuiltinFunction("max", fromTypes(INTEGER)),
+                                                createTestMetadataManager().resolveFunction(TEST_SESSION, QualifiedName.of("max"), fromTypes(INTEGER)),
                                                 windowFrame(
                                                         RANGE,
                                                         PRECEDING,
@@ -159,7 +160,7 @@ public class TestWindowClause
                                         .addFunction(
                                                 "count_result",
                                                 functionCall("count", ImmutableList.of()),
-                                                createTestMetadataManager().resolveBuiltinFunction("count", fromTypes()),
+                                                createTestMetadataManager().resolveFunction(TEST_SESSION, QualifiedName.of("count"), fromTypes()),
                                                 windowFrame(
                                                         RANGE,
                                                         CURRENT_ROW,

@@ -14,11 +14,12 @@
 
 package io.trino.spi.block;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 
 public class TestRowBlock
 {
@@ -28,7 +29,7 @@ public class TestRowBlock
         Block fieldBlock = new ByteArrayBlock(1, Optional.empty(), new byte[]{10});
         AbstractRowBlock rowBlock = (RowBlock) RowBlock.fromFieldBlocks(1, Optional.empty(), new Block[] {fieldBlock});
         // Blocks should discard the offset mask during creation if no values are null
-        assertThat(rowBlock.getFieldBlockOffsets()).isNull();
+        assertNull(rowBlock.getFieldBlockOffsets());
     }
 
     @Test
@@ -37,6 +38,6 @@ public class TestRowBlock
         Block fieldBlock = new ByteArrayBlock(1, Optional.empty(), new byte[]{10});
         AbstractRowBlock rowBlock = (RowBlock) RowBlock.fromFieldBlocks(1, Optional.of(new boolean[] {true}), new Block[] {fieldBlock});
         // Blocks should not discard the offset mask during creation if no values are null
-        assertThat(rowBlock.getFieldBlockOffsets()).isNotNull();
+        assertNotNull(rowBlock.getFieldBlockOffsets());
     }
 }

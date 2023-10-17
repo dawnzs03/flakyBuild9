@@ -130,10 +130,6 @@ public class InvocationConvention
          */
         BLOCK_POSITION(true, 2),
         /**
-         * Argument is passed as a flat slice. The sql value may not be null.
-         */
-        FLAT(false, 3),
-        /**
          * Argument is passed in an InOut. The sql value may be null.
          */
         IN_OUT(true, 1),
@@ -190,16 +186,7 @@ public class InvocationConvention
          * When a null is passed to a never null argument, the function
          * will not be invoked, and a null is written to the block builder.
          */
-        BLOCK_BUILDER(true, 1),
-        /**
-         * Return value is written to flat memory passed as the last 5
-         * arguments to the function.
-         * It is not possible to adapt a NEVER_NULL argument to a
-         * BOXED_NULLABLE or NULL_FLAG argument when this return
-         * convention is used.
-         */
-        FLAT_RETURN(false, 4),
-        /**/;
+        BLOCK_BUILDER(true, 1);
 
         private final boolean nullable;
         private final int parameterCount;

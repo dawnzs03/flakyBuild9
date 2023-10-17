@@ -71,9 +71,6 @@ import static io.trino.SystemSessionProperties.getFaultTolerantExecutionTaskMemo
 import static io.trino.SystemSessionProperties.getFaultTolerantExecutionTaskMemoryGrowthFactor;
 import static io.trino.execution.scheduler.ErrorCodes.isOutOfMemoryError;
 import static io.trino.execution.scheduler.ErrorCodes.isWorkerCrashAssociatedError;
-import static io.trino.execution.scheduler.TaskExecutionClass.EAGER_SPECULATIVE;
-import static io.trino.execution.scheduler.TaskExecutionClass.SPECULATIVE;
-import static io.trino.execution.scheduler.TaskExecutionClass.STANDARD;
 import static io.trino.spi.StandardErrorCode.NO_NODES_AVAILABLE;
 import static java.lang.Math.max;
 import static java.lang.Thread.currentThread;
@@ -101,7 +98,6 @@ public class BinPackingNodeAllocatorService
     private final boolean scheduleOnCoordinator;
     private final boolean memoryRequirementIncreaseOnWorkerCrashEnabled;
     private final DataSize taskRuntimeMemoryEstimationOverhead;
-    private final DataSize eagerSpeculativeTasksNodeMemoryOvercommit;
     private final Ticker ticker;
 
     private final Deque<PendingAcquire> pendingAcquires = new ConcurrentLinkedDeque<>();
@@ -121,7 +117,6 @@ public class BinPackingNodeAllocatorService
                 memoryManagerConfig.isFaultTolerantExecutionMemoryRequirementIncreaseOnWorkerCrashEnabled(),
                 Duration.ofMillis(nodeSchedulerConfig.getAllowedNoMatchingNodePeriod().toMillis()),
                 memoryManagerConfig.getFaultTolerantExecutionTaskRuntimeMemoryEstimationOverhead(),
-                memoryManagerConfig.getFaultTolerantExecutionEagerSpeculativeTasksNodeMemoryOvercommit(),
                 Ticker.systemTicker());
     }
 
@@ -133,7 +128,6 @@ public class BinPackingNodeAllocatorService
             boolean memoryRequirementIncreaseOnWorkerCrashEnabled,
             Duration allowedNoMatchingNodePeriod,
             DataSize taskRuntimeMemoryEstimationOverhead,
-            DataSize eagerSpeculativeTasksNodeMemoryOvercommit,
             Ticker ticker)
     {
         this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
@@ -142,7 +136,6 @@ public class BinPackingNodeAllocatorService
         this.memoryRequirementIncreaseOnWorkerCrashEnabled = memoryRequirementIncreaseOnWorkerCrashEnabled;
         this.allowedNoMatchingNodePeriod = requireNonNull(allowedNoMatchingNodePeriod, "allowedNoMatchingNodePeriod is null");
         this.taskRuntimeMemoryEstimationOverhead = requireNonNull(taskRuntimeMemoryEstimationOverhead, "taskRuntimeMemoryEstimationOverhead is null");
-        this.eagerSpeculativeTasksNodeMemoryOvercommit = eagerSpeculativeTasksNodeMemoryOvercommit;
         this.ticker = requireNonNull(ticker, "ticker is null");
     }
 
@@ -211,18 +204,14 @@ public class BinPackingNodeAllocatorService
     @VisibleForTesting
     synchronized void processPendingAcquires()
     {
-        // Process EAGER_SPECULATIVE first; it increases the chance that tasks which have potential to end query early get scheduled to worker nodes.
-        // Even though EAGER_SPECULATIVE tasks depend on upstream STANDARD tasks this logic will not lead to deadlock.
-        // When processing STANDARD acquires below, we will ignore EAGER_SPECULATIVE (and SPECULATIVE) tasks when assessing if node has enough resources for processing task.
-        processPendingAcquires(EAGER_SPECULATIVE);
-        processPendingAcquires(STANDARD);
+        processPendingAcquires(false);
         boolean hasNonSpeculativePendingAcquires = pendingAcquires.stream().anyMatch(pendingAcquire -> !pendingAcquire.isSpeculative());
         if (!hasNonSpeculativePendingAcquires) {
-            processPendingAcquires(SPECULATIVE);
+            processPendingAcquires(true);
         }
     }
 
-    private void processPendingAcquires(TaskExecutionClass executionClass)
+    private void processPendingAcquires(boolean processSpeculative)
     {
         // synchronized only for sake manual triggering in test code. In production code it should only be called by single thread
         Iterator<PendingAcquire> iterator = pendingAcquires.iterator();
@@ -233,8 +222,7 @@ public class BinPackingNodeAllocatorService
                 fulfilledAcquires,
                 scheduleOnCoordinator,
                 taskRuntimeMemoryEstimationOverhead,
-                executionClass == EAGER_SPECULATIVE ? eagerSpeculativeTasksNodeMemoryOvercommit : DataSize.ofBytes(0),
-                executionClass == STANDARD); // if we are processing non-speculative pending acquires we are ignoring speculative acquired ones
+                !processSpeculative); // if we are processing non-speculative pending acquires we are ignoring speculative acquired ones
 
         while (iterator.hasNext()) {
             PendingAcquire pendingAcquire = iterator.next();
@@ -245,7 +233,7 @@ public class BinPackingNodeAllocatorService
                 continue;
             }
 
-            if (pendingAcquire.getExecutionClass() != executionClass) {
+            if (pendingAcquire.isSpeculative() != processSpeculative) {
                 continue;
             }
 
@@ -296,9 +284,9 @@ public class BinPackingNodeAllocatorService
     }
 
     @Override
-    public NodeLease acquire(NodeRequirements nodeRequirements, DataSize memoryRequirement, TaskExecutionClass executionClass)
+    public NodeLease acquire(NodeRequirements nodeRequirements, DataSize memoryRequirement, boolean speculative)
     {
-        BinPackingNodeLease nodeLease = new BinPackingNodeLease(memoryRequirement.toBytes(), executionClass);
+        BinPackingNodeLease nodeLease = new BinPackingNodeLease(memoryRequirement.toBytes(), speculative);
         PendingAcquire pendingAcquire = new PendingAcquire(nodeRequirements, memoryRequirement, nodeLease, ticker);
         pendingAcquires.add(pendingAcquire);
         wakeupProcessPendingAcquires();
@@ -365,11 +353,6 @@ public class BinPackingNodeAllocatorService
         {
             return lease.isSpeculative();
         }
-
-        public TaskExecutionClass getExecutionClass()
-        {
-            return lease.getExecutionClass();
-        }
     }
 
     private class BinPackingNodeLease
@@ -379,13 +362,12 @@ public class BinPackingNodeAllocatorService
         private final AtomicBoolean released = new AtomicBoolean();
         private final long memoryLease;
         private final AtomicReference<TaskId> taskId = new AtomicReference<>();
-        private final AtomicReference<TaskExecutionClass> executionClass;
+        private final AtomicBoolean speculative;
 
-        private BinPackingNodeLease(long memoryLease, TaskExecutionClass executionClass)
+        private BinPackingNodeLease(long memoryLease, boolean speculative)
         {
             this.memoryLease = memoryLease;
-            requireNonNull(executionClass, "executionClass is null");
-            this.executionClass = new AtomicReference<>(executionClass);
+            this.speculative = new AtomicBoolean(speculative);
         }
 
         @Override
@@ -418,26 +400,18 @@ public class BinPackingNodeAllocatorService
         }
 
         @Override
-        public void setExecutionClass(TaskExecutionClass newExecutionClass)
+        public void setSpeculative(boolean speculative)
         {
-            TaskExecutionClass changedFrom = this.executionClass.getAndUpdate(oldExecutionClass -> {
-                checkArgument(oldExecutionClass.canTransitionTo(newExecutionClass), "cannot change execution class from %s to %s", oldExecutionClass, newExecutionClass);
-                return newExecutionClass;
-            });
-
-            if (changedFrom != newExecutionClass) {
+            checkArgument(!speculative, "cannot make non-speculative task speculative");
+            boolean changed = this.speculative.compareAndSet(true, false);
+            if (changed) {
                 wakeupProcessPendingAcquires();
             }
         }
 
         public boolean isSpeculative()
         {
-            return executionClass.get().isSpeculative();
-        }
-
-        public TaskExecutionClass getExecutionClass()
-        {
-            return executionClass.get();
+            return speculative.get();
         }
 
         public Optional<TaskId> getAttachedTaskId()
@@ -484,7 +458,6 @@ public class BinPackingNodeAllocatorService
                 Set<BinPackingNodeLease> fulfilledAcquires,
                 boolean scheduleOnCoordinator,
                 DataSize taskRuntimeMemoryEstimationOverhead,
-                DataSize nodeMemoryOvercommit,
                 boolean ignoreAcquiredSpeculative)
         {
             this.nodesSnapshot = requireNonNull(nodesSnapshot, "nodesSnapshot is null");
@@ -492,7 +465,6 @@ public class BinPackingNodeAllocatorService
             this.allNodesSorted = nodesSnapshot.getAllNodes().stream()
                     .sorted(comparing(InternalNode::getNodeIdentifier))
                     .collect(toImmutableList());
-
             this.ignoreAcquiredSpeculative = ignoreAcquiredSpeculative;
 
             requireNonNull(nodeMemoryPoolInfos, "nodeMemoryPoolInfos is null");
@@ -540,7 +512,7 @@ public class BinPackingNodeAllocatorService
                     continue;
                 }
                 long nodeReservedMemory = preReservedMemory.getOrDefault(node.getNodeIdentifier(), 0L);
-                nodesRemainingMemory.put(node.getNodeIdentifier(), max(memoryPoolInfo.getMaxBytes() + nodeMemoryOvercommit.toBytes() - nodeReservedMemory, 0L));
+                nodesRemainingMemory.put(node.getNodeIdentifier(), memoryPoolInfo.getMaxBytes() - nodeReservedMemory);
             }
 
             nodesRemainingMemoryRuntimeAdjusted = new HashMap<>();
@@ -568,7 +540,7 @@ public class BinPackingNodeAllocatorService
                 // if globally reported memory usage of node is greater than computed one lets use that.
                 // it can be greater if there are tasks executed on cluster which do not have task retries enabled.
                 nodeUsedMemoryRuntimeAdjusted = max(nodeUsedMemoryRuntimeAdjusted, memoryPoolInfo.getReservedBytes());
-                nodesRemainingMemoryRuntimeAdjusted.put(node.getNodeIdentifier(), max(memoryPoolInfo.getMaxBytes() + nodeMemoryOvercommit.toBytes() - nodeUsedMemoryRuntimeAdjusted, 0L));
+                nodesRemainingMemoryRuntimeAdjusted.put(node.getNodeIdentifier(), memoryPoolInfo.getMaxBytes() - nodeUsedMemoryRuntimeAdjusted);
             }
         }
 
@@ -638,10 +610,10 @@ public class BinPackingNodeAllocatorService
         {
             nodesRemainingMemoryRuntimeAdjusted.compute(
                     nodeIdentifier,
-                    (key, free) -> max(free - memoryLease, 0));
+                    (key, free) -> free - memoryLease);
             nodesRemainingMemory.compute(
                     nodeIdentifier,
-                    (key, free) -> max(free - memoryLease, 0));
+                    (key, free) -> free - memoryLease);
         }
 
         private boolean isNodeEmpty(String nodeIdentifier)

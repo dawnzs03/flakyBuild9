@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.hive.HiveBucketProperty;
 import io.trino.plugin.hive.HiveStorageFormat;
+import io.trino.plugin.hive.metastore.Column;
 import io.trino.plugin.hive.metastore.HiveColumnStatistics;
 import io.trino.plugin.hive.metastore.Storage;
 import io.trino.plugin.hive.metastore.StorageFormat;
@@ -104,8 +105,8 @@ public class TableMetadata
         writerVersion = Optional.of(requireNonNull(currentVersion, "currentVersion is null"));
         owner = table.getOwner();
         tableType = table.getTableType();
-        dataColumns = Column.fromMetastoreModel(table.getDataColumns());
-        partitionColumns = Column.fromMetastoreModel(table.getPartitionColumns());
+        dataColumns = table.getDataColumns();
+        partitionColumns = table.getPartitionColumns();
         parameters = table.getParameters();
 
         StorageFormat tableFormat = table.getStorage().getStorageFormat();
@@ -304,8 +305,8 @@ public class TableMetadata
                         .setBucketProperty(bucketProperty)
                         .setSerdeParameters(serdeParameters)
                         .build(),
-                Column.toMetastoreModel(dataColumns),
-                Column.toMetastoreModel(partitionColumns),
+                dataColumns,
+                partitionColumns,
                 parameters,
                 viewOriginalText,
                 viewExpandedText,

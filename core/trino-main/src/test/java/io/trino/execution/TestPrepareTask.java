@@ -14,7 +14,6 @@
 package io.trino.execution;
 
 import com.google.common.collect.ImmutableMap;
-import io.opentelemetry.api.OpenTelemetry;
 import io.trino.Session;
 import io.trino.client.NodeVersion;
 import io.trino.execution.warnings.WarningCollector;
@@ -32,9 +31,8 @@ import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.Query;
 import io.trino.sql.tree.Statement;
 import io.trino.transaction.TransactionManager;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.List;
@@ -57,16 +55,14 @@ import static io.trino.testing.assertions.TrinoExceptionAssert.assertTrinoExcept
 import static io.trino.transaction.InMemoryTransactionManager.createTestTransactionManager;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 
-@TestInstance(PER_CLASS)
 public class TestPrepareTask
 {
     private final Metadata metadata = createTestMetadataManager();
     private ExecutorService executor = newCachedThreadPool(daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
     {
         executor.shutdownNow();
@@ -108,7 +104,7 @@ public class TestPrepareTask
     private Map<String, String> executePrepare(String statementName, Statement statement, String sqlString, Session session)
     {
         TransactionManager transactionManager = createTestTransactionManager();
-        AccessControlManager accessControl = new AccessControlManager(transactionManager, emptyEventListenerManager(), new AccessControlConfig(), OpenTelemetry.noop(), DefaultSystemAccessControl.NAME);
+        AccessControlManager accessControl = new AccessControlManager(transactionManager, emptyEventListenerManager(), new AccessControlConfig(), DefaultSystemAccessControl.NAME);
         accessControl.setSystemAccessControls(List.of(AllowAllSystemAccessControl.INSTANCE));
         QueryStateMachine stateMachine = QueryStateMachine.begin(
                 Optional.empty(),

@@ -13,6 +13,8 @@
  */
 package io.trino.spi.block;
 
+import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
 import jakarta.annotation.Nullable;
 
 import java.util.Optional;
@@ -272,13 +274,8 @@ public class LongArrayBlock
         return sb.toString();
     }
 
-    long[] getRawValues()
+    Slice getValuesSlice()
     {
-        return values;
-    }
-
-    int getRawValuesOffset()
-    {
-        return arrayOffset;
+        return Slices.wrappedLongArray(values, arrayOffset, positionCount);
     }
 }

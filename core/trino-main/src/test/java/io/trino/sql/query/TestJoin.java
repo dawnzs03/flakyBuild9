@@ -264,10 +264,11 @@ public class TestJoin
                 anyTree(
                         aggregation(
                                 ImmutableMap.of("COUNT", functionCall("count", ImmutableList.of())),
-                                join(INNER, builder -> builder
-                                        .left(anyTree(values("y")))
-                                        .right(values()))
-                                        .with(JoinNode.class, not(JoinNode::isMaySkipOutputDuplicates)))));
+                                anyTree(
+                                        join(INNER, builder -> builder
+                                                .left(anyTree(values("y")))
+                                                .right(values()))
+                                                .with(JoinNode.class, not(JoinNode::isMaySkipOutputDuplicates))))));
 
         assertions.assertQueryAndPlan(
                 "SELECT t.x FROM (VALUES 1, 2) t(x) JOIN (VALUES 2, 2) u(x) ON t.x = u.x GROUP BY t.x",

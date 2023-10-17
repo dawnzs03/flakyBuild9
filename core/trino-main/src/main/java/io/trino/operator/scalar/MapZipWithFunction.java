@@ -48,8 +48,9 @@ public final class MapZipWithFunction
 
     private MapZipWithFunction()
     {
-        super(FunctionMetadata.scalarBuilder("map_zip_with")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("map_zip_with")
                         .typeVariable("K")
                         .typeVariable("V1")
                         .typeVariable("V2")

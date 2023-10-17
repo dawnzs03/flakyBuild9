@@ -88,7 +88,7 @@ public class ApplyTableScanRedirection
         CatalogSchemaTableName destinationTable = tableScanRedirectApplicationResult.get().getDestinationTable();
 
         QualifiedObjectName destinationObjectName = convertFromSchemaTableName(destinationTable.getCatalogName()).apply(destinationTable.getSchemaTableName());
-        Optional<QualifiedObjectName> redirectedObjectName = plannerContext.getMetadata().getRedirectionAwareTableHandle(context.getSession(), destinationObjectName).redirectedTableName();
+        Optional<QualifiedObjectName> redirectedObjectName = plannerContext.getMetadata().getRedirectionAwareTableHandle(context.getSession(), destinationObjectName).getRedirectedTableName();
 
         redirectedObjectName.ifPresent(name -> {
             throw new TrinoException(NOT_SUPPORTED, format("Further redirection of destination table '%s' to '%s' is not supported", destinationObjectName, name));
@@ -222,7 +222,7 @@ public class ApplyTableScanRedirection
                         newAssignments.keySet(),
                         casts.buildOrThrow(),
                         newScanNode),
-                domainTranslator.toPredicate(transformedConstraint));
+                domainTranslator.toPredicate(context.getSession(), transformedConstraint));
 
         return Result.ofPlanNode(applyProjection(
                 context.getIdAllocator(),
@@ -261,7 +261,7 @@ public class ApplyTableScanRedirection
             Type sourceType)
     {
         try {
-            plannerContext.getMetadata().getCoercion(destinationType, sourceType);
+            plannerContext.getMetadata().getCoercion(session, destinationType, sourceType);
         }
         catch (TrinoException e) {
             throw new TrinoException(FUNCTION_NOT_FOUND, format(

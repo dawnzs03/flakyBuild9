@@ -22,7 +22,7 @@ import io.trino.spi.block.RowBlockBuilder;
 import io.trino.spi.block.SingleRowBlock;
 import io.trino.spi.type.Type;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,10 +58,12 @@ public class TestRowBlock
     {
         List<Type> fieldTypes = ImmutableList.of(VARCHAR, BIGINT);
         List<Object>[] expectedValues = alternatingNullValues(generateTestRows(fieldTypes, 100));
-        Block block = createBlockBuilderWithValues(fieldTypes, expectedValues).build();
+        BlockBuilder blockBuilder = createBlockBuilderWithValues(fieldTypes, expectedValues);
+        Block block = blockBuilder.build();
         assertEquals(block.getPositionCount(), expectedValues.length);
         for (int i = 0; i < block.getPositionCount(); i++) {
             int expectedSize = getExpectedEstimatedDataSize(expectedValues[i]);
+            assertEquals(blockBuilder.getEstimatedDataSizeForStats(i), expectedSize);
             assertEquals(block.getEstimatedDataSizeForStats(i), expectedSize);
         }
     }
@@ -121,11 +123,14 @@ public class TestRowBlock
 
     private void testWith(List<Type> fieldTypes, List<Object>[] expectedValues)
     {
-        Block block = createBlockBuilderWithValues(fieldTypes, expectedValues).build();
-        assertBlock(block, expectedValues);
+        BlockBuilder blockBuilder = createBlockBuilderWithValues(fieldTypes, expectedValues);
+
+        assertBlock(blockBuilder, expectedValues);
+        assertBlock(blockBuilder.build(), expectedValues);
 
         IntArrayList positionList = generatePositionList(expectedValues.length, expectedValues.length / 2);
-        assertBlockFilteredPositions(expectedValues, block, positionList.toIntArray());
+        assertBlockFilteredPositions(expectedValues, blockBuilder, positionList.toIntArray());
+        assertBlockFilteredPositions(expectedValues, blockBuilder.build(), positionList.toIntArray());
     }
 
     private BlockBuilder createBlockBuilderWithValues(List<Type> fieldTypes, List<Object>[] rows)

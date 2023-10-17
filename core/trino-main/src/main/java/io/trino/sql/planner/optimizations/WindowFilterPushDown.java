@@ -41,6 +41,7 @@ import io.trino.sql.planner.plan.ValuesNode;
 import io.trino.sql.planner.plan.WindowNode;
 import io.trino.sql.tree.BooleanLiteral;
 import io.trino.sql.tree.Expression;
+import io.trino.sql.tree.QualifiedName;
 
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -108,8 +109,8 @@ public class WindowFilterPushDown
             this.plannerContext = requireNonNull(plannerContext, "plannerContext is null");
             this.session = requireNonNull(session, "session is null");
             this.types = requireNonNull(types, "types is null");
-            rowNumberFunctionId = plannerContext.getMetadata().resolveBuiltinFunction("row_number", ImmutableList.of()).getFunctionId();
-            rankFunctionId = plannerContext.getMetadata().resolveBuiltinFunction("rank", ImmutableList.of()).getFunctionId();
+            rowNumberFunctionId = plannerContext.getMetadata().resolveFunction(session, QualifiedName.of("row_number"), ImmutableList.of()).getFunctionId();
+            rankFunctionId = plannerContext.getMetadata().resolveFunction(session, QualifiedName.of("rank"), ImmutableList.of()).getFunctionId();
             domainTranslator = new DomainTranslator(plannerContext);
         }
 
@@ -220,7 +221,7 @@ public class WindowFilterPushDown
             Expression newPredicate = ExpressionUtils.combineConjuncts(
                     plannerContext.getMetadata(),
                     extractionResult.getRemainingExpression(),
-                    domainTranslator.toPredicate(newTupleDomain));
+                    domainTranslator.toPredicate(session, newTupleDomain));
 
             if (newPredicate.equals(BooleanLiteral.TRUE_LITERAL)) {
                 return source;

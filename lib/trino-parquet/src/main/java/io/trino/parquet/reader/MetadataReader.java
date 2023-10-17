@@ -64,6 +64,7 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Math.min;
 import static java.lang.Math.toIntExact;
+import static org.apache.hadoop.hive.ql.io.parquet.write.DataWritableWriteSupport.WRITER_TIMEZONE;
 import static org.apache.parquet.format.Util.readFileMetaData;
 import static org.apache.parquet.format.converter.ParquetMetadataConverterUtil.getLogicalTypeAnnotation;
 
@@ -116,16 +117,8 @@ public final class MetadataReader
         InputStream metadataStream = buffer.slice(buffer.length() - completeFooterSize, metadataLength).getInput();
 
         FileMetaData fileMetaData = readFileMetaData(metadataStream);
-        ParquetMetadata parquetMetadata = createParquetMetadata(fileMetaData, dataSource.getId().toString());
-        validateFileMetadata(dataSource.getId(), parquetMetadata.getFileMetaData(), parquetWriteValidation);
-        return parquetMetadata;
-    }
-
-    public static ParquetMetadata createParquetMetadata(FileMetaData fileMetaData, String filename)
-            throws ParquetCorruptionException
-    {
         List<SchemaElement> schema = fileMetaData.getSchema();
-        validateParquet(!schema.isEmpty(), "Empty Parquet schema in file: %s", filename);
+        validateParquet(!schema.isEmpty(), "Empty Parquet schema in file: %s", dataSource.getId());
 
         MessageType messageType = readParquetSchema(schema);
         List<BlockMetaData> blocks = new ArrayList<>();
@@ -182,6 +175,7 @@ public final class MetadataReader
                 messageType,
                 keyValueMetaData,
                 fileMetaData.getCreated_by());
+        validateFileMetadata(dataSource.getId(), parquetFileMetadata, parquetWriteValidation);
         return new ParquetMetadata(parquetFileMetadata, blocks);
     }
 
@@ -407,7 +401,7 @@ public final class MetadataReader
         ParquetWriteValidation writeValidation = parquetWriteValidation.get();
         writeValidation.validateTimeZone(
                 dataSourceId,
-                Optional.ofNullable(fileMetaData.getKeyValueMetaData().get("writer.time.zone")));
+                Optional.ofNullable(fileMetaData.getKeyValueMetaData().get(WRITER_TIMEZONE)));
         writeValidation.validateColumns(dataSourceId, fileMetaData.getSchema());
     }
 }

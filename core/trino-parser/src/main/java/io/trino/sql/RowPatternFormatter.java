@@ -101,10 +101,14 @@ public final class RowPatternFormatter
         @Override
         protected String visitAnchorPattern(AnchorPattern node, Void context)
         {
-            return switch (node.getType()) {
-                case PARTITION_START -> "^";
-                case PARTITION_END -> "$";
-            };
+            switch (node.getType()) {
+                case PARTITION_START:
+                    return "^";
+                case PARTITION_END:
+                    return "$";
+                default:
+                    throw new IllegalStateException("unexpected anchor pattern type: " + node.getType());
+            }
         }
 
         @Override

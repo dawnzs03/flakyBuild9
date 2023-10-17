@@ -15,21 +15,19 @@ package io.trino.spi.security;
 
 import io.trino.spi.QueryId;
 
-import java.time.Instant;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
 public class SystemSecurityContext
 {
     private final Identity identity;
-    private final QueryId queryId;
-    private final Instant queryStart;
+    private final Optional<QueryId> queryId;
 
-    public SystemSecurityContext(Identity identity, QueryId queryId, Instant queryStart)
+    public SystemSecurityContext(Identity identity, Optional<QueryId> queryId)
     {
         this.identity = requireNonNull(identity, "identity is null");
         this.queryId = requireNonNull(queryId, "queryId is null");
-        this.queryStart = requireNonNull(queryStart, "queryStart is null");
     }
 
     public Identity getIdentity()
@@ -37,13 +35,8 @@ public class SystemSecurityContext
         return identity;
     }
 
-    public QueryId getQueryId()
+    public Optional<QueryId> getQueryId()
     {
         return queryId;
-    }
-
-    public Instant getQueryStart()
-    {
-        return queryStart;
     }
 }

@@ -67,8 +67,9 @@ public class JsonToMapCast
 
     private JsonToMapCast()
     {
-        super(FunctionMetadata.operatorBuilder(CAST)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .operatorType(CAST)
                         .castableFromTypeParameter("K", VARCHAR.getTypeSignature())
                         .castableFromTypeParameter("V", JSON.getTypeSignature())
                         .returnType(mapType(new TypeSignature("K"), new TypeSignature("V")))
@@ -108,8 +109,7 @@ public class JsonToMapCast
             if (jsonParser.nextToken() != null) {
                 throw new JsonCastException(format("Unexpected trailing token: %s", jsonParser.getText()));
             }
-            Block block = blockBuilder.build();
-            return mapType.getObject(block, 0);
+            return mapType.getObject(blockBuilder, blockBuilder.getPositionCount() - 1);
         }
         catch (TrinoException | JsonCastException e) {
             throw new TrinoException(INVALID_CAST_ARGUMENT, format("Cannot cast to %s. %s\n%s", mapType, e.getMessage(), truncateIfNecessaryForErrorMessage(json)), e);

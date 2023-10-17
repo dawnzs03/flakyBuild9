@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
+import io.trino.FullConnectorSession;
 import io.trino.annotation.UsedByGeneratedCode;
 import io.trino.json.JsonPathEvaluator;
 import io.trino.json.JsonPathInvocationContext;
@@ -80,8 +81,9 @@ public class JsonValueFunction
 
     public JsonValueFunction(FunctionManager functionManager, Metadata metadata, TypeManager typeManager)
     {
-        super(FunctionMetadata.scalarBuilder(JSON_VALUE_FUNCTION_NAME)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name(JSON_VALUE_FUNCTION_NAME)
                         .typeVariable("R")
                         .typeVariable("T")
                         .returnType(new TypeSignature("R"))
@@ -298,7 +300,7 @@ public class JsonValueFunction
         }
         ResolvedFunction coercion;
         try {
-            coercion = metadata.getCoercion(typedValue.getType(), returnType);
+            coercion = metadata.getCoercion(((FullConnectorSession) session).getSession(), typedValue.getType(), returnType);
         }
         catch (OperatorNotFoundException e) {
             return handleSpecialCase(errorBehavior, errorDefault, () -> new JsonValueResultError(format(

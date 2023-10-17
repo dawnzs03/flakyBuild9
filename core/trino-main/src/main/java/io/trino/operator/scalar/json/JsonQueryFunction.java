@@ -74,8 +74,9 @@ public class JsonQueryFunction
 
     public JsonQueryFunction(FunctionManager functionManager, Metadata metadata, TypeManager typeManager)
     {
-        super(FunctionMetadata.scalarBuilder(JSON_QUERY_FUNCTION_NAME)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name(JSON_QUERY_FUNCTION_NAME)
                         .typeVariable("T")
                         .returnType(new TypeSignature(JSON_2016))
                         .argumentTypes(ImmutableList.of(

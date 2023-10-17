@@ -59,8 +59,9 @@ public class JsonArrayFunction
 
     private JsonArrayFunction()
     {
-        super(FunctionMetadata.scalarBuilder(JSON_ARRAY_FUNCTION_NAME)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name(JSON_ARRAY_FUNCTION_NAME)
                         .typeVariable("E")
                         .returnType(new TypeSignature(JSON_2016))
                         .argumentTypes(ImmutableList.of(new TypeSignature("E"), new TypeSignature(BOOLEAN)))

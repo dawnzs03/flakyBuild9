@@ -559,12 +559,9 @@ public class TaskContext
 
         synchronized (cumulativeMemoryLock) {
             long currentTimeNanos = System.nanoTime();
-
-            if (lastTaskStatCallNanos != 0) {
-                double sinceLastPeriodMillis = (currentTimeNanos - lastTaskStatCallNanos) / 1_000_000.0;
-                long averageUserMemoryForLastPeriod = (userMemory + lastUserMemoryReservation) / 2;
-                cumulativeUserMemory.addAndGet(averageUserMemoryForLastPeriod * sinceLastPeriodMillis);
-            }
+            double sinceLastPeriodMillis = (currentTimeNanos - lastTaskStatCallNanos) / 1_000_000.0;
+            long averageUserMemoryForLastPeriod = (userMemory + lastUserMemoryReservation) / 2;
+            cumulativeUserMemory.addAndGet(averageUserMemoryForLastPeriod * sinceLastPeriodMillis);
 
             lastTaskStatCallNanos = currentTimeNanos;
             lastUserMemoryReservation = userMemory;
@@ -642,11 +639,6 @@ public class TaskContext
     public QueryContext getQueryContext()
     {
         return queryContext;
-    }
-
-    public DataSize getQueryMemoryReservation()
-    {
-        return DataSize.ofBytes(queryContext.getUserMemoryReservation());
     }
 
     public LocalDynamicFiltersCollector getLocalDynamicFiltersCollector()

@@ -71,10 +71,9 @@ public class ParametricAggregation
 
     private static FunctionMetadata createFunctionMetadata(Signature signature, AggregationHeader details, FunctionNullability functionNullability)
     {
-        FunctionMetadata.Builder functionMetadata = FunctionMetadata.aggregateBuilder(details.getName())
-                .signature(signature);
-
-        details.getAliases().forEach(functionMetadata::alias);
+        FunctionMetadata.Builder functionMetadata = FunctionMetadata.aggregateBuilder()
+                .signature(signature)
+                .canonicalName(details.getName());
 
         if (details.getDescription().isPresent()) {
             functionMetadata.description(details.getDescription().get());

@@ -23,7 +23,7 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-public class SingleValueRowDecoder
+class SingleValueRowDecoder
         implements RowDecoder
 {
     private final DecoderColumnHandle column;
@@ -32,7 +32,7 @@ public class SingleValueRowDecoder
     public SingleValueRowDecoder(AvroDeserializer<Object> deserializer, DecoderColumnHandle column)
     {
         this.deserializer = requireNonNull(deserializer, "deserializer is null");
-        this.column = requireNonNull(column, "column is null");
+        this.column = requireNonNull(column, "columns is null");
     }
 
     @Override

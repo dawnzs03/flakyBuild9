@@ -16,7 +16,6 @@ package io.trino.security;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import io.opentelemetry.api.OpenTelemetry;
 import io.trino.connector.CatalogServiceProvider;
 import io.trino.connector.MockConnectorFactory;
 import io.trino.eventlistener.EventListenerManager;
@@ -45,13 +44,12 @@ import io.trino.testing.LocalQueryRunner;
 import io.trino.testing.TestingEventListenerManager;
 import io.trino.transaction.TransactionId;
 import io.trino.transaction.TransactionManager;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Principal;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -78,7 +76,6 @@ public class TestAccessControlManager
     private static final Principal PRINCIPAL = new BasicPrincipal("principal");
     private static final String USER_NAME = "user_name";
     private static final QueryId queryId = new QueryId("query_id");
-    private static final Instant queryStart = Instant.now();
 
     @Test
     public void testInitializing()
@@ -111,7 +108,7 @@ public class TestAccessControlManager
 
         transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    SecurityContext context = new SecurityContext(transactionId, identity, queryId, queryStart);
+                    SecurityContext context = new SecurityContext(transactionId, identity, queryId);
                     accessControlManager.checkCanSetCatalogSessionProperty(context, TEST_CATALOG_NAME, "property");
                     accessControlManager.checkCanShowSchemas(context, TEST_CATALOG_NAME);
                     accessControlManager.checkCanShowTables(context, new CatalogSchemaName(TEST_CATALOG_NAME, "schema"));
@@ -129,7 +126,7 @@ public class TestAccessControlManager
 
         assertThatThrownBy(() -> transaction(transactionManager, accessControlManager)
                 .execute(transactionId -> {
-                    accessControlManager.checkCanInsertIntoTable(new SecurityContext(transactionId, identity, queryId, queryStart), tableName);
+                    accessControlManager.checkCanInsertIntoTable(new SecurityContext(transactionId, identity, queryId), tableName);
                 }))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied: Cannot insert into table test-catalog.schema.table");
@@ -232,13 +229,13 @@ public class TestAccessControlManager
                     return new SystemAccessControl()
                     {
                         @Override
-                        public Optional<ViewExpression> getColumnMask(SystemSecurityContext context, CatalogSchemaTableName tableName, String column, Type type)
+                        public List<ViewExpression> getColumnMasks(SystemSecurityContext context, CatalogSchemaTableName tableName, String column, Type type)
                         {
-                            return Optional.of(new ViewExpression(Optional.of("user"), Optional.empty(), Optional.empty(), "system mask"));
+                            return ImmutableList.of(new ViewExpression(Optional.of("user"), Optional.empty(), Optional.empty(), "system mask"));
                         }
 
                         @Override
-                        public void checkCanSetSystemSessionProperty(Identity identity, String propertyName)
+                        public void checkCanSetSystemSessionProperty(SystemSecurityContext context, String propertyName)
                         {
                         }
                     };
@@ -250,9 +247,9 @@ public class TestAccessControlManager
             accessControlManager.setConnectorAccessControlProvider(CatalogServiceProvider.singleton(queryRunner.getCatalogHandle(TEST_CATALOG_NAME), Optional.of(new ConnectorAccessControl()
             {
                 @Override
-                public Optional<ViewExpression> getColumnMask(ConnectorSecurityContext context, SchemaTableName tableName, String column, Type type)
+                public List<ViewExpression> getColumnMasks(ConnectorSecurityContext context, SchemaTableName tableName, String column, Type type)
                 {
-                    return Optional.of(new ViewExpression(Optional.of("user"), Optional.empty(), Optional.empty(), "connector mask"));
+                    return ImmutableList.of(new ViewExpression(Optional.of("user"), Optional.empty(), Optional.empty(), "connector mask"));
                 }
 
                 @Override
@@ -266,7 +263,7 @@ public class TestAccessControlManager
     private static SecurityContext context(TransactionId transactionId)
     {
         Identity identity = Identity.forUser(USER_NAME).withPrincipal(PRINCIPAL).build();
-        return new SecurityContext(transactionId, identity, queryId, queryStart);
+        return new SecurityContext(transactionId, identity, queryId);
     }
 
     @Test
@@ -493,17 +490,17 @@ public class TestAccessControlManager
 
     private AccessControlManager createAccessControlManager(TransactionManager testTransactionManager)
     {
-        return new AccessControlManager(testTransactionManager, emptyEventListenerManager(), new AccessControlConfig(), OpenTelemetry.noop(), DefaultSystemAccessControl.NAME);
+        return new AccessControlManager(testTransactionManager, emptyEventListenerManager(), new AccessControlConfig(), DefaultSystemAccessControl.NAME);
     }
 
     private AccessControlManager createAccessControlManager(EventListenerManager eventListenerManager, AccessControlConfig config)
     {
-        return new AccessControlManager(createTestTransactionManager(), eventListenerManager, config, OpenTelemetry.noop(), DefaultSystemAccessControl.NAME);
+        return new AccessControlManager(createTestTransactionManager(), eventListenerManager, config, DefaultSystemAccessControl.NAME);
     }
 
     private AccessControlManager createAccessControlManager(EventListenerManager eventListenerManager, String defaultAccessControlName)
     {
-        return new AccessControlManager(createTestTransactionManager(), eventListenerManager, new AccessControlConfig(), OpenTelemetry.noop(), defaultAccessControlName);
+        return new AccessControlManager(createTestTransactionManager(), eventListenerManager, new AccessControlConfig(), defaultAccessControlName);
     }
 
     private SystemAccessControlFactory eventListeningSystemAccessControlFactory(String name, EventListener... eventListeners)
@@ -522,7 +519,7 @@ public class TestAccessControlManager
                 return new SystemAccessControl()
                 {
                     @Override
-                    public void checkCanSetSystemSessionProperty(Identity identity, String propertyName)
+                    public void checkCanSetSystemSessionProperty(SystemSecurityContext context, String propertyName)
                     {
                     }
 
@@ -590,7 +587,7 @@ public class TestAccessControlManager
                 }
 
                 @Override
-                public void checkCanSetSystemSessionProperty(Identity identity, String propertyName)
+                public void checkCanSetSystemSessionProperty(SystemSecurityContext context, String propertyName)
                 {
                     throw new UnsupportedOperationException();
                 }

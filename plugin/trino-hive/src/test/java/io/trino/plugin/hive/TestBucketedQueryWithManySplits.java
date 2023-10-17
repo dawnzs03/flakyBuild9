@@ -16,8 +16,7 @@ package io.trino.plugin.hive;
 import com.google.common.collect.ImmutableMap;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.QueryRunner;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.testng.annotations.Test;
 
 import static java.lang.String.format;
 
@@ -37,8 +36,7 @@ public class TestBucketedQueryWithManySplits
                 .build();
     }
 
-    @Test
-    @Timeout(120)
+    @Test(timeOut = 120_000)
     public void testBucketedQueryWithManySplits()
     {
         QueryRunner queryRunner = getQueryRunner();

@@ -146,12 +146,6 @@ public final class StatisticsAwareJdbcClient
     }
 
     @Override
-    public Optional<Type> getSupportedType(ConnectorSession session, Type type)
-    {
-        return delegate.getSupportedType(session, type);
-    }
-
-    @Override
     public boolean supportsAggregationPushdown(ConnectorSession session, JdbcTableHandle table, List<AggregateFunction> aggregates, Map<String, ColumnHandle> assignments, List<List<ColumnHandle>> groupingSets)
     {
         return delegate().supportsAggregationPushdown(session, table, aggregates, assignments, groupingSets);
@@ -406,9 +400,9 @@ public final class StatisticsAwareJdbcClient
     }
 
     @Override
-    public void dropSchema(ConnectorSession session, String schemaName, boolean cascade)
+    public void dropSchema(ConnectorSession session, String schemaName)
     {
-        stats.getDropSchema().wrap(() -> delegate().dropSchema(session, schemaName, cascade));
+        stats.getDropSchema().wrap(() -> delegate().dropSchema(session, schemaName));
     }
 
     @Override
@@ -451,12 +445,6 @@ public final class StatisticsAwareJdbcClient
     public OptionalLong delete(ConnectorSession session, JdbcTableHandle handle)
     {
         return stats.getDelete().wrap(() -> delegate().delete(session, handle));
-    }
-
-    @Override
-    public OptionalLong update(ConnectorSession session, JdbcTableHandle handle)
-    {
-        return stats.getUpdate().wrap(() -> delegate().update(session, handle));
     }
 
     @Override

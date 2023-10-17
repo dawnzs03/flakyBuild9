@@ -20,10 +20,10 @@ import io.trino.plugin.hive.metastore.file.FileHiveMetastore;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.MaterializedResult;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.apache.hadoop.hive.metastore.TableType;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +31,6 @@ import java.nio.file.Files;
 
 import static com.google.common.io.MoreFiles.deleteRecursively;
 import static com.google.common.io.RecursiveDeleteOption.ALLOW_INSECURE;
-import static io.trino.plugin.hive.TableType.EXTERNAL_TABLE;
 import static io.trino.plugin.hive.metastore.file.TestingFileHiveMetastore.createTestingFileHiveMetastore;
 import static io.trino.plugin.iceberg.DataFileRecord.toDataFileRecord;
 import static io.trino.plugin.iceberg.IcebergTestUtils.getFileSystemFactory;
@@ -39,12 +38,10 @@ import static io.trino.testing.TestingConnectorSession.SESSION;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_CLASS)
 public class TestIcebergTableWithExternalLocation
         extends AbstractTestQueryFramework
 {
@@ -64,13 +61,13 @@ public class TestIcebergTableWithExternalLocation
                 .build();
     }
 
-    @BeforeAll
+    @BeforeClass
     public void initFileSystem()
     {
         fileSystem = getFileSystemFactory(getDistributedQueryRunner()).create(SESSION);
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
             throws IOException
     {
@@ -88,7 +85,7 @@ public class TestIcebergTableWithExternalLocation
         assertQuerySucceeds(format("INSERT INTO %s VALUES (1), (2), (3)", tableName));
 
         Table table = metastore.getTable("tpch", tableName).orElseThrow();
-        assertThat(table.getTableType()).isEqualTo(EXTERNAL_TABLE.name());
+        assertThat(table.getTableType()).isEqualTo(TableType.EXTERNAL_TABLE.name());
         Location tableLocation = Location.of(table.getStorage().getLocation());
         assertTrue(fileSystem.newInputFile(tableLocation).exists(), "The directory corresponding to the table storage location should exist");
         MaterializedResult materializedResult = computeActual("SELECT * FROM \"test_table_external_create_and_drop$files\"");

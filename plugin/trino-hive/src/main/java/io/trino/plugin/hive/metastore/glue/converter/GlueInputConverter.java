@@ -111,12 +111,11 @@ public final class GlueInputConverter
         return sd;
     }
 
-    private static com.amazonaws.services.glue.model.Column convertColumn(Column trinoColumn)
+    private static com.amazonaws.services.glue.model.Column convertColumn(Column prestoColumn)
     {
         return new com.amazonaws.services.glue.model.Column()
-                .withName(trinoColumn.getName())
-                .withType(trinoColumn.getType().toString())
-                .withComment(trinoColumn.getComment().orElse(null))
-                .withParameters(trinoColumn.getProperties());
+                .withName(prestoColumn.getName())
+                .withType(prestoColumn.getType().toString())
+                .withComment(prestoColumn.getComment().orElse(null));
     }
 }

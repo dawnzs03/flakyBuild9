@@ -104,7 +104,7 @@ public class PushdownFilterIntoRowNumber
         Expression newPredicate = ExpressionUtils.combineConjuncts(
                 plannerContext.getMetadata(),
                 extractionResult.getRemainingExpression(),
-                new DomainTranslator(plannerContext).toPredicate(newTupleDomain));
+                new DomainTranslator(plannerContext).toPredicate(session, newTupleDomain));
 
         if (newPredicate.equals(BooleanLiteral.TRUE_LITERAL)) {
             return Result.ofPlanNode(source);

@@ -123,7 +123,6 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.MoreFiles.deleteRecursively;
 import static com.google.common.io.RecursiveDeleteOption.ALLOW_INSECURE;
@@ -222,8 +221,7 @@ public class TestingTrinoServer
             Optional<URI> discoveryUri,
             Module additionalModule,
             Optional<Path> baseDataDir,
-            Optional<FactoryConfiguration> systemAccessControlConfiguration,
-            Optional<List<SystemAccessControl>> systemAccessControls,
+            List<SystemAccessControl> systemAccessControls,
             List<EventListener> eventListeners)
     {
         this.coordinator = coordinator;
@@ -243,8 +241,8 @@ public class TestingTrinoServer
                 .put("catalog.management", "dynamic")
                 .put("task.concurrency", "4")
                 .put("task.max-worker-threads", "4")
-                // Use task.min-writer-count > 1, as this allows to expose writer-concurrency related bugs.
-                .put("task.min-writer-count", "2")
+                // Use task.writer-count > 1, as this allows to expose writer-concurrency related bugs.
+                .put("task.writer-count", "2")
                 .put("exchange.client-threads", "4")
                 // Reduce memory footprint in tests
                 .put("exchange.max-buffer-size", "4MB")
@@ -382,12 +380,7 @@ public class TestingTrinoServer
         failureInjector = injector.getInstance(FailureInjector.class);
         exchangeManagerRegistry = injector.getInstance(ExchangeManagerRegistry.class);
 
-        systemAccessControlConfiguration.ifPresentOrElse(
-                configuration -> {
-                    checkArgument(systemAccessControls.isEmpty(), "systemAccessControlConfiguration and systemAccessControls cannot be both present");
-                    accessControl.loadSystemAccessControl(configuration.factoryName(), configuration.configuration());
-                },
-                () -> accessControl.setSystemAccessControls(systemAccessControls.orElseThrow()));
+        accessControl.setSystemAccessControls(systemAccessControls);
 
         EventListenerManager eventListenerManager = injector.getInstance(EventListenerManager.class);
         eventListeners.forEach(eventListenerManager::addEventListener);
@@ -712,8 +705,7 @@ public class TestingTrinoServer
         private Optional<URI> discoveryUri = Optional.empty();
         private Module additionalModule = EMPTY_MODULE;
         private Optional<Path> baseDataDir = Optional.empty();
-        private Optional<FactoryConfiguration> systemAccessControlConfiguration = Optional.empty();
-        private Optional<List<SystemAccessControl>> systemAccessControls = Optional.of(ImmutableList.of());
+        private List<SystemAccessControl> systemAccessControls = ImmutableList.of();
         private List<EventListener> eventListeners = ImmutableList.of();
 
         public Builder setCoordinator(boolean coordinator)
@@ -752,20 +744,9 @@ public class TestingTrinoServer
             return this;
         }
 
-        public Builder setSystemAccessControlConfiguration(Optional<FactoryConfiguration> systemAccessControlConfiguration)
+        public Builder setSystemAccessControls(List<SystemAccessControl> systemAccessControls)
         {
-            this.systemAccessControlConfiguration = requireNonNull(systemAccessControlConfiguration, "systemAccessControlConfiguration is null");
-            return this;
-        }
-
-        public Builder setSystemAccessControl(SystemAccessControl systemAccessControl)
-        {
-            return setSystemAccessControls(Optional.of(ImmutableList.of(requireNonNull(systemAccessControl, "systemAccessControl is null"))));
-        }
-
-        public Builder setSystemAccessControls(Optional<List<SystemAccessControl>> systemAccessControls)
-        {
-            this.systemAccessControls = systemAccessControls.map(ImmutableList::copyOf);
+            this.systemAccessControls = ImmutableList.copyOf(requireNonNull(systemAccessControls, "systemAccessControls is null"));
             return this;
         }
 
@@ -784,7 +765,6 @@ public class TestingTrinoServer
                     discoveryUri,
                     additionalModule,
                     baseDataDir,
-                    systemAccessControlConfiguration,
                     systemAccessControls,
                     eventListeners);
         }

@@ -104,7 +104,11 @@ testing/bin/ptl env list
 
 #### Environment config
 
-Most of the Hadoop-based environments can be run in multiple configurations.
+Most of the Hadoop-based environments can be run in multiple configurations that use different Hadoop distribution:
+
+- **config-default** - executes tests against vanilla Hadoop distribution
+- **config-hdp3** - executes tests against HDP3 distribution of Hadoop
+
 You can obtain list of available environment configurations using command:
 
 ```

@@ -352,11 +352,6 @@ public class QueryAssertions
             return matches(expected);
         }
 
-        public QueryAssert succeeds()
-        {
-            return satisfies(actual -> {});
-        }
-
         public QueryAssert ordered()
         {
             ordered = true;

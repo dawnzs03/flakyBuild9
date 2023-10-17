@@ -68,10 +68,9 @@ import io.trino.testing.TestingMetadata.TestingColumnHandle;
 import io.trino.testing.TestingSession;
 import io.trino.testing.TestingSplit;
 import io.trino.util.FinalizerService;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -117,12 +116,10 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-@TestInstance(PER_CLASS)
 public class TestMultiSourcePartitionedScheduler
 {
     private static final PlanNodeId TABLE_SCAN_1_NODE_ID = new PlanNodeId("1");
@@ -148,13 +145,13 @@ public class TestMultiSourcePartitionedScheduler
                 new InternalNode("other3", URI.create("http://127.0.0.1:13"), NodeVersion.UNKNOWN, false));
     }
 
-    @BeforeAll
+    @BeforeClass
     public void setUp()
     {
         finalizerService.start();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void destroyExecutor()
     {
         queryExecutor.shutdownNow();
@@ -532,7 +529,7 @@ public class TestMultiSourcePartitionedScheduler
         FilterNode filterNodeOne = new FilterNode(
                 new PlanNodeId("filter_node_id"),
                 tableScanOne,
-                createDynamicFilterExpression(createTestMetadataManager(), DYNAMIC_FILTER_ID, VARCHAR, symbol.toSymbolReference()));
+                createDynamicFilterExpression(TEST_SESSION, createTestMetadataManager(), DYNAMIC_FILTER_ID, VARCHAR, symbol.toSymbolReference()));
         TableScanNode tableScanTwo = new TableScanNode(
                 TABLE_SCAN_2_NODE_ID,
                 secondTableHandle,
@@ -543,7 +540,7 @@ public class TestMultiSourcePartitionedScheduler
         FilterNode filterNodeTwo = new FilterNode(
                 new PlanNodeId("filter_node_id"),
                 tableScanTwo,
-                createDynamicFilterExpression(createTestMetadataManager(), DYNAMIC_FILTER_ID, VARCHAR, symbol.toSymbolReference()));
+                createDynamicFilterExpression(TEST_SESSION, createTestMetadataManager(), DYNAMIC_FILTER_ID, VARCHAR, symbol.toSymbolReference()));
 
         RemoteSourceNode remote = new RemoteSourceNode(new PlanNodeId("remote_id"), new PlanFragmentId("plan_fragment_id"), ImmutableList.of(buildSymbol), Optional.empty(), REPLICATE, RetryPolicy.NONE);
 

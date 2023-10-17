@@ -21,7 +21,6 @@ import io.trino.filesystem.Location;
 import io.trino.filesystem.TrinoFileSystem;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.TrinoInputFile;
-import io.trino.memory.context.AggregatedMemoryContext;
 import io.trino.parquet.BloomFilterStore;
 import io.trino.parquet.Field;
 import io.trino.parquet.ParquetCorruptionException;
@@ -68,7 +67,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.OptionalLong;
 import java.util.Properties;
 import java.util.Set;
 
@@ -91,8 +89,9 @@ import static io.trino.plugin.hive.HivePageSourceProvider.projectBaseColumns;
 import static io.trino.plugin.hive.HivePageSourceProvider.projectSufficientColumns;
 import static io.trino.plugin.hive.HiveSessionProperties.getParquetMaxReadBlockRowCount;
 import static io.trino.plugin.hive.HiveSessionProperties.getParquetMaxReadBlockSize;
-import static io.trino.plugin.hive.HiveSessionProperties.getParquetSmallFileThreshold;
 import static io.trino.plugin.hive.HiveSessionProperties.isParquetIgnoreStatistics;
+import static io.trino.plugin.hive.HiveSessionProperties.isParquetOptimizedNestedReaderEnabled;
+import static io.trino.plugin.hive.HiveSessionProperties.isParquetOptimizedReaderEnabled;
 import static io.trino.plugin.hive.HiveSessionProperties.isParquetUseColumnIndex;
 import static io.trino.plugin.hive.HiveSessionProperties.isUseParquetColumnNames;
 import static io.trino.plugin.hive.HiveSessionProperties.useParquetBloomFilter;
@@ -194,12 +193,12 @@ public class ParquetPageSourceFactory
                 options.withIgnoreStatistics(isParquetIgnoreStatistics(session))
                         .withMaxReadBlockSize(getParquetMaxReadBlockSize(session))
                         .withMaxReadBlockRowCount(getParquetMaxReadBlockRowCount(session))
-                        .withSmallFileThreshold(getParquetSmallFileThreshold(session))
                         .withUseColumnIndex(isParquetUseColumnIndex(session))
-                        .withBloomFilter(useParquetBloomFilter(session)),
+                        .withBloomFilter(useParquetBloomFilter(session))
+                        .withBatchColumnReaders(isParquetOptimizedReaderEnabled(session))
+                        .withBatchNestedColumnReaders(isParquetOptimizedNestedReaderEnabled(session)),
                 Optional.empty(),
-                domainCompactionThreshold,
-                OptionalLong.of(estimatedFileSize)));
+                domainCompactionThreshold));
     }
 
     /**
@@ -216,16 +215,14 @@ public class ParquetPageSourceFactory
             FileFormatDataSourceStats stats,
             ParquetReaderOptions options,
             Optional<ParquetWriteValidation> parquetWriteValidation,
-            int domainCompactionThreshold,
-            OptionalLong estimatedFileSize)
+            int domainCompactionThreshold)
     {
         MessageType fileSchema;
         MessageType requestedSchema;
         MessageColumnIO messageColumn;
         ParquetDataSource dataSource = null;
         try {
-            AggregatedMemoryContext memoryContext = newSimpleAggregatedMemoryContext();
-            dataSource = createDataSource(inputFile, estimatedFileSize, options, memoryContext, stats);
+            dataSource = new TrinoParquetDataSource(inputFile, options, stats);
 
             ParquetMetadata parquetMetadata = MetadataReader.readFooter(dataSource, parquetWriteValidation);
             FileMetaData fileMetaData = parquetMetadata.getFileMetaData();
@@ -286,7 +283,7 @@ public class ParquetPageSourceFactory
                     blockStarts.build(),
                     finalDataSource,
                     timeZone,
-                    memoryContext,
+                    newSimpleAggregatedMemoryContext(),
                     options,
                     exception -> handleException(dataSourceId, exception),
                     Optional.of(parquetPredicate),
@@ -312,20 +309,6 @@ public class ParquetPageSourceFactory
             String message = format("Error opening Hive split %s (offset=%s, length=%s): %s", inputFile.location(), start, length, e.getMessage());
             throw new TrinoException(HIVE_CANNOT_OPEN_SPLIT, message, e);
         }
-    }
-
-    public static ParquetDataSource createDataSource(
-            TrinoInputFile inputFile,
-            OptionalLong estimatedFileSize,
-            ParquetReaderOptions options,
-            AggregatedMemoryContext memoryContext,
-            FileFormatDataSourceStats stats)
-            throws IOException
-    {
-        if (estimatedFileSize.isEmpty() || estimatedFileSize.getAsLong() > options.getSmallFileThreshold().toBytes()) {
-            return new TrinoParquetDataSource(inputFile, options, stats);
-        }
-        return new MemoryParquetDataSource(inputFile, memoryContext, stats);
     }
 
     public static Optional<MessageType> getParquetMessageType(List<HiveColumnHandle> columns, boolean useColumnNames, MessageType fileSchema)

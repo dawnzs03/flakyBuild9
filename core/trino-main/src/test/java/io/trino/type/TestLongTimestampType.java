@@ -25,7 +25,6 @@ import java.util.List;
 
 import static io.trino.spi.type.TimestampType.TIMESTAMP_NANOS;
 import static io.trino.spi.type.TimestampType.createTimestampType;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.testng.Assert.assertEquals;
 
 public class TestLongTimestampType
@@ -60,7 +59,7 @@ public class TestLongTimestampType
         return new LongTimestamp(timestamp.getEpochMicros() + 1, 0);
     }
 
-    @Test
+    @Override
     public void testRange()
     {
         Range range = type.getRange().orElseThrow();
@@ -87,20 +86,6 @@ public class TestLongTimestampType
                 new MaxPrecision(10, new LongTimestamp(Long.MAX_VALUE, 999_900)),
                 new MaxPrecision(11, new LongTimestamp(Long.MAX_VALUE, 999_990)),
                 new MaxPrecision(12, new LongTimestamp(Long.MAX_VALUE, 999_999)));
-    }
-
-    @Test
-    public void testPreviousValue()
-    {
-        assertThat(type.getPreviousValue(getSampleValue()))
-                .isEmpty();
-    }
-
-    @Test
-    public void testNextValue()
-    {
-        assertThat(type.getNextValue(getSampleValue()))
-                .isEmpty();
     }
 
     record MaxPrecision(int precision, LongTimestamp expectedMax)

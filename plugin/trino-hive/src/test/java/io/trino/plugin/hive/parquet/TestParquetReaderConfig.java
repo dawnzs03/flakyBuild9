@@ -15,7 +15,7 @@ package io.trino.plugin.hive.parquet;
 
 import com.google.common.collect.ImmutableMap;
 import io.airlift.units.DataSize;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.util.Map;
 
@@ -37,8 +37,9 @@ public class TestParquetReaderConfig
                 .setMaxMergeDistance(DataSize.of(1, MEGABYTE))
                 .setMaxBufferSize(DataSize.of(8, MEGABYTE))
                 .setUseColumnIndex(true)
-                .setUseBloomFilter(true)
-                .setSmallFileThreshold(DataSize.of(3, MEGABYTE)));
+                .setOptimizedReaderEnabled(true)
+                .setOptimizedNestedReaderEnabled(true)
+                .setUseBloomFilter(true));
     }
 
     @Test
@@ -51,8 +52,9 @@ public class TestParquetReaderConfig
                 .put("parquet.max-buffer-size", "1431kB")
                 .put("parquet.max-merge-distance", "342kB")
                 .put("parquet.use-column-index", "false")
+                .put("parquet.optimized-reader.enabled", "false")
+                .put("parquet.optimized-nested-reader.enabled", "false")
                 .put("parquet.use-bloom-filter", "false")
-                .put("parquet.small-file-threshold", "1kB")
                 .buildOrThrow();
 
         ParquetReaderConfig expected = new ParquetReaderConfig()
@@ -62,8 +64,9 @@ public class TestParquetReaderConfig
                 .setMaxBufferSize(DataSize.of(1431, KILOBYTE))
                 .setMaxMergeDistance(DataSize.of(342, KILOBYTE))
                 .setUseColumnIndex(false)
-                .setUseBloomFilter(false)
-                .setSmallFileThreshold(DataSize.of(1, KILOBYTE));
+                .setOptimizedReaderEnabled(false)
+                .setOptimizedNestedReaderEnabled(false)
+                .setUseBloomFilter(false);
 
         assertFullMapping(properties, expected);
     }

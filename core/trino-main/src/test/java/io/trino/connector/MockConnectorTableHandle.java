@@ -89,10 +89,4 @@ public class MockConnectorTableHandle
     {
         return Objects.hash(tableName, constraint, columns);
     }
-
-    @Override
-    public String toString()
-    {
-        return tableName.toString();
-    }
 }

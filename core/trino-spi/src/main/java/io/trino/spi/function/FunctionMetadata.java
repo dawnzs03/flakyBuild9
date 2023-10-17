@@ -17,9 +17,7 @@ import io.trino.spi.Experimental;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static io.trino.spi.function.FunctionKind.AGGREGATE;
 import static io.trino.spi.function.FunctionKind.SCALAR;
@@ -29,13 +27,9 @@ import static java.util.Objects.requireNonNull;
 @Experimental(eta = "2022-10-31")
 public class FunctionMetadata
 {
-    // Copied from OperatorNameUtil
-    private static final String OPERATOR_PREFIX = "$operator$";
-
     private final FunctionId functionId;
     private final Signature signature;
     private final String canonicalName;
-    private final Set<String> names;
     private final FunctionNullability functionNullability;
     private final boolean hidden;
     private final boolean deterministic;
@@ -47,7 +41,6 @@ public class FunctionMetadata
             FunctionId functionId,
             Signature signature,
             String canonicalName,
-            Set<String> names,
             FunctionNullability functionNullability,
             boolean hidden,
             boolean deterministic,
@@ -58,10 +51,6 @@ public class FunctionMetadata
         this.functionId = requireNonNull(functionId, "functionId is null");
         this.signature = requireNonNull(signature, "signature is null");
         this.canonicalName = requireNonNull(canonicalName, "canonicalName is null");
-        this.names = Set.copyOf(names);
-        if (!names.contains(canonicalName)) {
-            throw new IllegalArgumentException("names must contain the canonical name");
-        }
         this.functionNullability = requireNonNull(functionNullability, "functionNullability is null");
         if (functionNullability.getArgumentNullable().size() != signature.getArgumentTypes().size()) {
             throw new IllegalArgumentException("signature and functionNullability must have same argument count");
@@ -76,6 +65,7 @@ public class FunctionMetadata
 
     /**
      * Unique id of this function.
+     * For aliased functions, each alias must have a different alias.
      */
     public FunctionId getFunctionId()
     {
@@ -84,6 +74,7 @@ public class FunctionMetadata
 
     /**
      * Signature of a matching call site.
+     * For aliased functions, the signature must use the alias name.
      */
     public Signature getSignature()
     {
@@ -91,19 +82,11 @@ public class FunctionMetadata
     }
 
     /**
-     * The canonical name of the function.
+     * For aliased functions, the canonical name of the function.
      */
     public String getCanonicalName()
     {
         return canonicalName;
-    }
-
-    /**
-     * Canonical name and any aliases.
-     */
-    public Set<String> getNames()
-    {
-        return names;
     }
 
     public FunctionNullability getFunctionNullability()
@@ -142,38 +125,31 @@ public class FunctionMetadata
         return signature.toString();
     }
 
-    public static Builder scalarBuilder(String canonicalName)
+    public static Builder scalarBuilder()
     {
-        return builder(canonicalName, SCALAR);
+        return builder(SCALAR);
     }
 
-    public static Builder operatorBuilder(OperatorType operatorType)
+    public static Builder aggregateBuilder()
     {
-        String name = OPERATOR_PREFIX + requireNonNull(operatorType, "operatorType is null").name();
-        return builder(name, SCALAR);
+        return builder(AGGREGATE);
     }
 
-    public static Builder aggregateBuilder(String canonicalName)
+    public static Builder windowBuilder()
     {
-        return builder(canonicalName, AGGREGATE);
+        return builder(WINDOW);
     }
 
-    public static Builder windowBuilder(String canonicalName)
+    public static Builder builder(FunctionKind functionKind)
     {
-        return builder(canonicalName, WINDOW);
-    }
-
-    public static Builder builder(String canonicalName, FunctionKind functionKind)
-    {
-        return new Builder(canonicalName, functionKind);
+        return new Builder(functionKind);
     }
 
     public static final class Builder
     {
-        private final String canonicalName;
         private final FunctionKind kind;
         private Signature signature;
-        private final Set<String> names = new HashSet<>();
+        private String canonicalName;
         private boolean nullable;
         private List<Boolean> argumentNullability;
         private boolean hidden;
@@ -182,14 +158,8 @@ public class FunctionMetadata
         private FunctionId functionId;
         private boolean deprecated;
 
-        private Builder(String canonicalName, FunctionKind kind)
+        private Builder(FunctionKind kind)
         {
-            this.canonicalName = requireNonNull(canonicalName, "canonicalName is null");
-            names.add(canonicalName);
-            if (canonicalName.startsWith(OPERATOR_PREFIX)) {
-                hidden = true;
-                description = "";
-            }
             this.kind = kind;
             if (kind == AGGREGATE || kind == WINDOW) {
                 nullable = true;
@@ -199,12 +169,16 @@ public class FunctionMetadata
         public Builder signature(Signature signature)
         {
             this.signature = signature;
+            if (signature.isOperator()) {
+                hidden = true;
+                description = "";
+            }
             return this;
         }
 
-        public Builder alias(String alias)
+        public Builder canonicalName(String canonicalName)
         {
-            names.add(alias);
+            this.canonicalName = canonicalName;
             return this;
         }
 
@@ -277,7 +251,10 @@ public class FunctionMetadata
         {
             FunctionId functionId = this.functionId;
             if (functionId == null) {
-                functionId = FunctionId.toFunctionId(canonicalName, signature);
+                functionId = FunctionId.toFunctionId(signature);
+            }
+            if (canonicalName == null) {
+                canonicalName = signature.getName();
             }
             if (argumentNullability == null) {
                 argumentNullability = Collections.nCopies(signature.getArgumentTypes().size(), kind == WINDOW);
@@ -286,7 +263,6 @@ public class FunctionMetadata
                     functionId,
                     signature,
                     canonicalName,
-                    names,
                     new FunctionNullability(nullable, argumentNullability),
                     hidden,
                     deterministic,

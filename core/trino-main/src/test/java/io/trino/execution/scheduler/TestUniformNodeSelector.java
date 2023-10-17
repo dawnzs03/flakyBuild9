@@ -35,10 +35,9 @@ import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.testing.TestingSession;
 import io.trino.testing.TestingSplit;
 import io.trino.util.FinalizerService;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.net.InetAddress;
 import java.net.URI;
@@ -58,11 +57,10 @@ import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.trino.testing.TestingHandles.TEST_CATALOG_HANDLE;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 
-@TestInstance(PER_METHOD)
+@Test(singleThreaded = true)
 public class TestUniformNodeSelector
 {
     private FinalizerService finalizerService;
@@ -76,7 +74,7 @@ public class TestUniformNodeSelector
     private ScheduledExecutorService remoteTaskScheduledExecutor;
     private Session session;
 
-    @BeforeEach
+    @BeforeMethod
     public void setUp()
     {
         session = TestingSession.testSessionBuilder().build();
@@ -100,7 +98,7 @@ public class TestUniformNodeSelector
         finalizerService.start();
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void tearDown()
     {
         remoteTaskExecutor.shutdown();

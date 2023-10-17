@@ -35,8 +35,9 @@ public class GenericDistinctFromOperator
 
     public GenericDistinctFromOperator(TypeOperators typeOperators)
     {
-        super(FunctionMetadata.operatorBuilder(IS_DISTINCT_FROM)
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .operatorType(IS_DISTINCT_FROM)
                         .comparableTypeParameter("T")
                         .returnType(BOOLEAN)
                         .argumentType(new TypeSignature("T"))

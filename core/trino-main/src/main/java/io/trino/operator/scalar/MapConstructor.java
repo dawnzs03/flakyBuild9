@@ -66,8 +66,9 @@ public final class MapConstructor
 
     public MapConstructor()
     {
-        super(FunctionMetadata.scalarBuilder("map")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("map")
                         .comparableTypeParameter("K")
                         .typeVariable("V")
                         .returnType(mapType(new TypeSignature("K"), new TypeSignature("V")))

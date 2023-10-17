@@ -67,7 +67,6 @@ import io.trino.sql.planner.plan.TableFinishNode;
 import io.trino.sql.planner.plan.TableFunctionNode;
 import io.trino.sql.planner.plan.TableFunctionProcessorNode;
 import io.trino.sql.planner.plan.TableScanNode;
-import io.trino.sql.planner.plan.TableUpdateNode;
 import io.trino.sql.planner.plan.TableWriterNode;
 import io.trino.sql.planner.plan.TopNNode;
 import io.trino.sql.planner.plan.TopNRankingNode;
@@ -427,13 +426,6 @@ public final class StreamPropertyDerivations
         public StreamProperties visitTableDelete(TableDeleteNode node, List<StreamProperties> inputProperties)
         {
             // delete only outputs a single row count
-            return StreamProperties.singleStream();
-        }
-
-        @Override
-        public StreamProperties visitTableUpdate(TableUpdateNode node, List<StreamProperties> inputProperties)
-        {
-            // update only outputs a single row count
             return StreamProperties.singleStream();
         }
 

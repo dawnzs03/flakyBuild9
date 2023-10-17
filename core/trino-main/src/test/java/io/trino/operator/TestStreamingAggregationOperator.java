@@ -21,11 +21,11 @@ import io.trino.spi.Page;
 import io.trino.spi.type.TypeOperators;
 import io.trino.sql.gen.JoinCompiler;
 import io.trino.sql.planner.plan.PlanNodeId;
+import io.trino.sql.tree.QualifiedName;
 import io.trino.testing.MaterializedResult;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.OptionalInt;
@@ -46,21 +46,20 @@ import static io.trino.testing.TestingTaskContext.createTaskContext;
 import static java.lang.String.format;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 
-@TestInstance(PER_METHOD)
+@Test(singleThreaded = true)
 public class TestStreamingAggregationOperator
 {
     private static final TestingFunctionResolution FUNCTION_RESOLUTION = new TestingFunctionResolution();
-    private static final TestingAggregationFunction LONG_SUM = FUNCTION_RESOLUTION.getAggregateFunction("sum", fromTypes(BIGINT));
-    private static final TestingAggregationFunction COUNT = FUNCTION_RESOLUTION.getAggregateFunction("count", ImmutableList.of());
+    private static final TestingAggregationFunction LONG_SUM = FUNCTION_RESOLUTION.getAggregateFunction(QualifiedName.of("sum"), fromTypes(BIGINT));
+    private static final TestingAggregationFunction COUNT = FUNCTION_RESOLUTION.getAggregateFunction(QualifiedName.of("count"), ImmutableList.of());
 
     private ExecutorService executor;
     private ScheduledExecutorService scheduledExecutor;
     private DriverContext driverContext;
     private OperatorFactory operatorFactory;
 
-    @BeforeEach
+    @BeforeMethod
     public void setUp()
     {
         executor = newCachedThreadPool(daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
@@ -81,7 +80,7 @@ public class TestStreamingAggregationOperator
                 new JoinCompiler(new TypeOperators()));
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void tearDown()
     {
         executor.shutdownNow();
@@ -148,11 +147,11 @@ public class TestStreamingAggregationOperator
     {
         RowPagesBuilder rowPagesBuilder = RowPagesBuilder.rowPagesBuilder(BOOLEAN, VARCHAR, BIGINT);
         List<Page> input = rowPagesBuilder
-                .addSequencePage(50_000, 0, 0, 1)
+                .addSequencePage(1_000_000, 0, 0, 1)
                 .build();
 
         MaterializedResult.Builder expectedBuilder = resultBuilder(driverContext.getSession(), VARCHAR, BIGINT, BIGINT);
-        for (int i = 0; i < 50_000; ++i) {
+        for (int i = 0; i < 1_000_000; ++i) {
             expectedBuilder.row(String.valueOf(i), 1L, i + 1L);
         }
 

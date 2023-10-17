@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 
 import static com.google.common.base.Strings.repeat;
+import static io.trino.sql.parser.ParsingOptions.DecimalLiteralTreatment.AS_DOUBLE;
 import static io.trino.sql.testing.TreeAssertions.assertFormattedSql;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -328,20 +329,17 @@ public class TestStatementBuilder
                 "when matched and c.action = 'del' then delete\n" +
                 "when not matched and c.action = 'new' then\n" +
                 "insert (part, qty) values (c.part, c.qty)");
-
-        printStatement("set session authorization user");
-        printStatement("reset session authorization");
     }
 
     @Test
     public void testStringFormatter()
     {
         assertSqlFormatter("U&'hello\\6d4B\\8Bd5\\+10FFFFworld\\7F16\\7801'",
-                "'hello测试\uDBFF\uDFFFworld编码'");
+                "U&'hello\\6D4B\\8BD5\\+10FFFFworld\\7F16\\7801'");
         assertSqlFormatter("'hello world'", "'hello world'");
-        assertSqlFormatter("U&'!+10FFFF!6d4B!8Bd5ABC!6d4B!8Bd5' UESCAPE '!'", "'\uDBFF\uDFFF测试ABC测试'");
-        assertSqlFormatter("U&'\\+10FFFF\\6D4B\\8BD5\\0041\\0042\\0043\\6D4B\\8BD5'", "'\uDBFF\uDFFF测试ABC测试'");
-        assertSqlFormatter("U&'\\\\abc\\6D4B'''", "'\\abc测'''");
+        assertSqlFormatter("U&'!+10FFFF!6d4B!8Bd5ABC!6d4B!8Bd5' UESCAPE '!'", "U&'\\+10FFFF\\6D4B\\8BD5ABC\\6D4B\\8BD5'");
+        assertSqlFormatter("U&'\\+10FFFF\\6D4B\\8BD5\\0041\\0042\\0043\\6D4B\\8BD5'", "U&'\\+10FFFF\\6D4B\\8BD5ABC\\6D4B\\8BD5'");
+        assertSqlFormatter("U&'\\\\abc\\6D4B'''", "U&'\\\\abc\\6D4B'''");
     }
 
     @Test
@@ -383,7 +381,8 @@ public class TestStatementBuilder
         println(sql.trim());
         println("");
 
-        Statement statement = SQL_PARSER.createStatement(sql);
+        ParsingOptions parsingOptions = new ParsingOptions(AS_DOUBLE /* anything */);
+        Statement statement = SQL_PARSER.createStatement(sql, parsingOptions);
         println(statement.toString());
         println("");
 
@@ -397,7 +396,7 @@ public class TestStatementBuilder
 
     private static void assertSqlFormatter(String expression, String formatted)
     {
-        Expression originalExpression = SQL_PARSER.createExpression(expression);
+        Expression originalExpression = SQL_PARSER.createExpression(expression, new ParsingOptions());
         String real = SqlFormatter.formatSql(originalExpression);
         assertEquals(formatted, real);
     }

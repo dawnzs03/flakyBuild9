@@ -26,9 +26,8 @@ import io.trino.plugin.hive.metastore.file.FileHiveMetastoreConfig;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -40,12 +39,10 @@ import static com.google.common.io.RecursiveDeleteOption.ALLOW_INSECURE;
 import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static io.trino.plugin.deltalake.DeltaLakeConnectorFactory.CONNECTOR_NAME;
 import static io.trino.plugin.hive.HiveMetadata.PRESTO_QUERY_ID_NAME;
-import static io.trino.plugin.hive.HiveTestUtils.HDFS_FILE_SYSTEM_FACTORY;
+import static io.trino.plugin.hive.HiveTestUtils.HDFS_ENVIRONMENT;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.testing.TestingSession.testSessionBuilder;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 public class TestDeltaLakeCreateSchemaInternalRetry
         extends AbstractTestQueryFramework
 {
@@ -68,7 +65,7 @@ public class TestDeltaLakeCreateSchemaInternalRetry
         this.dataDirectory = queryRunner.getCoordinator().getBaseDataDir().resolve("delta_lake_data").toString();
         this.metastore = new FileHiveMetastore(
                 new NodeVersion("testversion"),
-                HDFS_FILE_SYSTEM_FACTORY,
+                HDFS_ENVIRONMENT,
                 new HiveMetastoreConfig().isHideDeltaLakeTables(),
                 new FileHiveMetastoreConfig()
                         .setCatalogDirectory(dataDirectory)
@@ -96,7 +93,7 @@ public class TestDeltaLakeCreateSchemaInternalRetry
         return queryRunner;
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     public void tearDown()
             throws IOException
     {

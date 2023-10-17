@@ -23,10 +23,7 @@ public abstract class BaseJdbcConnectorSmokeTest
     protected boolean hasBehavior(TestingConnectorBehavior connectorBehavior)
     {
         switch (connectorBehavior) {
-            case SUPPORTS_UPDATE:
-                return true;
-            case SUPPORTS_ROW_LEVEL_UPDATE:
-                return false;
+            case SUPPORTS_UPDATE: // not supported by any JDBC connector
             case SUPPORTS_MERGE: // not supported by any JDBC connector
                 return false;
 

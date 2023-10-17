@@ -35,10 +35,4 @@ public final class KdbTreeUtils
         requireNonNull(kdbTree, "kdbTree is null");
         return KDB_TREE_CODEC.toJson(kdbTree);
     }
-
-    public static byte[] toJsonBytes(KdbTree kdbTree)
-    {
-        requireNonNull(kdbTree, "kdbTree is null");
-        return KDB_TREE_CODEC.toJsonBytes(kdbTree);
-    }
 }

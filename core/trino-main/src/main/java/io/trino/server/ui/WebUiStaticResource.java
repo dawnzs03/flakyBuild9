@@ -36,6 +36,7 @@ public class WebUiStaticResource
 {
     @ResourceSecurity(PUBLIC)
     @GET
+    @Path("/")
     public Response getRoot()
     {
         return Response.seeOther(URI.create("/ui/")).build();

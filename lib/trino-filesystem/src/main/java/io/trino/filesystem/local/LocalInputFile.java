@@ -19,6 +19,7 @@ import io.trino.filesystem.TrinoInputFile;
 import io.trino.filesystem.TrinoInputStream;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,7 +66,7 @@ public class LocalInputFile
             return new LocalInput(location, path.toFile());
         }
         catch (IOException e) {
-            throw handleException(location, e);
+            throw new FileNotFoundException(location.toString());
         }
     }
 
@@ -76,8 +77,8 @@ public class LocalInputFile
         try {
             return new LocalInputStream(location, path.toFile());
         }
-        catch (IOException e) {
-            throw handleException(location, e);
+        catch (FileNotFoundException e) {
+            throw new FileNotFoundException(location.toString());
         }
     }
 

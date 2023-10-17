@@ -33,10 +33,9 @@ import io.trino.spi.predicate.ValueSet;
 import io.trino.spi.type.CharType;
 import io.trino.spi.type.SqlTime;
 import io.trino.testing.TestingConnectorSession;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -90,9 +89,8 @@ import static java.lang.Float.floatToRawIntBits;
 import static java.lang.String.format;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 
-@TestInstance(PER_METHOD)
+@Test(singleThreaded = true)
 public class TestDefaultJdbcQueryBuilder
 {
     private static final JdbcNamedRelationHandle TEST_TABLE = new JdbcNamedRelationHandle(new SchemaTableName(
@@ -110,7 +108,7 @@ public class TestDefaultJdbcQueryBuilder
 
     private List<JdbcColumnHandle> columns;
 
-    @BeforeEach
+    @BeforeMethod
     public void setup()
             throws SQLException
     {
@@ -180,7 +178,7 @@ public class TestDefaultJdbcQueryBuilder
         }
     }
 
-    @AfterEach
+    @AfterMethod(alwaysRun = true)
     public void teardown()
             throws Exception
     {

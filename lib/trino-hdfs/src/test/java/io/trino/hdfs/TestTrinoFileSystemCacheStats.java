@@ -15,7 +15,7 @@ package io.trino.hdfs;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.net.URI;
 

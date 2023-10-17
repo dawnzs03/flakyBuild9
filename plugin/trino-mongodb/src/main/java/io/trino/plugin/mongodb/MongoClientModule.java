@@ -23,8 +23,6 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
-import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.instrumentation.mongo.v3_1.MongoTelemetry;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.mongodb.ptf.Query;
 import io.trino.spi.function.table.ConnectorTableFunction;
@@ -33,7 +31,6 @@ import io.trino.spi.type.TypeManager;
 import java.util.Set;
 
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
-import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -49,7 +46,6 @@ public class MongoClientModule
         binder.bind(MongoPageSourceProvider.class).in(Scopes.SINGLETON);
         binder.bind(MongoPageSinkProvider.class).in(Scopes.SINGLETON);
         newSetBinder(binder, SessionPropertiesProvider.class).addBinding().to(MongoSessionProperties.class).in(Scopes.SINGLETON);
-        newOptionalBinder(binder, MongoMetadataFactory.class).setDefault().to(DefaultMongoMetadataFactory.class).in(Scopes.SINGLETON);
 
         configBinder(binder).bindConfig(MongoClientConfig.class);
         newSetBinder(binder, MongoClientSettingConfigurator.class);
@@ -64,11 +60,10 @@ public class MongoClientModule
 
     @Singleton
     @Provides
-    public static MongoSession createMongoSession(TypeManager typeManager, MongoClientConfig config, Set<MongoClientSettingConfigurator> configurators, OpenTelemetry openTelemetry)
+    public static MongoSession createMongoSession(TypeManager typeManager, MongoClientConfig config, Set<MongoClientSettingConfigurator> configurators)
     {
         MongoClientSettings.Builder options = MongoClientSettings.builder();
         configurators.forEach(configurator -> configurator.configure(options));
-        options.addCommandListener(MongoTelemetry.builder(openTelemetry).build().newCommandListener());
         MongoClient client = MongoClients.create(options.build());
 
         return new MongoSession(

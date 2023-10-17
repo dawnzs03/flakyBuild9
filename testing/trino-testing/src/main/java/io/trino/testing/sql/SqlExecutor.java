@@ -15,10 +15,5 @@ package io.trino.testing.sql;
 
 public interface SqlExecutor
 {
-    default boolean supportsMultiRowInsert()
-    {
-        return true;
-    }
-
     void execute(String sql);
 }

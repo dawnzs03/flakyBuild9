@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.jdbc.BaseAutomaticJoinPushdownTest;
 import io.trino.testing.QueryRunner;
-import org.junit.jupiter.api.Disabled;
+import org.testng.SkipException;
 
 import static io.trino.plugin.redshift.RedshiftQueryRunner.TEST_SCHEMA;
 import static io.trino.plugin.redshift.RedshiftQueryRunner.createRedshiftQueryRunner;
@@ -39,9 +39,9 @@ public class TestRedshiftAutomaticJoinPushdown
     }
 
     @Override
-    @Disabled
     public void testJoinPushdownWithEmptyStatsInitially()
     {
+        throw new SkipException("Redshift table statistics are automatically populated");
     }
 
     @Override

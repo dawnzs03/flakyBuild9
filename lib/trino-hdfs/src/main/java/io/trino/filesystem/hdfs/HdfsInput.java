@@ -19,10 +19,8 @@ import io.trino.filesystem.TrinoInputFile;
 import io.trino.hdfs.FSDataInputStreamTail;
 import org.apache.hadoop.fs.FSDataInputStream;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import static io.trino.filesystem.hdfs.HdfsFileSystem.withCause;
 import static java.util.Objects.requireNonNull;
 
 class HdfsInput
@@ -30,7 +28,6 @@ class HdfsInput
 {
     private final FSDataInputStream stream;
     private final TrinoInputFile inputFile;
-    private boolean closed;
 
     public HdfsInput(FSDataInputStream stream, TrinoInputFile inputFile)
     {
@@ -42,41 +39,22 @@ class HdfsInput
     public void readFully(long position, byte[] buffer, int bufferOffset, int bufferLength)
             throws IOException
     {
-        ensureOpen();
-        try {
-            stream.readFully(position, buffer, bufferOffset, bufferLength);
-        }
-        catch (FileNotFoundException e) {
-            throw withCause(new FileNotFoundException("File %s not found: %s".formatted(toString(), e.getMessage())), e);
-        }
-        catch (IOException e) {
-            throw new IOException("Read exactly %s bytes at position %s of file %s failed: %s".formatted(bufferLength, position, toString(), e.getMessage()), e);
-        }
+        stream.readFully(position, buffer, bufferOffset, bufferLength);
     }
 
     @Override
     public int readTail(byte[] buffer, int bufferOffset, int bufferLength)
             throws IOException
     {
-        ensureOpen();
-        try {
-            Slice tail = FSDataInputStreamTail.readTail(toString(), inputFile.length(), stream, bufferLength).getTailSlice();
-            tail.getBytes(0, buffer, bufferOffset, tail.length());
-            return tail.length();
-        }
-        catch (FileNotFoundException e) {
-            throw withCause(new FileNotFoundException("File %s not found: %s".formatted(toString(), e.getMessage())), e);
-        }
-        catch (IOException e) {
-            throw new IOException("Read %s tail bytes of file %s failed: %s".formatted(bufferLength, toString(), e.getMessage()), e);
-        }
+        Slice tail = FSDataInputStreamTail.readTail(toString(), inputFile.length(), stream, bufferLength).getTailSlice();
+        tail.getBytes(0, buffer, bufferOffset, tail.length());
+        return tail.length();
     }
 
     @Override
     public void close()
             throws IOException
     {
-        closed = true;
         stream.close();
     }
 
@@ -84,13 +62,5 @@ class HdfsInput
     public String toString()
     {
         return inputFile.toString();
-    }
-
-    private void ensureOpen()
-            throws IOException
-    {
-        if (closed) {
-            throw new IOException("Output stream closed: " + this);
-        }
     }
 }

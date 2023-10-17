@@ -21,7 +21,7 @@ import io.trino.spi.block.BlockBuilderStatus;
 import io.trino.spi.block.ColumnarRow;
 import io.trino.spi.block.RowBlockBuilder;
 import io.trino.spi.block.RunLengthEncodedBlock;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -56,12 +56,14 @@ public class TestColumnarRow
                 }
             }
         }
-        Block block = createBlockBuilderWithValues(expectedValues).build();
-        verifyBlock(block, expectedValues);
+        BlockBuilder blockBuilder = createBlockBuilderWithValues(expectedValues);
+        verifyBlock(blockBuilder, expectedValues);
+        verifyBlock(blockBuilder.build(), expectedValues);
 
         Slice[][] expectedValuesWithNull = alternatingNullValues(expectedValues);
-        Block blockWithNull = createBlockBuilderWithValues(expectedValuesWithNull).build();
-        verifyBlock(blockWithNull, expectedValuesWithNull);
+        BlockBuilder blockBuilderWithNull = createBlockBuilderWithValues(expectedValuesWithNull);
+        verifyBlock(blockBuilderWithNull, expectedValuesWithNull);
+        verifyBlock(blockBuilderWithNull.build(), expectedValuesWithNull);
     }
 
     private static <T> void verifyBlock(Block block, T[] expectedValues)

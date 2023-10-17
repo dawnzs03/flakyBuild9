@@ -45,8 +45,9 @@ public final class ApplyFunction
 
     private ApplyFunction()
     {
-        super(FunctionMetadata.scalarBuilder("apply")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("apply")
                         .typeVariable("T")
                         .typeVariable("U")
                         .returnType(new TypeSignature("U"))

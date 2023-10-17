@@ -53,6 +53,7 @@ import static io.trino.sql.planner.assertions.PlanMatchPattern.aggregation;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.anyTree;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.exchange;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.functionCall;
+import static io.trino.sql.planner.assertions.PlanMatchPattern.project;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.tableScan;
 import static io.trino.sql.planner.plan.AggregationNode.Step.FINAL;
 import static io.trino.sql.planner.plan.AggregationNode.Step.PARTIAL;
@@ -151,8 +152,9 @@ public class TestTableScanNodePartitioning
                 anyTree(
                         aggregation(ImmutableMap.of("COUNT", functionCall("count", ImmutableList.of("COUNT_PART"))), FINAL,
                                 exchange(LOCAL, REPARTITION,
-                                        aggregation(ImmutableMap.of("COUNT_PART", functionCall("count", ImmutableList.of("B"))), PARTIAL,
-                                                tableScan(table, ImmutableMap.of("A", "column_a", "B", "column_b")))))));
+                                        project(
+                                                aggregation(ImmutableMap.of("COUNT_PART", functionCall("count", ImmutableList.of("B"))), PARTIAL,
+                                                        tableScan(table, ImmutableMap.of("A", "column_a", "B", "column_b"))))))));
         SubPlan subPlan = subplan(query, OPTIMIZED_AND_VALIDATED, false, session);
         assertThat(subPlan.getAllFragments()).hasSize(1);
         assertThat(subPlan.getAllFragments().get(0).getPartitioning().getConnectorHandle()).isEqualTo(expectedPartitioning);
@@ -166,8 +168,9 @@ public class TestTableScanNodePartitioning
                         aggregation(ImmutableMap.of("COUNT", functionCall("count", ImmutableList.of("COUNT_PART"))), FINAL,
                                 exchange(LOCAL, REPARTITION,
                                         exchange(REMOTE, REPARTITION,
-                                                aggregation(ImmutableMap.of("COUNT_PART", functionCall("count", ImmutableList.of("B"))), PARTIAL,
-                                                        tableScan(table, ImmutableMap.of("A", "column_a", "B", "column_b"))))))));
+                                                project(
+                                                        aggregation(ImmutableMap.of("COUNT_PART", functionCall("count", ImmutableList.of("B"))), PARTIAL,
+                                                                tableScan(table, ImmutableMap.of("A", "column_a", "B", "column_b")))))))));
         SubPlan subPlan = subplan(query, OPTIMIZED_AND_VALIDATED, false, session);
         assertThat(subPlan.getAllFragments()).hasSize(2);
         assertThat(subPlan.getAllFragments().get(1).getPartitioning().getConnectorHandle()).isEqualTo(SOURCE_DISTRIBUTION.getConnectorHandle());

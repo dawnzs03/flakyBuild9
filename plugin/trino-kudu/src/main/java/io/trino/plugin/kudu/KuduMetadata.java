@@ -242,9 +242,9 @@ public class KuduMetadata
     }
 
     @Override
-    public void dropSchema(ConnectorSession session, String schemaName, boolean cascade)
+    public void dropSchema(ConnectorSession session, String schemaName)
     {
-        clientSession.dropSchema(schemaName, cascade);
+        clientSession.dropSchema(schemaName);
     }
 
     @Override

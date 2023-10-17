@@ -596,7 +596,7 @@ public class IgniteClient
     }
 
     @Override
-    public void dropSchema(ConnectorSession session, String schemaName, boolean cascade)
+    public void dropSchema(ConnectorSession session, String schemaName)
     {
         throw new TrinoException(NOT_SUPPORTED, "This connector does not support dropping schemas");
     }

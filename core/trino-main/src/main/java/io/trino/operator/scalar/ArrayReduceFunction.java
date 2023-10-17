@@ -47,8 +47,9 @@ public final class ArrayReduceFunction
 
     private ArrayReduceFunction()
     {
-        super(FunctionMetadata.scalarBuilder("reduce")
+        super(FunctionMetadata.scalarBuilder()
                 .signature(Signature.builder()
+                        .name("reduce")
                         .typeVariable("T")
                         .typeVariable("S")
                         .typeVariable("R")

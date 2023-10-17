@@ -116,22 +116,22 @@ public class TestReadWriteUtils
     {
         output.reset();
         WritableUtils.writeVLong(output, value);
-        Slice vLongOld = output.slice().copy();
+        Slice vLongOld = Slices.copyOf(output.slice());
 
         output.reset();
         ReadWriteUtils.writeVLong(output, value);
-        Slice vLongNew = output.slice().copy();
+        Slice vLongNew = Slices.copyOf(output.slice());
         assertEquals(vLongNew, vLongOld);
 
         if (value == (int) value) {
             output.reset();
             WritableUtils.writeVInt(output, (int) value);
-            Slice vIntOld = output.slice().copy();
+            Slice vIntOld = Slices.copyOf(output.slice());
             assertEquals(vIntOld, vLongOld);
 
             output.reset();
             ReadWriteUtils.writeVInt(output, (int) value);
-            Slice vIntNew = output.slice().copy();
+            Slice vIntNew = Slices.copyOf(output.slice());
             assertEquals(vIntNew, vLongOld);
 
             assertEquals(computeVIntLength((int) value), vIntNew.length());
