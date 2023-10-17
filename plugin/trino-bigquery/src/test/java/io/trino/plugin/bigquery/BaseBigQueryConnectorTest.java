@@ -243,18 +243,9 @@ public abstract class BaseBigQueryConnectorTest
     @Test
     public void testEmptyProjectionSnapshotTable()
     {
-        // BigQuery has limits on how many snapshots/clones a single table can have and seems to miscount leading to failure when creating too many snapshots from single table
-        // For snapshot table test we use a different source table everytime
-        String regionCopy = TEST_SCHEMA + ".region_" + randomNameSuffix();
-        onBigQuery("CREATE TABLE " + regionCopy + " AS SELECT * FROM tpch.region");
-        try {
-            testEmptyProjection(
-                    snapshotTableName -> onBigQuery("CREATE SNAPSHOT TABLE " + snapshotTableName + " CLONE " + regionCopy),
-                    snapshotTableName -> onBigQuery("DROP SNAPSHOT TABLE " + snapshotTableName));
-        }
-        finally {
-            onBigQuery("DROP TABLE " + regionCopy);
-        }
+        testEmptyProjection(
+                snapshotTableName -> onBigQuery("CREATE SNAPSHOT TABLE " + snapshotTableName + " CLONE tpch.region"),
+                snapshotTableName -> onBigQuery("DROP SNAPSHOT TABLE " + snapshotTableName));
     }
 
     private void testEmptyProjection(Consumer<String> createTable, Consumer<String> dropTable)
@@ -620,13 +611,9 @@ public abstract class BaseBigQueryConnectorTest
     @Test
     public void testBigQuerySnapshotTable()
     {
-        // BigQuery has limits on how many snapshots/clones a single table can have and seems to miscount leading to failure when creating too many snapshots from single table
-        // For snapshot table test we use a different source table everytime
-        String regionCopy = "region_" + randomNameSuffix();
         String snapshotTable = "test_snapshot" + randomNameSuffix();
         try {
-            onBigQuery("CREATE TABLE test." + regionCopy + " AS SELECT * FROM tpch.region");
-            onBigQuery("CREATE SNAPSHOT TABLE test." + snapshotTable + " CLONE test." + regionCopy);
+            onBigQuery("CREATE SNAPSHOT TABLE test." + snapshotTable + " CLONE tpch.region");
             assertQuery("SELECT table_type FROM information_schema.tables WHERE table_schema = 'test' AND table_name = '" + snapshotTable + "'", "VALUES 'BASE TABLE'");
 
             assertThat(query("DESCRIBE test." + snapshotTable)).matches("DESCRIBE tpch.region");
@@ -637,7 +624,6 @@ public abstract class BaseBigQueryConnectorTest
         }
         finally {
             onBigQuery("DROP SNAPSHOT TABLE IF EXISTS test." + snapshotTable);
-            onBigQuery("DROP TABLE test." + regionCopy);
         }
     }
 
