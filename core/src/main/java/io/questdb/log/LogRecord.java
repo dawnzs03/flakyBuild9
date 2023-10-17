@@ -1,0 +1,80 @@
+/*******************************************************************************
+ *     ___                  _   ____  ____
+ *    / _ \ _   _  ___  ___| |_|  _ \| __ )
+ *   | | | | | | |/ _ \/ __| __| | | |  _ \
+ *   | |_| | |_| |  __/\__ \ |_| |_| | |_) |
+ *    \__\_\\__,_|\___||___/\__|____/|____/
+ *
+ *  Copyright (c) 2014-2019 Appsicle
+ *  Copyright (c) 2019-2023 QuestDB
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ ******************************************************************************/
+
+package io.questdb.log;
+
+import io.questdb.std.Sinkable;
+import io.questdb.std.str.CharSinkBase;
+
+import java.io.File;
+
+public interface LogRecord extends CharSinkBase {
+    void $();
+
+    LogRecord $(CharSequence sequence);
+
+    LogRecord $(CharSequence sequence, int lo, int hi);
+
+    LogRecord $(int x);
+
+    LogRecord $(double x);
+
+    LogRecord $(long l);
+
+    LogRecord $(boolean x);
+
+    LogRecord $(char c);
+
+    LogRecord $(Throwable e);
+
+    LogRecord $(File x);
+
+    LogRecord $(Object x);
+
+    LogRecord $(Sinkable x);
+
+    LogRecord $256(long a, long b, long c, long d);
+
+    LogRecord $hex(long value);
+
+    LogRecord $hexPadded(long value);
+
+    LogRecord $ip(long ip);
+
+    LogRecord $ts(long x);
+
+    LogRecord $utf8(long lo, long hi);
+
+    default void I$() {
+        $(']').$();
+    }
+
+    boolean isEnabled();
+
+    LogRecord microTime(long x);
+
+    LogRecord ts();
+
+    LogRecord utf8(CharSequence sequence);
+}
