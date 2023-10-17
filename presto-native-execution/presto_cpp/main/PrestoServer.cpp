@@ -359,13 +359,12 @@ void PrestoServer::run() {
   }
 
   auto memoryAllocator = velox::memory::MemoryAllocator::getInstance();
-  auto asyncDataCache = cache::AsyncDataCache::getInstance();
   periodicTaskManager_ = std::make_unique<PeriodicTaskManager>(
       driverCPUExecutor(),
       httpServer_->getExecutor(),
       taskManager_.get(),
       memoryAllocator,
-      asyncDataCache,
+      dynamic_cast<const velox::cache::AsyncDataCache* const>(memoryAllocator),
       velox::connector::getAllConnectors());
   addServerPeriodicTasks();
   addAdditionalPeriodicTasks();
@@ -511,11 +510,13 @@ void PrestoServer::initializeVeloxMemory() {
   options.capacity = memoryBytes;
   options.checkUsageLeak = systemConfig->enableMemoryLeakCheck();
   if (systemConfig->enableMemoryArbitration()) {
-    options.arbitratorKind = memory::MemoryArbitrator::Kind::kShared;
-    options.capacity =
+    auto& arbitratorCfg = options.arbitratorConfig;
+    arbitratorCfg.kind = memory::MemoryArbitrator::Kind::kShared;
+    arbitratorCfg.capacity =
         memoryBytes * 100 / systemConfig->reservedMemoryPoolCapacityPct();
-    options.memoryPoolInitCapacity = systemConfig->memoryPoolInitCapacity();
-    options.memoryPoolTransferCapacity =
+    arbitratorCfg.initMemoryPoolCapacity =
+        systemConfig->memoryPoolInitCapacity();
+    arbitratorCfg.minMemoryPoolCapacityTransferSize =
         systemConfig->memoryPoolTransferCapacity();
   }
   const auto& manager = memory::MemoryManager::getInstance(options, true);

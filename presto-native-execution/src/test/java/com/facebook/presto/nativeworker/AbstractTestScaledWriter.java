@@ -100,7 +100,6 @@ public abstract class AbstractTestScaledWriter
                 .setSystemProperty("task_writer_count", "1")
                 .setCatalogSessionProperty("hive", "collect_column_statistics_on_write", "false")
                 .setCatalogSessionProperty("hive", "optimized_partition_update_serialization_enabled", "false")
-                .setCatalogSessionProperty("hive", "orc_compression_codec", "ZSTD")
                 .build();
     }
 }

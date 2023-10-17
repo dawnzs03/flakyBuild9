@@ -138,9 +138,9 @@ public class ManifestsTable
             BlockBuilder rowBuilder = singleArrayWriter.beginBlockEntry();
             BOOLEAN.writeBoolean(rowBuilder, summary.containsNull());
             VARCHAR.writeString(rowBuilder, field.transform().toHumanString(
-                    nestedType, Conversions.fromByteBuffer(nestedType, summary.lowerBound())));
+                    Conversions.fromByteBuffer(nestedType, summary.lowerBound())));
             VARCHAR.writeString(rowBuilder, field.transform().toHumanString(
-                    nestedType, Conversions.fromByteBuffer(nestedType, summary.upperBound())));
+                    Conversions.fromByteBuffer(nestedType, summary.upperBound())));
             singleArrayWriter.closeEntry();
         }
         arrayBlockBuilder.closeEntry();
