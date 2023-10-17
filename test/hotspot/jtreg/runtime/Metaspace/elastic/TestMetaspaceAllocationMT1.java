@@ -54,24 +54,7 @@
  * @run main/othervm/timeout=400
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:VerifyMetaspaceInterval=10
- *      TestMetaspaceAllocationMT1 3
- */
-
-/*
- * @test id=debug-default-strict
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @key randomness
- * @requires (vm.debug == true)
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/manual
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:VerifyMetaspaceInterval=10
- *      TestMetaspaceAllocationMT1 10
+ *      TestMetaspaceAllocationMT1
  */
 
 /*
@@ -89,7 +72,7 @@
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:VerifyMetaspaceInterval=10
  *      -XX:+MetaspaceGuardAllocations
- *      TestMetaspaceAllocationMT1 3
+ *      TestMetaspaceAllocationMT1
  */
 
 /*
@@ -105,7 +88,7 @@
  *
  * @run main/othervm/timeout=400
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      TestMetaspaceAllocationMT1 3
+ *      TestMetaspaceAllocationMT1
  */
 
 public class TestMetaspaceAllocationMT1 {
@@ -114,7 +97,7 @@ public class TestMetaspaceAllocationMT1 {
 
         final long testAllocationCeiling = 1024 * 1024 * 8; // 8m words = 64M on 64bit
         final int numThreads = 4;
-        final int seconds = Integer.parseInt(args[0]);
+        final int seconds = 10;
 
         for (int i = 0; i < 3; i ++) {
 

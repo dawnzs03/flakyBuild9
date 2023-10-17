@@ -25,8 +25,6 @@
 #ifndef SHARE_RUNTIME_JFIELDIDWORKAROUND_HPP
 #define SHARE_RUNTIME_JFIELDIDWORKAROUND_HPP
 
-#include "utilities/checkedCast.hpp"
-
 class jfieldIDWorkaround: AllStatic {
   // This workaround is because JVMTI doesn't have distinct entry points
   // for methods that use static jfieldIDs and instance jfieldIDs.

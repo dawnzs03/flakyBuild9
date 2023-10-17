@@ -77,11 +77,11 @@ TEST_VM(FlagGuard, ccstr_flag) {
 TEST_VM(FlagAccess, ccstr_flag) {
   FLAG_SET_CMDLINE(SharedArchiveConfigFile, "");
   ASSERT_EQ(FLAG_IS_CMDLINE(SharedArchiveConfigFile), true);
-  EXPECT_STREQ(SharedArchiveConfigFile, "");
+  ASSERT_EQ(strcmp(SharedArchiveConfigFile, ""), 0);
 
   FLAG_SET_ERGO(SharedArchiveConfigFile, "foobar");
   ASSERT_EQ(FLAG_IS_ERGO(SharedArchiveConfigFile), true);
-  EXPECT_STREQ(SharedArchiveConfigFile, "foobar");
+  ASSERT_EQ(strcmp(SharedArchiveConfigFile, "foobar") , 0);
 
   FLAG_SET_ERGO(SharedArchiveConfigFile, nullptr);
   ASSERT_EQ(FLAG_IS_ERGO(SharedArchiveConfigFile), true);
@@ -89,7 +89,7 @@ TEST_VM(FlagAccess, ccstr_flag) {
 
   FLAG_SET_ERGO(SharedArchiveConfigFile, "xyz");
   ASSERT_EQ(FLAG_IS_ERGO(SharedArchiveConfigFile), true);
-  EXPECT_STREQ(SharedArchiveConfigFile, "xyz");
+  ASSERT_EQ(strcmp(SharedArchiveConfigFile, "xyz"), 0);
 }
 
 template <typename T, int type_enum>

@@ -1872,8 +1872,7 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
   // nmethod could be deoptimized by the time we get here
   // so no update to the caller is needed.
 
-  if ((caller.is_compiled_frame() && !caller.is_deoptimized_frame()) ||
-      (caller.is_native_frame() && ((CompiledMethod*)caller.cb())->method()->is_continuation_enter_intrinsic())) {
+  if (caller.is_compiled_frame() && !caller.is_deoptimized_frame()) {
 
     address pc = caller.pc();
 

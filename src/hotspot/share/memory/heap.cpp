@@ -29,7 +29,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Implementation of Heap

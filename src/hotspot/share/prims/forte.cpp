@@ -35,7 +35,6 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
-#include "utilities/checkedCast.hpp"
 
 // call frame copied from old .h file and renamed
 typedef struct {

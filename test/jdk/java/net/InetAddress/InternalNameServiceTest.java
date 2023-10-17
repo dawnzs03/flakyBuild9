@@ -27,8 +27,6 @@
  *          the system property jdk.net.hosts.file. This property specifies
  *          a file name that contains address host mappings, similar to those in
  *          /etc/hosts file.
- * @library /test/lib
- * @build jdk.test.lib.net.IPSupport
  * @run main/othervm -Djdk.net.hosts.file=TestHosts -Dsun.net.inetaddr.ttl=0
  *      InternalNameServiceTest
  */
@@ -39,8 +37,6 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-
-import jdk.test.lib.net.IPSupport;
 
 public class InternalNameServiceTest {
 
@@ -132,16 +128,17 @@ public class InternalNameServiceTest {
         }
 
         // IPV6 tests
-        if (IPSupport.hasIPv6()) {
-            addMappingToHostsFile("host-ipv6.sample-domain", "::1", hostsFileName, true);
-            testAddress = InetAddress.getByName("host-ipv6.sample-domain");
-            retrievedIpAddr = testAddress.getAddress();
-            if (!Arrays.equals(retrievedIpAddr, expectedIpAddrIpv6_1)) {
-                System.out.println("retrieved ipv6 addr == " + Arrays.toString(retrievedIpAddr));
-                System.out.println("expected ipv6 addr == " + Arrays.toString(expectedIpAddrIpv6_1));
-                throw new RuntimeException(
-                        "retrieved IPV6 Addr not equal to expected IPV6 Addr");
-            }
+
+        // IPV6 tests
+        addMappingToHostsFile("host-ipv6.sample-domain", "::1", hostsFileName,
+                true);
+        testAddress = InetAddress.getByName("host-ipv6.sample-domain");
+        retrievedIpAddr = testAddress.getAddress();
+        if (!Arrays.equals(retrievedIpAddr, expectedIpAddrIpv6_1)) {
+            System.out.println("retrieved ipv6 addr == " + Arrays.toString(retrievedIpAddr));
+            System.out.println("expected ipv6 addr == " + Arrays.toString(expectedIpAddrIpv6_1));
+            throw new RuntimeException(
+                    "retrieved IPV6 Addr not equal to expected IPV6 Addr");
         }
     }
 

@@ -52,7 +52,6 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef PRODUCT

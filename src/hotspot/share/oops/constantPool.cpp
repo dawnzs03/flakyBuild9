@@ -64,7 +64,6 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {

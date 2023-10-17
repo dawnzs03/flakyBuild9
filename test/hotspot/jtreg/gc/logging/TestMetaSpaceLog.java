@@ -31,8 +31,6 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.ByteCodeLoader;
-import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
@@ -93,6 +91,9 @@ public class TestMetaSpaceLog {
   }
 
   private static void testMetaSpaceUpdate() throws Exception {
+    // Propagate test.src for the jar file.
+    String testSrc= "-Dtest.src=" + System.getProperty("test.src", ".");
+
     ProcessBuilder pb =
       ProcessTools.createTestJvm(
           "-Xlog:gc*",
@@ -101,7 +102,7 @@ public class TestMetaSpaceLog {
           "-XX:+WhiteBoxAPI",
           "-Xmx1000M",
           "-Xms1000M",
-          StressMetaSpace.class.getName());
+          testSrc, StressMetaSpace.class.getName());
 
     OutputAnalyzer output = null;
     try {
@@ -116,20 +117,29 @@ public class TestMetaSpaceLog {
   }
 
   static class StressMetaSpace {
+    private static URL[] urls = new URL[1];
 
-    public static void main(String args[]) {
-      loadManyClasses();
-      WhiteBox.getWhiteBox().fullGC();
+    static {
+      try {
+        File jarFile = new File(System.getProperty("test.src") + "/testcases.jar");
+        urls[0] = jarFile.toURI().toURL();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     }
 
-    public static void loadManyClasses() {
-      String className = "Tmp";
-      String sourceCode = "public class Tmp {}";
-      byte[] byteCode = InMemoryJavaCompiler.compile(className, sourceCode);
+    public static void main(String args[]) {
+      WhiteBox wb = WhiteBox.getWhiteBox();
+      for(int i = 0; i < 10000; i++) {
+        loadClass(wb);
+      }
+      wb.fullGC();
+    }
+
+    public static void loadClass(WhiteBox wb) {
       try {
-        for (int i = 0; i < 10000; i++) {
-          ByteCodeLoader.load(className, byteCode);
-        }
+        URLClassLoader ucl = new URLClassLoader(urls);
+        Class.forName("case00", false, ucl);
       } catch (Exception e) {
         e.printStackTrace();
       }

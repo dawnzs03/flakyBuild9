@@ -72,8 +72,8 @@ public class SigningPackageFromTwoStepAppImageTest {
         }
 
         Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyPkgutil(outputBundle, SigningBase.DEFAULT_INDEX);
-        SigningBase.verifySpctl(outputBundle, "install", SigningBase.DEFAULT_INDEX);
+        SigningBase.verifyPkgutil(outputBundle);
+        SigningBase.verifySpctl(outputBundle, "install");
     }
 
     private static void verifyDMG(JPackageCommand cmd) {
@@ -89,9 +89,9 @@ public class SigningPackageFromTwoStepAppImageTest {
             if (dmgImage.endsWith(cmd.name() + ".app")) {
                 Path launcherPath = ApplicationLayout.platformAppImage()
                     .resolveAt(dmgImage).launchersDirectory().resolve(cmd.name());
-                SigningBase.verifyCodesign(launcherPath, true, SigningBase.DEFAULT_INDEX);
-                SigningBase.verifyCodesign(dmgImage, true, SigningBase.DEFAULT_INDEX);
-                SigningBase.verifySpctl(dmgImage, "exec", SigningBase.DEFAULT_INDEX);
+                SigningBase.verifyCodesign(launcherPath, true);
+                SigningBase.verifyCodesign(dmgImage, true);
+                SigningBase.verifySpctl(dmgImage, "exec");
             }
         });
     }
@@ -100,7 +100,7 @@ public class SigningPackageFromTwoStepAppImageTest {
     @Parameter("true")
     @Parameter("false")
     public static void test(boolean signAppImage) throws Exception {
-        SigningCheck.checkCertificates(SigningBase.DEFAULT_INDEX);
+        SigningCheck.checkCertificates();
 
         Path appimageOutput = TKit.createTempDirectory("appimage");
 
@@ -111,8 +111,8 @@ public class SigningPackageFromTwoStepAppImageTest {
                 .setArgumentValue("--dest", appimageOutput);
         if (signAppImage) {
             appImageCmd.addArguments("--mac-sign", "--mac-signing-key-user-name",
-                    SigningBase.getDevName(SigningBase.DEFAULT_INDEX),
-                    "--mac-signing-keychain", SigningBase.getKeyChain());
+                    SigningBase.DEV_NAME, "--mac-signing-keychain",
+                    SigningBase.KEYCHAIN);
         }
 
         // Generate app image
@@ -126,9 +126,8 @@ public class SigningPackageFromTwoStepAppImageTest {
         appImageSignedCmd.setPackageType(PackageType.IMAGE)
             .addArguments("--app-image", appImageCmd.outputBundle().toAbsolutePath())
             .addArguments("--mac-sign")
-            .addArguments("--mac-signing-key-user-name",
-                SigningBase.getDevName(SigningBase.DEFAULT_INDEX))
-            .addArguments("--mac-signing-keychain", SigningBase.getKeyChain());
+            .addArguments("--mac-signing-key-user-name", SigningBase.DEV_NAME)
+            .addArguments("--mac-signing-keychain", SigningBase.KEYCHAIN);
         appImageSignedCmd.executeAndAssertImageCreated();
 
         // Should be signed app image
@@ -142,9 +141,9 @@ public class SigningPackageFromTwoStepAppImageTest {
                     if (signAppImage) {
                         cmd.addArguments("--mac-sign",
                                 "--mac-signing-key-user-name",
-                                SigningBase.getDevName(SigningBase.DEFAULT_INDEX),
+                                SigningBase.DEV_NAME,
                                 "--mac-signing-keychain",
-                                SigningBase.getKeyChain());
+                                SigningBase.KEYCHAIN);
                     }
                 })
                 .forTypes(PackageType.MAC_PKG)

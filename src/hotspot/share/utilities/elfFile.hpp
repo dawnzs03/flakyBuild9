@@ -70,7 +70,6 @@ typedef Elf32_Sym       Elf_Sym;
 #include "jvm_md.h"
 #include "globalDefinitions.hpp"
 #include "memory/allocation.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"
 
 #ifdef ASSERT

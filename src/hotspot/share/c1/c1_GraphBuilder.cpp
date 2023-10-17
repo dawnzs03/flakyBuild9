@@ -45,7 +45,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR

@@ -29,8 +29,6 @@
  * @library ../common/patches
  * @modules java.base/jdk.internal.access
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
- *          jdk.internal.vm.ci/jdk.vm.ci.runtime
- *          jdk.internal.vm.ci/jdk.vm.ci.meta
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   -XX:-UseJVMCICompiler
@@ -45,64 +43,35 @@ import compiler.jvmci.common.testcases.SingleSubclass;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaType;
 
-import java.io.ByteArrayOutputStream;
-import java.io.CharArrayWriter;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class LookupTypeTest {
-
-    /**
-     * Abstracts which lookup method is being tested.
-     */
-    public interface Lookup {
-        ResolvedJavaType lookupType(String name, Class<?> accessingClass, boolean resolve);
-    }
-
     public static void main(String args[]) {
         LookupTypeTest test = new LookupTypeTest();
-
-        // Test CompilerToVM.lookupType
-        for (TestCase tcase : createTestCases(false, true)) {
-            test.runTest(tcase, CompilerToVMHelper::lookupType);
-        }
-
-        // Test HotSpotJVMCIRuntime.lookupType
-        HotSpotJVMCIRuntime runtime = HotSpotJVMCIRuntime.runtime();
-        MetaAccessProvider metaAccess = runtime.getHostJVMCIBackend().getMetaAccess();
-        for (TestCase tcase : createTestCases(true, false)) {
-            test.runTest(tcase, (name, accessingClass, resolve) -> (ResolvedJavaType) runtime.lookupType(name,
-                (HotSpotResolvedObjectType) metaAccess.lookupJavaType(accessingClass), resolve));
+        for (TestCase tcase : createTestCases()) {
+            test.runTest(tcase);
         }
     }
 
-    private static List<TestCase> createTestCases(boolean allowPrimitive, boolean allowNullAccessingClass) {
-        List<TestCase> result = new ArrayList<>();
+    private static Set<TestCase> createTestCases() {
+        Set<TestCase> result = new HashSet<>();
         // a primitive class
-        if (allowPrimitive) {
-            result.add(new TestCase(Utils.toJVMTypeSignature(int.class),
-                LookupTypeTest.class, true, true));
-        } else {
-            result.add(new TestCase(Utils.toJVMTypeSignature(int.class),
+        result.add(new TestCase(Utils.toJVMTypeSignature(int.class),
                 LookupTypeTest.class, true, false, InternalError.class));
-        }
         // lookup not existing class
         result.add(new TestCase("Lsome_not_existing;", LookupTypeTest.class,
-                true, false, NoClassDefFoundError.class));
+                true, false, ClassNotFoundException.class));
         // lookup invalid classname
         result.add(new TestCase("L!@#$%^&**()[]{}?;", LookupTypeTest.class,
-                true, false, NoClassDefFoundError.class));
+                true, false, ClassNotFoundException.class));
         // lookup package private class
         result.add(new TestCase(
                 "Lcompiler/jvmci/compilerToVM/testcases/PackagePrivateClass;",
                 LookupTypeTest.class, true, false,
-                NoClassDefFoundError.class));
+                ClassNotFoundException.class));
         // lookup usual class with resolve=true
         result.add(new TestCase(Utils.toJVMTypeSignature(SingleSubclass.class),
                 LookupTypeTest.class, true, true));
@@ -111,30 +80,25 @@ public class LookupTypeTest {
                 Utils.toJVMTypeSignature(DoNotExtendClass.class),
                 LookupTypeTest.class, false, true));
         // lookup usual class with null accessor
-        if (allowNullAccessingClass) {
-            result.add(new TestCase(
+        result.add(new TestCase(
                 Utils.toJVMTypeSignature(MultiSubclassedClass.class), null,
                 false, false, NullPointerException.class));
-        }
         return result;
     }
 
-    private void runTest(TestCase tcase, Lookup lookup) {
+    private void runTest(TestCase tcase) {
         System.out.println(tcase);
-        ResolvedJavaType metaspaceKlass;
+        HotSpotResolvedObjectType metaspaceKlass;
         try {
-            metaspaceKlass = lookup.lookupType(tcase.className,
+            metaspaceKlass = CompilerToVMHelper.lookupType(tcase.className,
                     tcase.accessing, tcase.resolve);
         } catch (Throwable t) {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            t.printStackTrace(new PrintStream(bos));
-            String tString = bos.toString();
             Asserts.assertNotNull(tcase.expectedException,
-                    "Assumed no exception, but got " + tString);
+                    "Assumed no exception, but got " + t);
             Asserts.assertFalse(tcase.isPositive,
-                    "Got unexpected exception " + tString);
+                    "Got unexpected exception " + t);
             Asserts.assertEQ(t.getClass(), tcase.expectedException,
-                    "Unexpected exception: " + tString);
+                    "Unexpected exception");
             // passed
             return;
         }

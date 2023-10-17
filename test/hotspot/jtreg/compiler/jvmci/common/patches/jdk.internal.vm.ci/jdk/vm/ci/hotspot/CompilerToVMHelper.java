@@ -84,7 +84,7 @@ public class CompilerToVMHelper {
     }
 
     public static HotSpotResolvedObjectType lookupType(String name,
-            Class<?> accessClass, boolean resolve) throws NoClassDefFoundError {
+            Class<?> accessClass, boolean resolve) throws ClassNotFoundException {
         if (accessClass == null) {
             throw new NullPointerException();
         }
@@ -94,7 +94,11 @@ public class CompilerToVMHelper {
 
     public static HotSpotResolvedObjectType lookupTypeHelper(String name,
             Class<?> accessingClass, boolean resolve) {
-        return lookupType(name, accessingClass, resolve);
+        try {
+            return lookupType(name, accessingClass, resolve);
+        } catch (ClassNotFoundException e) {
+            throw (NoClassDefFoundError) new NoClassDefFoundError().initCause(e);
+        }
     }
 
     public static Object lookupConstantInPool(ConstantPool constantPool, int cpi, boolean resolve) {

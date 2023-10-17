@@ -75,7 +75,6 @@
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/exceptions.hpp"

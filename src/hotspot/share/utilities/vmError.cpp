@@ -178,10 +178,7 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
 }
 
 static bool stack_has_headroom(size_t headroom) {
-  size_t stack_size = 0;
-  address stack_base = nullptr;
-  os::current_stack_base_and_size(&stack_base, &stack_size);
-
+  const size_t stack_size = os::current_stack_size();
   const size_t guard_size = StackOverflow::stack_guard_zone_size();
   const size_t unguarded_stack_size = stack_size - guard_size;
 
@@ -189,6 +186,7 @@ static bool stack_has_headroom(size_t headroom) {
     return false;
   }
 
+  const address stack_base          = os::current_stack_base();
   const address unguarded_stack_end = stack_base - unguarded_stack_size;
   const address stack_pointer       = os::current_stack_pointer();
 
@@ -201,11 +199,9 @@ PRAGMA_INFINITE_RECURSION_IGNORED
 void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
   if (stack_has_headroom(_reattempt_required_stack_headroom)) {
     // Use all but (_reattempt_required_stack_headroom - K) unguarded stack space.
-    size_t stack_size = 0;
-    address stack_base = nullptr;
-    os::current_stack_base_and_size(&stack_base, &stack_size);
-
+    const size_t stack_size     = os::current_stack_size();
     const size_t guard_size     = StackOverflow::stack_guard_zone_size();
+    const address stack_base    = os::current_stack_base();
     const address stack_pointer = os::current_stack_pointer();
 
     const size_t unguarded_stack_size = stack_size - guard_size;
@@ -979,7 +975,8 @@ void VMError::report(outputStream* st, bool _verbose) {
       stack_top = _thread->stack_base();
       stack_size = _thread->stack_size();
     } else {
-      os::current_stack_base_and_size(&stack_top, &stack_size);
+      stack_top = os::current_stack_base();
+      stack_size = os::current_stack_size();
     }
 
     address stack_bottom = stack_top - stack_size;

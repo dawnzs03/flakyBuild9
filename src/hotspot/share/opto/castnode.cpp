@@ -32,7 +32,6 @@
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "castnode.hpp"
-#include "utilities/checkedCast.hpp"
 
 //=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.

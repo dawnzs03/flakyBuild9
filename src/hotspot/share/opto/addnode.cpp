@@ -216,19 +216,22 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // the other input's symbols.
 const Type* AddNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type* t1 = phase->type(in(1));
-  const Type* t2 = phase->type(in(2));
-  if (t1 == Type::TOP || t2 == Type::TOP) {
-    return Type::TOP;
-  }
+  const Type *t1 = phase->type( in(1) );
+  const Type *t2 = phase->type( in(2) );
+  if( t1 == Type::TOP ) return Type::TOP;
+  if( t2 == Type::TOP ) return Type::TOP;
+
+  // Either input is BOTTOM ==> the result is the local BOTTOM
+  const Type *bot = bottom_type();
+  if( (t1 == bot) || (t2 == bot) ||
+      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
+    return bot;
 
   // Check for an addition involving the additive identity
-  const Type* tadd = add_of_identity(t1, t2);
-  if (tadd != nullptr) {
-    return tadd;
-  }
+  const Type *tadd = add_of_identity( t1, t2 );
+  if( tadd ) return tadd;
 
-  return add_ring(t1, t2);               // Local flavor of type addition
+  return add_ring(t1,t2);               // Local flavor of type addition
 }
 
 //------------------------------add_identity-----------------------------------
@@ -510,9 +513,7 @@ const Type *AddFNode::add_of_identity( const Type *t1, const Type *t2 ) const {
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
 const Type *AddFNode::add_ring( const Type *t0, const Type *t1 ) const {
-  if (!t0->isa_float_constant() || !t1->isa_float_constant()) {
-    return bottom_type();
-  }
+  // We must be adding 2 float constants.
   return TypeF::make( t0->getf() + t1->getf() );
 }
 
@@ -543,9 +544,7 @@ const Type *AddDNode::add_of_identity( const Type *t1, const Type *t2 ) const {
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
 const Type *AddDNode::add_ring( const Type *t0, const Type *t1 ) const {
-  if (!t0->isa_double_constant() || !t1->isa_double_constant()) {
-    return bottom_type();
-  }
+  // We must be adding 2 double constants.
   return TypeD::make( t0->getd() + t1->getd() );
 }
 
@@ -1368,12 +1367,9 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 //------------------------------add_ring---------------------------------------
-const Type* MinFNode::add_ring(const Type* t0, const Type* t1 ) const {
-  const TypeF* r0 = t0->isa_float_constant();
-  const TypeF* r1 = t1->isa_float_constant();
-  if (r0 == nullptr || r1 == nullptr) {
-    return bottom_type();
-  }
+const Type *MinFNode::add_ring( const Type *t0, const Type *t1 ) const {
+  const TypeF *r0 = t0->is_float_constant();
+  const TypeF *r1 = t1->is_float_constant();
 
   if (r0->is_nan()) {
     return r0;
@@ -1393,12 +1389,9 @@ const Type* MinFNode::add_ring(const Type* t0, const Type* t1 ) const {
 }
 
 //------------------------------add_ring---------------------------------------
-const Type* MinDNode::add_ring(const Type* t0, const Type* t1) const {
-  const TypeD* r0 = t0->isa_double_constant();
-  const TypeD* r1 = t1->isa_double_constant();
-  if (r0 == nullptr || r1 == nullptr) {
-    return bottom_type();
-  }
+const Type *MinDNode::add_ring( const Type *t0, const Type *t1 ) const {
+  const TypeD *r0 = t0->is_double_constant();
+  const TypeD *r1 = t1->is_double_constant();
 
   if (r0->is_nan()) {
     return r0;
@@ -1418,12 +1411,9 @@ const Type* MinDNode::add_ring(const Type* t0, const Type* t1) const {
 }
 
 //------------------------------add_ring---------------------------------------
-const Type* MaxFNode::add_ring(const Type* t0, const Type* t1) const {
-  const TypeF* r0 = t0->isa_float_constant();
-  const TypeF* r1 = t1->isa_float_constant();
-  if (r0 == nullptr || r1 == nullptr) {
-    return bottom_type();
-  }
+const Type *MaxFNode::add_ring( const Type *t0, const Type *t1 ) const {
+  const TypeF *r0 = t0->is_float_constant();
+  const TypeF *r1 = t1->is_float_constant();
 
   if (r0->is_nan()) {
     return r0;
@@ -1443,12 +1433,9 @@ const Type* MaxFNode::add_ring(const Type* t0, const Type* t1) const {
 }
 
 //------------------------------add_ring---------------------------------------
-const Type* MaxDNode::add_ring(const Type* t0, const Type* t1) const {
-  const TypeD* r0 = t0->isa_double_constant();
-  const TypeD* r1 = t1->isa_double_constant();
-  if (r0 == nullptr || r1 == nullptr) {
-    return bottom_type();
-  }
+const Type *MaxDNode::add_ring( const Type *t0, const Type *t1 ) const {
+  const TypeD *r0 = t0->is_double_constant();
+  const TypeD *r1 = t1->is_double_constant();
 
   if (r0->is_nan()) {
     return r0;

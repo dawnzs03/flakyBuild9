@@ -425,31 +425,40 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   return captured;
 }
 
+// os::current_stack_base()
+//
 //   Returns the base of the stack, which is the stack's
 //   starting address.  This function must be called
 //   while running on the stack of the thread being queried.
 
-void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
+address os::current_stack_base() {
   MEMORY_BASIC_INFORMATION minfo;
   address stack_bottom;
-  size_t size;
+  size_t stack_size;
 
   VirtualQuery(&minfo, &minfo, sizeof(minfo));
-  stack_bottom = (address)minfo.AllocationBase;
-  size = minfo.RegionSize;
+  stack_bottom =  (address)minfo.AllocationBase;
+  stack_size = minfo.RegionSize;
 
   // Add up the sizes of all the regions with the same
   // AllocationBase.
   while (1) {
-    VirtualQuery(stack_bottom + size, &minfo, sizeof(minfo));
+    VirtualQuery(stack_bottom+stack_size, &minfo, sizeof(minfo));
     if (stack_bottom == (address)minfo.AllocationBase) {
-      size += minfo.RegionSize;
+      stack_size += minfo.RegionSize;
     } else {
       break;
     }
   }
-  *stack_base = stack_bottom + size;
-  *stack_size = size;
+  return stack_bottom + stack_size;
+}
+
+size_t os::current_stack_size() {
+  size_t sz;
+  MEMORY_BASIC_INFORMATION minfo;
+  VirtualQuery(&minfo, &minfo, sizeof(minfo));
+  sz = (size_t)os::current_stack_base() - (size_t)minfo.AllocationBase;
+  return sz;
 }
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {

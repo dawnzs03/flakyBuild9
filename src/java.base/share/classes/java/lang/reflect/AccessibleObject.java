@@ -74,6 +74,7 @@ import sun.security.util.SecurityConstants;
  * @spec jni/index.html Java Native Interface Specification
  * @jls 6.6 Access Control
  * @since 1.2
+ * @revised 9
  */
 public class AccessibleObject implements AnnotatedElement {
     static {
@@ -118,6 +119,7 @@ public class AccessibleObject implements AnnotatedElement {
      *         java.lang.Class}
      * @see SecurityManager#checkPermission
      * @see ReflectPermission
+     * @revised 9
      */
     @CallerSensitive
     public static void setAccessible(AccessibleObject[] array, boolean flag) {
@@ -205,6 +207,7 @@ public class AccessibleObject implements AnnotatedElement {
      * @spec jni/index.html Java Native Interface Specification
      * @see #trySetAccessible
      * @see java.lang.invoke.MethodHandles#privateLookupIn
+     * @revised 9
      */
     @CallerSensitive   // overrides in Method/Field/Constructor are @CS
     public void setAccessible(boolean flag) {
@@ -421,6 +424,8 @@ public class AccessibleObject implements AnnotatedElement {
      * This method may return {@code false} on a reflected object that is
      * accessible to the caller. To test if this reflected object is accessible,
      * it should use {@link #canAccess(Object)}.
+     *
+     * @revised 9
      */
     @Deprecated(since="9")
     public boolean isAccessible() {

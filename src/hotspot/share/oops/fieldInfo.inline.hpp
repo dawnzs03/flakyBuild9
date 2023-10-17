@@ -31,7 +31,6 @@
 #include "oops/constantPool.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/checkedCast.hpp"
 
 inline Symbol* FieldInfo::name(ConstantPool* cp) const {
   int index = _name_index;

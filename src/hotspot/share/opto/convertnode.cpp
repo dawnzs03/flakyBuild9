@@ -32,7 +32,6 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/checkedCast.hpp"
 
 //=============================================================================
 //------------------------------Identity---------------------------------------

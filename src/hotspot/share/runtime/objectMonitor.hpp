@@ -30,7 +30,6 @@
 #include "oops/markWord.hpp"
 #include "oops/weakHandle.hpp"
 #include "runtime/perfDataTypes.hpp"
-#include "utilities/checkedCast.hpp"
 
 class ObjectMonitor;
 class ParkEvent;

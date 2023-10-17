@@ -32,7 +32,6 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/align.hpp"
-#include "utilities/checkedCast.hpp"
 
 // Static initialization
 const u2 ConstMethod::MAX_IDNUM   = 0xFFFE;

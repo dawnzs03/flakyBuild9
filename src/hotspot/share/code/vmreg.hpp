@@ -28,7 +28,6 @@
 #include "asm/register.hpp"
 #include "code/vmregTypes.hpp"
 #include "runtime/globals.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"

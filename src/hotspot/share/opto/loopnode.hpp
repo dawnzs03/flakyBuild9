@@ -30,7 +30,6 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
-#include "utilities/checkedCast.hpp"
 
 class CmpNode;
 class BaseCountedLoopEndNode;

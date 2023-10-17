@@ -226,9 +226,11 @@ TEST(globalDefinitions, array_size) {
     stringStream out;                                          \
     out.print((format), (value));                              \
     const char* result = out.as_string();                      \
-    EXPECT_STREQ((result), (expected)) << "Failed with"        \
+    EXPECT_EQ(strcmp(result, (expected)), 0) << "Failed with"  \
         << " format '"   << (format)   << "'"                  \
-        << " value '"    << (value);                           \
+        << " value '"    << (value)    << "'"                  \
+        << " result '"   << result     << "'"                  \
+        << " expected '" << (expected) << "'";                 \
   } while (false)
 
 TEST(globalDefinitions, format_specifiers) {

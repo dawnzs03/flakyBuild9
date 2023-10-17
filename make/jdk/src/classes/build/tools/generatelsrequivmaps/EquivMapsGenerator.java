@@ -53,38 +53,21 @@ import java.util.regex.Pattern;
 public class EquivMapsGenerator {
 
     public static void main(String[] args) throws Exception {
-        int i = 0;
-        boolean valid = true;
-        if (args.length != 5 && args.length !=3) {
-            valid = false;
-        } else if (args.length == 5) {
-            if ("-jdk-header-template".equals(args[i])) {
-                jdkHeaderTemplate = Files.readString(Paths.get(args[++i]));
-                i++;
-            } else {
-                valid = false;
-            }
-        }
-        if (!valid) {
+        if (args.length != 3) {
             System.err.println("Usage: java EquivMapsGenerator"
-                    + " [-jdk-header-template <file>]"
                     + " language-subtag-registry.txt LocaleEquivalentMaps.java copyrightYear");
             System.exit(1);
         }
-        String lsrFile = args[i++];
-        String outputFile = args[i++];
-        copyrightYear = Integer.parseInt(args[i++]);
-
-        readLSRfile(lsrFile);
+        copyrightYear = Integer.parseInt(args[2]);
+        readLSRfile(args[0]);
         // Builds the maps from the IANA data
         generateEquivalentMap();
         // Writes the maps out to LocaleEquivalentMaps.java
-        generateSourceCode(outputFile);
+        generateSourceCode(args[1]);
     }
 
     private static String LSRrevisionDate;
     private static int copyrightYear;
-    private static String jdkHeaderTemplate;
     private static Map<String, StringBuilder> initialLanguageMap =
         new TreeMap<>();
     private static Map<String, StringBuilder> initialRegionVariantMap =
@@ -242,7 +225,6 @@ public class EquivMapsGenerator {
         try (BufferedWriter writer = Files.newBufferedWriter(
                 Paths.get(fileName))) {
             writer.write(getOpenJDKCopyright());
-            writer.write("\n");
             writer.write(HEADER_TEXT);
             writer.write(getMapsText());
             writer.write(getLSRText());
@@ -259,8 +241,7 @@ public class EquivMapsGenerator {
     }
 
     private static String getOpenJDKCopyright() {
-        return String.format(Locale.US,
-                (jdkHeaderTemplate != null ? jdkHeaderTemplate : COPYRIGHT), copyrightYear);
+        return String.format(Locale.US, COPYRIGHT, copyrightYear);
     }
 
     private static final String COPYRIGHT =
@@ -289,6 +270,7 @@ public class EquivMapsGenerator {
              * or visit www.oracle.com if you need additional information or have any
              * questions.
             */
+
             """;
 
     private static final String HEADER_TEXT =

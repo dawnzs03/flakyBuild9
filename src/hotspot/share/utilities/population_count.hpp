@@ -26,7 +26,6 @@
 #define SHARE_UTILITIES_POPULATION_COUNT_HPP
 
 #include "metaprogramming/enableIf.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

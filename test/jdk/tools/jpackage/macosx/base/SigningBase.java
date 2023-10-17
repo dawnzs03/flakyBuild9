@@ -22,7 +22,6 @@
  */
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 
 import jdk.jpackage.test.JPackageCommand;
@@ -32,53 +31,17 @@ import jdk.jpackage.test.Executor.Result;
 
 public class SigningBase {
 
-    public static int DEFAULT_INDEX = 0;
-    private static String [] DEV_NAMES = {
-        "jpackage.openjdk.java.net",
-        "jpackage.openjdk.java.net (ö)",
-    };
-    private static String DEFAULT_KEYCHAIN = "jpackagerTest.keychain";
-
-    public static String getDevName(int certIndex) {
-        // Always use values from system properties if set
+    public static String DEV_NAME;
+    public static String APP_CERT;
+    public static String INSTALLER_CERT;
+    public static String KEYCHAIN;
+    static {
         String value = System.getProperty("jpackage.mac.signing.key.user.name");
-        if (value != null) {
-            return value;
-        }
-
-        return DEV_NAMES[certIndex];
-    }
-
-    public static int getDevNameIndex(String devName) {
-        return Arrays.binarySearch(DEV_NAMES, devName);
-    }
-
-    // Returns 'true' if dev name from DEV_NAMES
-    public static boolean isDevNameDefault() {
-        String value = System.getProperty("jpackage.mac.signing.key.user.name");
-        if (value != null) {
-            return false;
-        }
-
-        return true;
-    }
-
-    public static String getAppCert(int certIndex) {
-        return "Developer ID Application: " + getDevName(certIndex);
-    }
-
-    public static String getInstallerCert(int certIndex) {
-        return "Developer ID Installer: " + getDevName(certIndex);
-    }
-
-    public static String getKeyChain() {
-        // Always use values from system properties if set
-        String value = System.getProperty("jpackage.mac.signing.keychain");
-        if (value != null) {
-            return value;
-        }
-
-        return DEFAULT_KEYCHAIN;
+        DEV_NAME = (value == null) ?  "jpackage.openjdk.java.net" : value;
+        APP_CERT = "Developer ID Application: " + DEV_NAME;
+        INSTALLER_CERT = "Developer ID Installer: " + DEV_NAME;
+        value = System.getProperty("jpackage.mac.signing.keychain");
+        KEYCHAIN = (value == null) ? "jpackagerTest.keychain" : value;
     }
 
     // Note: It is not clear if we can combine "--verify" and "--display", so
@@ -100,13 +63,13 @@ public class SigningBase {
         int exitCode = 0;
         Executor executor = new Executor().setExecutable("/usr/bin/codesign");
         switch (type) {
-            case VERIFY_UNSIGNED:
+            case CodesignCheckType.VERIFY_UNSIGNED:
                 exitCode = 1;
-            case VERIFY:
+            case CodesignCheckType.VERIFY:
                 executor.addArguments("--verify", "--deep", "--strict",
                                       "--verbose=2", target.toString());
                 break;
-            case DISPLAY:
+            case CodesignCheckType.DISPLAY:
                 executor.addArguments("--display", "--verbose=4", target.toString());
                 break;
             default:
@@ -117,23 +80,23 @@ public class SigningBase {
     }
 
     private static void verifyCodesignResult(List<String> result, Path target,
-            boolean signed, CodesignCheckType type, int certIndex) {
+            boolean signed, CodesignCheckType type) {
         result.stream().forEachOrdered(TKit::trace);
         String lookupString;
         switch (type) {
-            case VERIFY:
+            case CodesignCheckType.VERIFY:
                 lookupString = target.toString() + ": valid on disk";
                 checkString(result, lookupString);
                 lookupString = target.toString() + ": satisfies its Designated Requirement";
                 checkString(result, lookupString);
                 break;
-            case VERIFY_UNSIGNED:
+            case CodesignCheckType.VERIFY_UNSIGNED:
                 lookupString = target.toString() + ": code object is not signed at all";
                 checkString(result, lookupString);
                 break;
-            case DISPLAY:
+            case CodesignCheckType.DISPLAY:
                 if (signed) {
-                    lookupString = "Authority=" + getAppCert(certIndex);
+                    lookupString = "Authority=" + APP_CERT;
                 } else {
                     lookupString = "Signature=adhoc";
                 }
@@ -161,7 +124,7 @@ public class SigningBase {
     }
 
     private static void verifySpctlResult(List<String> output, Path target,
-            String type, int exitCode, int certIndex) {
+            String type, int exitCode) {
         output.stream().forEachOrdered(TKit::trace);
         String lookupString;
 
@@ -175,9 +138,9 @@ public class SigningBase {
         }
 
         if (type.equals("install")) {
-            lookupString = "origin=" + getInstallerCert(certIndex);
+            lookupString = "origin=" + INSTALLER_CERT;
         } else {
-            lookupString = "origin=" + getAppCert(certIndex);
+            lookupString = "origin=" + APP_CERT;
         }
         checkString(output, lookupString);
     }
@@ -192,20 +155,20 @@ public class SigningBase {
         return result;
     }
 
-    private static void verifyPkgutilResult(List<String> result, int certIndex) {
+    private static void verifyPkgutilResult(List<String> result) {
         result.stream().forEachOrdered(TKit::trace);
         String lookupString = "Status: signed by";
         checkString(result, lookupString);
-        lookupString = "1. " + getInstallerCert(certIndex);
+        lookupString = "1. " + INSTALLER_CERT;
         checkString(result, lookupString);
     }
 
-    public static void verifyCodesign(Path target, boolean signed, int certIndex) {
+    public static void verifyCodesign(Path target, boolean signed) {
         List<String> result = codesignResult(target, CodesignCheckType.VERIFY);
-        verifyCodesignResult(result, target, signed, CodesignCheckType.VERIFY, certIndex);
+        verifyCodesignResult(result, target, signed, CodesignCheckType.VERIFY);
 
         result = codesignResult(target, CodesignCheckType.DISPLAY);
-        verifyCodesignResult(result, target, signed, CodesignCheckType.DISPLAY, certIndex);
+        verifyCodesignResult(result, target, signed, CodesignCheckType.DISPLAY);
     }
 
     // Since we no longer have unsigned app image, but we need to check
@@ -218,36 +181,36 @@ public class SigningBase {
         }
 
         List<String> result = codesignResult(target, CodesignCheckType.VERIFY_UNSIGNED);
-        verifyCodesignResult(result, target, false, CodesignCheckType.VERIFY_UNSIGNED, -1);
+        verifyCodesignResult(result, target, false, CodesignCheckType.VERIFY_UNSIGNED);
     }
 
-    public static void verifySpctl(Path target, String type, int certIndex) {
+    public static void verifySpctl(Path target, String type) {
         Result result = spctlResult(target, type);
         List<String> output = result.getOutput();
 
-        verifySpctlResult(output, target, type, result.getExitCode(), certIndex);
+        verifySpctlResult(output, target, type, result.getExitCode());
     }
 
-    public static void verifyPkgutil(Path target, int certIndex) {
+    public static void verifyPkgutil(Path target) {
         List<String> result = pkgutilResult(target);
-        verifyPkgutilResult(result, certIndex);
+        verifyPkgutilResult(result);
     }
 
     public static void verifyAppImageSignature(JPackageCommand appImageCmd,
             boolean isSigned, String... launchers) throws Exception {
         Path launcherPath = appImageCmd.appLauncherPath();
-        SigningBase.verifyCodesign(launcherPath, isSigned, SigningBase.DEFAULT_INDEX);
+        SigningBase.verifyCodesign(launcherPath, isSigned);
 
         final List<String> launchersList = List.of(launchers);
         launchersList.forEach(launcher -> {
             Path testALPath = launcherPath.getParent().resolve(launcher);
-            SigningBase.verifyCodesign(testALPath, isSigned, SigningBase.DEFAULT_INDEX);
+            SigningBase.verifyCodesign(testALPath, isSigned);
         });
 
         Path appImage = appImageCmd.outputBundle();
-        SigningBase.verifyCodesign(appImage, isSigned, SigningBase.DEFAULT_INDEX);
+        SigningBase.verifyCodesign(appImage, isSigned);
         if (isSigned) {
-            SigningBase.verifySpctl(appImage, "exec", 0);
+            SigningBase.verifySpctl(appImage, "exec");
         }
     }
 

@@ -27,7 +27,6 @@
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 
 #include "memory/allocation.inline.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/elfFuncDescTable.hpp"
 #include "utilities/elfSymbolTable.hpp"
 

@@ -30,7 +30,6 @@
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 #include "memory/allocation.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"

@@ -31,7 +31,6 @@
 #include "runtime/atomic.hpp"
 #endif
 #include "services/memTracker.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

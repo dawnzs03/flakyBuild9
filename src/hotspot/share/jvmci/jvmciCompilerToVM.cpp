@@ -617,7 +617,10 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   }
 
   if (resolve) {
-    resolved_klass = SystemDictionary::resolve_or_fail(class_name, class_loader, protection_domain, true, CHECK_NULL);
+    resolved_klass = SystemDictionary::resolve_or_null(class_name, class_loader, protection_domain, CHECK_NULL);
+    if (resolved_klass == nullptr) {
+      JVMCI_THROW_MSG_NULL(NoClassDefFoundError, str);
+    }
   } else {
     if (Signature::has_envelope(class_name)) {
       // This is a name from a signature.  Strip off the trimmings.
