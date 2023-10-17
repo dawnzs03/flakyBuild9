@@ -1,112 +1,265 @@
-# Presto
+<!--
 
-Presto is a distributed SQL query engine for big data.
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
 
-See the [User Manual](https://prestodb.github.io/docs/current/) for deployment instructions and end user documentation.
+      http://www.apache.org/licenses/LICENSE-2.0
 
-## Requirements
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 
-* Mac OS X or Linux
-* Java 8 Update 151 or higher (8u151+), 64-bit. Both Oracle JDK and OpenJDK are supported.
-* Maven 3.3.9+ (for building)
-* Python 2.4+ (for running with the launcher script)
+-->
 
-## Building Presto
+![logo](https://pulsar.apache.org/img/pulsar.svg)
 
-Presto is a standard Maven project. Simply run the following command from the project root directory:
+[![docker pull](https://img.shields.io/docker/pulls/apachepulsar/pulsar-all.svg)](https://hub.docker.com/r/apachepulsar/pulsar)
+[![contributors](https://img.shields.io/github/contributors-anon/apache/pulsar)](https://github.com/apache/pulsar/graphs/contributors)
+[![last commit](https://img.shields.io/github/last-commit/apache/pulsar)](https://github.com/apache/pulsar/commits/master)
+[![release](https://img.shields.io/github/v/release/apache/pulsar?sort=semver)](https://pulsar.apache.org/download/)
+[![downloads](https://img.shields.io/github/downloads/apache/pulsar/total)](https://pulsar.apache.org/download/)
 
-    ./mvnw clean install
+Pulsar is a distributed pub-sub messaging platform with a very
+flexible messaging model and an intuitive client API.
 
-On the first build, Maven will download all the dependencies from the internet and cache them in the local repository (`~/.m2/repository`), which can take a considerable amount of time. Subsequent builds will be faster.
+Learn more about Pulsar at https://pulsar.apache.org
 
-Presto has a comprehensive set of unit tests that can take several minutes to run. You can disable the tests when building:
+## Main features
 
-    ./mvnw clean install -DskipTests
+- Horizontally scalable (Millions of independent topics and millions
+  of messages published per second)
+- Strong ordering and consistency guarantees
+- Low latency durable storage
+- Topic and queue semantics
+- Load balancer
+- Designed for being deployed as a hosted service:
+  - Multi-tenant
+  - Authentication
+  - Authorization
+  - Quotas
+  - Support mixing very different workloads
+  - Optional hardware isolation
+- Keeps track of consumer cursor position
+- REST API for provisioning, admin and stats
+- Geo replication
+- Transparent handling of partitioned topics
+- Transparent batching of messages
 
+## Repositories
 
-## Presto native and Velox
+This repository is the main repository of Apache Pulsar. Pulsar PMC also maintains other repositories for
+components in the Pulsar ecosystem, including connectors, adapters, and other language clients.
 
-[Presto native](https://github.com/prestodb/presto/tree/master/presto-native-execution) is a C++ rewrite of Presto worker. [Presto native](https://github.com/prestodb/presto/tree/master/presto-native-execution) uses [Velox](https://github.com/facebookincubator/velox) as its primary engine to run presto workloads.
+- [Pulsar Core](https://github.com/apache/pulsar)
 
-[Velox](https://github.com/facebookincubator/velox) is a C++ database library which provides reusable, extensible, and high-performance data processing components.
+### Helm Chart
 
-Check out [building instructions](https://github.com/prestodb/presto/tree/master/presto-native-execution#building) to get started. 
+- [Pulsar Helm Chart](https://github.com/apache/pulsar-helm-chart)
 
+### Ecosystem
 
-## Running Presto in your IDE
+- [Pulsar Adapters](https://github.com/apache/pulsar-adapters)
 
-### Overview
+### Clients
 
-After building Presto for the first time, you can load the project into your IDE and run the server. We recommend using [IntelliJ IDEA](http://www.jetbrains.com/idea/). Because Presto is a standard Maven project, you can import it into your IDE using the root `pom.xml` file. In IntelliJ, choose Open Project from the Quick Start box or choose Open from the File menu and select the root `pom.xml` file.
+- [.NET/C# Client](https://github.com/apache/pulsar-dotpulsar)
+- [C++ Client](https://github.com/apache/pulsar-client-cpp)
+- [Go Client](https://github.com/apache/pulsar-client-go)
+- [NodeJS Client](https://github.com/apache/pulsar-client-node)
+- [Python Client](https://github.com/apache/pulsar-client-python)
+- [Reactive Java Client](https://github.com/apache/pulsar-client-reactive)
 
-After opening the project in IntelliJ, double check that the Java SDK is properly configured for the project:
+### Dashboard & Management Tools
 
-* Open the File menu and select Project Structure
-* In the SDKs section, ensure that a 1.8 JDK is selected (create one if none exist)
-* In the Project section, ensure the Project language level is set to 8.0 as Presto makes use of several Java 8 language features
+- [Pulsar Manager](https://github.com/apache/pulsar-manager)
 
-Presto comes with sample configuration that should work out-of-the-box for development. Use the following options to create a run configuration:
+### Website
 
-* Main Class: `com.facebook.presto.server.PrestoServer`
-* VM Options: `-ea -XX:+UseG1GC -XX:G1HeapRegionSize=32M -XX:+UseGCOverheadLimit -XX:+ExplicitGCInvokesConcurrent -Xmx2G -Dconfig=etc/config.properties -Dlog.levels-file=etc/log.properties`
-* Working directory: `$MODULE_WORKING_DIR$` or `$MODULE_DIR$`(Depends your version of IntelliJ)
-* Use classpath of module: `presto-main`
+- [Pulsar Site](https://github.com/apache/pulsar-site)
 
-The working directory should be the `presto-main` subdirectory. In IntelliJ, using `$MODULE_DIR$` accomplishes this automatically.
+### CI/CD
 
-Additionally, the Hive plugin must be configured with location of your Hive metastore Thrift service. Add the following to the list of VM options, replacing `localhost:9083` with the correct host and port (or use the below value if you do not have a Hive metastore):
+- [Pulsar CI](https://github.com/apache/pulsar-test-infra)
 
-    -Dhive.metastore.uri=thrift://localhost:9083
+### Archived/Halted
 
-### Using SOCKS for Hive or HDFS
+- [Pulsar Connectors](https://github.com/apache/pulsar-connectors) (bundled as [pulsar-io](pulsar-io))
+- [Pulsar Translation](https://github.com/apache/pulsar-translation)
+- [Pulsar SQL (Pulsar Presto Connector)](https://github.com/apache/pulsar-presto) (bundled as [pulsar-sql](pulsar-sql))
+- [Ruby Client](https://github.com/apache/pulsar-client-ruby)
 
-If your Hive metastore or HDFS cluster is not directly accessible to your local machine, you can use SSH port forwarding to access it. Setup a dynamic SOCKS proxy with SSH listening on local port 1080:
+## Pulsar Runtime Java Version Recommendation
 
-    ssh -v -N -D 1080 server
+- pulsar ver > 2.10 and master branch
 
-Then add the following to the list of VM options:
+| Components     | Java Version  |
+|----------------|:-------------:|
+| Broker         |      17       |
+| Functions / IO |      17       |
+| CLI            |      17       |
+| Java Client    | 8 or 11 or 17 |
 
-    -Dhive.metastore.thrift.client.socks-proxy=localhost:1080
+- 2.8 <= pulsar ver <= 2.10
 
-### Running the CLI
+| Components     | Java Version |
+|----------------|:------------:|
+| Broker         |      11      |
+| Functions / IO |      11      |
+| CLI            |   8 or 11    |
+| Java Client    |   8 or 11    |
 
-Start the CLI to connect to the server and run SQL queries:
+- pulsar ver < 2.8
 
-    presto-cli/target/presto-cli-*-executable.jar
+| Components | Java Version |
+|------------|:------------:|
+| All        |   8 or 11    |
 
-Run a query to see the nodes in the cluster:
+## Build Pulsar
 
-    SELECT * FROM system.runtime.nodes;
+### Requirements
 
-In the sample configuration, the Hive connector is mounted in the `hive` catalog, so you can run the following queries to show the tables in the Hive database `default`:
+- JDK
 
-    SHOW TABLES FROM hive.default;
+    | Pulsar Version    |                    JDK Version                    |
+    |-------------------|:-------------------------------------------------:|
+    | master and 2.11 + | [JDK 17](https://adoptium.net/?variant=openjdk17) |
+    | 2.8 / 2.9 / 2.10  | [JDK 11](https://adoptium.net/?variant=openjdk11) |
+    | 2.7 -             |  [JDK 8](https://adoptium.net/?variant=openjdk8)  |
 
-## Development
+- Maven 3.6.1+
+- zip
 
-See [Contributions](CONTRIBUTING.md) for guidelines around making new contributions and reviewing them.
+> **Note**:
+>
+> This project includes a [Maven Wrapper](https://maven.apache.org/wrapper/) that can be used instead of a system-installed Maven.
+> Use it by replacing `mvn` by `./mvnw` on Linux and `mvnw.cmd` on Windows in the commands below.    
+>
+> It's better to use CMD rather than Powershell on Windows. Because maven will activate the `windows` profile which runs `rename-netty-native-libs.cmd`.
 
-## Building the Documentation
+### Build
 
-To learn how to build the docs, see the [docs README](presto-docs/README.md).
+Compile and install:
 
-## Building the Web UI
+```bash
+$ mvn install -DskipTests
+```
 
-The Presto Web UI is composed of several React components and is written in JSX and ES6. This source code is compiled and packaged into browser-compatible JavaScript, which is then checked in to the Presto source code (in the `dist` folder). You must have [Node.js](https://nodejs.org/en/download/) and [Yarn](https://yarnpkg.com/en/) installed to execute these commands. To update this folder after making changes, simply run:
+Compile and install individual module
 
-    yarn --cwd presto-main/src/main/resources/webapp/src install
+```bash
+$ mvn -pl module-name (e.g: pulsar-broker) install -DskipTests
+```
 
-If no JavaScript dependencies have changed (i.e., no changes to `package.json`), it is faster to run:
+### Minimal build (This skips most of external connectors and tiered storage handlers)
 
-    yarn --cwd presto-main/src/main/resources/webapp/src run package
+```bash
+mvn install -Pcore-modules,-main -DskipTests
+```
 
-To simplify iteration, you can also run in `watch` mode, which automatically re-compiles when changes to source files are detected:
+Run Unit Tests:
 
-    yarn --cwd presto-main/src/main/resources/webapp/src run watch
+```bash
+$ mvn test
+```
 
-To iterate quickly, simply re-build the project in IntelliJ after packaging is complete. Project resources will be hot-reloaded and changes are reflected on browser refresh.
+Run Individual Unit Test:
 
-## Release Notes
+```bash
+$ mvn -pl module-name (e.g: pulsar-client) test -Dtest=unit-test-name (e.g: ConsumerBuilderImplTest)
+```
 
-When authoring a pull request, the PR description should include its relevant release notes.
-Follow [Release Notes Guidelines](https://github.com/prestodb/presto/wiki/Release-Notes-Guidelines) when authoring release notes. 
+Run Selected Test packages:
+
+```bash
+$ mvn test -pl module-name (for example, pulsar-broker) -Dinclude=org/apache/pulsar/**/*.java
+```
+
+Start standalone Pulsar service:
+
+```bash
+$ bin/pulsar standalone
+```
+
+Check https://pulsar.apache.org for documentation and examples.
+
+## Build custom docker images
+
+* Docker images must be built with Java 8 for `branch-2.7` or previous branches because of [ISSUE-8445](https://github.com/apache/pulsar/issues/8445).
+* Java 11 is the recommended JDK version in `branch-2.8`, `branch-2.9` and `branch-2.10`.
+* Java 17 is the recommended JDK version in `master`.
+
+The following command builds the docker images `apachepulsar/pulsar-all:latest` and `apachepulsar/pulsar:latest`:
+
+```bash
+mvn clean install -DskipTests
+mvn package -Pdocker,-main -am -pl docker/pulsar-all -DskipTests
+```
+
+After the images are built, they can be tagged and pushed to your custom repository. Here's an example of a bash script that tags the docker images with the current version and git revision and pushes them to `localhost:32000/apachepulsar`.
+
+```bash
+image_repo_and_project=localhost:32000/apachepulsar
+pulsar_version=$(mvn initialize help:evaluate -Dexpression=project.version -pl . -q -DforceStdout)
+gitrev=$(git rev-parse HEAD | colrm 10)
+tag="${pulsar_version}-${gitrev}"
+echo "Using tag $tag"
+docker tag apachepulsar/pulsar-all:latest ${image_repo_and_project}/pulsar-all:$tag
+docker push ${image_repo_and_project}/pulsar-all:$tag
+docker tag apachepulsar/pulsar:latest ${image_repo_and_project}/pulsar:$tag
+docker push ${image_repo_and_project}/pulsar:$tag
+```
+
+## Setting up your IDE
+
+Read https://pulsar.apache.org/contribute/setup-ide for setting up IntelliJ IDEA or Eclipse for developing Pulsar.
+
+## Documentation
+
+> **Note**:
+>
+> For how to make contributions to Pulsar documentation, see [Pulsar Documentation Contribution Guide](https://pulsar.apache.org/contribute/document-intro/).
+
+## Contact
+
+##### Mailing lists
+
+| Name                                                      | Scope                           | Subscribe                                             | Unsubscribe                                               | Archives                                                           |
+|:----------------------------------------------------------|:--------------------------------|:------------------------------------------------------|:----------------------------------------------------------|:-------------------------------------------------------------------|
+| [users@pulsar.apache.org](mailto:users@pulsar.apache.org) | User-related discussions        | [Subscribe](mailto:users-subscribe@pulsar.apache.org) | [Unsubscribe](mailto:users-unsubscribe@pulsar.apache.org) | [Archives](http://mail-archives.apache.org/mod_mbox/pulsar-users/) |
+| [dev@pulsar.apache.org](mailto:dev@pulsar.apache.org)     | Development-related discussions | [Subscribe](mailto:dev-subscribe@pulsar.apache.org)   | [Unsubscribe](mailto:dev-unsubscribe@pulsar.apache.org)   | [Archives](http://mail-archives.apache.org/mod_mbox/pulsar-dev/)   |
+
+##### Slack
+
+Pulsar slack channel at https://apache-pulsar.slack.com/
+
+You can self-register at https://communityinviter.com/apps/apache-pulsar/apache-pulsar
+
+## Security Policy
+
+If you find a security issue with Pulsar then please [read the security policy](https://pulsar.apache.org/security/#security-policy). It is critical to avoid public disclosure.
+
+### Reporting a security vulnerability
+
+To report a vulnerability for Pulsar, contact the [Apache Security Team](https://www.apache.org/security/). When reporting a vulnerability to [security@apache.org](mailto:security@apache.org), you can copy your email to [private@pulsar.apache.org](mailto:private@pulsar.apache.org) to send your report to the Apache Pulsar Project Management Committee. This is a private mailing list.
+
+https://github.com/apache/pulsar/security/policy contains more details.
+
+## License
+
+Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+
+## Crypto Notice
+
+This distribution includes cryptographic software. The country in which you currently reside may have restrictions on the import, possession, use, and/or re-export to another country, of encryption software. BEFORE using any encryption software, please check your country's laws, regulations and policies concerning the import, possession, or use, and re-export of encryption software, to see if this is permitted. See [The Wassenaar Arrangement](http://www.wassenaar.org/) for more information.
+
+The U.S. Government Department of Commerce, Bureau of Industry and Security (BIS), has classified this software as Export Commodity Control Number (ECCN) 5D002.C.1, which includes information security software using or performing cryptographic functions with asymmetric algorithms. The form and manner of this Apache Software Foundation distribution makes it eligible for export under the License Exception ENC Technology Software Unrestricted (TSU) exception (see the BIS Export Administration Regulations, Section 740.13) for both object code and source code.
+
+The following provides more details on the included cryptographic software: Pulsar uses the SSL library from Bouncy Castle written by http://www.bouncycastle.org.
