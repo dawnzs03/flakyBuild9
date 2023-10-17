@@ -21,7 +21,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
-public class RemoteStorePressureSettingsTests extends OpenSearchTestCase {
+public class RemoteRefreshSegmentPressureSettingsTests extends OpenSearchTestCase {
 
     private ClusterService clusterService;
 
@@ -45,10 +45,10 @@ public class RemoteStorePressureSettingsTests extends OpenSearchTestCase {
     }
 
     public void testGetDefaultSettings() {
-        RemoteStorePressureSettings pressureSettings = new RemoteStorePressureSettings(
+        RemoteRefreshSegmentPressureSettings pressureSettings = new RemoteRefreshSegmentPressureSettings(
             clusterService,
             Settings.EMPTY,
-            mock(RemoteStorePressureService.class)
+            mock(RemoteRefreshSegmentPressureService.class)
         );
 
         // Check remote refresh segment pressure enabled is false
@@ -75,18 +75,18 @@ public class RemoteStorePressureSettingsTests extends OpenSearchTestCase {
 
     public void testGetConfiguredSettings() {
         Settings settings = Settings.builder()
-            .put(RemoteStorePressureSettings.REMOTE_REFRESH_SEGMENT_PRESSURE_ENABLED.getKey(), true)
-            .put(RemoteStorePressureSettings.BYTES_LAG_VARIANCE_FACTOR.getKey(), 50.0)
-            .put(RemoteStorePressureSettings.UPLOAD_TIME_LAG_VARIANCE_FACTOR.getKey(), 60.0)
-            .put(RemoteStorePressureSettings.MIN_CONSECUTIVE_FAILURES_LIMIT.getKey(), 121)
-            .put(RemoteStorePressureSettings.UPLOAD_BYTES_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 102)
-            .put(RemoteStorePressureSettings.UPLOAD_BYTES_PER_SEC_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 103)
-            .put(RemoteStorePressureSettings.UPLOAD_TIME_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 104)
+            .put(RemoteRefreshSegmentPressureSettings.REMOTE_REFRESH_SEGMENT_PRESSURE_ENABLED.getKey(), true)
+            .put(RemoteRefreshSegmentPressureSettings.BYTES_LAG_VARIANCE_FACTOR.getKey(), 50.0)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_TIME_LAG_VARIANCE_FACTOR.getKey(), 60.0)
+            .put(RemoteRefreshSegmentPressureSettings.MIN_CONSECUTIVE_FAILURES_LIMIT.getKey(), 121)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_BYTES_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 102)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_BYTES_PER_SEC_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 103)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_TIME_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 104)
             .build();
-        RemoteStorePressureSettings pressureSettings = new RemoteStorePressureSettings(
+        RemoteRefreshSegmentPressureSettings pressureSettings = new RemoteRefreshSegmentPressureSettings(
             clusterService,
             settings,
-            mock(RemoteStorePressureService.class)
+            mock(RemoteRefreshSegmentPressureService.class)
         );
 
         // Check remote refresh segment pressure enabled is true
@@ -112,20 +112,20 @@ public class RemoteStorePressureSettingsTests extends OpenSearchTestCase {
     }
 
     public void testUpdateAfterGetDefaultSettings() {
-        RemoteStorePressureSettings pressureSettings = new RemoteStorePressureSettings(
+        RemoteRefreshSegmentPressureSettings pressureSettings = new RemoteRefreshSegmentPressureSettings(
             clusterService,
             Settings.EMPTY,
-            mock(RemoteStorePressureService.class)
+            mock(RemoteRefreshSegmentPressureService.class)
         );
 
         Settings newSettings = Settings.builder()
-            .put(RemoteStorePressureSettings.REMOTE_REFRESH_SEGMENT_PRESSURE_ENABLED.getKey(), true)
-            .put(RemoteStorePressureSettings.BYTES_LAG_VARIANCE_FACTOR.getKey(), 50.0)
-            .put(RemoteStorePressureSettings.UPLOAD_TIME_LAG_VARIANCE_FACTOR.getKey(), 60.0)
-            .put(RemoteStorePressureSettings.MIN_CONSECUTIVE_FAILURES_LIMIT.getKey(), 121)
-            .put(RemoteStorePressureSettings.UPLOAD_BYTES_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 102)
-            .put(RemoteStorePressureSettings.UPLOAD_BYTES_PER_SEC_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 103)
-            .put(RemoteStorePressureSettings.UPLOAD_TIME_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 104)
+            .put(RemoteRefreshSegmentPressureSettings.REMOTE_REFRESH_SEGMENT_PRESSURE_ENABLED.getKey(), true)
+            .put(RemoteRefreshSegmentPressureSettings.BYTES_LAG_VARIANCE_FACTOR.getKey(), 50.0)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_TIME_LAG_VARIANCE_FACTOR.getKey(), 60.0)
+            .put(RemoteRefreshSegmentPressureSettings.MIN_CONSECUTIVE_FAILURES_LIMIT.getKey(), 121)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_BYTES_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 102)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_BYTES_PER_SEC_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 103)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_TIME_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 104)
             .build();
         clusterService.getClusterSettings().applySettings(newSettings);
 
@@ -153,27 +153,27 @@ public class RemoteStorePressureSettingsTests extends OpenSearchTestCase {
 
     public void testUpdateAfterGetConfiguredSettings() {
         Settings settings = Settings.builder()
-            .put(RemoteStorePressureSettings.REMOTE_REFRESH_SEGMENT_PRESSURE_ENABLED.getKey(), true)
-            .put(RemoteStorePressureSettings.BYTES_LAG_VARIANCE_FACTOR.getKey(), 50.0)
-            .put(RemoteStorePressureSettings.UPLOAD_TIME_LAG_VARIANCE_FACTOR.getKey(), 60.0)
-            .put(RemoteStorePressureSettings.MIN_CONSECUTIVE_FAILURES_LIMIT.getKey(), 121)
-            .put(RemoteStorePressureSettings.UPLOAD_BYTES_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 102)
-            .put(RemoteStorePressureSettings.UPLOAD_BYTES_PER_SEC_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 103)
-            .put(RemoteStorePressureSettings.UPLOAD_TIME_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 104)
+            .put(RemoteRefreshSegmentPressureSettings.REMOTE_REFRESH_SEGMENT_PRESSURE_ENABLED.getKey(), true)
+            .put(RemoteRefreshSegmentPressureSettings.BYTES_LAG_VARIANCE_FACTOR.getKey(), 50.0)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_TIME_LAG_VARIANCE_FACTOR.getKey(), 60.0)
+            .put(RemoteRefreshSegmentPressureSettings.MIN_CONSECUTIVE_FAILURES_LIMIT.getKey(), 121)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_BYTES_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 102)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_BYTES_PER_SEC_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 103)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_TIME_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 104)
             .build();
-        RemoteStorePressureSettings pressureSettings = new RemoteStorePressureSettings(
+        RemoteRefreshSegmentPressureSettings pressureSettings = new RemoteRefreshSegmentPressureSettings(
             clusterService,
             settings,
-            mock(RemoteStorePressureService.class)
+            mock(RemoteRefreshSegmentPressureService.class)
         );
 
         Settings newSettings = Settings.builder()
-            .put(RemoteStorePressureSettings.BYTES_LAG_VARIANCE_FACTOR.getKey(), 40.0)
-            .put(RemoteStorePressureSettings.UPLOAD_TIME_LAG_VARIANCE_FACTOR.getKey(), 50.0)
-            .put(RemoteStorePressureSettings.MIN_CONSECUTIVE_FAILURES_LIMIT.getKey(), 111)
-            .put(RemoteStorePressureSettings.UPLOAD_BYTES_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 112)
-            .put(RemoteStorePressureSettings.UPLOAD_BYTES_PER_SEC_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 113)
-            .put(RemoteStorePressureSettings.UPLOAD_TIME_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 114)
+            .put(RemoteRefreshSegmentPressureSettings.BYTES_LAG_VARIANCE_FACTOR.getKey(), 40.0)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_TIME_LAG_VARIANCE_FACTOR.getKey(), 50.0)
+            .put(RemoteRefreshSegmentPressureSettings.MIN_CONSECUTIVE_FAILURES_LIMIT.getKey(), 111)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_BYTES_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 112)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_BYTES_PER_SEC_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 113)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_TIME_MOVING_AVERAGE_WINDOW_SIZE.getKey(), 114)
             .build();
 
         clusterService.getClusterSettings().applySettings(newSettings);
@@ -208,7 +208,7 @@ public class RemoteStorePressureSettingsTests extends OpenSearchTestCase {
         AtomicInteger updatedUploadBytesPerSecWindowSize = new AtomicInteger();
         AtomicInteger updatedUploadTimeWindowSize = new AtomicInteger();
 
-        RemoteStorePressureService pressureService = mock(RemoteStorePressureService.class);
+        RemoteRefreshSegmentPressureService pressureService = mock(RemoteRefreshSegmentPressureService.class);
 
         // Upload bytes
         doAnswer(invocation -> {
@@ -228,11 +228,15 @@ public class RemoteStorePressureSettingsTests extends OpenSearchTestCase {
             return null;
         }).when(pressureService).updateUploadTimeMsMovingAverageWindowSize(anyInt());
 
-        RemoteStorePressureSettings pressureSettings = new RemoteStorePressureSettings(clusterService, Settings.EMPTY, pressureService);
+        RemoteRefreshSegmentPressureSettings pressureSettings = new RemoteRefreshSegmentPressureSettings(
+            clusterService,
+            Settings.EMPTY,
+            pressureService
+        );
         Settings newSettings = Settings.builder()
-            .put(RemoteStorePressureSettings.UPLOAD_BYTES_MOVING_AVERAGE_WINDOW_SIZE.getKey(), toUpdateVal1)
-            .put(RemoteStorePressureSettings.UPLOAD_BYTES_PER_SEC_MOVING_AVERAGE_WINDOW_SIZE.getKey(), toUpdateVal2)
-            .put(RemoteStorePressureSettings.UPLOAD_TIME_MOVING_AVERAGE_WINDOW_SIZE.getKey(), toUpdateVal3)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_BYTES_MOVING_AVERAGE_WINDOW_SIZE.getKey(), toUpdateVal1)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_BYTES_PER_SEC_MOVING_AVERAGE_WINDOW_SIZE.getKey(), toUpdateVal2)
+            .put(RemoteRefreshSegmentPressureSettings.UPLOAD_TIME_MOVING_AVERAGE_WINDOW_SIZE.getKey(), toUpdateVal3)
             .build();
         clusterService.getClusterSettings().applySettings(newSettings);
 

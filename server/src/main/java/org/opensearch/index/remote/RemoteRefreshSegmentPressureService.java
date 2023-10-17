@@ -30,9 +30,9 @@ import java.util.function.BiConsumer;
  *
  * @opensearch.internal
  */
-public class RemoteStorePressureService implements IndexEventListener {
+public class RemoteRefreshSegmentPressureService implements IndexEventListener {
 
-    private static final Logger logger = LogManager.getLogger(RemoteStorePressureService.class);
+    private static final Logger logger = LogManager.getLogger(RemoteRefreshSegmentPressureService.class);
 
     /**
      * Keeps map of remote-backed index shards and their corresponding backpressure tracker.
@@ -42,13 +42,13 @@ public class RemoteStorePressureService implements IndexEventListener {
     /**
      * Remote refresh segment pressure settings which is used for creation of the backpressure tracker and as well as rejection.
      */
-    private final RemoteStorePressureSettings pressureSettings;
+    private final RemoteRefreshSegmentPressureSettings pressureSettings;
 
     private final List<LagValidator> lagValidators;
 
     @Inject
-    public RemoteStorePressureService(ClusterService clusterService, Settings settings) {
-        pressureSettings = new RemoteStorePressureSettings(clusterService, settings, this);
+    public RemoteRefreshSegmentPressureService(ClusterService clusterService, Settings settings) {
+        pressureSettings = new RemoteRefreshSegmentPressureSettings(clusterService, settings, this);
         lagValidators = Arrays.asList(
             new ConsecutiveFailureValidator(pressureSettings),
             new BytesLagValidator(pressureSettings),
@@ -146,9 +146,9 @@ public class RemoteStorePressureService implements IndexEventListener {
      */
     private static abstract class LagValidator {
 
-        final RemoteStorePressureSettings pressureSettings;
+        final RemoteRefreshSegmentPressureSettings pressureSettings;
 
-        private LagValidator(RemoteStorePressureSettings pressureSettings) {
+        private LagValidator(RemoteRefreshSegmentPressureSettings pressureSettings) {
             this.pressureSettings = pressureSettings;
         }
 
@@ -180,7 +180,7 @@ public class RemoteStorePressureService implements IndexEventListener {
 
         private static final String NAME = "bytes_lag";
 
-        private BytesLagValidator(RemoteStorePressureSettings pressureSettings) {
+        private BytesLagValidator(RemoteRefreshSegmentPressureSettings pressureSettings) {
             super(pressureSettings);
         }
 
@@ -226,7 +226,7 @@ public class RemoteStorePressureService implements IndexEventListener {
 
         private static final String NAME = "time_lag";
 
-        private TimeLagValidator(RemoteStorePressureSettings pressureSettings) {
+        private TimeLagValidator(RemoteRefreshSegmentPressureSettings pressureSettings) {
             super(pressureSettings);
         }
 
@@ -272,7 +272,7 @@ public class RemoteStorePressureService implements IndexEventListener {
 
         private static final String NAME = "consecutive_failures_lag";
 
-        private ConsecutiveFailureValidator(RemoteStorePressureSettings pressureSettings) {
+        private ConsecutiveFailureValidator(RemoteRefreshSegmentPressureSettings pressureSettings) {
             super(pressureSettings);
         }
 

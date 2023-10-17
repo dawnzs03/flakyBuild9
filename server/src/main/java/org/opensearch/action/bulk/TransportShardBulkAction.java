@@ -89,7 +89,7 @@ import org.opensearch.index.get.GetResult;
 import org.opensearch.index.mapper.MapperException;
 import org.opensearch.index.mapper.MapperService;
 import org.opensearch.index.mapper.SourceToParse;
-import org.opensearch.index.remote.RemoteStorePressureService;
+import org.opensearch.index.remote.RemoteRefreshSegmentPressureService;
 import org.opensearch.index.seqno.SequenceNumbers;
 import org.opensearch.index.shard.IndexShard;
 import org.opensearch.core.index.shard.ShardId;
@@ -137,7 +137,7 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
     private final UpdateHelper updateHelper;
     private final MappingUpdatedAction mappingUpdatedAction;
     private final SegmentReplicationPressureService segmentReplicationPressureService;
-    private final RemoteStorePressureService remoteStorePressureService;
+    private final RemoteRefreshSegmentPressureService remoteRefreshSegmentPressureService;
 
     /**
      * This action is used for performing primary term validation. With remote translog enabled, the translogs would
@@ -161,7 +161,7 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
         ActionFilters actionFilters,
         IndexingPressureService indexingPressureService,
         SegmentReplicationPressureService segmentReplicationPressureService,
-        RemoteStorePressureService remoteStorePressureService,
+        RemoteRefreshSegmentPressureService remoteRefreshSegmentPressureService,
         SystemIndices systemIndices
     ) {
         super(
@@ -183,7 +183,7 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
         this.updateHelper = updateHelper;
         this.mappingUpdatedAction = mappingUpdatedAction;
         this.segmentReplicationPressureService = segmentReplicationPressureService;
-        this.remoteStorePressureService = remoteStorePressureService;
+        this.remoteRefreshSegmentPressureService = remoteRefreshSegmentPressureService;
 
         this.transportPrimaryTermValidationAction = ACTION_NAME + "[validate_primary_term]";
 
@@ -539,8 +539,9 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
             }
             // TODO - While removing remote store flag, this can be encapsulated to single class with common interface for backpressure
             // service
-            if (FeatureFlags.isEnabled(FeatureFlags.REMOTE_STORE) && remoteStorePressureService.isSegmentsUploadBackpressureEnabled()) {
-                remoteStorePressureService.validateSegmentsUploadLag(request.shardId());
+            if (FeatureFlags.isEnabled(FeatureFlags.REMOTE_STORE)
+                && remoteRefreshSegmentPressureService.isSegmentsUploadBackpressureEnabled()) {
+                remoteRefreshSegmentPressureService.validateSegmentsUploadLag(request.shardId());
             }
         }
         return super.checkPrimaryLimits(request, rerouteWasLocal, localRerouteInitiatedByNodeClient);

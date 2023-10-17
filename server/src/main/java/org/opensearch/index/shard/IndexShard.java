@@ -144,7 +144,7 @@ import org.opensearch.index.mapper.Uid;
 import org.opensearch.index.merge.MergeStats;
 import org.opensearch.index.recovery.RecoveryStats;
 import org.opensearch.index.refresh.RefreshStats;
-import org.opensearch.index.remote.RemoteStorePressureService;
+import org.opensearch.index.remote.RemoteRefreshSegmentPressureService;
 import org.opensearch.index.remote.RemoteSegmentStats;
 import org.opensearch.index.search.stats.SearchStats;
 import org.opensearch.index.search.stats.ShardSearchStats;
@@ -333,7 +333,8 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
     private final Store remoteStore;
     private final BiFunction<IndexSettings, ShardRouting, TranslogFactory> translogFactorySupplier;
     private final boolean isTimeSeriesIndex;
-    private final RemoteStorePressureService remoteStorePressureService;
+
+    private final RemoteRefreshSegmentPressureService remoteRefreshSegmentPressureService;
 
     private final List<ReferenceManager.RefreshListener> internalRefreshListener = new ArrayList<>();
 
@@ -361,7 +362,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         final BiFunction<IndexSettings, ShardRouting, TranslogFactory> translogFactorySupplier,
         @Nullable final SegmentReplicationCheckpointPublisher checkpointPublisher,
         @Nullable final Store remoteStore,
-        final RemoteStorePressureService remoteStorePressureService
+        final RemoteRefreshSegmentPressureService remoteRefreshSegmentPressureService
     ) throws IOException {
         super(shardRouting.shardId(), indexSettings);
         assert shardRouting.initializing();
@@ -456,7 +457,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         this.isTimeSeriesIndex = (mapperService == null || mapperService.documentMapper() == null)
             ? false
             : mapperService.documentMapper().mappers().containsTimeStampField();
-        this.remoteStorePressureService = remoteStorePressureService;
+        this.remoteRefreshSegmentPressureService = remoteRefreshSegmentPressureService;
     }
 
     public ThreadPool getThreadPool() {
@@ -546,8 +547,8 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
     }
 
     /** Only used for testing **/
-    protected RemoteStorePressureService getRemoteStorePressureService() {
-        return remoteStorePressureService;
+    protected RemoteRefreshSegmentPressureService getRemoteRefreshSegmentPressureService() {
+        return remoteRefreshSegmentPressureService;
     }
 
     @Override
@@ -1386,7 +1387,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         // Populate remote_store stats only if the index is remote store backed
         if (indexSettings.isRemoteStoreEnabled()) {
             segmentsStats.addRemoteSegmentStats(
-                new RemoteSegmentStats(remoteStorePressureService.getRemoteRefreshSegmentTracker(shardId).stats())
+                new RemoteSegmentStats(remoteRefreshSegmentPressureService.getRemoteRefreshSegmentTracker(shardId).stats())
             );
         }
         return segmentsStats;
@@ -3696,7 +3697,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
                     this,
                     // Add the checkpoint publisher if the Segment Replciation via remote store is enabled.
                     indexSettings.isSegRepWithRemoteEnabled() ? this.checkpointPublisher : SegmentReplicationCheckpointPublisher.EMPTY,
-                    remoteStorePressureService.getRemoteRefreshSegmentTracker(shardId())
+                    remoteRefreshSegmentPressureService.getRemoteRefreshSegmentTracker(shardId())
                 )
             );
         }

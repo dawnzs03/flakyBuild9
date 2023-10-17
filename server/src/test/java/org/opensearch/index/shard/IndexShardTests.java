@@ -89,6 +89,7 @@ import org.opensearch.common.util.concurrent.AtomicArray;
 import org.opensearch.common.util.concurrent.ConcurrentCollections;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.core.Assertions;
+import org.opensearch.core.common.bytes.BytesArray;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.core.xcontent.MediaTypeRegistry;
@@ -1821,7 +1822,7 @@ public class IndexShardTests extends IndexShardTestCase {
                 .put(IndexMetadata.SETTING_REMOTE_STORE_ENABLED, true)
                 .build()
         );
-        RemoteSegmentTransferTracker remoteRefreshSegmentTracker = shard.getRemoteStorePressureService()
+        RemoteSegmentTransferTracker remoteRefreshSegmentTracker = shard.getRemoteRefreshSegmentPressureService()
             .getRemoteRefreshSegmentTracker(shard.shardId);
         populateSampleRemoteStoreStats(remoteRefreshSegmentTracker);
         ShardStats shardStats = new ShardStats(
