@@ -34,7 +34,6 @@ package org.opensearch.search.functionscore;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.Explanation;
-import org.apache.lucene.search.IndexSearcher;
 import org.opensearch.action.index.IndexRequestBuilder;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.SearchType;
@@ -94,7 +93,7 @@ public class ExplainableScriptIT extends OpenSearchIntegTestCase {
                 public <T> T compile(String scriptName, String scriptSource, ScriptContext<T> context, Map<String, String> params) {
                     assert scriptSource.equals("explainable_script");
                     assert context == ScoreScript.CONTEXT;
-                    ScoreScript.Factory factory = (params1, lookup, indexSearcher) -> new ScoreScript.LeafFactory() {
+                    ScoreScript.Factory factory = (params1, lookup) -> new ScoreScript.LeafFactory() {
                         @Override
                         public boolean needs_score() {
                             return false;
@@ -102,7 +101,7 @@ public class ExplainableScriptIT extends OpenSearchIntegTestCase {
 
                         @Override
                         public ScoreScript newInstance(LeafReaderContext ctx) throws IOException {
-                            return new MyScript(params1, lookup, indexSearcher, ctx);
+                            return new MyScript(params1, lookup, ctx);
                         }
                     };
                     return context.factoryClazz.cast(factory);
@@ -118,8 +117,8 @@ public class ExplainableScriptIT extends OpenSearchIntegTestCase {
 
     static class MyScript extends ScoreScript implements ExplainableScoreScript {
 
-        MyScript(Map<String, Object> params, SearchLookup lookup, IndexSearcher indexSearcher, LeafReaderContext leafContext) {
-            super(params, lookup, indexSearcher, leafContext);
+        MyScript(Map<String, Object> params, SearchLookup lookup, LeafReaderContext leafContext) {
+            super(params, lookup, leafContext);
         }
 
         @Override

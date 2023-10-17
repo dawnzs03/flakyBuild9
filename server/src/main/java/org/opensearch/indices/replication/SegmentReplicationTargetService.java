@@ -11,7 +11,6 @@ package org.opensearch.indices.replication;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.opensearch.ExceptionsHelper;
 import org.opensearch.OpenSearchCorruptionException;
 import org.opensearch.action.support.ChannelActionListener;
 import org.opensearch.cluster.node.DiscoveryNode;
@@ -19,7 +18,6 @@ import org.opensearch.cluster.routing.ShardRouting;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.Nullable;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.common.util.CancellableThreads;
 import org.opensearch.common.util.concurrent.AbstractRunnable;
 import org.opensearch.common.util.concurrent.ConcurrentCollections;
 import org.opensearch.core.action.ActionListener;
@@ -271,7 +269,15 @@ public class SegmentReplicationTargetService implements IndexEventListener {
                         ReplicationFailedException e,
                         boolean sendShardFailure
                     ) {
-                        logReplicationFailure(state, e, replicaShard);
+                        logger.error(
+                            () -> new ParameterizedMessage(
+                                "[shardId {}] [replication id {}] Replication failed, timing data: {}",
+                                replicaShard.shardId().getId(),
+                                state.getReplicationId(),
+                                state.getTimingData()
+                            ),
+                            e
+                        );
                         if (sendShardFailure == true) {
                             failShard(e, replicaShard);
                         } else {
@@ -283,30 +289,6 @@ public class SegmentReplicationTargetService implements IndexEventListener {
         } else {
             logger.trace(
                 () -> new ParameterizedMessage("Ignoring checkpoint, shard not started {} {}", receivedCheckpoint, replicaShard.state())
-            );
-        }
-    }
-
-    private void logReplicationFailure(SegmentReplicationState state, ReplicationFailedException e, IndexShard replicaShard) {
-        // only log as error if error is not a cancellation.
-        if (ExceptionsHelper.unwrap(e, CancellableThreads.ExecutionCancelledException.class) == null) {
-            logger.error(
-                () -> new ParameterizedMessage(
-                    "[shardId {}] [replication id {}] Replication failed, timing data: {}",
-                    replicaShard.shardId(),
-                    state.getReplicationId(),
-                    state.getTimingData()
-                ),
-                e
-            );
-        } else {
-            logger.debug(
-                () -> new ParameterizedMessage(
-                    "[shardId {}] [replication id {}] Replication cancelled",
-                    replicaShard.shardId(),
-                    state.getReplicationId()
-                ),
-                e
             );
         }
     }
@@ -521,6 +503,7 @@ public class SegmentReplicationTargetService implements IndexEventListener {
 
             @Override
             public void onFailure(Exception e) {
+                logger.error(() -> new ParameterizedMessage("Exception replicating {} marking as failed.", target.description()), e);
                 if (e instanceof OpenSearchCorruptionException) {
                     onGoingReplications.fail(replicationId, new ReplicationFailedException("Store corruption during replication", e), true);
                     return;
@@ -601,7 +584,15 @@ public class SegmentReplicationTargetService implements IndexEventListener {
                         ReplicationFailedException e,
                         boolean sendShardFailure
                     ) {
-                        logReplicationFailure(state, e, indexShard);
+                        logger.error(
+                            () -> new ParameterizedMessage(
+                                "[shardId {}] [replication id {}] Force replication Sync failed, timing data: {}",
+                                indexShard.shardId().getId(),
+                                state.getReplicationId(),
+                                state.getTimingData()
+                            ),
+                            e
+                        );
                         if (sendShardFailure) {
                             failShard(e, indexShard);
                         }

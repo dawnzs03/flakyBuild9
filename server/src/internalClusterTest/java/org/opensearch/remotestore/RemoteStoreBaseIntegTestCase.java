@@ -72,7 +72,7 @@ public class RemoteStoreBaseIntegTestCase extends OpenSearchIntegTestCase {
         Map<String, Long> indexingStats = new HashMap<>();
         for (int i = 0; i < numberOfIterations; i++) {
             if (invokeFlush) {
-                flushAndRefresh(index);
+                flush(index);
             } else {
                 refresh(index);
             }

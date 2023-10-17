@@ -299,11 +299,10 @@ public final class IndexSettings {
         Property.Deprecated
     );
     public static final TimeValue DEFAULT_REFRESH_INTERVAL = new TimeValue(1, TimeUnit.SECONDS);
-    public static final TimeValue MINIMUM_REFRESH_INTERVAL = new TimeValue(-1, TimeUnit.MILLISECONDS);
     public static final Setting<TimeValue> INDEX_REFRESH_INTERVAL_SETTING = Setting.timeSetting(
         "index.refresh_interval",
         DEFAULT_REFRESH_INTERVAL,
-        MINIMUM_REFRESH_INTERVAL,
+        new TimeValue(-1, TimeUnit.MILLISECONDS),
         Property.Dynamic,
         Property.IndexScope
     );
@@ -1147,9 +1146,7 @@ public final class IndexSettings {
      */
     public static boolean same(final Settings left, final Settings right) {
         return left.filter(IndexScopedSettings.INDEX_SETTINGS_KEY_PREDICATE)
-            .equals(right.filter(IndexScopedSettings.INDEX_SETTINGS_KEY_PREDICATE))
-            && left.filter(IndexScopedSettings.ARCHIVED_SETTINGS_KEY_PREDICATE)
-                .equals(right.filter(IndexScopedSettings.ARCHIVED_SETTINGS_KEY_PREDICATE));
+            .equals(right.filter(IndexScopedSettings.INDEX_SETTINGS_KEY_PREDICATE));
     }
 
     /**

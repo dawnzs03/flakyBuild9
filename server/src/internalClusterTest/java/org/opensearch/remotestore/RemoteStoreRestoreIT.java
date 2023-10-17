@@ -38,6 +38,7 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
     private static final String TOTAL_OPERATIONS = "total-operations";
     private static final String REFRESHED_OR_FLUSHED_OPERATIONS = "refreshed-or-flushed-operations";
     private static final String MAX_SEQ_NO_TOTAL = "max-seq-no-total";
+    private static final String MAX_SEQ_NO_REFRESHED_OR_FLUSHED = "max-seq-no-refreshed-or-flushed";
 
     @Override
     public Settings indexSettings() {
@@ -67,18 +68,18 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
             );
     }
 
-    private void verifyRestoredData(Map<String, Long> indexStats, String indexName) {
+    private void verifyRestoredData(Map<String, Long> indexStats, boolean checkTotal, String indexName) {
         // This is required to get updated number from already active shards which were not restored
         refresh(indexName);
+        String statsGranularity = checkTotal ? TOTAL_OPERATIONS : REFRESHED_OR_FLUSHED_OPERATIONS;
+        String maxSeqNoGranularity = checkTotal ? MAX_SEQ_NO_TOTAL : MAX_SEQ_NO_REFRESHED_OR_FLUSHED;
         ensureYellowAndNoInitializingShards(indexName);
         ensureGreen(indexName);
-        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), indexStats.get(TOTAL_OPERATIONS));
+        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), indexStats.get(statsGranularity));
         IndexResponse response = indexSingleDoc(indexName);
-        if (indexStats.containsKey(MAX_SEQ_NO_TOTAL + "-shard-" + response.getShardId().id())) {
-            assertEquals(indexStats.get(MAX_SEQ_NO_TOTAL + "-shard-" + response.getShardId().id()) + 1, response.getSeqNo());
-        }
+        assertEquals(indexStats.get(maxSeqNoGranularity + "-shard-" + response.getShardId().id()) + 1, response.getSeqNo());
         refresh(indexName);
-        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), indexStats.get(TOTAL_OPERATIONS) + 1);
+        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), indexStats.get(statsGranularity) + 1);
     }
 
     private void prepareCluster(int numClusterManagerNodes, int numDataOnlyNodes, String indices, int replicaCount, int shardCount) {
@@ -95,6 +96,7 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
      * Simulates all data restored using Remote Translog Store.
      * @throws IOException IO Exception.
      */
+    @AwaitsFix(bugUrl = "https://github.com/opensearch-project/OpenSearch/issues/6188")
     public void testRemoteTranslogRestoreWithNoDataPostCommit() throws IOException {
         testRestoreFlow(1, true, randomIntBetween(1, 5));
     }
@@ -129,6 +131,7 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
      * Simulates all data restored using Remote Translog Store.
      * @throws IOException IO Exception.
      */
+    // @AwaitsFix(bugUrl = "https://github.com/opensearch-project/OpenSearch/issues/6188")
     @AwaitsFix(bugUrl = "https://github.com/opensearch-project/OpenSearch/issues/8479")
     public void testRTSRestoreWithNoDataPostCommitPrimaryReplicaDown() throws IOException {
         testRestoreFlowBothPrimaryReplicasDown(1, true, randomIntBetween(1, 5));
@@ -169,7 +172,7 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
         // This is required to get updated number from already active shards which were not restored
         assertEquals(shardCount * (1 + replicaCount), getNumShards(INDEX_NAME).totalNumShards);
         assertEquals(replicaCount, getNumShards(INDEX_NAME).numReplicas);
-        verifyRestoredData(indexStats, INDEX_NAME);
+        verifyRestoredData(indexStats, true, INDEX_NAME);
     }
 
     /**
@@ -182,8 +185,6 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
         prepareCluster(0, 3, INDEX_NAME, 0, shardCount);
         Map<String, Long> indexStats = indexData(numberOfIterations, invokeFlush, INDEX_NAME);
         assertEquals(shardCount, getNumShards(INDEX_NAME).totalNumShards);
-
-        assertHitCount(client().prepareSearch(INDEX_NAME).setSize(0).get(), indexStats.get(REFRESHED_OR_FLUSHED_OPERATIONS));
 
         internalCluster().stopRandomNode(InternalTestCluster.nameFilter(primaryNodeName(INDEX_NAME)));
         ensureRed(INDEX_NAME);
@@ -255,7 +256,7 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
         ensureGreen(indices);
         for (String index : indices) {
             assertEquals(shardCount, getNumShards(index).totalNumShards);
-            verifyRestoredData(indicesStats.get(index), index);
+            verifyRestoredData(indicesStats.get(index), true, index);
         }
     }
 
@@ -287,7 +288,7 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
 
         ensureGreen(INDEX_NAME);
         assertEquals(shardCount, getNumShards(INDEX_NAME).totalNumShards);
-        verifyRestoredData(indexStats, INDEX_NAME);
+        verifyRestoredData(indexStats, true, INDEX_NAME);
     }
 
     /**
@@ -339,7 +340,7 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
 
         for (String index : indices) {
             assertEquals(shardCount, getNumShards(index).totalNumShards);
-            verifyRestoredData(indicesStats.get(index), index);
+            verifyRestoredData(indicesStats.get(index), true, index);
         }
     }
 
@@ -383,9 +384,9 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
             );
         ensureGreen(indices[0], indices[1]);
         assertEquals(shardCount, getNumShards(indices[0]).totalNumShards);
-        verifyRestoredData(indicesStats.get(indices[0]), indices[0]);
+        verifyRestoredData(indicesStats.get(indices[0]), true, indices[0]);
         assertEquals(shardCount, getNumShards(indices[1]).totalNumShards);
-        verifyRestoredData(indicesStats.get(indices[1]), indices[1]);
+        verifyRestoredData(indicesStats.get(indices[1]), true, indices[1]);
         ensureRed(indices[2], indices[3]);
     }
 
@@ -435,9 +436,9 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
             );
         ensureGreen(indices[0], indices[1]);
         assertEquals(shardCount, getNumShards(indices[0]).totalNumShards);
-        verifyRestoredData(indicesStats.get(indices[0]), indices[0]);
+        verifyRestoredData(indicesStats.get(indices[0]), true, indices[0]);
         assertEquals(shardCount, getNumShards(indices[1]).totalNumShards);
-        verifyRestoredData(indicesStats.get(indices[1]), indices[1]);
+        verifyRestoredData(indicesStats.get(indices[1]), true, indices[1]);
         ensureRed(indices[2], indices[3]);
     }
 
@@ -446,7 +447,8 @@ public class RemoteStoreRestoreIT extends RemoteStoreBaseIntegTestCase {
      * when the index has no data.
      * @throws IOException IO Exception.
      */
-    public void testRTSRestoreDataOnlyInTranslog() throws IOException {
+    @AwaitsFix(bugUrl = "https://github.com/opensearch-project/OpenSearch/issues/6188")
+    public void testRTSRestoreNoData() throws IOException {
         testRestoreFlow(0, true, randomIntBetween(1, 5));
     }
 
