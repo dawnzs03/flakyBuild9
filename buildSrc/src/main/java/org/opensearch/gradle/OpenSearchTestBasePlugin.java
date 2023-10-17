@@ -33,7 +33,6 @@
 package org.opensearch.gradle;
 
 import com.github.jengelman.gradle.plugins.shadow.ShadowBasePlugin;
-
 import org.opensearch.gradle.info.BuildParams;
 import org.opensearch.gradle.info.GlobalBuildInfoPlugin;
 import org.opensearch.gradle.jvm.JvmTestSuiteHelper;

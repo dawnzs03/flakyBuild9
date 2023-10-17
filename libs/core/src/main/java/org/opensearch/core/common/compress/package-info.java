@@ -6,8 +6,5 @@
  * compatible open source license.
  */
 
-/**
- * This is the compress library for registering optional
- * {@link org.opensearch.core.compress.Compressor} implementations
- */
-package org.opensearch;
+/** Classes for core compress module */
+package org.opensearch.core.common.compress;

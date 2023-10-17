@@ -31,7 +31,6 @@
 
 package org.opensearch.gradle.docker;
 
-import org.apache.tools.ant.taskdefs.condition.Os;
 import org.opensearch.gradle.Version;
 import org.opensearch.gradle.info.BuildParams;
 import org.gradle.api.GradleException;
@@ -41,9 +40,9 @@ import org.gradle.api.services.BuildService;
 import org.gradle.api.services.BuildServiceParameters;
 import org.gradle.process.ExecOperations;
 import org.gradle.process.ExecResult;
+import org.apache.tools.ant.taskdefs.condition.Os;
 
 import javax.inject.Inject;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;

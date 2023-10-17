@@ -189,7 +189,7 @@ public final class RemoteStoreRefreshListener extends CloseableRetryableRefreshL
 
     private boolean syncSegments() {
         if (indexShard.getReplicationTracker().isPrimaryMode() == false || indexShard.state() == IndexShardState.CLOSED) {
-            logger.trace(
+            logger.info(
                 "Skipped syncing segments with primaryMode={} indexShardState={}",
                 indexShard.getReplicationTracker().isPrimaryMode(),
                 indexShard.state()

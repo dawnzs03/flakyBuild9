@@ -32,9 +32,10 @@
 
 package org.opensearch.gradle.test;
 
+import org.opensearch.gradle.testclusters.StandaloneRestIntegTestTask;
+
 import groovy.lang.Closure;
 
-import org.opensearch.gradle.testclusters.StandaloneRestIntegTestTask;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.CacheableTask;
 

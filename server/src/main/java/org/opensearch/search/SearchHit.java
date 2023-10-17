@@ -37,6 +37,7 @@ import org.opensearch.OpenSearchParseException;
 import org.opensearch.Version;
 import org.opensearch.action.OriginalIndices;
 import org.opensearch.common.Nullable;
+import org.opensearch.common.compress.CompressorFactory;
 import org.opensearch.common.document.DocumentField;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.core.common.ParsingException;
@@ -46,7 +47,6 @@ import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.common.io.stream.Writeable;
 import org.opensearch.core.common.text.Text;
-import org.opensearch.core.compress.CompressorRegistry;
 import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.xcontent.ConstructingObjectParser;
@@ -383,7 +383,7 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
         }
 
         try {
-            this.source = CompressorRegistry.uncompressIfNeeded(this.source);
+            this.source = CompressorFactory.uncompressIfNeeded(this.source);
             return this.source;
         } catch (IOException e) {
             throw new OpenSearchParseException("failed to decompress source", e);
