@@ -1,6 +1,6 @@
 ---
 {
-    "title": "WINDOW_FUNCTION_LAST_VALUE",
+    "title": "WINDOW-FUNCTION-LAST_VALUE",
     "language": "zh-CN"
 }
 ---

@@ -40,7 +40,7 @@ struct TTabletSchema {
     12: optional i32 sort_col_num
     13: optional bool disable_auto_compaction
     14: optional i32 version_col_idx = -1
-    15: optional bool is_dynamic_schema = false // deprecated
+    15: optional bool is_dynamic_schema = false
     16: optional bool store_row_column = false
     17: optional bool enable_single_replica_compaction = false
     18: optional bool skip_write_index_on_load = false
@@ -338,7 +338,6 @@ struct TSnapshotRequest {
     10: optional bool is_copy_tablet_task
     11: optional Types.TVersion start_version
     12: optional Types.TVersion end_version
-    13: optional bool is_copy_binlog
 }
 
 struct TReleaseSnapshotRequest {

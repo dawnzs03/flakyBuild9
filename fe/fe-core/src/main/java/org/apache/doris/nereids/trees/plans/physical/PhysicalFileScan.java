@@ -26,12 +26,9 @@ import org.apache.doris.nereids.trees.expressions.Expression;
 import org.apache.doris.nereids.trees.plans.Plan;
 import org.apache.doris.nereids.trees.plans.PlanType;
 import org.apache.doris.nereids.trees.plans.RelationId;
-import org.apache.doris.nereids.trees.plans.logical.LogicalFileScan.SelectedPartitions;
 import org.apache.doris.nereids.trees.plans.visitor.PlanVisitor;
 import org.apache.doris.nereids.util.Utils;
 import org.apache.doris.statistics.Statistics;
-
-import lombok.Getter;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,22 +40,17 @@ import java.util.Set;
 public class PhysicalFileScan extends PhysicalCatalogRelation {
 
     private final DistributionSpec distributionSpec;
-    @Getter
     private final Set<Expression> conjuncts;
-    @Getter
-    private final SelectedPartitions selectedPartitions;
 
     /**
      * Constructor for PhysicalFileScan.
      */
     public PhysicalFileScan(RelationId id, ExternalTable table, List<String> qualifier,
             DistributionSpec distributionSpec, Optional<GroupExpression> groupExpression,
-            LogicalProperties logicalProperties, Set<Expression> conjuncts,
-            SelectedPartitions selectedPartitions) {
+            LogicalProperties logicalProperties, Set<Expression> conjuncts) {
         super(id, PlanType.PHYSICAL_FILE_SCAN, table, qualifier, groupExpression, logicalProperties);
         this.distributionSpec = distributionSpec;
         this.conjuncts = conjuncts;
-        this.selectedPartitions = selectedPartitions;
     }
 
     /**
@@ -67,23 +59,19 @@ public class PhysicalFileScan extends PhysicalCatalogRelation {
     public PhysicalFileScan(RelationId id, ExternalTable table, List<String> qualifier,
             DistributionSpec distributionSpec, Optional<GroupExpression> groupExpression,
             LogicalProperties logicalProperties, PhysicalProperties physicalProperties,
-            Statistics statistics, Set<Expression> conjuncts, SelectedPartitions selectedPartitions) {
+            Statistics statistics, Set<Expression> conjuncts) {
         super(id, PlanType.PHYSICAL_FILE_SCAN, table, qualifier, groupExpression, logicalProperties,
                 physicalProperties, statistics);
         this.distributionSpec = distributionSpec;
         this.conjuncts = conjuncts;
-        this.selectedPartitions = selectedPartitions;
     }
 
     @Override
     public String toString() {
         return Utils.toSqlString("PhysicalFileScan",
-                "qualified", Utils.qualifiedName(qualifier, table.getName()),
-                "output", getOutput(),
-                "stats", statistics,
-                "conjuncts", conjuncts,
-                "selected partitions num",
-                selectedPartitions.isPartitionPruned ? selectedPartitions.selectedPartitions.size() : "unknown"
+            "qualified", Utils.qualifiedName(qualifier, table.getName()),
+            "output", getOutput(),
+            "stats", statistics
         );
     }
 
@@ -95,14 +83,14 @@ public class PhysicalFileScan extends PhysicalCatalogRelation {
     @Override
     public PhysicalFileScan withGroupExpression(Optional<GroupExpression> groupExpression) {
         return new PhysicalFileScan(relationId, getTable(), qualifier, distributionSpec,
-                groupExpression, getLogicalProperties(), conjuncts, selectedPartitions);
+            groupExpression, getLogicalProperties(), conjuncts);
     }
 
     @Override
     public Plan withGroupExprLogicalPropChildren(Optional<GroupExpression> groupExpression,
             Optional<LogicalProperties> logicalProperties, List<Plan> children) {
         return new PhysicalFileScan(relationId, getTable(), qualifier, distributionSpec,
-                groupExpression, logicalProperties.get(), conjuncts, selectedPartitions);
+                groupExpression, logicalProperties.get(), conjuncts);
     }
 
     @Override
@@ -114,7 +102,10 @@ public class PhysicalFileScan extends PhysicalCatalogRelation {
     public PhysicalFileScan withPhysicalPropertiesAndStats(PhysicalProperties physicalProperties,
                                                        Statistics statistics) {
         return new PhysicalFileScan(relationId, getTable(), qualifier, distributionSpec,
-                groupExpression, getLogicalProperties(), physicalProperties, statistics, conjuncts,
-                selectedPartitions);
+                groupExpression, getLogicalProperties(), physicalProperties, statistics, conjuncts);
+    }
+
+    public Set<Expression> getConjuncts() {
+        return this.conjuncts;
     }
 }

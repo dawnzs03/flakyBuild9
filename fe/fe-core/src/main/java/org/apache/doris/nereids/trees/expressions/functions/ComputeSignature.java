@@ -19,19 +19,15 @@ package org.apache.doris.nereids.trees.expressions.functions;
 
 import org.apache.doris.catalog.FunctionSignature;
 import org.apache.doris.nereids.annotation.Developing;
-import org.apache.doris.nereids.exceptions.AnalysisException;
 import org.apache.doris.nereids.trees.expressions.functions.ComputeSignatureHelper.ComputeSignatureChain;
 import org.apache.doris.nereids.trees.expressions.typecoercion.ImplicitCastInputTypes;
-import org.apache.doris.nereids.types.ArrayType;
 import org.apache.doris.nereids.types.DataType;
-import org.apache.doris.nereids.types.MapType;
-import org.apache.doris.nereids.types.StructType;
+import org.apache.doris.nereids.types.coercion.AbstractDataType;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
 import java.util.List;
-import java.util.function.BiFunction;
 
 /**
  * this class is usage to compute function's return type by the argument's type.
@@ -71,13 +67,13 @@ public interface ComputeSignature extends FunctionTrait, ImplicitCastInputTypes 
      * @return expectedInputTypes
      */
     @Override
-    default List<DataType> expectedInputTypes() {
+    default List<AbstractDataType> expectedInputTypes() {
         FunctionSignature signature = getSignature();
         int arity = arity();
         if (signature.hasVarArgs && arity > signature.arity) {
-            Builder<DataType> varTypes = ImmutableList.<DataType>builder()
+            Builder<AbstractDataType> varTypes = ImmutableList.<AbstractDataType>builder()
                     .addAll(signature.argumentsTypes);
-            DataType varType = signature.getVarArgType().get();
+            AbstractDataType varType = signature.getVarArgType().get();
             for (int i = signature.arity; i < arity; ++i) {
                 varTypes.add(varType);
             }
@@ -92,7 +88,7 @@ public interface ComputeSignature extends FunctionTrait, ImplicitCastInputTypes 
      */
     @Override
     default DataType getDataType() {
-        return getSignature().returnType;
+        return (DataType) getSignature().returnType;
     }
 
     @Override
@@ -109,27 +105,10 @@ public interface ComputeSignature extends FunctionTrait, ImplicitCastInputTypes 
         // If you want to add some special cases, please override this method in the special
         // function class, like 'If' function and 'Substring' function.
         return ComputeSignatureChain.from(this, signature, getArguments())
-                .then(ComputeSignatureHelper::implementAnyDataTypeWithIndex)
-                .then(ComputeSignatureHelper::computePrecision)
-                .then(ComputeSignatureHelper::implementFollowToArgumentReturnType)
+                .then(ComputeSignatureHelper::implementAbstractReturnType)
                 .then(ComputeSignatureHelper::normalizeDecimalV2)
+                .then(ComputeSignatureHelper::computePrecision)
                 .then(ComputeSignatureHelper::dynamicComputePropertiesOfArray)
                 .get();
-    }
-
-    /** default computeSignature */
-    static boolean processComplexType(DataType signatureType, DataType realType,
-            BiFunction<DataType, DataType, Boolean> processor) {
-        if (signatureType instanceof ArrayType && realType instanceof ArrayType) {
-            return processor.apply(((ArrayType) signatureType).getItemType(),
-                    ((ArrayType) realType).getItemType());
-        } else if (signatureType instanceof MapType && realType instanceof MapType) {
-            return processor.apply(((MapType) signatureType).getKeyType(), ((MapType) realType).getKeyType())
-                    && processor.apply(((MapType) signatureType).getValueType(), ((MapType) realType).getValueType());
-        } else if (signatureType instanceof StructType && realType instanceof StructType) {
-            throw new AnalysisException("do not support struct type now");
-        } else {
-            return processor.apply(signatureType, realType);
-        }
     }
 }

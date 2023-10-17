@@ -33,18 +33,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * PartitionPruner
- */
+/** PartitionPruner */
 public class PartitionPruner {
     private List<OnePartitionEvaluator> partitions;
     private Expression partitionPredicate;
-
-    /** Different type of table may have different partition prune behavior. */
-    public enum PartitionTableType {
-        OLAP,
-        HIVE
-    }
 
     private PartitionPruner(List<OnePartitionEvaluator> partitions, Expression partitionPredicate) {
         this.partitions = Objects.requireNonNull(partitions, "partitions cannot be null");
@@ -58,47 +50,29 @@ public class PartitionPruner {
                 .collect(ImmutableList.toImmutableList());
     }
 
-    /**
-     * prune partition with `partitionInfo` as parameter.
-     */
+    /** prune partition */
     public static List<Long> prune(List<Slot> partitionSlots, Expression partitionPredicate,
-            PartitionInfo partitionInfo, CascadesContext cascadesContext, PartitionTableType partitionTableType) {
-        return prune(partitionSlots, partitionPredicate, partitionInfo.getIdToItem(false), cascadesContext,
-                partitionTableType);
-    }
-
-    /**
-     * prune partition with `idToPartitions` as parameter.
-     */
-    public static List<Long> prune(List<Slot> partitionSlots, Expression partitionPredicate,
-            Map<Long, PartitionItem> idToPartitions, CascadesContext cascadesContext,
-            PartitionTableType partitionTableType) {
+            PartitionInfo partitionInfo, CascadesContext cascadesContext) {
         partitionPredicate = TryEliminateUninterestedPredicates.rewrite(
                 partitionPredicate, ImmutableSet.copyOf(partitionSlots), cascadesContext);
 
+        Map<Long, PartitionItem> idToPartitions = partitionInfo.getIdToItem(false);
+
         List<OnePartitionEvaluator> evaluators = idToPartitions.entrySet()
                 .stream()
-                .map(kv -> toPartitionEvaluator(kv.getKey(), kv.getValue(), partitionSlots, cascadesContext,
-                        partitionTableType))
+                .map(kv -> toPartitionEvaluator(kv.getKey(), kv.getValue(), partitionSlots, cascadesContext))
                 .collect(ImmutableList.toImmutableList());
 
         PartitionPruner partitionPruner = new PartitionPruner(evaluators, partitionPredicate);
         return partitionPruner.prune();
     }
 
-    /**
-     * convert partition item to partition evaluator
-     */
+    /** convert partition item to partition evaluator */
     public static final OnePartitionEvaluator toPartitionEvaluator(long id, PartitionItem partitionItem,
-            List<Slot> partitionSlots, CascadesContext cascadesContext, PartitionTableType partitionTableType) {
+            List<Slot> partitionSlots, CascadesContext cascadesContext) {
         if (partitionItem instanceof ListPartitionItem) {
-            if (partitionTableType == PartitionTableType.HIVE
-                    && ((ListPartitionItem) partitionItem).isHiveDefaultPartition()) {
-                return new HiveDefaultPartitionEvaluator(id, partitionSlots);
-            } else {
-                return new OneListPartitionEvaluator(
-                        id, partitionSlots, (ListPartitionItem) partitionItem, cascadesContext);
-            }
+            return new OneListPartitionEvaluator(
+                    id, partitionSlots, (ListPartitionItem) partitionItem, cascadesContext);
         } else if (partitionItem instanceof RangePartitionItem) {
             return new OneRangePartitionEvaluator(
                     id, partitionSlots, (RangePartitionItem) partitionItem, cascadesContext);

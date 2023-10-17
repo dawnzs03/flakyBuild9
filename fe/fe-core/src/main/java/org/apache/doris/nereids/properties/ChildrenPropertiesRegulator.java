@@ -439,7 +439,7 @@ public class ChildrenPropertiesRegulator extends PlanVisitor<Boolean, Void> {
 
         PhysicalProperties newOutputProperty = new PhysicalProperties(target);
         GroupExpression enforcer = target.addEnforcer(child.getOwnerGroup());
-        child.getOwnerGroup().addEnforcer(enforcer);
+        jobContext.getCascadesContext().getMemo().addEnforcerPlan(enforcer, child.getOwnerGroup());
         Cost totalCost = CostCalculator.addChildCost(enforcer.getPlan(),
                 CostCalculator.calculateCost(enforcer, Lists.newArrayList(childOutput)),
                 currentCost,

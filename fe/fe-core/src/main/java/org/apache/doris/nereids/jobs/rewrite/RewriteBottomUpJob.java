@@ -87,10 +87,8 @@ public class RewriteBottomUpJob extends Job {
         }
 
         countJobExecutionTimesOfGroupExpressions(logicalExpression);
-        for (Rule rule : rules) {
-            if (rule.isInvalid(disableRules, logicalExpression)) {
-                continue;
-            }
+        List<Rule> validRules = getValidRules(logicalExpression, rules);
+        for (Rule rule : validRules) {
             GroupExpressionMatching groupExpressionMatching
                     = new GroupExpressionMatching(rule.getPattern(), logicalExpression);
             for (Plan before : groupExpressionMatching) {

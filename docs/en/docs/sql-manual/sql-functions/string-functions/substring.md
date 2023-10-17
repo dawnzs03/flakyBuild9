@@ -1,6 +1,6 @@
 ---
 {
-    "title": "SUBSTRING",
+    "title": "substring",
     "language": "en"
 }
 ---

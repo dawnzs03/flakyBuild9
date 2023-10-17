@@ -1,6 +1,6 @@
 ---
 {
-"title": "SUBSTR",
+"title": "substr",
 "language": "zh-CN"
 }
 ---

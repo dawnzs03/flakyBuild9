@@ -34,7 +34,6 @@
 #include <string>
 
 #include "common/status.h"
-#include "gutil/endian.h"
 #include "io/fs/file_writer.h"
 #include "olap/olap_common.h"
 #include "runtime/decimalv2_value.h"
@@ -181,31 +180,8 @@ void ParquetBuildHelper::build_schema_data_type(parquet::Type::type& parquet_dat
 
 void ParquetBuildHelper::build_schema_data_logical_type(
         std::shared_ptr<const parquet::LogicalType>& parquet_data_logical_type_ptr,
-        const TParquetDataLogicalType::type& column_data_logical_type, int* primitive_length,
-        const TypeDescriptor& type_desc) {
+        const TParquetDataLogicalType::type& column_data_logical_type) {
     switch (column_data_logical_type) {
-    case TParquetDataLogicalType::DECIMAL: {
-        DCHECK(type_desc.precision != -1 && type_desc.scale != -1)
-                << "precision and scale: " << type_desc.precision << " " << type_desc.scale;
-        if (type_desc.type == TYPE_DECIMAL32) {
-            *primitive_length = 4;
-        } else if (type_desc.type == TYPE_DECIMAL64) {
-            *primitive_length = 8;
-        } else if (type_desc.type == TYPE_DECIMAL128I) {
-            *primitive_length = 16;
-        } else {
-            throw parquet::ParquetException(
-                    "the logical decimal now only support in decimalv3, maybe error of " +
-                    type_desc.debug_string());
-        }
-        parquet_data_logical_type_ptr =
-                parquet::LogicalType::Decimal(type_desc.precision, type_desc.scale);
-        break;
-    }
-    case TParquetDataLogicalType::STRING: {
-        parquet_data_logical_type_ptr = parquet::LogicalType::String();
-        break;
-    }
     case TParquetDataLogicalType::DATE: {
         parquet_data_logical_type_ptr = parquet::LogicalType::Date();
         break;
@@ -314,22 +290,19 @@ Status VParquetWriterWrapper::parse_properties() {
 Status VParquetWriterWrapper::parse_schema() {
     parquet::schema::NodeVector fields;
     parquet::Repetition::type parquet_repetition_type;
-    parquet::Type::type parquet_physical_type;
+    parquet::Type::type parquet_data_type;
     std::shared_ptr<const parquet::LogicalType> parquet_data_logical_type;
-    int primitive_length = -1;
     for (int idx = 0; idx < _parquet_schemas.size(); ++idx) {
-        primitive_length = -1;
         ParquetBuildHelper::build_schema_repetition_type(
                 parquet_repetition_type, _parquet_schemas[idx].schema_repetition_type);
-        ParquetBuildHelper::build_schema_data_type(parquet_physical_type,
+        ParquetBuildHelper::build_schema_data_type(parquet_data_type,
                                                    _parquet_schemas[idx].schema_data_type);
         ParquetBuildHelper::build_schema_data_logical_type(
-                parquet_data_logical_type, _parquet_schemas[idx].schema_data_logical_type,
-                &primitive_length, _output_vexpr_ctxs[idx]->root()->type());
+                parquet_data_logical_type, _parquet_schemas[idx].schema_data_logical_type);
         try {
             fields.push_back(parquet::schema::PrimitiveNode::Make(
                     _parquet_schemas[idx].schema_column_name, parquet_repetition_type,
-                    parquet_data_logical_type, parquet_physical_type, primitive_length));
+                    parquet_data_logical_type, parquet_data_type));
         } catch (const parquet::ParquetException& e) {
             LOG(WARNING) << "parquet writer parse schema error: " << e.what();
             return Status::InternalError("parquet writer parse schema error: {}", e.what());
@@ -360,6 +333,37 @@ Status VParquetWriterWrapper::parse_schema() {
                 reinterpret_cast<const NATIVE_TYPE*>(not_nullable_column->get_data().data()));    \
     } else {                                                                                      \
         RETURN_WRONG_TYPE                                                                         \
+    }
+
+#define DISPATCH_PARQUET_DECIMAL_WRITER(DECIMAL_TYPE)                                            \
+    parquet::RowGroupWriter* rgWriter = get_rg_writer();                                         \
+    parquet::ByteArrayWriter* col_writer =                                                       \
+            static_cast<parquet::ByteArrayWriter*>(rgWriter->column(i));                         \
+    parquet::ByteArray value;                                                                    \
+    auto decimal_type =                                                                          \
+            check_and_get_data_type<DataTypeDecimal<DECIMAL_TYPE>>(remove_nullable(type).get()); \
+    DCHECK(decimal_type);                                                                        \
+    if (null_map != nullptr) {                                                                   \
+        auto& null_data = assert_cast<const ColumnUInt8&>(*null_map).get_data();                 \
+        for (size_t row_id = 0; row_id < sz; row_id++) {                                         \
+            if (null_data[row_id] != 0) {                                                        \
+                single_def_level = 0;                                                            \
+                col_writer->WriteBatch(1, &single_def_level, nullptr, &value);                   \
+                single_def_level = 1;                                                            \
+            } else {                                                                             \
+                auto s = decimal_type->to_string(*col, row_id);                                  \
+                value.ptr = reinterpret_cast<const uint8_t*>(s.data());                          \
+                value.len = s.size();                                                            \
+                col_writer->WriteBatch(1, &single_def_level, nullptr, &value);                   \
+            }                                                                                    \
+        }                                                                                        \
+    } else {                                                                                     \
+        for (size_t row_id = 0; row_id < sz; row_id++) {                                         \
+            auto s = decimal_type->to_string(*col, row_id);                                      \
+            value.ptr = reinterpret_cast<const uint8_t*>(s.data());                              \
+            value.len = s.size();                                                                \
+            col_writer->WriteBatch(1, nullable ? def_level.data() : nullptr, nullptr, &value);   \
+        }                                                                                        \
     }
 
 #define DISPATCH_PARQUET_COMPLEX_WRITER(COLUMN_TYPE)                                             \
@@ -787,108 +791,15 @@ Status VParquetWriterWrapper::write(const Block& block) {
                 break;
             }
             case TYPE_DECIMAL32: {
-                parquet::RowGroupWriter* rgWriter = get_rg_writer();
-                parquet::FixedLenByteArrayWriter* col_writer =
-                        static_cast<parquet::FixedLenByteArrayWriter*>(rgWriter->column(i));
-                parquet::FixedLenByteArray value;
-                auto decimal_type = check_and_get_data_type<DataTypeDecimal<Decimal32>>(
-                        remove_nullable(type).get());
-                DCHECK(decimal_type);
-                if (null_map != nullptr) {
-                    auto& null_data = assert_cast<const ColumnUInt8&>(*null_map).get_data();
-                    const auto& data_column = assert_cast<const ColumnDecimal32&>(*col);
-                    for (size_t row_id = 0; row_id < sz; row_id++) {
-                        if (null_data[row_id] != 0) {
-                            single_def_level = 0;
-                            col_writer->WriteBatch(1, &single_def_level, nullptr, &value);
-                            single_def_level = 1;
-                        } else {
-                            auto data = data_column.get_element(row_id);
-                            auto big_endian = bswap_32(data);
-                            value.ptr = reinterpret_cast<const uint8_t*>(&big_endian);
-                            col_writer->WriteBatch(1, &single_def_level, nullptr, &value);
-                        }
-                    }
-                } else {
-                    const auto& data_column = assert_cast<const ColumnDecimal32&>(*col);
-                    for (size_t row_id = 0; row_id < sz; row_id++) {
-                        auto data = data_column.get_element(row_id);
-                        auto big_endian = bswap_32(data);
-                        value.ptr = reinterpret_cast<const uint8_t*>(&big_endian);
-                        col_writer->WriteBatch(1, nullable ? &single_def_level : nullptr, nullptr,
-                                               &value);
-                    }
-                }
+                DISPATCH_PARQUET_DECIMAL_WRITER(Decimal32)
                 break;
             }
             case TYPE_DECIMAL64: {
-                parquet::RowGroupWriter* rgWriter = get_rg_writer();
-                parquet::FixedLenByteArrayWriter* col_writer =
-                        static_cast<parquet::FixedLenByteArrayWriter*>(rgWriter->column(i));
-                parquet::FixedLenByteArray value;
-                auto decimal_type = check_and_get_data_type<DataTypeDecimal<Decimal64>>(
-                        remove_nullable(type).get());
-                DCHECK(decimal_type);
-                if (null_map != nullptr) {
-                    auto& null_data = assert_cast<const ColumnUInt8&>(*null_map).get_data();
-                    const auto& data_column = assert_cast<const ColumnDecimal64&>(*col);
-                    for (size_t row_id = 0; row_id < sz; row_id++) {
-                        if (null_data[row_id] != 0) {
-                            single_def_level = 0;
-                            col_writer->WriteBatch(1, &single_def_level, nullptr, &value);
-                            single_def_level = 1;
-                        } else {
-                            auto data = data_column.get_element(row_id);
-                            auto big_endian = bswap_64(data);
-                            value.ptr = reinterpret_cast<const uint8_t*>(&big_endian);
-                            col_writer->WriteBatch(1, &single_def_level, nullptr, &value);
-                        }
-                    }
-                } else {
-                    const auto& data_column = assert_cast<const ColumnDecimal64&>(*col);
-                    for (size_t row_id = 0; row_id < sz; row_id++) {
-                        auto data = data_column.get_element(row_id);
-                        auto big_endian = bswap_64(data);
-                        value.ptr = reinterpret_cast<const uint8_t*>(&big_endian);
-                        col_writer->WriteBatch(1, nullable ? &single_def_level : nullptr, nullptr,
-                                               &value);
-                    }
-                }
+                DISPATCH_PARQUET_DECIMAL_WRITER(Decimal64)
                 break;
             }
             case TYPE_DECIMAL128I: {
-                parquet::RowGroupWriter* rgWriter = get_rg_writer();
-                parquet::FixedLenByteArrayWriter* col_writer =
-                        static_cast<parquet::FixedLenByteArrayWriter*>(rgWriter->column(i));
-                parquet::FixedLenByteArray value;
-                auto decimal_type = check_and_get_data_type<DataTypeDecimal<Decimal128I>>(
-                        remove_nullable(type).get());
-                DCHECK(decimal_type);
-                if (null_map != nullptr) {
-                    auto& null_data = assert_cast<const ColumnUInt8&>(*null_map).get_data();
-                    const auto& data_column = assert_cast<const ColumnDecimal128I&>(*col);
-                    for (size_t row_id = 0; row_id < sz; row_id++) {
-                        if (null_data[row_id] != 0) {
-                            single_def_level = 0;
-                            col_writer->WriteBatch(1, &single_def_level, nullptr, &value);
-                            single_def_level = 1;
-                        } else {
-                            auto data = data_column.get_element(row_id);
-                            auto big_endian = gbswap_128(data);
-                            value.ptr = reinterpret_cast<const uint8_t*>(&big_endian);
-                            col_writer->WriteBatch(1, &single_def_level, nullptr, &value);
-                        }
-                    }
-                } else {
-                    const auto& data_column = assert_cast<const ColumnDecimal128I&>(*col);
-                    for (size_t row_id = 0; row_id < sz; row_id++) {
-                        auto data = data_column.get_element(row_id);
-                        auto big_endian = gbswap_128(data);
-                        value.ptr = reinterpret_cast<const uint8_t*>(&big_endian);
-                        col_writer->WriteBatch(1, nullable ? &single_def_level : nullptr, nullptr,
-                                               &value);
-                    }
-                }
+                DISPATCH_PARQUET_DECIMAL_WRITER(Decimal128I)
                 break;
             }
             default: {

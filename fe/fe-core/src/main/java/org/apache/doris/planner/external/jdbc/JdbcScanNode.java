@@ -38,7 +38,6 @@ import org.apache.doris.common.UserException;
 import org.apache.doris.nereids.glue.translator.PlanTranslatorContext;
 import org.apache.doris.planner.PlanNodeId;
 import org.apache.doris.planner.external.ExternalScanNode;
-import org.apache.doris.qe.ConnectContext;
 import org.apache.doris.statistics.StatisticalType;
 import org.apache.doris.statistics.StatsRecursiveDerive;
 import org.apache.doris.statistics.query.StatsDelta;
@@ -205,10 +204,6 @@ public class JdbcScanNode extends ExternalScanNode {
             sql.append(" LIMIT ").append(limit);
         }
 
-        if (jdbcType == TOdbcTableType.CLICKHOUSE
-                && ConnectContext.get().getSessionVariable().jdbcClickhouseQueryFinal) {
-            sql.append(" SETTINGS final = 1");
-        }
         return sql.toString();
     }
 
@@ -277,8 +272,7 @@ public class JdbcScanNode extends ExternalScanNode {
 
     @Override
     public int getNumInstances() {
-        return ConnectContext.get().getSessionVariable().getEnablePipelineEngine()
-            ? ConnectContext.get().getSessionVariable().getParallelExecInstanceNum() : 1;
+        return 1;
     }
 
     @Override

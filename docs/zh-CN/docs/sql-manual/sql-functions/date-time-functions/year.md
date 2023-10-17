@@ -1,6 +1,6 @@
 ---
 {
-    "title": "YEAR",
+    "title": "year",
     "language": "zh-CN"
 }
 ---

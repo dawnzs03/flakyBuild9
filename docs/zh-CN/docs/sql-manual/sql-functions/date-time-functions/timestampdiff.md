@@ -1,6 +1,6 @@
 ---
 {
-    "title": "TIMESTAMPDIFF",
+    "title": "timestampdiff",
     "language": "zh-CN"
 }
 ---

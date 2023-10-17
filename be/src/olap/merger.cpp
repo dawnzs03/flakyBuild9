@@ -76,7 +76,8 @@ Status Merger::vmerge_rowsets(TabletSharedPtr tablet, ReaderType reader_type,
                                 reader_params.delete_predicates.begin()));
         // Merge the columns in delete predicate that not in latest schema in to current tablet schema
         for (auto& del_pred_rs : reader_params.delete_predicates) {
-            merge_tablet_schema->merge_dropped_columns(del_pred_rs->tablet_schema());
+            merge_tablet_schema->merge_dropped_columns(
+                    tablet->tablet_schema(del_pred_rs->version()));
         }
     }
     reader_params.tablet_schema = merge_tablet_schema;
@@ -212,7 +213,8 @@ Status Merger::vertical_compact_one_group(
                                 reader_params.delete_predicates.begin()));
 
         for (auto& del_pred_rs : reader_params.delete_predicates) {
-            merge_tablet_schema->merge_dropped_columns(del_pred_rs->tablet_schema());
+            merge_tablet_schema->merge_dropped_columns(
+                    tablet->tablet_schema(del_pred_rs->version()));
         }
     }
     reader_params.tablet_schema = merge_tablet_schema;

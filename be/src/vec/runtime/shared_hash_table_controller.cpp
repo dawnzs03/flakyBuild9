@@ -57,7 +57,8 @@ bool SharedHashTableController::should_build_hash_table(const TUniqueId& fragmen
 
 SharedHashTableContextPtr SharedHashTableController::get_context(int my_node_id) {
     std::lock_guard<std::mutex> lock(_mutex);
-    if (!_shared_contexts.count(my_node_id)) {
+    auto it = _shared_contexts.find(my_node_id);
+    if (it == _shared_contexts.cend()) {
         _shared_contexts.insert({my_node_id, std::make_shared<SharedHashTableContext>()});
     }
     return _shared_contexts[my_node_id];

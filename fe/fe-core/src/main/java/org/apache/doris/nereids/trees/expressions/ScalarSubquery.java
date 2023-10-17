@@ -18,6 +18,7 @@
 package org.apache.doris.nereids.trees.expressions;
 
 import org.apache.doris.nereids.exceptions.UnboundException;
+import org.apache.doris.nereids.trees.expressions.shape.LeafExpression;
 import org.apache.doris.nereids.trees.expressions.visitor.ExpressionVisitor;
 import org.apache.doris.nereids.trees.plans.logical.LogicalPlan;
 import org.apache.doris.nereids.types.DataType;
@@ -31,7 +32,7 @@ import java.util.Optional;
 /**
  * A subquery that will return only one row and one column.
  */
-public class ScalarSubquery extends SubqueryExpr {
+public class ScalarSubquery extends SubqueryExpr implements LeafExpression {
 
     public ScalarSubquery(LogicalPlan subquery) {
         super(Objects.requireNonNull(subquery, "subquery can not be null"));

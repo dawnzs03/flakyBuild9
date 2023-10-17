@@ -53,7 +53,6 @@ public class LoadStatisticForTag {
     private final Map<TStorageMedium, Long> totalCapacityMap = Maps.newHashMap();
     private final Map<TStorageMedium, Long> totalUsedCapacityMap = Maps.newHashMap();
     private final Map<TStorageMedium, Long> totalReplicaNumMap = Maps.newHashMap();
-    private final Map<TStorageMedium, Double> maxUsedPercentDiffMap = Maps.newHashMap();
     private final Map<TStorageMedium, Double> avgUsedCapacityPercentMap = Maps.newHashMap();
     private final Map<TStorageMedium, Double> avgReplicaNumPercentMap = Maps.newHashMap();
     private final Map<TStorageMedium, Double> avgLoadScoreMap = Maps.newHashMap();
@@ -117,27 +116,10 @@ public class LoadStatisticForTag {
                     / (double) totalCapacityMap.getOrDefault(medium, 1L));
             avgReplicaNumPercentMap.put(medium, totalReplicaNumMap.getOrDefault(medium, 0L)
                     / (double) backendNumMap.getOrDefault(medium, 1));
-
-            double maxUsedPercent = -1.0;
-            double minUsedPercent = -1.0;
-            for (BackendLoadStatistic beStatistic : beLoadStatistics) {
-                long beTotalCapacityB = beStatistic.getTotalCapacityB(medium);
-                long beTotalUsedCapacityB = beStatistic.getTotalUsedCapacityB(medium);
-                if (beTotalCapacityB > 0) {
-                    double beUsedPercent = ((double) beTotalUsedCapacityB) / beTotalCapacityB;
-                    if (maxUsedPercent < 0.0 || beUsedPercent > maxUsedPercent) {
-                        maxUsedPercent = beUsedPercent;
-                    }
-                    if (minUsedPercent < 0.0 || beUsedPercent < minUsedPercent) {
-                        minUsedPercent = beUsedPercent;
-                    }
-                }
-            }
-            maxUsedPercentDiffMap.put(medium, maxUsedPercent - minUsedPercent);
         }
 
         for (BackendLoadStatistic beStatistic : beLoadStatistics) {
-            beStatistic.calcScore(avgUsedCapacityPercentMap, maxUsedPercentDiffMap, avgReplicaNumPercentMap);
+            beStatistic.calcScore(avgUsedCapacityPercentMap, avgReplicaNumPercentMap);
         }
 
         // classify all backends
@@ -268,15 +250,13 @@ public class LoadStatisticForTag {
         currentSrcBeScore = srcBeStat.getLoadScore(medium);
         currentDestBeScore = destBeStat.getLoadScore(medium);
 
-        LoadScore newSrcBeScore = BackendLoadStatistic.calcScore(srcBeStat.getTotalUsedCapacityB(medium) - tabletSize,
+        LoadScore newSrcBeScore = BackendLoadStatistic.calcSore(srcBeStat.getTotalUsedCapacityB(medium) - tabletSize,
                 srcBeStat.getTotalCapacityB(medium), srcBeStat.getReplicaNum(medium) - 1,
-                avgUsedCapacityPercentMap.get(medium), maxUsedPercentDiffMap.get(medium),
-                avgReplicaNumPercentMap.get(medium));
+                avgUsedCapacityPercentMap.get(medium), avgReplicaNumPercentMap.get(medium));
 
-        LoadScore newDestBeScore = BackendLoadStatistic.calcScore(destBeStat.getTotalUsedCapacityB(medium) + tabletSize,
+        LoadScore newDestBeScore = BackendLoadStatistic.calcSore(destBeStat.getTotalUsedCapacityB(medium) + tabletSize,
                 destBeStat.getTotalCapacityB(medium), destBeStat.getReplicaNum(medium) + 1,
-                avgUsedCapacityPercentMap.get(medium), maxUsedPercentDiffMap.get(medium),
-                avgReplicaNumPercentMap.get(medium));
+                avgUsedCapacityPercentMap.get(medium), avgReplicaNumPercentMap.get(medium));
 
         double currentDiff = Math.abs(currentSrcBeScore - avgLoadScoreMap.get(medium))
                 + Math.abs(currentDestBeScore - avgLoadScoreMap.get(medium));
@@ -340,10 +320,6 @@ public class LoadStatisticForTag {
             }
         }
         return null;
-    }
-
-    public List<BackendLoadStatistic> getBackendLoadStatistics() {
-        return beLoadStatistics;
     }
 
     /*

@@ -39,25 +39,22 @@ public:
     DataTypeArraySerDe(const DataTypeSerDeSPtr& _nested_serde) : nested_serde(_nested_serde) {}
 
     void serialize_one_cell_to_text(const IColumn& column, int row_num, BufferWritable& bw,
-                                    FormatOptions& options) const override;
+                                    const FormatOptions& options) const override {
+        LOG(FATAL) << "Not support serialize array column to buffer";
+    }
 
-    void serialize_column_to_text(const IColumn& column, int start_idx, int end_idx,
-                                  BufferWritable& bw, FormatOptions& options) const override;
+    Status deserialize_one_cell_from_text(IColumn& column, ReadBuffer& rb,
+                                          const FormatOptions& options) const override {
+        LOG(FATAL) << "Not support deserialize from buffer to array";
+        return Status::NotSupported("Not support deserialize from buffer to array");
+    }
 
-    Status deserialize_one_cell_from_text(IColumn& column, Slice& slice,
-                                          const FormatOptions& options) const override;
-
-    Status deserialize_column_from_text_vector(IColumn& column, std::vector<Slice>& slices,
-                                               int* num_deserialized,
-                                               const FormatOptions& options) const override;
     Status write_column_to_pb(const IColumn& column, PValues& result, int start,
                               int end) const override {
-        throw doris::Exception(ErrorCode::NOT_IMPLEMENTED_ERROR,
-                               "write_column_to_pb with type " + column.get_name());
+        LOG(FATAL) << "Not support write array column to pb";
     }
     Status read_column_from_pb(IColumn& column, const PValues& arg) const override {
-        throw doris::Exception(ErrorCode::NOT_IMPLEMENTED_ERROR,
-                               "write_column_to_pb with type " + column.get_name());
+        LOG(FATAL) << "Not support read from pb to array";
     }
 
     void write_one_cell_to_jsonb(const IColumn& column, JsonbWriter& result, Arena* mem_pool,

@@ -1,6 +1,6 @@
 ---
 {
-    "title": "WINDOW_FUNCTION_FIRST_VALUE",
+    "title": "WINDOW-FUNCTION-FIRST_VALUE",
     "language": "en"
 }
 ---

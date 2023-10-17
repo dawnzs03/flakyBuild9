@@ -49,12 +49,13 @@ public:
             using Set = std::conditional_t<
                     std::is_same_v<CppType, StringRef>, StringSet<>,
                     HybridSet<type,
-                              FixedContainer<typename PrimitiveTypeTraits<type>::CppType, N>>>;
+                              FixedContainer<typename VecPrimitiveTypeTraits<type>::CppType, N>>>;
             return new Set();
         } else {
             using Set = std::conditional_t<
                     std::is_same_v<CppType, StringRef>, StringSet<>,
-                    HybridSet<type, DynamicContainer<typename PrimitiveTypeTraits<type>::CppType>>>;
+                    HybridSet<type,
+                              DynamicContainer<typename VecPrimitiveTypeTraits<type>::CppType>>>;
             return new Set();
         }
     }
@@ -161,9 +162,7 @@ inline auto create_set(PrimitiveType type) {
 }
 
 inline auto create_set(PrimitiveType type, size_t size) {
-    if (size == 0) {
-        return create_set<0>(type);
-    } else if (size == 1) {
+    if (size == 1) {
         return create_set<1>(type);
     } else if (size == 2) {
         return create_set<2>(type);

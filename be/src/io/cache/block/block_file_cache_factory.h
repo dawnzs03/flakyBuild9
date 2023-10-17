@@ -39,8 +39,8 @@ class FileCacheFactory {
 public:
     static FileCacheFactory& instance();
 
-    void create_file_cache(const std::string& cache_base_path,
-                           const FileCacheSettings& file_cache_settings, Status* status);
+    Status create_file_cache(const std::string& cache_base_path,
+                             const FileCacheSettings& file_cache_settings);
 
     size_t try_release();
 
@@ -55,8 +55,6 @@ public:
     FileCacheFactory(const FileCacheFactory&) = delete;
 
 private:
-    // to protect following containers
-    std::mutex _cache_mutex;
     std::vector<std::unique_ptr<IFileCache>> _caches;
     std::unordered_map<std::string, CloudFileCachePtr> _path_to_cache;
 };

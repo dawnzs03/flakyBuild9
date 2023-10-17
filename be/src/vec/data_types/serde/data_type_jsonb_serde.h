@@ -43,16 +43,10 @@ class DataTypeJsonbSerDe : public DataTypeStringSerDe {
                                int end) const override;
 
     void serialize_one_cell_to_text(const IColumn& column, int row_num, BufferWritable& bw,
-                                    FormatOptions& options) const override;
-    void serialize_column_to_text(const IColumn& column, int start_idx, int end_idx,
-                                  BufferWritable& bw, FormatOptions& options) const override;
+                                    const FormatOptions& options) const override;
 
-    Status deserialize_one_cell_from_text(IColumn& column, Slice& slice,
+    Status deserialize_one_cell_from_text(IColumn& column, ReadBuffer& rb,
                                           const FormatOptions& options) const override;
-
-    Status deserialize_column_from_text_vector(IColumn& column, std::vector<Slice>& slices,
-                                               int* num_deserialized,
-                                               const FormatOptions& options) const override;
 
 private:
     template <bool is_binary_format>

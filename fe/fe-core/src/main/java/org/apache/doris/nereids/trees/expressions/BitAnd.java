@@ -21,7 +21,6 @@ import org.apache.doris.analysis.ArithmeticExpr.Operator;
 import org.apache.doris.nereids.trees.expressions.visitor.ExpressionVisitor;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
@@ -31,17 +30,13 @@ import java.util.List;
 public class BitAnd extends BinaryArithmetic {
 
     public BitAnd(Expression left, Expression right) {
-        super(ImmutableList.of(left, right), Operator.BITAND);
-    }
-
-    private BitAnd(List<Expression> children) {
-        super(children, Operator.BITAND);
+        super(left, right, Operator.BITAND);
     }
 
     @Override
     public Expression withChildren(List<Expression> children) {
         Preconditions.checkArgument(children.size() == 2);
-        return new BitAnd(children);
+        return new BitAnd(children.get(0), children.get(1));
     }
 
     @Override

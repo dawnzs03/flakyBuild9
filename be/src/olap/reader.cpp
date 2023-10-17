@@ -458,21 +458,22 @@ Status TabletReader::_init_orderby_keys_param(const ReaderParams& read_params) {
 
 Status TabletReader::_init_conditions_param(const ReaderParams& read_params) {
     for (auto& condition : read_params.conditions) {
+        // These conditions is passed from OlapScannode, but not set column unique id here, so that set it here because it
+        // is too complicated to modify related interface
         TCondition tmp_cond = condition;
         RETURN_IF_ERROR(_tablet_schema->have_column(tmp_cond.column_name));
-        // The "column" parameter might represent a column resulting from the decomposition of a variant column.
-        // Instead of using a "unique_id" for identification, we are utilizing a "path" to denote this column.
-        const auto& column = _tablet_schema->column(tmp_cond.column_name);
-        uint32_t index = _tablet_schema->field_index(tmp_cond.column_name);
+        auto condition_col_uid = _tablet_schema->column(tmp_cond.column_name).unique_id();
+        tmp_cond.__set_column_unique_id(condition_col_uid);
         ColumnPredicate* predicate =
-                parse_to_predicate(column, index, tmp_cond, _predicate_arena.get());
+                parse_to_predicate(_tablet_schema, tmp_cond, _predicate_arena.get());
         if (predicate != nullptr) {
             // record condition value into predicate_params in order to pushdown segment_iterator,
             // _gen_predicate_result_sign will build predicate result unique sign with condition value
             auto predicate_params = predicate->predicate_params();
             predicate_params->value = condition.condition_values[0];
             predicate_params->marked_by_runtime_filter = condition.marked_by_runtime_filter;
-            if (column.aggregation() != FieldAggregationMethod::OLAP_FIELD_AGGREGATION_NONE) {
+            if (_tablet_schema->column_by_uid(condition_col_uid).aggregation() !=
+                FieldAggregationMethod::OLAP_FIELD_AGGREGATION_NONE) {
                 _value_col_predicates.push_back(predicate);
             } else {
                 _col_predicates.push_back(predicate);
@@ -537,10 +538,10 @@ void TabletReader::_init_conditions_param_except_leafnode_of_andnode(
         const ReaderParams& read_params) {
     for (const auto& condition : read_params.conditions_except_leafnode_of_andnode) {
         TCondition tmp_cond = condition;
-        const auto& column = _tablet_schema->column(tmp_cond.column_name);
-        uint32_t index = _tablet_schema->field_index(tmp_cond.column_name);
+        auto condition_col_uid = _tablet_schema->column(tmp_cond.column_name).unique_id();
+        tmp_cond.__set_column_unique_id(condition_col_uid);
         ColumnPredicate* predicate =
-                parse_to_predicate(column, index, tmp_cond, _predicate_arena.get());
+                parse_to_predicate(_tablet_schema, tmp_cond, _predicate_arena.get());
         if (predicate != nullptr) {
             auto predicate_params = predicate->predicate_params();
             predicate_params->marked_by_runtime_filter = condition.marked_by_runtime_filter;
@@ -601,20 +602,20 @@ ColumnPredicate* TabletReader::_parse_to_predicate(const FunctionFilter& functio
 }
 
 Status TabletReader::_init_delete_condition(const ReaderParams& read_params) {
-    // If it's cumu and not allow do delete when cumu
-    if (read_params.reader_type == ReaderType::READER_SEGMENT_COMPACTION ||
-        (read_params.reader_type == ReaderType::READER_CUMULATIVE_COMPACTION &&
-         !config::enable_delete_when_cumu_compaction)) {
+    if (read_params.reader_type == ReaderType::READER_CUMULATIVE_COMPACTION ||
+        read_params.reader_type == ReaderType::READER_SEGMENT_COMPACTION) {
         return Status::OK();
     }
-    // Only BASE_COMPACTION and COLD_DATA_COMPACTION and CUMULATIVE_COMPACTION need set filter_delete = true
+    // Only BASE_COMPACTION and COLD_DATA_COMPACTION need set filter_delete = true
     // other reader type:
     // QUERY will filter the row in query layer to keep right result use where clause.
-    _filter_delete = (read_params.reader_type == ReaderType::READER_BASE_COMPACTION ||
-                      read_params.reader_type == ReaderType::READER_COLD_DATA_COMPACTION ||
-                      ((read_params.reader_type == ReaderType::READER_CUMULATIVE_COMPACTION &&
-                        config::enable_delete_when_cumu_compaction)) ||
-                      read_params.reader_type == ReaderType::READER_CHECKSUM);
+    // CUMULATIVE_COMPACTION will lost the filter_delete info of base rowset
+    if (read_params.reader_type == ReaderType::READER_BASE_COMPACTION ||
+        read_params.reader_type == ReaderType::READER_FULL_COMPACTION ||
+        read_params.reader_type == ReaderType::READER_COLD_DATA_COMPACTION ||
+        read_params.reader_type == ReaderType::READER_CHECKSUM) {
+        _filter_delete = true;
+    }
 
     return _delete_handler.init(_tablet_schema, read_params.delete_predicates,
                                 read_params.version.second);

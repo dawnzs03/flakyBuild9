@@ -74,16 +74,18 @@ public class PhysicalCTEProducer<CHILD_TYPE extends Plan> extends PhysicalUnary<
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+
+        if (!super.equals(o)) {
             return false;
         }
-        PhysicalCTEProducer<?> that = (PhysicalCTEProducer<?>) o;
-        return cteId.equals(that.cteId);
+
+        PhysicalCTEProducer that = (PhysicalCTEProducer) o;
+        return Objects.equals(cteId, that.cteId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(cteId);
+        return Objects.hash(super.hashCode(), cteId);
     }
 
     @Override

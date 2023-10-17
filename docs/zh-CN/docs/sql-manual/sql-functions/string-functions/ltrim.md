@@ -1,6 +1,6 @@
 ---
 {
-    "title": "LTRIM",
+    "title": "ltrim",
     "language": "zh-CN"
 }
 ---

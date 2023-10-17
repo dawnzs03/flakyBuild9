@@ -24,8 +24,6 @@ import org.apache.doris.common.FeConstants;
 import org.apache.doris.common.util.HttpURLUtil;
 import org.apache.doris.common.util.MasterDaemon;
 import org.apache.doris.common.util.NetUtils;
-import org.apache.doris.httpv2.entity.ResponseBody;
-import org.apache.doris.httpv2.rest.RestApiStatusCode;
 import org.apache.doris.metric.MetricRepo;
 import org.apache.doris.monitor.jvm.JvmService;
 import org.apache.doris.monitor.jvm.JvmStats;
@@ -203,12 +201,8 @@ public class Checkpoint extends MasterDaemon {
                 LOG.info("Put image:{}", url);
 
                 try {
-                    ResponseBody responseBody = MetaHelper.doGet(url, PUT_TIMEOUT_SECOND * 1000, Object.class);
-                    if (responseBody.getCode() == RestApiStatusCode.OK.code) {
-                        successPushed++;
-                    } else {
-                        LOG.warn("Failed when pushing image file. url = {},responseBody = {}", url, responseBody);
-                    }
+                    MetaHelper.getRemoteFile(url, PUT_TIMEOUT_SECOND * 1000, new NullOutputStream());
+                    successPushed++;
                 } catch (IOException e) {
                     LOG.error("Exception when pushing image file. url = {}", url, e);
                 }

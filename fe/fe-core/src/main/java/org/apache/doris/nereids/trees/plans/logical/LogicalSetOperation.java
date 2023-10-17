@@ -20,6 +20,7 @@ package org.apache.doris.nereids.trees.plans.logical;
 import org.apache.doris.catalog.Type;
 import org.apache.doris.nereids.memo.GroupExpression;
 import org.apache.doris.nereids.properties.LogicalProperties;
+import org.apache.doris.nereids.properties.UnboundLogicalProperties;
 import org.apache.doris.nereids.trees.expressions.Alias;
 import org.apache.doris.nereids.trees.expressions.Cast;
 import org.apache.doris.nereids.trees.expressions.Expression;
@@ -62,7 +63,7 @@ public abstract class LogicalSetOperation extends AbstractLogicalPlan implements
     protected final List<NamedExpression> outputs;
 
     public LogicalSetOperation(PlanType planType, Qualifier qualifier, List<Plan> inputs) {
-        super(planType, inputs);
+        super(planType, inputs.toArray(new Plan[0]));
         this.qualifier = qualifier;
         this.outputs = ImmutableList.of();
     }
@@ -70,7 +71,7 @@ public abstract class LogicalSetOperation extends AbstractLogicalPlan implements
     public LogicalSetOperation(PlanType planType, Qualifier qualifier,
                                List<NamedExpression> outputs,
                                List<Plan> inputs) {
-        super(planType, inputs);
+        super(planType, inputs.toArray(new Plan[0]));
         this.qualifier = qualifier;
         this.outputs = ImmutableList.copyOf(outputs);
     }
@@ -85,7 +86,15 @@ public abstract class LogicalSetOperation extends AbstractLogicalPlan implements
 
     @Override
     public boolean hasUnboundExpression() {
-        return outputs.isEmpty();
+        return outputs.isEmpty() || super.hasUnboundExpression();
+    }
+
+    @Override
+    public LogicalProperties computeLogicalProperties() {
+        if (outputs.isEmpty()) {
+            return UnboundLogicalProperties.INSTANCE;
+        }
+        return super.computeLogicalProperties();
     }
 
     @Override

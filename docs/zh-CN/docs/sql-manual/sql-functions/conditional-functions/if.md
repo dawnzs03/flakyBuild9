@@ -1,6 +1,6 @@
 ---
 {
-    "title": "IF",
+    "title": "if",
     "language": "zh-CN"
 }
 ---

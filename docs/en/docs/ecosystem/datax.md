@@ -1,6 +1,6 @@
 ---
 {
-    "title": "DataX Doriswriter",
+    "title": "DataX doriswriter",
     "language": "en"
 }
 ---
@@ -24,7 +24,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-# DataX Doriswriter
+# DataX doriswriter
 
 [DataX](https://github.com/alibaba/DataX) doriswriter plug-in, used to synchronize data from other data sources to Doris through DataX.
 

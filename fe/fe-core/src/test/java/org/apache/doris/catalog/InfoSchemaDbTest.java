@@ -32,7 +32,7 @@ public class InfoSchemaDbTest {
         Assert.assertFalse(db.createTable(null));
         Assert.assertFalse(db.createTableWithLock(null, false, false).first);
         db.dropTable("authors");
-        Assert.assertThrows(IOException.class, () -> db.write(null));
+        db.write(null);
         Assert.assertNull(db.getTableNullable("authors"));
     }
 }

@@ -37,7 +37,6 @@ public class UnboundStar extends NamedExpression implements LeafExpression, Unbo
     private final List<String> qualifier;
 
     public UnboundStar(List<String> qualifier) {
-        super(ImmutableList.of());
         this.qualifier = Objects.requireNonNull(ImmutableList.copyOf(qualifier), "qualifier can not be null");
     }
 

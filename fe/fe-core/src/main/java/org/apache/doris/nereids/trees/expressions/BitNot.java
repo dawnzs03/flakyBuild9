@@ -21,10 +21,10 @@ import org.apache.doris.analysis.ArithmeticExpr.Operator;
 import org.apache.doris.nereids.exceptions.UnboundException;
 import org.apache.doris.nereids.trees.expressions.visitor.ExpressionVisitor;
 import org.apache.doris.nereids.types.DataType;
+import org.apache.doris.nereids.types.coercion.AbstractDataType;
 import org.apache.doris.nereids.types.coercion.NumericType;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
@@ -33,18 +33,14 @@ import java.util.List;
  */
 public class BitNot extends UnaryArithmetic {
 
-    private BitNot(List<Expression> child) {
-        super(child, Operator.BITNOT);
-    }
-
     public BitNot(Expression child) {
-        super(ImmutableList.of(child), Operator.BITNOT);
+        super(child, Operator.BITNOT);
     }
 
     @Override
     public Expression withChildren(List<Expression> children) {
         Preconditions.checkArgument(children.size() == 1);
-        return new BitNot(children);
+        return new BitNot(children.get(0));
     }
 
     @Override
@@ -58,7 +54,7 @@ public class BitNot extends UnaryArithmetic {
     }
 
     @Override
-    public DataType inputType() {
+    public AbstractDataType inputType() {
         return NumericType.INSTANCE;
     }
 }

@@ -24,7 +24,6 @@ import org.apache.doris.nereids.types.DataType;
 import org.apache.doris.nereids.types.DecimalV3Type;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
@@ -34,17 +33,13 @@ import java.util.List;
 public class Multiply extends BinaryArithmetic implements CheckOverflowNullable {
 
     public Multiply(Expression left, Expression right) {
-        super(ImmutableList.of(left, right), Operator.MULTIPLY);
-    }
-
-    public Multiply(List<Expression> children) {
-        super(children, Operator.MULTIPLY);
+        super(left, right, Operator.MULTIPLY);
     }
 
     @Override
     public Expression withChildren(List<Expression> children) {
         Preconditions.checkArgument(children.size() == 2);
-        return new Multiply(children);
+        return new Multiply(children.get(0), children.get(1));
     }
 
     @Override

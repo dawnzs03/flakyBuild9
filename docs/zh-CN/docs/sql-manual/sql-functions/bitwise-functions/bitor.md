@@ -1,6 +1,6 @@
 ---
 {
-"title": "BITOR",
+"title": "bitor",
 "language": "zh-CN"
 }
 ---

@@ -28,7 +28,6 @@ import org.apache.doris.nereids.trees.expressions.functions.scalar.Array;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayAvg;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayCompact;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayContains;
-import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayCumSum;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayDifference;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayDistinct;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayEnumerate;
@@ -37,13 +36,12 @@ import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayIntersec
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayJoin;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayMax;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayMin;
-import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayPopBack;
-import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayPopFront;
+import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayPopback;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayPosition;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayProduct;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayRange;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayRemove;
-import org.apache.doris.nereids.trees.expressions.functions.scalar.ArrayReverseSort;
+import org.apache.doris.nereids.trees.expressions.functions.scalar.ArraySize;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArraySlice;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArraySort;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ArraySum;
@@ -125,6 +123,8 @@ import org.apache.doris.nereids.trees.expressions.functions.scalar.Dround;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Dsqrt;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.E;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ElementAt;
+import org.apache.doris.nereids.trees.expressions.functions.scalar.ElementExtract;
+import org.apache.doris.nereids.trees.expressions.functions.scalar.ElementSlice;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Elt;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.EndsWith;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.EsQuery;
@@ -250,7 +250,6 @@ import org.apache.doris.nereids.trees.expressions.functions.scalar.RoundBankers;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Rpad;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Rtrim;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.RunningDifference;
-import org.apache.doris.nereids.trees.expressions.functions.scalar.SecToTime;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Second;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.SecondCeil;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.SecondFloor;
@@ -259,6 +258,7 @@ import org.apache.doris.nereids.trees.expressions.functions.scalar.SecondsDiff;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.SecondsSub;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Sign;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Sin;
+import org.apache.doris.nereids.trees.expressions.functions.scalar.Size;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Sleep;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Sm3;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Sm3sum;
@@ -304,7 +304,6 @@ import org.apache.doris.nereids.trees.expressions.functions.scalar.Substring;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.SubstringIndex;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Tan;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.TimeDiff;
-import org.apache.doris.nereids.trees.expressions.functions.scalar.TimeToSec;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.Timestamp;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ToBase64;
 import org.apache.doris.nereids.trees.expressions.functions.scalar.ToBitmap;
@@ -364,7 +363,6 @@ public class BuiltinScalarFunctions implements FunctionHelper {
             scalar(ArrayAvg.class, "array_avg"),
             scalar(ArrayCompact.class, "array_compact"),
             scalar(ArrayContains.class, "array_contains"),
-            scalar(ArrayCumSum.class, "array_cum_sum"),
             scalar(ArrayDifference.class, "array_difference"),
             scalar(ArrayDistinct.class, "array_distinct"),
             scalar(ArrayEnumerate.class, "array_enumerate"),
@@ -373,13 +371,12 @@ public class BuiltinScalarFunctions implements FunctionHelper {
             scalar(ArrayJoin.class, "array_join"),
             scalar(ArrayMax.class, "array_max"),
             scalar(ArrayMin.class, "array_min"),
-            scalar(ArrayPopBack.class, "array_popback"),
-            scalar(ArrayPopFront.class, "array_popfront"),
+            scalar(ArrayPopback.class, "array_popback"),
             scalar(ArrayPosition.class, "array_position"),
             scalar(ArrayProduct.class, "array_product"),
             scalar(ArrayRange.class, "array_range"),
             scalar(ArrayRemove.class, "array_remove"),
-            scalar(ArrayReverseSort.class, "array_reverse_sort"),
+            scalar(ArraySize.class, "array_size"),
             scalar(ArraySlice.class, "array_slice"),
             scalar(ArraySort.class, "array_sort"),
             scalar(ArraySum.class, "array_sum"),
@@ -415,7 +412,7 @@ public class BuiltinScalarFunctions implements FunctionHelper {
             scalar(BitmapToString.class, "bitmap_to_string"),
             scalar(BitmapXor.class, "bitmap_xor"),
             scalar(BitmapXorCount.class, "bitmap_xor_count"),
-            scalar(Cardinality.class, "array_size", "cardinality", "size"),
+            scalar(Cardinality.class, "cardinality"),
             scalar(Cbrt.class, "cbrt"),
             scalar(Ceil.class, "ceil", "ceiling"),
             scalar(CharacterLength.class, "char_length", "character_length"),
@@ -461,6 +458,8 @@ public class BuiltinScalarFunctions implements FunctionHelper {
             scalar(Dsqrt.class, "dsqrt"),
             scalar(E.class, "e"),
             scalar(ElementAt.class, "element_at"),
+            scalar(ElementExtract.class, "%element_extract%"),
+            scalar(ElementSlice.class, "%element_slice%"),
             scalar(Elt.class, "elt"),
             scalar(EndsWith.class, "ends_with"),
             scalar(EsQuery.class, "esquery"),
@@ -592,9 +591,9 @@ public class BuiltinScalarFunctions implements FunctionHelper {
             scalar(SecondsAdd.class, "seconds_add"),
             scalar(SecondsDiff.class, "seconds_diff"),
             scalar(SecondsSub.class, "seconds_sub"),
-            scalar(SecToTime.class, "sec_to_time"),
             scalar(Sign.class, "sign"),
             scalar(Sin.class, "sin"),
+            scalar(Size.class, "size"),
             scalar(Sleep.class, "sleep"),
             scalar(Sm3.class, "sm3"),
             scalar(Sm3sum.class, "sm3sum"),
@@ -640,7 +639,6 @@ public class BuiltinScalarFunctions implements FunctionHelper {
             scalar(SubstringIndex.class, "substring_index"),
             scalar(Tan.class, "tan"),
             scalar(TimeDiff.class, "timediff"),
-            scalar(TimeToSec.class, "time_to_sec"),
             scalar(Timestamp.class, "timestamp"),
             scalar(ToBase64.class, "to_base64"),
             scalar(ToBitmap.class, "to_bitmap"),

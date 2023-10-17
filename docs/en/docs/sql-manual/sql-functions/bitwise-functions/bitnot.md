@@ -1,6 +1,6 @@
 ---
 {
-"title": "BITNOT",
+"title": "bitnot",
 "language": "en"
 }
 ---

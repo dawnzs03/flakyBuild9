@@ -1,6 +1,6 @@
 ---
 {
-    "title": "IFNULL",
+    "title": "ifnull",
     "language": "zh-CN"
 }
 ---

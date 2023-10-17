@@ -74,7 +74,10 @@ public class AppliedAwareRule extends Rule {
         /** provide this method for the child class get the applied state */
         public final boolean isAppliedRule(Rule rule, Plan plan) {
             Optional<BitSet> appliedRules = plan.getMutableState("applied_rules");
-            return appliedRules.map(bitSet -> bitSet.get(rule.getRuleType().ordinal())).orElse(false);
+            if (!appliedRules.isPresent()) {
+                return false;
+            }
+            return appliedRules.get().get(rule.getRuleType().ordinal());
         }
 
         /**

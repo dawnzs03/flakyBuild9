@@ -156,7 +156,9 @@ public class AggScalarSubQueryToWindowFunction extends DefaultPlanRewriter<JobCo
         return apply.isScalar()
                 && !apply.isMarkJoin()
                 && apply.right() instanceof LogicalAggregate
-                && apply.isCorrelated();
+                && apply.isCorrelated()
+                && apply.getSubCorrespondingConjunct().isPresent()
+                && apply.getSubCorrespondingConjunct().get() instanceof ComparisonPredicate;
     }
 
     /**
@@ -324,17 +326,7 @@ public class AggScalarSubQueryToWindowFunction extends DefaultPlanRewriter<JobCo
         // it's a simple case, but we may meet some complex cases in ut.
         // TODO: support compound predicate and multi apply node.
 
-        Map<Boolean, Set<Expression>> conjuncts = filter.getConjuncts().stream()
-                .collect(Collectors.groupingBy(conjunct -> Sets
-                        .intersection(conjunct.getInputSlotExprIds(), agg.getOutputExprIdSet())
-                        .isEmpty(), Collectors.toSet()));
-        Set<Expression> correlatedConjuncts = conjuncts.get(false);
-        if (correlatedConjuncts.isEmpty() || correlatedConjuncts.size() > 1
-                || !(correlatedConjuncts.iterator().next() instanceof ComparisonPredicate)) {
-            //TODO: only support simple comparison predicate now
-            return filter;
-        }
-        Expression windowFilterConjunct = correlatedConjuncts.iterator().next();
+        Expression windowFilterConjunct = apply.getSubCorrespondingConjunct().get();
         windowFilterConjunct = PlanUtils.maybeCommuteComparisonPredicate(
                 (ComparisonPredicate) windowFilterConjunct, apply.left());
 
@@ -357,10 +349,13 @@ public class AggScalarSubQueryToWindowFunction extends DefaultPlanRewriter<JobCo
         aggOutExpr = ExpressionUtils.replace(aggOutExpr, ImmutableMap
                 .of(functions.get(0), windowFunctionAlias.toSlot()));
 
-        windowFilterConjunct = ExpressionUtils.replace(windowFilterConjunct,
-                ImmutableMap.of(aggOut.toSlot(), aggOutExpr));
+        // we change the child contains the original agg output to agg output expr.
+        // for comparison predicate, it is always the child(1), since we ensure the window agg slot is in child(0)
+        // for in predicate, we should extract the options and find the corresponding child.
+        windowFilterConjunct = windowFilterConjunct
+                .withChildren(windowFilterConjunct.child(0), aggOutExpr);
 
-        LogicalFilter<Plan> newFilter = filter.withConjunctsAndChild(conjuncts.get(true), apply.left());
+        LogicalFilter<Plan> newFilter = (LogicalFilter<Plan>) filter.withChildren(apply.left());
         LogicalWindow<Plan> newWindow = new LogicalWindow<>(ImmutableList.of(windowFunctionAlias), newFilter);
         LogicalFilter<Plan> windowFilter = new LogicalFilter<>(ImmutableSet.of(windowFilterConjunct), newWindow);
         return windowFilter;

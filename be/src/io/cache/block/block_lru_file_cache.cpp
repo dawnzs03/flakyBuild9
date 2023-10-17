@@ -51,7 +51,6 @@
 #include "io/fs/path.h"
 #include "util/doris_metrics.h"
 #include "util/slice.h"
-#include "util/stopwatch.hpp"
 #include "vec/common/hex.h"
 
 namespace fs = std::filesystem;
@@ -119,8 +118,6 @@ LRUFileCache::LRUFileCache(const std::string& cache_base_path,
 }
 
 Status LRUFileCache::initialize() {
-    MonotonicStopWatch watch;
-    watch.start();
     std::lock_guard cache_lock(_mutex);
     if (!_is_initialized) {
         if (fs::exists(_cache_base_path)) {
@@ -137,18 +134,17 @@ Status LRUFileCache::initialize() {
     }
     _is_initialized = true;
     _cache_background_thread = std::thread(&LRUFileCache::run_background_operation, this);
-    int64_t cost = watch.elapsed_time() / 1000 / 1000;
     LOG(INFO) << fmt::format(
             "After initialize file cache path={}, disposable queue size={} elements={}, index "
             "queue size={} "
             "elements={}, query queue "
-            "size={} elements={}, init cost(ms)={}",
+            "size={} elements={}",
             _cache_base_path, _disposable_queue.get_total_cache_size(cache_lock),
             _disposable_queue.get_elements_num(cache_lock),
             _index_queue.get_total_cache_size(cache_lock),
             _index_queue.get_elements_num(cache_lock),
             _normal_queue.get_total_cache_size(cache_lock),
-            _normal_queue.get_elements_num(cache_lock), cost);
+            _normal_queue.get_elements_num(cache_lock));
     return Status::OK();
 }
 

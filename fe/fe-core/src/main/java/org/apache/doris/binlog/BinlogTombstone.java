@@ -23,6 +23,7 @@ import com.google.common.collect.Maps;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class BinlogTombstone {
@@ -34,6 +35,12 @@ public class BinlogTombstone {
 
     @SerializedName(value = "commitSeq")
     private long commitSeq;
+
+    // TODO(deadlinefen): delete this field later
+    // This is a reserved field for the transition between new and old versions.
+    // It will be deleted later
+    @SerializedName(value = "tableIds")
+    private List<Long> tableIds;
 
     @SerializedName(value = "tableCommitSeqMap")
     private Map<Long, Long> tableCommitSeqMap;
@@ -47,6 +54,7 @@ public class BinlogTombstone {
         this.dbBinlogTombstone = isDbTombstone;
         this.dbId = dbId;
         this.commitSeq = -1;
+        this.tableIds = Collections.emptyList();
         this.tableCommitSeqMap = Maps.newHashMap();
     }
 
@@ -54,6 +62,7 @@ public class BinlogTombstone {
         this.dbBinlogTombstone = false;
         this.dbId = -1;
         this.commitSeq = commitSeq;
+        this.tableIds = Collections.emptyList();
         this.tableCommitSeqMap = Collections.singletonMap(tableId, commitSeq);
     }
 
@@ -81,6 +90,14 @@ public class BinlogTombstone {
 
     public long getDbId() {
         return dbId;
+    }
+
+    // TODO(deadlinefen): deprecated this code later
+    public List<Long> getTableIds() {
+        if (tableIds == null) {
+            tableIds = Collections.emptyList();
+        }
+        return tableIds;
     }
 
     public Map<Long, Long> getTableCommitSeqMap() {

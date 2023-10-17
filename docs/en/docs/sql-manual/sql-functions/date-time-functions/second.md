@@ -1,6 +1,6 @@
 ---
 {
-    "title": "SECOND",
+    "title": "second",
     "language": "en"
 }
 ---

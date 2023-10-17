@@ -52,7 +52,7 @@ public class WindowExpression extends Expression {
                 .add(function)
                 .addAll(partitionKeys)
                 .addAll(orderKeys)
-                .build());
+                .build().toArray(new Expression[0]));
         this.function = function;
         this.partitionKeys = ImmutableList.copyOf(partitionKeys);
         this.orderKeys = ImmutableList.copyOf(orderKeys);
@@ -67,7 +67,7 @@ public class WindowExpression extends Expression {
                 .addAll(partitionKeys)
                 .addAll(orderKeys)
                 .add(windowFrame)
-                .build());
+                .build().toArray(new Expression[0]));
         this.function = function;
         this.partitionKeys = ImmutableList.copyOf(partitionKeys);
         this.orderKeys = ImmutableList.copyOf(orderKeys);

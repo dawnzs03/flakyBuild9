@@ -109,13 +109,16 @@ public class PhysicalResultSink<CHILD_TYPE extends Plan> extends PhysicalSink<CH
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+        if (!super.equals(o)) {
+            return false;
+        }
         PhysicalResultSink<?> that = (PhysicalResultSink<?>) o;
-        return outputExprs.equals(that.outputExprs);
+        return Objects.equals(outputExprs, that.outputExprs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(outputExprs);
+        return Objects.hash(super.hashCode(), outputExprs);
     }
 
     @Override

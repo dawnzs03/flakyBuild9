@@ -66,8 +66,7 @@ public:
     // TODO(lingbin): Other schema-change type do not need to be on the same disk. Because
     // there may be insufficient space on the current disk, which will lead the schema-change
     // task to be fail, even if there is enough space on other disks
-    Status create_tablet(const TCreateTabletReq& request, std::vector<DataDir*> stores,
-                         RuntimeProfile* profile);
+    Status create_tablet(const TCreateTabletReq& request, std::vector<DataDir*> stores);
 
     // Drop a tablet by description.
     // If `is_drop_table_or_partition` is true, we need to remove all remote rowsets in this tablet.
@@ -179,11 +178,10 @@ private:
     //        OLAP_ERR_TABLE_INSERT_DUPLICATION_ERROR, if find duplication
     //        Status::Error<UNINITIALIZED>(), if not inited
     Status _add_tablet_unlocked(TTabletId tablet_id, const TabletSharedPtr& tablet,
-                                bool update_meta, bool force, RuntimeProfile* profile);
+                                bool update_meta, bool force);
 
     Status _add_tablet_to_map_unlocked(TTabletId tablet_id, const TabletSharedPtr& tablet,
-                                       bool update_meta, bool keep_files, bool drop_old,
-                                       RuntimeProfile* profile);
+                                       bool update_meta, bool keep_files, bool drop_old);
 
     bool _check_tablet_id_exist_unlocked(TTabletId tablet_id);
 
@@ -197,13 +195,11 @@ private:
     TabletSharedPtr _internal_create_tablet_unlocked(const TCreateTabletReq& request,
                                                      const bool is_schema_change,
                                                      const Tablet* base_tablet,
-                                                     const std::vector<DataDir*>& data_dirs,
-                                                     RuntimeProfile* profile);
+                                                     const std::vector<DataDir*>& data_dirs);
     TabletSharedPtr _create_tablet_meta_and_dir_unlocked(const TCreateTabletReq& request,
                                                          const bool is_schema_change,
                                                          const Tablet* base_tablet,
-                                                         const std::vector<DataDir*>& data_dirs,
-                                                         RuntimeProfile* profile);
+                                                         const std::vector<DataDir*>& data_dirs);
     Status _create_tablet_meta_unlocked(const TCreateTabletReq& request, DataDir* store,
                                         const bool is_schema_change_tablet,
                                         const Tablet* base_tablet,

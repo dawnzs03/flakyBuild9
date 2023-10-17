@@ -65,7 +65,7 @@ public:
                             const std::function<void(RuntimeState*, Status*)>& call_back,
                             const report_status_callback& report_status_cb);
 
-    virtual ~PipelineFragmentContext();
+    ~PipelineFragmentContext();
 
     PipelinePtr add_pipeline();
 
@@ -74,26 +74,21 @@ public:
     RuntimeState* get_runtime_state() { return _runtime_state.get(); }
 
     // should be protected by lock?
-    [[nodiscard]] bool is_canceled() const { return _runtime_state->is_cancelled(); }
+    bool is_canceled() const { return _runtime_state->is_cancelled(); }
 
     int32_t next_operator_builder_id() { return _next_operator_builder_id++; }
 
     Status prepare(const doris::TPipelineFragmentParams& request, const size_t idx);
 
-    virtual Status prepare(const doris::TPipelineFragmentParams& request) {
-        return Status::InternalError("Pipeline fragment context do not implement prepare");
-    }
+    Status submit();
 
-    virtual Status submit();
-
-    virtual void close_if_prepare_failed();
-    virtual void close_sink();
+    void close_if_prepare_failed();
+    void close_sink();
 
     void set_is_report_success(bool is_report_success) { _is_report_success = is_report_success; }
 
-    virtual void cancel(
-            const PPlanFragmentCancelReason& reason = PPlanFragmentCancelReason::INTERNAL_ERROR,
-            const std::string& msg = "");
+    void cancel(const PPlanFragmentCancelReason& reason = PPlanFragmentCancelReason::INTERNAL_ERROR,
+                const std::string& msg = "");
 
     // TODO: Support pipeline runtime filter
 
@@ -112,7 +107,7 @@ public:
 
     void send_report(bool);
 
-    virtual void report_profile();
+    void report_profile();
 
     Status update_status(Status status) {
         std::lock_guard<std::mutex> l(_status_lock);
@@ -126,13 +121,13 @@ public:
         return _task_group_entity;
     }
 
-protected:
+private:
     Status _create_sink(int sender_id, const TDataSink& t_data_sink, RuntimeState* state);
     Status _build_pipelines(ExecNode*, PipelinePtr);
-    virtual Status _build_pipeline_tasks(const doris::TPipelineFragmentParams& request);
+    Status _build_pipeline_tasks(const doris::TPipelineFragmentParams& request);
     template <bool is_intersect>
     Status _build_operators_for_set_operation_node(ExecNode*, PipelinePtr);
-    virtual void _close_action();
+    void _close_action();
     void _stop_report_thread();
     void _set_is_report_on_cancel(bool val) { _is_report_on_cancel = val; }
 
@@ -160,6 +155,7 @@ protected:
     // After prepared, `_total_tasks` is equal to the size of `_tasks`.
     // When submit fail, `_total_tasks` is equal to the number of tasks submitted.
     int _total_tasks = 0;
+    std::vector<std::unique_ptr<PipelineTask>> _tasks;
 
     int32_t _next_operator_builder_id = 10000;
 
@@ -204,9 +200,6 @@ protected:
     // If this is set to false, and '_is_report_success' is false as well,
     // This executor will not report status to FE on being cancelled.
     bool _is_report_on_cancel;
-
-private:
-    std::vector<std::unique_ptr<PipelineTask>> _tasks;
 };
 } // namespace pipeline
 } // namespace doris

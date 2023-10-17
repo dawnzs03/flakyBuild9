@@ -17,7 +17,6 @@
 
 package org.apache.doris.nereids.trees.plans.logical;
 
-import org.apache.doris.catalog.PartitionItem;
 import org.apache.doris.catalog.external.ExternalTable;
 import org.apache.doris.nereids.memo.GroupExpression;
 import org.apache.doris.nereids.properties.LogicalProperties;
@@ -29,12 +28,9 @@ import org.apache.doris.nereids.trees.plans.visitor.PlanVisitor;
 import org.apache.doris.nereids.util.Utils;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import lombok.Getter;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -44,27 +40,22 @@ import java.util.Set;
  */
 public class LogicalFileScan extends LogicalCatalogRelation {
 
-    // TODO remove this conjuncts when old planner is removed
-    @Getter
+    // TODO remove this conjuncts.
     private final Set<Expression> conjuncts;
-    @Getter
-    private final SelectedPartitions selectedPartitions;
 
     /**
      * Constructor for LogicalFileScan.
      */
     public LogicalFileScan(RelationId id, ExternalTable table, List<String> qualifier,
             Optional<GroupExpression> groupExpression, Optional<LogicalProperties> logicalProperties,
-            Set<Expression> conjuncts, SelectedPartitions selectedPartitions) {
+            Set<Expression> conjuncts) {
         super(id, PlanType.LOGICAL_FILE_SCAN, table, qualifier,
                 groupExpression, logicalProperties);
         this.conjuncts = conjuncts;
-        this.selectedPartitions = selectedPartitions;
     }
 
     public LogicalFileScan(RelationId id, ExternalTable table, List<String> qualifier) {
-        this(id, table, qualifier, Optional.empty(), Optional.empty(),
-                Sets.newHashSet(), null);
+        this(id, table, qualifier, Optional.empty(), Optional.empty(), Sets.newHashSet());
     }
 
     @Override
@@ -85,24 +76,19 @@ public class LogicalFileScan extends LogicalCatalogRelation {
     @Override
     public LogicalFileScan withGroupExpression(Optional<GroupExpression> groupExpression) {
         return new LogicalFileScan(relationId, (ExternalTable) table, qualifier, groupExpression,
-                Optional.of(getLogicalProperties()), conjuncts, selectedPartitions);
+                Optional.of(getLogicalProperties()), conjuncts);
     }
 
     @Override
     public Plan withGroupExprLogicalPropChildren(Optional<GroupExpression> groupExpression,
             Optional<LogicalProperties> logicalProperties, List<Plan> children) {
         return new LogicalFileScan(relationId, (ExternalTable) table, qualifier,
-                groupExpression, logicalProperties, conjuncts, selectedPartitions);
+                groupExpression, logicalProperties, conjuncts);
     }
 
     public LogicalFileScan withConjuncts(Set<Expression> conjuncts) {
         return new LogicalFileScan(relationId, (ExternalTable) table, qualifier, groupExpression,
-                Optional.of(getLogicalProperties()), conjuncts, selectedPartitions);
-    }
-
-    public LogicalFileScan withSelectedPartitions(SelectedPartitions selectedPartitions) {
-        return new LogicalFileScan(relationId, (ExternalTable) table, qualifier, groupExpression,
-                Optional.of(getLogicalProperties()), conjuncts, selectedPartitions);
+                Optional.of(getLogicalProperties()), conjuncts);
     }
 
     @Override
@@ -110,44 +96,12 @@ public class LogicalFileScan extends LogicalCatalogRelation {
         return visitor.visitLogicalFileScan(this, context);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        return super.equals(o) && Objects.equals(conjuncts, ((LogicalFileScan) o).conjuncts)
-                && Objects.equals(selectedPartitions, ((LogicalFileScan) o).selectedPartitions);
+    public Set<Expression> getConjuncts() {
+        return this.conjuncts;
     }
 
-    /**
-     * SelectedPartitions contains the selected partitions and the total partition number.
-     * Mainly for hive table partition pruning.
-     */
-    public static class SelectedPartitions {
-        /** total partition number */
-        public long totalPartitionNum = 0;
-        /** partition id -> partition item */
-        public Map<Long, PartitionItem> selectedPartitions;
-        /**
-         * true means the result is after partition pruning
-         * false means the partition pruning is not processed.
-         */
-        public boolean isPartitionPruned;
-
-        /**
-         * Constructor for SelectedPartitions.
-         */
-        public SelectedPartitions(long totalPartitionNum, Map<Long, PartitionItem> selectedPartitions,
-                boolean isPartitionPruned) {
-            this.totalPartitionNum = totalPartitionNum;
-            this.selectedPartitions = selectedPartitions;
-            this.isPartitionPruned = isPartitionPruned;
-            if (this.selectedPartitions == null) {
-                this.selectedPartitions = Maps.newHashMap();
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return isPartitionPruned == ((SelectedPartitions) o).isPartitionPruned && Objects.equals(
-                    selectedPartitions.keySet(), ((SelectedPartitions) o).selectedPartitions.keySet());
-        }
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o) && Objects.equals(conjuncts, ((LogicalFileScan) o).conjuncts);
     }
 }

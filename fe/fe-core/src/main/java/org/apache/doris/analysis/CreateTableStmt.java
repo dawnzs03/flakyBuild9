@@ -146,7 +146,7 @@ public class CreateTableStmt extends DdlStmt {
             Map<String, String> extProperties,
             String comment) {
         this(ifNotExists, isExternal, tableName, columnDefinitions, null, engineName, keysDesc, partitionDesc,
-                distributionDesc, properties, extProperties, comment, null);
+                distributionDesc, properties, extProperties, comment, null, false);
     }
 
     public CreateTableStmt(boolean ifNotExists,
@@ -161,7 +161,7 @@ public class CreateTableStmt extends DdlStmt {
             Map<String, String> extProperties,
             String comment, List<AlterClause> ops) {
         this(ifNotExists, isExternal, tableName, columnDefinitions, null, engineName, keysDesc, partitionDesc,
-                distributionDesc, properties, extProperties, comment, ops);
+                distributionDesc, properties, extProperties, comment, ops, false);
     }
 
     public CreateTableStmt(boolean ifNotExists,
@@ -175,7 +175,8 @@ public class CreateTableStmt extends DdlStmt {
             DistributionDesc distributionDesc,
             Map<String, String> properties,
             Map<String, String> extProperties,
-            String comment, List<AlterClause> rollupAlterClauseList) {
+            String comment, List<AlterClause> rollupAlterClauseList,
+            boolean isDynamicSchema) {
         this.tableName = tableName;
         if (columnDefinitions == null) {
             this.columnDefs = Lists.newArrayList();
@@ -192,6 +193,12 @@ public class CreateTableStmt extends DdlStmt {
         this.keysDesc = keysDesc;
         this.partitionDesc = partitionDesc;
         this.distributionDesc = distributionDesc;
+        if (isDynamicSchema) {
+            if (properties == null) {
+                properties = Maps.newHashMap();
+            }
+            properties.put(PropertyAnalyzer.PROPERTIES_DYNAMIC_SCHEMA, "true");
+        }
         this.properties = properties;
         this.extProperties = extProperties;
         this.isExternal = isExternal;
@@ -484,6 +491,8 @@ public class CreateTableStmt extends DdlStmt {
                 columnDefs.add(ColumnDef.newVersionColumnDef(AggregateType.REPLACE));
             }
         }
+        boolean hasObjectStored = false;
+        String objectStoredColumn = "";
         Set<String> columnSet = Sets.newTreeSet(String.CASE_INSENSITIVE_ORDER);
         for (ColumnDef columnDef : columnDefs) {
             columnDef.analyze(engineName.equals("olap"));
@@ -510,21 +519,17 @@ public class CreateTableStmt extends DdlStmt {
             }
 
             if (columnDef.getType().isObjectStored()) {
-                if (columnDef.getType().isBitmapType()) {
-                    if (keysDesc.getKeysType() == KeysType.DUP_KEYS) {
-                        throw new AnalysisException("column:" + columnDef.getName()
-                                + " must be used in AGG_KEYS or UNIQUE_KEYS.");
-                    }
-                } else {
-                    if (keysDesc.getKeysType() != KeysType.AGG_KEYS) {
-                        throw new AnalysisException("column:" + columnDef.getName() + " must be used in AGG_KEYS.");
-                    }
-                }
+                hasObjectStored = true;
+                objectStoredColumn = columnDef.getName();
             }
 
             if (!columnSet.add(columnDef.getName())) {
                 ErrorReport.reportAnalysisException(ErrorCode.ERR_DUP_FIELDNAME, columnDef.getName());
             }
+        }
+
+        if (hasObjectStored && keysDesc.getKeysType() != KeysType.AGG_KEYS) {
+            throw new AnalysisException("column:" + objectStoredColumn + " must be used in AGG_KEYS.");
         }
 
         if (engineName.equals("olap")) {
@@ -600,7 +605,7 @@ public class CreateTableStmt extends DdlStmt {
                         }
                     }
                     if (!found) {
-                        throw new AnalysisException("Column does not exist in table. invalid column: "
+                        throw new AnalysisException("BITMAP column does not exist in table. invalid column: "
                                 + indexColName);
                     }
                 }
@@ -698,9 +703,6 @@ public class CreateTableStmt extends DdlStmt {
             sb.append("EXTERNAL ");
         }
         sb.append("TABLE ");
-        if (ifNotExists) {
-            sb.append("IF NOT EXISTS ");
-        }
         sb.append(tableName.toSql()).append(" (\n");
         int idx = 0;
         for (ColumnDef columnDef : columnDefs) {

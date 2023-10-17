@@ -1,6 +1,6 @@
 ---
 {
-    "title": "NULLIF",
+    "title": "nullif",
     "language": "en"
 }
 ---

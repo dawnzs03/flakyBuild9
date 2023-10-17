@@ -211,13 +211,27 @@ public class Alter {
         } else if (currentAlterOps.checkIsBeingSynced(alterClauses)) {
             olapTable.setIsBeingSynced(currentAlterOps.isBeingSynced(alterClauses));
             needProcessOutsideTableLock = true;
-        } else if (currentAlterOps.checkCompactionPolicy(alterClauses)) {
+        } else if (currentAlterOps.checkCompactionPolicy(alterClauses)
+                    && currentAlterOps.getCompactionPolicy(alterClauses) != olapTable.getCompactionPolicy()) {
+            olapTable.setCompactionPolicy(currentAlterOps.getCompactionPolicy(alterClauses));
             needProcessOutsideTableLock = true;
-        } else if (currentAlterOps.checkTimeSeriesCompactionGoalSizeMbytes(alterClauses)) {
+        } else if (currentAlterOps.checkTimeSeriesCompactionGoalSizeMbytes(alterClauses)
+                    && currentAlterOps.getTimeSeriesCompactionGoalSizeMbytes(alterClauses)
+                                                != olapTable.getTimeSeriesCompactionGoalSizeMbytes()) {
+            olapTable.setTimeSeriesCompactionGoalSizeMbytes(currentAlterOps
+                                            .getTimeSeriesCompactionGoalSizeMbytes(alterClauses));
             needProcessOutsideTableLock = true;
-        } else if (currentAlterOps.checkTimeSeriesCompactionFileCountThreshold(alterClauses)) {
+        } else if (currentAlterOps.checkTimeSeriesCompactionFileCountThreshold(alterClauses)
+                    && currentAlterOps.getTimeSeriesCompactionFileCountThreshold(alterClauses)
+                                                != olapTable.getTimeSeriesCompactionFileCountThreshold()) {
+            olapTable.setTimeSeriesCompactionFileCountThreshold(currentAlterOps
+                                            .getTimeSeriesCompactionFileCountThreshold(alterClauses));
             needProcessOutsideTableLock = true;
-        } else if (currentAlterOps.checkTimeSeriesCompactionTimeThresholdSeconds(alterClauses)) {
+        } else if (currentAlterOps.checkTimeSeriesCompactionTimeThresholdSeconds(alterClauses)
+                    && currentAlterOps.getTimeSeriesCompactionTimeThresholdSeconds(alterClauses)
+                                                != olapTable.getTimeSeriesCompactionTimeThresholdSeconds()) {
+            olapTable.setTimeSeriesCompactionTimeThresholdSeconds(currentAlterOps
+                                            .getTimeSeriesCompactionTimeThresholdSeconds(alterClauses));
             needProcessOutsideTableLock = true;
         } else if (currentAlterOps.checkBinlogConfigChange(alterClauses)) {
             if (!Config.enable_feature_binlog) {
@@ -687,7 +701,7 @@ public class Alter {
                 try {
                     view.init();
                 } catch (UserException e) {
-                    throw new DdlException("failed to init view stmt, reason=" + e.getMessage());
+                    throw new DdlException("failed to init view stmt", e);
                 }
                 view.setNewFullSchema(newFullSchema);
                 String viewName = view.getName();
@@ -723,7 +737,7 @@ public class Alter {
             try {
                 view.init();
             } catch (UserException e) {
-                throw new DdlException("failed to init view stmt, reason=" + e.getMessage());
+                throw new DdlException("failed to init view stmt", e);
             }
             view.setNewFullSchema(newFullSchema);
 

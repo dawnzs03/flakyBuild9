@@ -1,6 +1,6 @@
 ---
 {
-    "title": "STRLEFT",
+    "title": "strleft",
     "language": "zh-CN"
 }
 ---

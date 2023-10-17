@@ -1,6 +1,6 @@
 ---
 {
-    "title": "MASK",
+    "title": "mask",
     "language": "zh-CN"
 }
 ---

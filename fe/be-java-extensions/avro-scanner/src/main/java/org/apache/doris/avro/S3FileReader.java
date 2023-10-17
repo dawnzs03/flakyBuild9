@@ -35,7 +35,6 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Objects;
 
 public class S3FileReader implements AvroReader {
 
@@ -49,14 +48,13 @@ public class S3FileReader implements AvroReader {
     private final String endpoint;
     private final String region;
 
-    public S3FileReader(String accessKey, String secretKey, String endpoint, String region, String uri)
-            throws IOException {
+    public S3FileReader(String accessKey, String secretKey, String endpoint, String region,
+            String bucketName, String key) {
+        this.bucketName = bucketName;
+        this.key = key;
         this.endpoint = endpoint;
         this.region = region;
-        this.credentials = new BasicAWSCredentials(accessKey, secretKey);
-        S3Utils.parseURI(uri);
-        this.bucketName = S3Utils.getBucket();
-        this.key = S3Utils.getKey();
+        credentials = new BasicAWSCredentials(accessKey, secretKey);
     }
 
     @Override
@@ -87,11 +85,7 @@ public class S3FileReader implements AvroReader {
 
     @Override
     public void close() throws IOException {
-        if (Objects.nonNull(s3ObjectInputStream)) {
-            s3ObjectInputStream.close();
-        }
-        if (Objects.nonNull(reader)) {
-            reader.close();
-        }
+        s3ObjectInputStream.close();
+        reader.close();
     }
 }

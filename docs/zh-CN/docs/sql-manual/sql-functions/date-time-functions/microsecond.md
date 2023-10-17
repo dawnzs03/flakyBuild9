@@ -1,6 +1,6 @@
 ---
 {
-    "title": "MICROSECOND",
+    "title": "microsecond",
     "language": "zh-CN"
 }
 ---

@@ -198,8 +198,7 @@ public class Transaction {
         // 2. transaction failed but Config.using_old_load_usage_pattern is true.
         // we will record the load job info for these 2 cases
         try {
-            // the statement parsed by Nereids is saved at executor::parsedStmt.
-            StatementBase statement = executor.getParsedStmt();
+            StatementBase statement = planner.getCascadesContext().getStatementContext().getParsedStatement();
             ctx.getEnv().getLoadManager()
                     .recordFinishedLoadJob(labelName, txnId, database.getFullName(),
                             table.getId(),

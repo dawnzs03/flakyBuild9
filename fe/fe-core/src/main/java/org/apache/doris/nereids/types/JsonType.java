@@ -19,6 +19,7 @@ package org.apache.doris.nereids.types;
 
 import org.apache.doris.catalog.Type;
 import org.apache.doris.nereids.annotation.Developing;
+import org.apache.doris.nereids.types.coercion.AbstractDataType;
 
 /**
  * Json type in Nereids.
@@ -39,7 +40,7 @@ public class JsonType extends DataType {
     }
 
     @Override
-    public boolean acceptsType(DataType other) {
+    public boolean acceptsType(AbstractDataType other) {
         return other instanceof JsonType;
     }
 

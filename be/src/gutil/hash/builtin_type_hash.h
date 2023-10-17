@@ -9,8 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <bit>
-
+#include "gutil/casts.h"
 #include "gutil/hash/jenkins_lookup2.h"
 #include "gutil/integral_types.h"
 #include "gutil/macros.h"
@@ -68,7 +67,7 @@ inline uint64 Hash64FloatWithSeed(float num, uint64 seed) {
 
     const uint64 kMul = 0xc6a4a7935bd1e995ULL;
 
-    uint64 a = (std::bit_cast<uint32>(num) + seed) * kMul;
+    uint64 a = (bit_cast<uint32>(num) + seed) * kMul;
     a ^= (a >> 47);
     a *= kMul;
     a ^= (a >> 47);
@@ -84,7 +83,7 @@ inline uint64 Hash64DoubleWithSeed(double num, uint64 seed) {
 
     const uint64 kMul = 0xc6a4a7935bd1e995ULL;
 
-    uint64 a = (std::bit_cast<uint64>(num) + seed) * kMul;
+    uint64 a = (bit_cast<uint64>(num) + seed) * kMul;
     a ^= (a >> 47);
     a *= kMul;
     a ^= (a >> 47);

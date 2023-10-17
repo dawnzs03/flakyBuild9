@@ -268,7 +268,6 @@ public class ColumnType {
                 type = Type.DATEV2;
                 break;
             case "binary":
-            case "bytes":
                 type = Type.BINARY;
                 break;
             case "string":
@@ -280,27 +279,27 @@ public class ColumnType {
                     precision = 6; // default
                     Matcher match = digitPattern.matcher(lowerCaseType);
                     if (match.find()) {
-                        precision = Integer.parseInt(match.group(1).trim());
+                        precision = Integer.parseInt(match.group(1));
                     }
                 } else if (lowerCaseType.startsWith("char")) {
                     Matcher match = digitPattern.matcher(lowerCaseType);
                     if (match.find()) {
                         type = Type.CHAR;
-                        length = Integer.parseInt(match.group(1).trim());
+                        length = Integer.parseInt(match.group(1));
                     }
                 } else if (lowerCaseType.startsWith("varchar")) {
                     Matcher match = digitPattern.matcher(lowerCaseType);
                     if (match.find()) {
                         type = Type.VARCHAR;
-                        length = Integer.parseInt(match.group(1).trim());
+                        length = Integer.parseInt(match.group(1));
                     }
                 } else if (lowerCaseType.startsWith("decimal")) {
                     int s = lowerCaseType.indexOf('(');
                     int e = lowerCaseType.indexOf(')');
                     if (s != -1 && e != -1) {
                         String[] ps = lowerCaseType.substring(s + 1, e).split(",");
-                        precision = Integer.parseInt(ps[0].trim());
-                        scale = Integer.parseInt(ps[1].trim());
+                        precision = Integer.parseInt(ps[0]);
+                        scale = Integer.parseInt(ps[1]);
                         if (lowerCaseType.startsWith("decimalv2")) {
                             type = Type.DECIMALV2;
                         } else if (lowerCaseType.startsWith("decimal32")) {

@@ -21,7 +21,6 @@ import org.apache.doris.analysis.BrokerDesc;
 import org.apache.doris.analysis.TupleDescriptor;
 import org.apache.doris.catalog.ArrayType;
 import org.apache.doris.catalog.Column;
-import org.apache.doris.catalog.Env;
 import org.apache.doris.catalog.HdfsResource;
 import org.apache.doris.catalog.MapType;
 import org.apache.doris.catalog.PrimitiveType;
@@ -45,7 +44,6 @@ import org.apache.doris.proto.InternalService.PFetchTableSchemaRequest;
 import org.apache.doris.proto.Types.PScalarType;
 import org.apache.doris.proto.Types.PTypeDesc;
 import org.apache.doris.proto.Types.PTypeNode;
-import org.apache.doris.qe.ConnectContext;
 import org.apache.doris.rpc.BackendServiceProxy;
 import org.apache.doris.rpc.RpcException;
 import org.apache.doris.system.Backend;
@@ -366,13 +364,18 @@ public abstract class ExternalFileTableValuedFunction extends TableValuedFunctio
             return columns;
         }
         // get one BE address
+        TNetworkAddress address = null;
         columns = Lists.newArrayList();
-        Backend be = getBackend();
-        if (be == null) {
+        for (Backend be : org.apache.doris.catalog.Env.getCurrentSystemInfo().getIdToBackend().values()) {
+            if (be.isAlive()) {
+                address = new TNetworkAddress(be.getHost(), be.getBrpcPort());
+                break;
+            }
+        }
+        if (address == null) {
             throw new AnalysisException("No Alive backends");
         }
 
-        TNetworkAddress address = new TNetworkAddress(be.getHost(), be.getBrpcPort());
         try {
             PFetchTableSchemaRequest request = getFetchTableStructureRequest();
             Future<InternalService.PFetchTableSchemaResult> future = BackendServiceProxy.getInstance()
@@ -402,15 +405,6 @@ public abstract class ExternalFileTableValuedFunction extends TableValuedFunctio
             throw new AnalysisException("getFetchTableStructureRequest exception", e);
         }
         return columns;
-    }
-
-    protected Backend getBackend() {
-        for (Backend be : Env.getCurrentSystemInfo().getIdToBackend().values()) {
-            if (be.isAlive()) {
-                return be;
-            }
-        }
-        return null;
     }
 
     /**
@@ -476,8 +470,6 @@ public abstract class ExternalFileTableValuedFunction extends TableValuedFunctio
         fileScanRangeParams.setFormatType(fileFormatType);
         fileScanRangeParams.setProperties(locationProperties);
         fileScanRangeParams.setFileAttributes(getFileAttributes());
-        ConnectContext ctx = ConnectContext.get();
-        fileScanRangeParams.setLoadId(ctx.getLoadId());
         if (getTFileType() == TFileType.FILE_HDFS) {
             THdfsParams tHdfsParams = HdfsResource.generateHdfsParam(locationProperties);
             String fsNmae = getLocationProperties().get(HdfsResource.HADOOP_FS_NAME);

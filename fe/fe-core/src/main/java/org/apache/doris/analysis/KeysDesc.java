@@ -104,7 +104,7 @@ public class KeysDesc implements Writable {
 
     public String toSql() {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(type.toSql()).append("(");
+        stringBuilder.append(type.name()).append("(");
         int i = 0;
         for (String columnName : keysColumnNames) {
             if (i != 0) {

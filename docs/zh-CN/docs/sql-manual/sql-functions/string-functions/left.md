@@ -1,6 +1,6 @@
 ---
 {
-    "title": "LEFT",
+    "title": "left",
     "language": "zh-CN"
 }
 ---

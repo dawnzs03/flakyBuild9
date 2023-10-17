@@ -26,7 +26,6 @@ import org.apache.doris.nereids.trees.expressions.visitor.ExpressionVisitor;
 import org.apache.doris.nereids.types.DataType;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,18 +38,13 @@ public class UnboundAlias extends NamedExpression implements UnaryExpression, Un
     private Optional<String> alias;
 
     public UnboundAlias(Expression child) {
-        super(ImmutableList.of(child));
+        super(child);
         this.alias = Optional.empty();
     }
 
     public UnboundAlias(Expression child, String alias) {
-        super(ImmutableList.of(child));
+        super(child);
         this.alias = Optional.of(alias);
-    }
-
-    private UnboundAlias(List<Expression> children, Optional<String> alias) {
-        super(children);
-        this.alias = alias;
     }
 
     @Override
@@ -83,7 +77,7 @@ public class UnboundAlias extends NamedExpression implements UnaryExpression, Un
     @Override
     public UnboundAlias withChildren(List<Expression> children) {
         Preconditions.checkArgument(children.size() == 1);
-        return new UnboundAlias(children, alias);
+        return new UnboundAlias(children.get(0));
     }
 
     public Optional<String> getAlias() {

@@ -41,6 +41,7 @@
 #include "vec/columns/column_nullable.h"
 #include "vec/core/column_with_type_and_name.h"
 #include "vec/core/columns_with_type_and_name.h"
+#include "vec/core/names.h"
 #include "vec/core/types.h"
 #include "vec/data_types/data_type.h"
 #include "vec/data_types/data_type_nullable.h"
@@ -196,7 +197,7 @@ public:
 
     const ColumnsWithTypeAndName& get_columns_with_type_and_name() const;
 
-    std::vector<std::string> get_names() const;
+    Names get_names() const;
     DataTypes get_data_types() const;
 
     DataTypePtr get_data_type(size_t index) const {
@@ -225,6 +226,9 @@ public:
 
     /// Approximate number of allocated bytes in memory - for profiling and limits.
     size_t allocated_bytes() const;
+
+    operator bool() const { return !!columns(); }
+    bool operator!() const { return !this->operator bool(); }
 
     /** Get a list of column names separated by commas. */
     std::string dump_names() const;
@@ -409,7 +413,7 @@ class MutableBlock {
 private:
     MutableColumns _columns;
     DataTypes _data_types;
-    std::vector<std::string> _names;
+    Names _names;
 
     using IndexByName = phmap::flat_hash_map<String, size_t>;
     IndexByName index_by_name;
@@ -608,7 +612,7 @@ public:
         return res;
     }
 
-    std::vector<std::string>& get_names() { return _names; }
+    Names& get_names() { return _names; }
 
     bool has(const std::string& name) const;
 

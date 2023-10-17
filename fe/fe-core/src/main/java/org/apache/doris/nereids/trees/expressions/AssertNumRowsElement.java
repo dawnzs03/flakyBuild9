@@ -23,7 +23,6 @@ import org.apache.doris.nereids.trees.expressions.visitor.ExpressionVisitor;
 import org.apache.doris.nereids.util.Utils;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 import java.util.Objects;
@@ -50,7 +49,6 @@ public class AssertNumRowsElement extends Expression implements LeafExpression, 
 
     public AssertNumRowsElement(long desiredNumOfRows, String subqueryString,
             Assertion assertion) {
-        super(ImmutableList.of());
         this.desiredNumOfRows = desiredNumOfRows;
         this.subqueryString = subqueryString;
         this.assertion = assertion;
@@ -70,7 +68,7 @@ public class AssertNumRowsElement extends Expression implements LeafExpression, 
 
     @Override
     public AssertNumRowsElement withChildren(List<Expression> children) {
-        Preconditions.checkArgument(children.isEmpty());
+        Preconditions.checkArgument(children.size() == 0);
         return this;
     }
 

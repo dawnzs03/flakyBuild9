@@ -29,7 +29,6 @@ import org.apache.doris.nereids.trees.plans.RelationId;
 import org.apache.doris.nereids.types.BigIntType;
 import org.apache.doris.nereids.types.BooleanType;
 import org.apache.doris.nereids.types.DataType;
-import org.apache.doris.nereids.types.DateV2Type;
 import org.apache.doris.nereids.types.DoubleType;
 import org.apache.doris.nereids.types.IntegerType;
 import org.apache.doris.nereids.types.StringType;
@@ -86,7 +85,7 @@ public abstract class ExpressionRewriteTestHelper {
         Assertions.assertEquals(expectedExpression.toSql(), rewrittenExpression.toSql());
     }
 
-    protected Expression replaceUnboundSlot(Expression expression, Map<String, Slot> mem) {
+    private Expression replaceUnboundSlot(Expression expression, Map<String, Slot> mem) {
         List<Expression> children = Lists.newArrayList();
         boolean hasNewChildren = false;
         for (Expression child : expression.children()) {
@@ -104,7 +103,7 @@ public abstract class ExpressionRewriteTestHelper {
         return hasNewChildren ? expression.withChildren(children) : expression;
     }
 
-    protected Expression typeCoercion(Expression expression) {
+    private Expression typeCoercion(Expression expression) {
         return FunctionBinder.INSTANCE.rewrite(expression, null);
     }
 
@@ -122,8 +121,6 @@ public abstract class ExpressionRewriteTestHelper {
                 return VarcharType.SYSTEM_DEFAULT;
             case 'B':
                 return BooleanType.INSTANCE;
-            case 'C':
-                return DateV2Type.INSTANCE;
             default:
                 return BigIntType.INSTANCE;
         }

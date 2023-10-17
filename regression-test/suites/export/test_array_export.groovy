@@ -52,15 +52,10 @@ suite("test_array_export", "export") {
     // define the table and out file path
     def tableName = "array_outfile_test"
     def outFilePath = """${context.file.parent}/test_array_export"""
-    List<List<Object>> backends =  sql """ show backends """
-    assertTrue(backends.size() > 0)
-    def outFile = outFilePath
-    if (backends.size() > 1) {
-        outFile = "/tmp"
-    }
+    def outFile = "/tmp"
     def urlHost = ""
     def csvFiles = ""
-    logger.warn("test_array_export the outFile=" + outFile)
+    logger.warn("test_array_export the outFilePath=" + outFilePath)
 
     def create_test_table = {testTablex ->
         sql """ DROP TABLE IF EXISTS ${tableName} """
@@ -176,14 +171,10 @@ suite("test_array_export", "export") {
         """
         url = result[0][3]
         urlHost = url.substring(8, url.indexOf("${outFile}"))
-        if (backends.size() > 1) {
-            // custer will scp files
-            def filePrifix = url.split("${outFile}")[1]
-            csvFiles = "${outFile}${filePrifix}*.csv"
-            scpFiles ("root", urlHost, csvFiles, outFilePath)
-        }
+        def filePrifix = url.split("${outFile}")[1]
+        csvFiles = "${outFile}${filePrifix}*.csv"
+        scpFiles ("root", urlHost, csvFiles, outFilePath);
 
-        // path is from outputfilepath
         File[] files = path.listFiles()
         assert files.length == 1
         List<String> outLines = Files.readAllLines(Paths.get(files[0].getAbsolutePath()), StandardCharsets.UTF_8);
@@ -202,10 +193,8 @@ suite("test_array_export", "export") {
             }
             path.delete();
         }
-        if (csvFiles != "") {
-            cmd = "rm -rf ${csvFiles}"
-            sshExec("root", urlHost, cmd)
-        }
+        cmd = "rm -rf ${csvFiles}"
+        sshExec ("root", urlHost, cmd)
     }
     
     

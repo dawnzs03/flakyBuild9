@@ -35,7 +35,6 @@ import org.apache.doris.nereids.trees.plans.logical.LogicalAggregate;
 import org.apache.doris.nereids.trees.plans.logical.LogicalFilter;
 import org.apache.doris.nereids.trees.plans.logical.LogicalJoin;
 import org.apache.doris.nereids.trees.plans.logical.LogicalProject;
-import org.apache.doris.nereids.trees.plans.logical.LogicalResultSink;
 import org.apache.doris.nereids.trees.plans.logical.LogicalSort;
 import org.apache.doris.nereids.trees.plans.physical.PhysicalFilter;
 import org.apache.doris.nereids.trees.plans.physical.PhysicalHashAggregate;
@@ -56,10 +55,10 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-class PlanEqualsTest {
+public class PlanEqualsTest {
     /* *************************** Logical *************************** */
     @Test
-    void testLogicalAggregate(@Mocked Plan child) {
+    public void testLogicalAggregate(@Mocked Plan child) {
         LogicalAggregate<Plan> actual = new LogicalAggregate<>(Lists.newArrayList(), ImmutableList.of(
                 new SlotReference(new ExprId(0), "a", BigIntType.INSTANCE, true, Lists.newArrayList())),
                 child);
@@ -91,7 +90,7 @@ class PlanEqualsTest {
     }
 
     @Test
-    void testLogicalFilter(@Mocked Plan child) {
+    public void testLogicalFilter(@Mocked Plan child) {
         LogicalFilter<Plan> actual = new LogicalFilter<>(ImmutableSet.of(new EqualTo(Literal.of(1), Literal.of(1))), child);
 
         LogicalFilter<Plan> expected = new LogicalFilter<>(ImmutableSet.of(new EqualTo(Literal.of(1), Literal.of(1))), child);
@@ -102,7 +101,7 @@ class PlanEqualsTest {
     }
 
     @Test
-    void testLogicalJoin(@Mocked Plan left, @Mocked Plan right) {
+    public void testLogicalJoin(@Mocked Plan left, @Mocked Plan right) {
         LogicalJoin<Plan, Plan> actual = new LogicalJoin<>(JoinType.INNER_JOIN, Lists.newArrayList(new EqualTo(
                 new SlotReference(new ExprId(0), "a", BigIntType.INSTANCE, true, Lists.newArrayList()),
                 new SlotReference(new ExprId(1), "b", BigIntType.INSTANCE, true, Lists.newArrayList()))),
@@ -122,7 +121,7 @@ class PlanEqualsTest {
     }
 
     @Test
-    void testLogicalProject(@Mocked Plan child) {
+    public void testLogicalProject(@Mocked Plan child) {
         LogicalProject<Plan> actual = new LogicalProject<>(
                 ImmutableList.of(
                         new SlotReference(new ExprId(0), "a", BigIntType.INSTANCE, true, Lists.newArrayList())),
@@ -148,7 +147,7 @@ class PlanEqualsTest {
     }
 
     @Test
-    void testLogicalSort(@Mocked Plan child) {
+    public void testLogicalSort(@Mocked Plan child) {
         LogicalSort<Plan> actual = new LogicalSort<>(
                 ImmutableList.of(new OrderKey(
                         new SlotReference(new ExprId(1), "b", BigIntType.INSTANCE, true, Lists.newArrayList()), true,
@@ -170,26 +169,9 @@ class PlanEqualsTest {
         Assertions.assertNotEquals(unexpected, actual);
     }
 
-    @Test
-    void testLogicalResultSink(@Mocked Plan child) {
-        LogicalResultSink<Plan> actual = new LogicalResultSink<>(
-                ImmutableList.of(new SlotReference(new ExprId(0), "a", BigIntType.INSTANCE, true, Lists.newArrayList())),
-                child);
-
-        LogicalResultSink<Plan> expected = new LogicalResultSink<>(
-                ImmutableList.of(new SlotReference(new ExprId(0), "a", BigIntType.INSTANCE, true, Lists.newArrayList())),
-                child);
-        Assertions.assertEquals(expected, actual);
-
-        LogicalResultSink<Plan> unexpected = new LogicalResultSink<>(
-                ImmutableList.of(new SlotReference(new ExprId(1), "a", BigIntType.INSTANCE, true, Lists.newArrayList())),
-                child);
-        Assertions.assertNotEquals(unexpected, actual);
-    }
-
     /* *************************** Physical *************************** */
     @Test
-    void testPhysicalAggregate(@Mocked Plan child, @Mocked LogicalProperties logicalProperties) {
+    public void testPhysicalAggregate(@Mocked Plan child, @Mocked LogicalProperties logicalProperties) {
         List<NamedExpression> outputExpressionList = ImmutableList.of(
                 new SlotReference(new ExprId(0), "a", BigIntType.INSTANCE, true, Lists.newArrayList()));
         PhysicalHashAggregate<Plan> actual = new PhysicalHashAggregate<>(Lists.newArrayList(), outputExpressionList,
@@ -214,7 +196,7 @@ class PlanEqualsTest {
     }
 
     @Test
-    void testPhysicalFilter(@Mocked Plan child, @Mocked LogicalProperties logicalProperties) {
+    public void testPhysicalFilter(@Mocked Plan child, @Mocked LogicalProperties logicalProperties) {
         PhysicalFilter<Plan> actual = new PhysicalFilter<>(ImmutableSet.of(new EqualTo(Literal.of(1), Literal.of(2))),
                 logicalProperties, child);
 
@@ -228,7 +210,7 @@ class PlanEqualsTest {
     }
 
     @Test
-    void testPhysicalJoin(@Mocked Plan left, @Mocked Plan right, @Mocked LogicalProperties logicalProperties) {
+    public void testPhysicalJoin(@Mocked Plan left, @Mocked Plan right, @Mocked LogicalProperties logicalProperties) {
         PhysicalHashJoin<Plan, Plan> actual = new PhysicalHashJoin<>(JoinType.INNER_JOIN,
                 Lists.newArrayList(new EqualTo(
                         new SlotReference(new ExprId(0), "a", BigIntType.INSTANCE, true, Lists.newArrayList()),
@@ -251,7 +233,7 @@ class PlanEqualsTest {
     }
 
     @Test
-    void testPhysicalOlapScan(
+    public void testPhysicalOlapScan(
             @Mocked LogicalProperties logicalProperties,
             @Mocked OlapTable olapTable,
             @Mocked DistributionSpecHash distributionSpecHash) {
@@ -279,7 +261,7 @@ class PlanEqualsTest {
     }
 
     @Test
-    void testPhysicalProject(@Mocked Plan child, @Mocked LogicalProperties logicalProperties) {
+    public void testPhysicalProject(@Mocked Plan child, @Mocked LogicalProperties logicalProperties) {
         PhysicalProject<Plan> actual = new PhysicalProject<>(
                 ImmutableList.of(
                         new SlotReference(new ExprId(0), "a", BigIntType.INSTANCE, true, Lists.newArrayList())),
@@ -309,7 +291,7 @@ class PlanEqualsTest {
     }
 
     @Test
-    void testPhysicalSort(@Mocked Plan child, @Mocked LogicalProperties logicalProperties) {
+    public void testPhysicalSort(@Mocked Plan child, @Mocked LogicalProperties logicalProperties) {
 
         PhysicalQuickSort<Plan> actual = new PhysicalQuickSort<>(
                 ImmutableList.of(new OrderKey(

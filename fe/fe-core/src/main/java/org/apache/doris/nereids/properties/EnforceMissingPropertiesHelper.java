@@ -149,7 +149,7 @@ public class EnforceMissingPropertiesHelper {
     private void addEnforcerUpdateCost(GroupExpression enforcer,
             PhysicalProperties oldOutputProperty,
             PhysicalProperties newOutputProperty) {
-        groupExpression.getOwnerGroup().addEnforcer(enforcer);
+        context.getCascadesContext().getMemo().addEnforcerPlan(enforcer, groupExpression.getOwnerGroup());
         NereidsTracer.logEnforcerEvent(enforcer.getOwnerGroup().getGroupId(), groupExpression.getPlan(),
                 oldOutputProperty, newOutputProperty);
         ENFORCER_TRACER.log(EnforcerEvent.of(groupExpression, ((PhysicalPlan) enforcer.getPlan()),

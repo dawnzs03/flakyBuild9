@@ -20,9 +20,8 @@ package org.apache.doris.nereids.trees.expressions.functions;
 import org.apache.doris.catalog.FunctionSignature;
 import org.apache.doris.catalog.Type;
 import org.apache.doris.nereids.types.DataType;
-import org.apache.doris.nereids.types.NullType;
+import org.apache.doris.nereids.types.coercion.AbstractDataType;
 import org.apache.doris.nereids.types.coercion.AnyDataType;
-import org.apache.doris.nereids.types.coercion.FollowToAnyDataType;
 
 import java.util.List;
 
@@ -34,19 +33,9 @@ import java.util.List;
  */
 public interface ImplicitlyCastableSignature extends ComputeSignature {
 
-    static boolean isImplicitlyCastable(DataType signatureType, DataType realType) {
-        return ComputeSignature.processComplexType(
-                signatureType, realType, ImplicitlyCastableSignature::isPrimitiveImplicitlyCastable);
-    }
-
     /** isImplicitlyCastable */
-    static boolean isPrimitiveImplicitlyCastable(DataType signatureType, DataType realType) {
-        if (signatureType instanceof AnyDataType
-                || signatureType instanceof FollowToAnyDataType
-                || signatureType.isAssignableFrom(realType)) {
-            return true;
-        }
-        if (realType instanceof NullType) {
+    static boolean isImplicitlyCastable(AbstractDataType signatureType, AbstractDataType realType) {
+        if (signatureType instanceof AnyDataType || signatureType.isAssignableFrom(realType)) {
             return true;
         }
         try {
@@ -54,16 +43,14 @@ public interface ImplicitlyCastableSignature extends ComputeSignature {
             if (Type.isImplicitlyCastable(realType.toCatalogDataType(), signatureType.toCatalogDataType(), true)) {
                 return true;
             }
-        } catch (Throwable t) {
-            // the signatureType maybe DataType and can not cast to catalog data type.
-        }
-        try {
-            List<DataType> allPromotions = realType.getAllPromotions();
-            if (allPromotions.stream().anyMatch(promotion -> isImplicitlyCastable(signatureType, promotion))) {
-                return true;
+            if (realType instanceof DataType) {
+                List<DataType> allPromotions = ((DataType) realType).getAllPromotions();
+                if (allPromotions.stream().anyMatch(promotion -> isImplicitlyCastable(signatureType, promotion))) {
+                    return true;
+                }
             }
         } catch (Throwable t) {
-            // the signatureType maybe DataType and can not cast to catalog data type.
+            // the signatureType maybe AbstractDataType and can not cast to catalog data type.
         }
         return false;
     }

@@ -1,6 +1,6 @@
 ---
 {
-    "title": "CURDATE,CURRENT_DATE",
+    "title": "curdate,current_date",
     "language": "en"
 }
 ---

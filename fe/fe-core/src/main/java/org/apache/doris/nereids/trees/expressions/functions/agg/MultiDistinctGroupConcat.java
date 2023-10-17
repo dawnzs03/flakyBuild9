@@ -41,21 +41,21 @@ public class MultiDistinctGroupConcat extends NullableAggregateFunction
     public static final List<FunctionSignature> SIGNATURES = ImmutableList.of(
             FunctionSignature.ret(VarcharType.SYSTEM_DEFAULT).args(VarcharType.SYSTEM_DEFAULT),
             FunctionSignature.ret(VarcharType.SYSTEM_DEFAULT).varArgs(VarcharType.SYSTEM_DEFAULT,
-                    AnyDataType.INSTANCE_WITHOUT_INDEX),
+                    AnyDataType.INSTANCE),
             FunctionSignature.ret(VarcharType.SYSTEM_DEFAULT).varArgs(VarcharType.SYSTEM_DEFAULT,
-                    VarcharType.SYSTEM_DEFAULT, AnyDataType.INSTANCE_WITHOUT_INDEX),
+                    VarcharType.SYSTEM_DEFAULT, AnyDataType.INSTANCE),
 
             FunctionSignature.ret(StringType.INSTANCE).args(StringType.INSTANCE),
             FunctionSignature.ret(StringType.INSTANCE).varArgs(StringType.INSTANCE,
-                    AnyDataType.INSTANCE_WITHOUT_INDEX),
+                    AnyDataType.INSTANCE),
             FunctionSignature.ret(StringType.INSTANCE).varArgs(StringType.INSTANCE,
-                    StringType.INSTANCE, AnyDataType.INSTANCE_WITHOUT_INDEX),
+                    StringType.INSTANCE, AnyDataType.INSTANCE),
 
             FunctionSignature.ret(CharType.SYSTEM_DEFAULT).args(CharType.SYSTEM_DEFAULT),
             FunctionSignature.ret(CharType.SYSTEM_DEFAULT).varArgs(CharType.SYSTEM_DEFAULT,
-                    AnyDataType.INSTANCE_WITHOUT_INDEX),
+                    AnyDataType.INSTANCE),
             FunctionSignature.ret(CharType.SYSTEM_DEFAULT).varArgs(CharType.SYSTEM_DEFAULT,
-                    CharType.SYSTEM_DEFAULT, AnyDataType.INSTANCE_WITHOUT_INDEX));
+                    CharType.SYSTEM_DEFAULT, AnyDataType.INSTANCE));
 
     private final int nonOrderArguments;
 

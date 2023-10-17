@@ -1,6 +1,6 @@
 ---
 {
-    "title": "MONTHNAME",
+    "title": "monthname",
     "language": "zh-CN"
 }
 ---

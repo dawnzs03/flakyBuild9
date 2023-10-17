@@ -55,16 +55,11 @@ statement
         whereClause                                                    #delete
     ;
 
-propertiesStatment
-    : properties+=property (COMMA properties+=property)*
-    ;
-
-
 // -----------------Command accessories-----------------
 
 identifierOrText
     : errorCapturingIdentifier
-    | STRING_LITERAL
+    | STRING
     ;
 
 userIdentify
@@ -94,7 +89,7 @@ planType
 outFileClause
     : INTO OUTFILE filePath=constant
         (FORMAT AS format=identifier)?
-        (PROPERTIES LEFT_PAREN properties+=property (COMMA properties+=property)* RIGHT_PAREN)?
+        (PROPERTIES LEFT_PAREN properties+=tvfProperty (COMMA properties+=tvfProperty)* RIGHT_PAREN)?
     ;
 
 query
@@ -267,18 +262,18 @@ identifierSeq
     ;
 
 relationPrimary
-    : multipartIdentifier specifiedPartition? tabletList? tableAlias relationHint? lateralView*           #tableName
+    : multipartIdentifier specifiedPartition? tableAlias relationHint? lateralView*           #tableName
     | LEFT_PAREN query RIGHT_PAREN tableAlias lateralView*                                    #aliasedQuery
     | tvfName=identifier LEFT_PAREN
-      (properties+=property (COMMA properties+=property)*)?
+      (properties+=tvfProperty (COMMA properties+=tvfProperty)*)?
       RIGHT_PAREN tableAlias                                                                  #tableValuedFunction
     ;
 
-property
-    : key=propertyItem EQ value=propertyItem
+tvfProperty
+    : key=tvfPropertyItem EQ value=tvfPropertyItem
     ;
 
-propertyItem : identifier | constant ;
+tvfPropertyItem : identifier | constant ;
 
 tableAlias
     : (AS? strictIdentifier identifierList?)?
@@ -286,10 +281,6 @@ tableAlias
 
 multipartIdentifier
     : parts+=errorCapturingIdentifier (DOT parts+=errorCapturingIdentifier)*
-    ;
-
-tabletList
-    : TABLET LEFT_PAREN tabletIdList+=INTEGER_VALUE (COMMA tabletIdList+=INTEGER_VALUE)*  RIGHT_PAREN
     ;
 
 // -----------------Expression-----------------
@@ -375,13 +366,10 @@ primaryExpression
     | qualifiedName DOT ASTERISK                                                               #star
     | functionIdentifier LEFT_PAREN ((DISTINCT|ALL)? arguments+=expression
       (COMMA arguments+=expression)* (ORDER BY sortItem (COMMA sortItem)*)?)? RIGHT_PAREN
-      (OVER windowSpec)?                                                                       #functionCall
-    | value=primaryExpression LEFT_BRACKET index=valueExpression RIGHT_BRACKET                 #elementAt
-    | value=primaryExpression LEFT_BRACKET begin=valueExpression
-      COLON (end=valueExpression)? RIGHT_BRACKET                                               #arraySlice
+      (OVER windowSpec)?                                                                        #functionCall
     | LEFT_PAREN query RIGHT_PAREN                                                             #subqueryExpression
-    | ATSIGN identifierOrText                                                                  #userVariable
-    | DOUBLEATSIGN (kind=(GLOBAL | SESSION) DOT)? identifier                                   #systemVariable
+    | ATSIGN identifierOrText                                                                        #userVariable
+    | DOUBLEATSIGN (kind=(GLOBAL | SESSION) DOT)? identifier                                     #systemVariable
     | identifier                                                                               #columnReference
     | base=primaryExpression DOT fieldName=identifier                                          #dereference
     | LEFT_PAREN expression RIGHT_PAREN                                                        #parenthesizedExpression
@@ -437,10 +425,10 @@ specifiedPartition
 constant
     : NULL                                                                                     #nullLiteral
     | interval                                                                                 #intervalLiteral
-    | type=(DATE | DATEV2 | TIMESTAMP) STRING_LITERAL                                                  #typeConstructor
+    | type=(DATE | DATEV2 | TIMESTAMP) STRING                                                  #typeConstructor
     | number                                                                                   #numericLiteral
     | booleanValue                                                                             #booleanLiteral
-    | STRING_LITERAL                                                                                   #stringLiteral
+    | STRING                                                                                   #stringLiteral
     ;
 
 comparisonOperator
@@ -464,23 +452,8 @@ unitIdentifier
     ;
 
 dataType
-    : complex=ARRAY LT dataType GT                              #complexDataType
-    | complex=MAP LT dataType COMMA dataType GT                 #complexDataType
-    | complex=STRUCT LT complexColTypeList GT                   #complexDataType
-    | identifier (LEFT_PAREN INTEGER_VALUE
+    : identifier (LEFT_PAREN INTEGER_VALUE
       (COMMA INTEGER_VALUE)* RIGHT_PAREN)?                      #primitiveDataType
-    ;
-
-complexColTypeList
-    : complexColType (COMMA complexColType)*
-    ;
-
-complexColType
-    : identifier COLON dataType commentSpec?
-    ;
-
-commentSpec
-    : COMMENT STRING_LITERAL
     ;
 
 // this rule is used for explicitly capturing wrong identifiers such as test-table, which should actually be `test-table`

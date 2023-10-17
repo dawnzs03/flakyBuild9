@@ -90,7 +90,6 @@ ExecNode::ExecNode(ObjectPool* pool, const TPlanNode& tnode, const DescriptorTbl
           _rows_returned_counter(nullptr),
           _rows_returned_rate(nullptr),
           _memory_used_counter(nullptr),
-          _peak_memory_usage_counter(nullptr),
           _is_closed(false),
           _ref(0) {
     if (tnode.__isset.output_tuple_id) {
@@ -135,10 +134,8 @@ Status ExecNode::prepare(RuntimeState* state) {
             std::bind<int64_t>(&RuntimeProfile::units_per_second, _rows_returned_counter,
                                runtime_profile()->total_time_counter()),
             "");
-    _memory_used_counter = ADD_LABEL_COUNTER(runtime_profile(), "MemoryUsage");
-    _peak_memory_usage_counter = _runtime_profile->AddHighWaterMarkCounter(
-            "PeakMemoryUsage", TUnit::BYTES, "MemoryUsage");
-    _mem_tracker = std::make_unique<MemTracker>("ExecNode:" + _runtime_profile->name());
+    _mem_tracker = std::make_unique<MemTracker>("ExecNode:" + _runtime_profile->name(),
+                                                _runtime_profile.get(), nullptr, "PeakMemoryUsage");
 
     for (auto& conjunct : _conjuncts) {
         RETURN_IF_ERROR(conjunct->prepare(state, intermediate_row_desc()));
@@ -206,9 +203,6 @@ Status ExecNode::close(RuntimeState* state) {
         if (result.ok() && !st.ok()) {
             result = st;
         }
-    }
-    if (_peak_memory_usage_counter) {
-        _peak_memory_usage_counter->set(_mem_tracker->peak_consumption());
     }
     release_resource(state);
     return result;
@@ -504,8 +498,6 @@ void ExecNode::collect_scan_nodes(vector<ExecNode*>* nodes) {
     collect_nodes(TPlanNodeType::DATA_GEN_SCAN_NODE, nodes);
     collect_nodes(TPlanNodeType::FILE_SCAN_NODE, nodes);
     collect_nodes(TPlanNodeType::META_SCAN_NODE, nodes);
-    collect_nodes(TPlanNodeType::JDBC_SCAN_NODE, nodes);
-    collect_nodes(TPlanNodeType::ODBC_SCAN_NODE, nodes);
 }
 
 void ExecNode::init_runtime_profile(const std::string& name) {
@@ -580,7 +572,6 @@ Status ExecNode::get_next_after_projects(
         if (UNLIKELY(!status.ok())) return status;
         return do_projections(&_origin_block, block);
     }
-    _peak_memory_usage_counter->set(_mem_tracker->peak_consumption());
     return func(state, block, eos);
 }
 

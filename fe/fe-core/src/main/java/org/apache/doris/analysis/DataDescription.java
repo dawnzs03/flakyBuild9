@@ -156,10 +156,6 @@ public class DataDescription implements InsertStmt.DataDesc {
 
     private boolean isAnalyzed = false;
 
-    private byte enclose = 0;
-
-    private byte escape = 0;
-
     public DataDescription(String tableName,
                            PartitionNames partitionNames,
                            List<String> filePaths,
@@ -305,8 +301,6 @@ public class DataDescription implements InsertStmt.DataDesc {
         this.fileFieldNames = taskInfo.getColumnExprDescs().getFileColNames();
         this.columnSeparator = taskInfo.getColumnSeparator();
         this.lineDelimiter = taskInfo.getLineDelimiter();
-        this.enclose = taskInfo.getEnclose();
-        this.escape = taskInfo.getEscape();
         getFileFormatAndCompressType(taskInfo);
         this.columnsFromPath = null;
         this.isNegative = taskInfo.getNegative();
@@ -631,14 +625,6 @@ public class DataDescription implements InsertStmt.DataDesc {
 
     public void setLineDelimiter(Separator lineDelimiter) {
         this.lineDelimiter = lineDelimiter;
-    }
-
-    public byte getEnclose() {
-        return enclose;
-    }
-
-    public byte getEscape() {
-        return escape;
     }
 
     public String getSequenceCol() {

@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * TODO: distinct
  * Related paper "Eager aggregation and lazy aggregation".
  * <pre>
  * aggregate: Min/Max(x)
@@ -70,8 +69,7 @@ public class PushdownMinMaxThroughJoin implements RewriteRuleFactory {
                         .when(agg -> {
                             Set<AggregateFunction> funcs = agg.getAggregateFunctions();
                             return !funcs.isEmpty() && funcs.stream()
-                                    .allMatch(f -> (f instanceof Min || f instanceof Max) && !f.isDistinct() && f.child(
-                                            0) instanceof Slot);
+                                .allMatch(f -> (f instanceof Min || f instanceof Max) && f.child(0) instanceof Slot);
                         })
                         .then(agg -> pushMinMax(agg, agg.child(), ImmutableList.of()))
                         .toRule(RuleType.PUSHDOWN_MIN_MAX_THROUGH_JOIN),
@@ -82,9 +80,7 @@ public class PushdownMinMaxThroughJoin implements RewriteRuleFactory {
                         .when(agg -> {
                             Set<AggregateFunction> funcs = agg.getAggregateFunctions();
                             return !funcs.isEmpty() && funcs.stream()
-                                    .allMatch(
-                                            f -> (f instanceof Min || f instanceof Max) && !f.isDistinct() && f.child(
-                                                    0) instanceof Slot);
+                                .allMatch(f -> (f instanceof Min || f instanceof Max) && f.child(0) instanceof Slot);
                         })
                         .then(agg -> pushMinMax(agg, agg.child().child(), agg.child().getProjects()))
                         .toRule(RuleType.PUSHDOWN_MIN_MAX_THROUGH_JOIN)

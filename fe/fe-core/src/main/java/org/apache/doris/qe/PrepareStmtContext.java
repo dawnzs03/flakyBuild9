@@ -40,9 +40,7 @@ public class PrepareStmtContext {
         this.ctx = ctx;
         this.planner = planner;
         // Only support OriginalPlanner for now
-        if (planner != null) {
-            Preconditions.checkState(planner instanceof OriginalPlanner);
-        }
+        Preconditions.checkState(planner instanceof OriginalPlanner);
         this.analyzer = analyzer;
         this.stmtString = stmtString;
     }

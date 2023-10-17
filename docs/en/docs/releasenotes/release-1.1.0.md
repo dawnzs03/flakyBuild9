@@ -88,12 +88,11 @@ On all 13 SQLs in the SSB test data set, version 1.1 is better than version 0.15
 
 On all 22 SQLs in the TPC-H test data set, version 1.1 is better than version 0.15, the overall performance is improved by about 4.5 times, and the performance of some scenarios is improved by more than ten times;
 
-![](/images/release-note-1.1.0-SSB.png)
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/edb59781b0f74ff08821467f23a63bad~tplv-k3u1fbpfcp-zoom-1.image)
 
 <p align='center'>SSB Benchmark</p>
 
-![](/images/release-note-1.1.0-TPC-H.png)
-
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/e34377054f4448b3b367789a391f2122~tplv-k3u1fbpfcp-zoom-1.image)
 
 <p align='center'>TPC-H Benchmark</p>
 

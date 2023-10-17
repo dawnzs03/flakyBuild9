@@ -36,6 +36,7 @@ import org.apache.doris.catalog.Partition;
 import org.apache.doris.catalog.PartitionInfo;
 import org.apache.doris.catalog.PartitionItem;
 import org.apache.doris.catalog.PartitionType;
+import org.apache.doris.catalog.Type;
 import org.apache.doris.common.AnalysisException;
 import org.apache.doris.common.Config;
 import org.apache.doris.common.DdlException;
@@ -152,9 +153,9 @@ public class StreamLoadPlanner {
                 for (ImportColumnDesc importColumnDesc : taskInfo.getColumnExprDescs().descs) {
                     if (importColumnDesc.getColumnName() != null
                             && importColumnDesc.getColumnName().equals(col.getName())) {
-                        if (!col.isVisible() && !Column.DELETE_SIGN.equals(col.getName())) {
-                            throw new UserException("Partial update should not include invisible column except"
-                                    + " delete sign column: " + col.getName());
+                        if (!col.isVisible()) {
+                            throw new UserException("Partial update should not include invisible column: "
+                                + col.getName());
                         }
                         partialUpdateInputColumns.add(col.getName());
                         if (destTable.hasSequenceCol() && (taskInfo.hasSequenceCol() || (
@@ -210,6 +211,20 @@ public class StreamLoadPlanner {
             if (negative && !col.isKey() && col.getAggregationType() != AggregateType.SUM) {
                 throw new DdlException("Column is not SUM AggregateType. column:" + col.getName());
             }
+        }
+
+        // Plan scan tuple of dynamic table
+        if (destTable.isDynamicSchema()) {
+            descTable.addReferencedTable(destTable);
+            scanTupleDesc.setTable(destTable);
+            // add a implict container column "DORIS_DYNAMIC_COL" for dynamic columns
+            SlotDescriptor slotDesc = descTable.addSlotDescriptor(scanTupleDesc);
+            Column col = new Column(Column.DYNAMIC_COLUMN_NAME, Type.VARIANT, false, null, false, "",
+                                    "stream load auto dynamic column");
+            slotDesc.setIsMaterialized(true);
+            slotDesc.setColumn(col);
+            slotDesc.setIsNullable(false);
+            LOG.debug("plan tupleDesc {}", scanTupleDesc.toString());
         }
 
         // create scan node
@@ -356,9 +371,9 @@ public class StreamLoadPlanner {
                 for (ImportColumnDesc importColumnDesc : taskInfo.getColumnExprDescs().descs) {
                     if (importColumnDesc.getColumnName() != null
                             && importColumnDesc.getColumnName().equals(col.getName())) {
-                        if (!col.isVisible() && !Column.DELETE_SIGN.equals(col.getName())) {
-                            throw new UserException("Partial update should not include invisible column except"
-                                    + " delete sign column: " + col.getName());
+                        if (!col.isVisible()) {
+                            throw new UserException("Partial update should not include invisible column: "
+                                    + col.getName());
                         }
                         partialUpdateInputColumns.add(col.getName());
                         if (destTable.hasSequenceCol() && (taskInfo.hasSequenceCol() || (
@@ -414,6 +429,20 @@ public class StreamLoadPlanner {
             if (negative && !col.isKey() && col.getAggregationType() != AggregateType.SUM) {
                 throw new DdlException("Column is not SUM AggregateType. column:" + col.getName());
             }
+        }
+
+        // Plan scan tuple of dynamic table
+        if (destTable.isDynamicSchema()) {
+            descTable.addReferencedTable(destTable);
+            scanTupleDesc.setTable(destTable);
+            // add a implict container column "DORIS_DYNAMIC_COL" for dynamic columns
+            SlotDescriptor slotDesc = descTable.addSlotDescriptor(scanTupleDesc);
+            Column col = new Column(Column.DYNAMIC_COLUMN_NAME, Type.VARIANT, false, null, false, "",
+                    "stream load auto dynamic column");
+            slotDesc.setIsMaterialized(true);
+            slotDesc.setColumn(col);
+            slotDesc.setIsNullable(false);
+            LOG.debug("plan tupleDesc {}", scanTupleDesc.toString());
         }
 
         // create scan node

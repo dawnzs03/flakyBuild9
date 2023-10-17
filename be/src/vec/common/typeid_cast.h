@@ -42,8 +42,7 @@
   * In the rest, behaves like a dynamic_cast.
   */
 template <typename To, typename From>
-    requires std::is_reference_v<To>
-To typeid_cast(From& from) {
+std::enable_if_t<std::is_reference_v<To>, To> typeid_cast(From& from) {
     try {
         if (typeid(from) == typeid(To)) {
             return static_cast<To>(from);

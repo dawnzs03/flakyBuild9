@@ -1,6 +1,6 @@
 ---
 {
-    "title": "REPLACE",
+    "title": "replace",
     "language": "en"
 }
 ---

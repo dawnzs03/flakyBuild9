@@ -220,6 +220,7 @@ public class OlapTableSink extends DataSink {
         schemaParam.setDbId(dbId);
         schemaParam.setTableId(table.getId());
         schemaParam.setVersion(table.getIndexMetaByIndexId(table.getBaseIndexId()).getSchemaVersion());
+        schemaParam.setIsDynamicSchema(table.isDynamicSchema());
         schemaParam.setIsStrictMode(isStrictMode);
 
         schemaParam.tuple_desc = tupleDescriptor.toThrift();
@@ -410,8 +411,7 @@ public class OlapTableSink extends DataSink {
                     Multimap<Long, Long> bePathsMap = tablet.getNormalReplicaBackendPathMap();
                     if (bePathsMap.keySet().size() < quorum) {
                         throw new UserException(InternalErrorCode.REPLICA_FEW_ERR,
-                                "tablet " + tablet.getId() + " alive replica num " + bePathsMap.keySet().size()
-                                        + " < quorum replica num " + quorum
+                                "tablet " + tablet.getId() + " has few replicas: " + bePathsMap.keySet().size()
                                         + ", alive backends: [" + StringUtils.join(bePathsMap.keySet(), ",") + "]");
                     }
 

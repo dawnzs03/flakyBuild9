@@ -1,6 +1,6 @@
 ---
 {
-    "title": "CHAR",
+    "title": "char",
     "language": "zh-CN"
 }
 ---

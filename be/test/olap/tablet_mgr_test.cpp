@@ -109,8 +109,7 @@ TEST_F(TabletMgrTest, CreateTablet) {
     create_tablet_req.__set_version(2);
     std::vector<DataDir*> data_dirs;
     data_dirs.push_back(_data_dir);
-    RuntimeProfile profile("CreateTablet");
-    Status create_st = _tablet_mgr->create_tablet(create_tablet_req, data_dirs, &profile);
+    Status create_st = _tablet_mgr->create_tablet(create_tablet_req, data_dirs);
     EXPECT_TRUE(create_st == Status::OK());
     TabletSharedPtr tablet = _tablet_mgr->get_tablet(111);
     EXPECT_TRUE(tablet != nullptr);
@@ -124,7 +123,7 @@ TEST_F(TabletMgrTest, CreateTablet) {
     EXPECT_TRUE(check_meta_st == Status::OK());
 
     // retry create should be successfully
-    create_st = _tablet_mgr->create_tablet(create_tablet_req, data_dirs, &profile);
+    create_st = _tablet_mgr->create_tablet(create_tablet_req, data_dirs);
     EXPECT_TRUE(create_st == Status::OK());
 
     Status drop_st = _tablet_mgr->drop_tablet(111, create_tablet_req.replica_id, false);
@@ -156,7 +155,6 @@ TEST_F(TabletMgrTest, CreateTabletWithSequence) {
     col3.__set_aggregation_type(TAggregationType::REPLACE);
     cols.push_back(col3);
 
-    RuntimeProfile profile("CreateTablet");
     TTabletSchema tablet_schema;
     tablet_schema.__set_short_key_column_count(1);
     tablet_schema.__set_schema_hash(3333);
@@ -170,7 +168,7 @@ TEST_F(TabletMgrTest, CreateTabletWithSequence) {
     create_tablet_req.__set_version(2);
     std::vector<DataDir*> data_dirs;
     data_dirs.push_back(_data_dir);
-    Status create_st = _tablet_mgr->create_tablet(create_tablet_req, data_dirs, &profile);
+    Status create_st = _tablet_mgr->create_tablet(create_tablet_req, data_dirs);
     EXPECT_TRUE(create_st == Status::OK());
 
     TabletSharedPtr tablet = _tablet_mgr->get_tablet(111);
@@ -192,7 +190,6 @@ TEST_F(TabletMgrTest, CreateTabletWithSequence) {
 }
 
 TEST_F(TabletMgrTest, DropTablet) {
-    RuntimeProfile profile("CreateTablet");
     TColumnType col_type;
     col_type.__set_type(TPrimitiveType::SMALLINT);
     TColumn col1;
@@ -213,7 +210,7 @@ TEST_F(TabletMgrTest, DropTablet) {
     create_tablet_req.__set_version(2);
     std::vector<DataDir*> data_dirs;
     data_dirs.push_back(_data_dir);
-    Status create_st = _tablet_mgr->create_tablet(create_tablet_req, data_dirs, &profile);
+    Status create_st = _tablet_mgr->create_tablet(create_tablet_req, data_dirs);
     EXPECT_TRUE(create_st == Status::OK());
     TabletSharedPtr tablet = _tablet_mgr->get_tablet(111);
     EXPECT_TRUE(tablet != nullptr);

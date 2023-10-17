@@ -28,7 +28,6 @@
 #include <vector>
 
 #include "common/status.h"
-#include "runtime/descriptors.h"
 #include "util/runtime_profile.h"
 #include "util/telemetry/telemetry.h"
 
@@ -37,6 +36,7 @@ namespace doris {
 class ObjectPool;
 class RuntimeState;
 class TPlanFragmentExecParams;
+class RowDescriptor;
 class DescriptorTbl;
 class QueryStatistics;
 class TDataSink;
@@ -50,7 +50,7 @@ class Block;
 // Superclass of all data sinks.
 class DataSink {
 public:
-    DataSink(const RowDescriptor& desc) : _row_desc(desc) {}
+    DataSink() : _closed(false) {}
     virtual ~DataSink() {}
 
     virtual Status init(const TDataSink& thrift_sink);
@@ -65,11 +65,6 @@ public:
     // Send a Block into this sink.
     virtual Status send(RuntimeState* state, vectorized::Block* block, bool eos = false) {
         return Status::NotSupported("Not support send block");
-    }
-
-    // Send a Block into this sink, not blocked thredd API only use in pipeline exec engine
-    virtual Status sink(RuntimeState* state, vectorized::Block* block, bool eos = false) {
-        return send(state, block, eos);
     }
 
     [[nodiscard]] virtual Status try_close(RuntimeState* state, Status exec_status) {
@@ -110,16 +105,11 @@ public:
         _query_statistics = statistics;
     }
 
-    const RowDescriptor& row_desc() { return _row_desc; }
-
-    virtual bool can_write() { return true; }
-
 protected:
     // Set to true after close() has been called. subclasses should check and set this in
     // close().
-    bool _closed = false;
+    bool _closed;
     std::string _name;
-    const RowDescriptor& _row_desc;
 
     // Maybe this will be transferred to BufferControlBlock.
     std::shared_ptr<QueryStatistics> _query_statistics;

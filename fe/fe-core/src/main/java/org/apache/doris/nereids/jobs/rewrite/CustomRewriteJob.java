@@ -23,6 +23,7 @@ import org.apache.doris.nereids.rules.RuleType;
 import org.apache.doris.nereids.trees.plans.Plan;
 import org.apache.doris.nereids.trees.plans.visitor.CustomRewriter;
 
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -48,8 +49,8 @@ public class CustomRewriteJob implements RewriteJob {
 
     @Override
     public void execute(JobContext context) {
-        Set<Integer> disableRules = Job.getDisableRules(context);
-        if (disableRules.contains(ruleType.type())) {
+        Set<String> disableRules = Job.getDisableRules(context);
+        if (disableRules.contains(ruleType.name().toUpperCase(Locale.ROOT))) {
             return;
         }
         Plan root = context.getCascadesContext().getRewritePlan();

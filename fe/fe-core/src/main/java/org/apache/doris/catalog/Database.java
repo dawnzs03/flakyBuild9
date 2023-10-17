@@ -18,6 +18,7 @@
 package org.apache.doris.catalog;
 
 import org.apache.doris.catalog.TableIf.TableType;
+import org.apache.doris.cluster.ClusterNamespace;
 import org.apache.doris.common.AnalysisException;
 import org.apache.doris.common.Config;
 import org.apache.doris.common.DdlException;
@@ -634,7 +635,7 @@ public class Database extends MetaObject implements Writable, DatabaseIf<Table> 
         dbState = DbState.valueOf(Text.readString(in));
         attachDbName = Text.readString(in);
 
-        FunctionUtil.readFields(in, this.getFullName(), name2Function);
+        FunctionUtil.readFields(in, name2Function);
 
         // read encryptKeys
         if (Env.getCurrentEnvJournalVersion() >= FeMetaVersion.VERSION_102) {
@@ -755,6 +756,10 @@ public class Database extends MetaObject implements Writable, DatabaseIf<Table> 
 
     public synchronized List<Function> getFunctions() {
         return FunctionUtil.getFunctions(name2Function);
+    }
+
+    public boolean isInfoSchemaDb() {
+        return ClusterNamespace.getNameFromFullName(fullQualifiedName).equalsIgnoreCase(InfoSchemaDb.DATABASE_NAME);
     }
 
     public synchronized void addEncryptKey(EncryptKey encryptKey, boolean ifNotExists) throws UserException {
@@ -898,11 +903,4 @@ public class Database extends MetaObject implements Writable, DatabaseIf<Table> 
     public String toString() {
         return toJson();
     }
-
-    // Return ture if database is created for mysql compatibility.
-    // Currently, we have two dbs that are created for this purpose, InformationSchemaDb and MysqlDb,
-    public boolean isMysqlCompatibleDatabase() {
-        return false;
-    }
-
 }

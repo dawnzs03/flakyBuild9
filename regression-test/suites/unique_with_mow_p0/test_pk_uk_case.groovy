@@ -184,11 +184,9 @@ suite("test_pk_uk_case") {
             ($order_key, $part_key, $sub_key, $line_num, $decimal, $decimal, $decimal, $decimal, '1', '1', '$date', '$date', '$date', '$name', '$name', '$city')
         """
 
-        sql "sync"
-
         // count(*)
-        def result0 = sql """ SELECT count(*) FROM ${tableNamePk}; """
-        def result1 = sql """ SELECT count(*) FROM ${tableNameUk}; """
+        result0 = sql """ SELECT count(*) FROM ${tableNamePk}; """
+        result1 = sql """ SELECT count(*) FROM ${tableNameUk}; """
         logger.info("result:" + result0[0][0] + "|" + result1[0][0])
         assertTrue(result0[0]==result1[0])
         if (result0[0][0]!=result1[0][0]) {

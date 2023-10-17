@@ -1,6 +1,6 @@
 ---
 {
-    "title": "YEARWEEK",
+    "title": "yearweek",
     "language": "en"
 }
 ---

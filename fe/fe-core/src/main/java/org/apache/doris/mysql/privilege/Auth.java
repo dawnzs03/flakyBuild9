@@ -67,7 +67,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
@@ -333,29 +332,17 @@ public class Auth implements Writable {
     }
 
     // ==== Column ====
-    // The reason why this method throws an exception instead of returning a boolean is to
-    // indicate which col does not have permission
     public void checkColsPriv(UserIdentity currentUser, String ctl, String db, String tbl, Set<String> cols,
             PrivPredicate wanted) throws AuthorizationException {
-        Set<Role> roles = getRolesByUserWithLdap(currentUser);
-        for (String col : cols) {
-            if (!checkColPriv(ctl, db, tbl, col, wanted, roles)) {
-                throw new AuthorizationException(String.format(
-                        "Permission denied: user [%s] does not have privilege for [%s] command on [%s].[%s].[%s].[%s]",
-                        currentUser, wanted, ctl, db, tbl, col));
-            }
+        // TODO: Support column priv
+        // we check if have tbl priv,until internal support col auth.
+        if (!checkTblPriv(currentUser, ctl, db, tbl, wanted)) {
+            throw new AuthorizationException(String.format(
+                    "Permission denied: user [%s] does not have privilege for [%s] command on [%s].[%s].[%s]",
+                    currentUser, wanted, ctl, db, tbl));
         }
     }
 
-    private boolean checkColPriv(String ctl, String db, String tbl,
-            String col, PrivPredicate wanted, Set<Role> roles) {
-        for (Role role : roles) {
-            if (role.checkColPriv(ctl, db, tbl, col, wanted)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     // ==== Resource ====
     public boolean checkResourcePriv(UserIdentity currentUser, String resourceName, PrivPredicate wanted) {
@@ -533,7 +520,7 @@ public class Auth implements Writable {
         if (stmt.getTblPattern() != null) {
             PrivBitSet privs = PrivBitSet.of(stmt.getPrivileges());
             grantInternal(stmt.getUserIdent(), stmt.getQualifiedRole(), stmt.getTblPattern(), privs,
-                    stmt.getColPrivileges(), true /* err on non exist */, false /* not replay */);
+                    true /* err on non exist */, false /* not replay */);
         } else if (stmt.getResourcePattern() != null) {
             PrivBitSet privs = PrivBitSet.of(stmt.getPrivileges());
             grantInternal(stmt.getUserIdent(), stmt.getQualifiedRole(), stmt.getResourcePattern(), privs,
@@ -551,7 +538,7 @@ public class Auth implements Writable {
         try {
             if (privInfo.getTblPattern() != null) {
                 grantInternal(privInfo.getUserIdent(), privInfo.getRole(),
-                        privInfo.getTblPattern(), privInfo.getPrivs(), privInfo.getColPrivileges(),
+                        privInfo.getTblPattern(), privInfo.getPrivs(),
                         true /* err on non exist */, true /* is replay */);
             } else if (privInfo.getResourcePattern() != null) {
                 grantInternal(privInfo.getUserIdent(), privInfo.getRole(),
@@ -571,8 +558,8 @@ public class Auth implements Writable {
 
     // grant for TablePattern
     //if no role,role is default role of userIdent
-    private void grantInternal(UserIdentity userIdent, String role, TablePattern tblPattern, PrivBitSet privs,
-            Map<ColPrivilegeKey, Set<String>> colPrivileges, boolean errOnNonExist, boolean isReplay)
+    private void grantInternal(UserIdentity userIdent, String role, TablePattern tblPattern,
+            PrivBitSet privs, boolean errOnNonExist, boolean isReplay)
             throws DdlException {
         writeLock();
         try {
@@ -582,10 +569,10 @@ public class Auth implements Writable {
                 }
                 role = roleManager.getUserDefaultRoleName(userIdent);
             }
-            Role newRole = new Role(role, tblPattern, privs, colPrivileges);
+            Role newRole = new Role(role, tblPattern, privs);
             roleManager.addOrMergeRole(newRole, false /* err on exist */);
             if (!isReplay) {
-                PrivInfo info = new PrivInfo(userIdent, tblPattern, privs, null, role, colPrivileges);
+                PrivInfo info = new PrivInfo(userIdent, tblPattern, privs, null, role);
                 Env.getCurrentEnv().getEditLog().logGrantPriv(info);
             }
             LOG.info("finished to grant privilege. is replay: {}", isReplay);
@@ -663,7 +650,7 @@ public class Auth implements Writable {
 
 
     // return true if user ident exist
-    public boolean doesUserExist(UserIdentity userIdent) {
+    private boolean doesUserExist(UserIdentity userIdent) {
         return userManager.userIdentityExist(userIdent, false);
     }
 
@@ -685,7 +672,7 @@ public class Auth implements Writable {
         if (stmt.getTblPattern() != null) {
             PrivBitSet privs = PrivBitSet.of(stmt.getPrivileges());
             revokeInternal(stmt.getUserIdent(), stmt.getQualifiedRole(), stmt.getTblPattern(), privs,
-                    stmt.getColPrivileges(), true /* err on non exist */, false /* is replay */);
+                    true /* err on non exist */, false /* is replay */);
         } else if (stmt.getResourcePattern() != null) {
             PrivBitSet privs = PrivBitSet.of(stmt.getPrivileges());
             revokeInternal(stmt.getUserIdent(), stmt.getQualifiedRole(), stmt.getResourcePattern(), privs,
@@ -703,7 +690,7 @@ public class Auth implements Writable {
         try {
             if (info.getTblPattern() != null) {
                 revokeInternal(info.getUserIdent(), info.getRole(), info.getTblPattern(), info.getPrivs(),
-                        info.getColPrivileges(), true /* err on non exist */, true /* is replay */);
+                        true /* err on non exist */, true /* is replay */);
             } else if (info.getResourcePattern() != null) {
                 revokeInternal(info.getUserIdent(), info.getRole(), info.getResourcePattern(), info.getPrivs(),
                         true /* err on non exist */, true /* is replay */);
@@ -719,18 +706,17 @@ public class Auth implements Writable {
     }
 
     private void revokeInternal(UserIdentity userIdent, String role, TablePattern tblPattern,
-            PrivBitSet privs, Map<ColPrivilegeKey, Set<String>> colPrivileges, boolean errOnNonExist, boolean isReplay)
-            throws DdlException {
+            PrivBitSet privs, boolean errOnNonExist, boolean isReplay) throws DdlException {
         writeLock();
         try {
             if (role == null) {
                 role = roleManager.getUserDefaultRoleName(userIdent);
             }
             // revoke privs from role
-            roleManager.revokePrivs(role, tblPattern, privs, colPrivileges, errOnNonExist);
+            roleManager.revokePrivs(role, tblPattern, privs, errOnNonExist);
 
             if (!isReplay) {
-                PrivInfo info = new PrivInfo(userIdent, tblPattern, privs, null, role, colPrivileges);
+                PrivInfo info = new PrivInfo(userIdent, tblPattern, privs, null, role);
                 Env.getCurrentEnv().getEditLog().logRevokePriv(info);
             }
             LOG.info("finished to revoke privilege. is replay: {}", isReplay);
@@ -1117,16 +1103,11 @@ public class Auth implements Writable {
                     .collect(Collectors.joining(",")));
         } else {
             User user = userManager.getUserByUserIdentity(userIdent);
-            if (user == null) {
-                userAuthInfo.add(FeConstants.null_string);
-                userAuthInfo.add(FeConstants.null_string);
-            } else {
-                // ============== Password ==============
-                userAuthInfo.add(user.hasPassword() ? "Yes" : "No");
-                // ============== Roles ==============
-                userAuthInfo.add(Joiner.on(",").join(userRoleManager
-                        .getRolesByUser(userIdent, ConnectContext.get().getSessionVariable().showUserDefaultRole)));
-            }
+            // ============== Password ==============
+            userAuthInfo.add(user.hasPassword() ? "Yes" : "No");
+            // ============== Roles ==============
+            userAuthInfo.add(Joiner.on(",").join(userRoleManager
+                    .getRolesByUser(userIdent, ConnectContext.get().getSessionVariable().showUserDefaultRole)));
         }
         // ==============GlobalPrivs==============
         PrivBitSet globalPrivs = new PrivBitSet();
@@ -1172,19 +1153,6 @@ public class Auth implements Writable {
             userAuthInfo.add(FeConstants.null_string);
         } else {
             userAuthInfo.add(Joiner.on("; ").join(tblPrivs));
-        }
-
-        // col
-        List<String> colPrivs = Lists.newArrayList();
-        for (Entry<ColPrivilegeKey, Set<String>> entry : getUserColPrivMap(userIdent).entrySet()) {
-            colPrivs.add(String.format("%s.%s.%s: %s%s", entry.getKey().getCtl(), entry.getKey().getDb(),
-                    entry.getKey().getTbl(), entry.getKey().getPrivilege(), entry.getValue()));
-        }
-
-        if (colPrivs.isEmpty()) {
-            userAuthInfo.add(FeConstants.null_string);
-        } else {
-            userAuthInfo.add(Joiner.on("; ").join(colPrivs));
         }
 
         // resource
@@ -1253,16 +1221,6 @@ public class Auth implements Writable {
         }
         return table;
     }
-
-    private Map<ColPrivilegeKey, Set<String>> getUserColPrivMap(UserIdentity userIdentity) {
-        Map<ColPrivilegeKey, Set<String>> colPrivMap = Maps.newHashMap();
-        Set<Role> roles = getRolesByUserWithLdap(userIdentity);
-        for (Role role : roles) {
-            Role.mergeColPrivMap(colPrivMap, role.getColPrivMap());
-        }
-        return colPrivMap;
-    }
-
 
     private ResourcePrivTable getUserResourcePrivTable(UserIdentity userIdentity) {
         ResourcePrivTable table = new ResourcePrivTable();

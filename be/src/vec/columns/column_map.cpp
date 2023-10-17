@@ -98,6 +98,8 @@ MutableColumnPtr ColumnMap::clone_resized(size_t to_size) const {
 
 // to support field functions
 Field ColumnMap::operator[](size_t n) const {
+    // Map is FieldVector, now we keep key value in seperate  , see in field.h
+    Map m(2);
     size_t start_offset = offset_at(n);
     size_t element_size = size_at(n);
 
@@ -114,7 +116,9 @@ Field ColumnMap::operator[](size_t n) const {
         v[i] = get_values()[start_offset + i];
     }
 
-    return Map {k, v};
+    m.push_back(k);
+    m.push_back(v);
+    return m;
 }
 
 // here to compare to below
@@ -165,7 +169,6 @@ void ColumnMap::pop_back(size_t n) {
 }
 
 void ColumnMap::insert_from(const IColumn& src_, size_t n) {
-    DCHECK(n < src_.size());
     const ColumnMap& src = assert_cast<const ColumnMap&>(src_);
     size_t size = src.size_at(n);
     size_t offset = src.offset_at(n);
@@ -464,16 +467,6 @@ ColumnPtr ColumnMap::replicate(const Offsets& offsets) const {
                                  assert_cast<const ColumnArray&>(*v_arr).get_data_ptr(),
                                  assert_cast<const ColumnArray&>(*k_arr).get_offsets_ptr());
     return res;
-}
-
-void ColumnMap::replicate(const uint32_t* indexs, size_t target_size, IColumn& column) const {
-    auto& res = reinterpret_cast<ColumnMap&>(column);
-
-    // Make a temp column array for reusing its replicate function
-    ColumnArray::create(keys_column->assume_mutable(), offsets_column->assume_mutable())
-            ->replicate(indexs, target_size, res.keys_column->assume_mutable_ref());
-    ColumnArray::create(values_column->assume_mutable(), offsets_column->assume_mutable())
-            ->replicate(indexs, target_size, res.values_column->assume_mutable_ref());
 }
 
 void ColumnMap::reserve(size_t n) {

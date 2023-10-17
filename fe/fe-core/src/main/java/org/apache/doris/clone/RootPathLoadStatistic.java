@@ -31,7 +31,6 @@ public class RootPathLoadStatistic implements Comparable<RootPathLoadStatistic> 
     private TStorageMedium storageMedium;
     private long capacityB;
     private long usedCapacityB;
-    private long copingSizeB;
     private DiskState diskState;
 
     private Classification clazz = Classification.INIT;
@@ -44,7 +43,6 @@ public class RootPathLoadStatistic implements Comparable<RootPathLoadStatistic> 
         this.storageMedium = storageMedium;
         this.capacityB = capacityB <= 0 ? 1 : capacityB;
         this.usedCapacityB = usedCapacityB;
-        this.copingSizeB = 0;
         this.diskState = diskState;
     }
 
@@ -73,11 +71,7 @@ public class RootPathLoadStatistic implements Comparable<RootPathLoadStatistic> 
     }
 
     public double getUsedPercent() {
-        return capacityB <= 0 ? 0.0 : (usedCapacityB + copingSizeB) / (double) capacityB;
-    }
-
-    public void incrCopingSizeB(long size) {
-        copingSizeB += size;
+        return capacityB <= 0 ? 0.0 : usedCapacityB / (double) capacityB;
     }
 
     public void setClazz(Classification clazz) {

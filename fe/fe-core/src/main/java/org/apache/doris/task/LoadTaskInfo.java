@@ -89,16 +89,6 @@ public interface LoadTaskInfo {
 
     Separator getLineDelimiter();
 
-    /**
-     * only for csv
-     */
-    byte getEnclose();
-
-    /**
-     * only for csv
-     */
-    byte getEscape();
-
     int getSendBatchParallelism();
 
     boolean isLoadToSingleTablet();

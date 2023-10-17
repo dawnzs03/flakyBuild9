@@ -175,10 +175,11 @@ template <typename T>
 struct SingleValueDataDecimal {
 private:
     using Self = SingleValueDataDecimal;
+    using Type = typename NativeType<T>::Type;
 
     bool has_value =
             false; /// We need to remember if at least one value has been passed. This is necessary for AggregateFunctionIf.
-    T value;
+    Type value;
 
 public:
     SingleValueDataDecimal() = default;
@@ -296,7 +297,7 @@ private:
 
     Int32 size = -1;    /// -1 indicates that there is no value.
     Int32 capacity = 0; /// power of two or zero
-    std::unique_ptr<char[]> large_data;
+    char* large_data = nullptr;
 
 public:
     static constexpr Int32 AUTOMATIC_STORAGE_SIZE = 64;
@@ -313,9 +314,7 @@ public:
 
     bool has() const { return size >= 0; }
 
-    const char* get_data() const {
-        return size <= MAX_SMALL_STRING_SIZE ? small_data : large_data.get();
-    }
+    const char* get_data() const { return size <= MAX_SMALL_STRING_SIZE ? small_data : large_data; }
 
     void insert_result_into(IColumn& to) const {
         if (has()) {
@@ -329,6 +328,7 @@ public:
         if (size != -1) {
             size = -1;
             capacity = 0;
+            delete[] large_data;
             large_data = nullptr;
         }
     }
@@ -356,11 +356,11 @@ public:
             } else {
                 if (capacity < rhs_size) {
                     capacity = round_up_to_power_of_two_or_zero(rhs_size);
-                    large_data.reset(new char[capacity]);
+                    large_data = arena->alloc(capacity);
                 }
 
                 size = rhs_size;
-                buf.read(large_data.get(), size);
+                buf.read(large_data, size);
             }
         } else {
             /// Don't free large_data here.
@@ -385,11 +385,11 @@ public:
             if (capacity < value_size) {
                 /// Don't free large_data here.
                 capacity = round_up_to_power_of_two_or_zero(value_size);
-                large_data.reset(new char[capacity]);
+                large_data = arena->alloc(capacity);
             }
 
             size = value_size;
-            memcpy(large_data.get(), value.data, size);
+            memcpy(large_data, value.data, size);
         }
     }
 

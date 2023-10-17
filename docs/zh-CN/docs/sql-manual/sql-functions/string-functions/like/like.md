@@ -1,6 +1,6 @@
 ---
 {
-    "title": "LIKE",
+    "title": "like",
     "language": "zh-CN"
 }
 ---

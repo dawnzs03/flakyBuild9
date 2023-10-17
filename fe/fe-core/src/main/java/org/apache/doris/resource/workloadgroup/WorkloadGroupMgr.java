@@ -97,8 +97,7 @@ public class WorkloadGroupMgr implements Writable, GsonPostProcessable {
 
     private void checkWorkloadGroupEnabled() throws DdlException {
         if (!Config.enable_workload_group) {
-            throw new DdlException(
-                    "WorkloadGroup is disabled, you can set config enable_workload_group = true to enable it");
+            throw new DdlException("unsupported feature now, coming soon.");
         }
     }
 

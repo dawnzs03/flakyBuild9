@@ -805,10 +805,6 @@ build_brpc() {
         ldflags="-L${TP_LIB_DIR} -static-libstdc++ -static-libgcc"
     else
         ldflags="-L${TP_LIB_DIR}"
-
-        # Don't set OPENSSL_ROOT_DIR
-        sed '/set(OPENSSL_ROOT_DIR/,/)/ d' ../CMakeLists.txt >../CMakeLists.txt.bak
-        mv ../CMakeLists.txt.bak ../CMakeLists.txt
     fi
 
     # Currently, BRPC can't be built for static libraries only (without .so). Therefore, we should add `-fPIC`
@@ -1438,9 +1434,9 @@ build_jemalloc() {
 
 # libunwind
 build_libunwind() {
-    # There are two major variants of libunwind. libunwind on Linux
-    # (https://www.nongnu.org/libunwind/) provides unw_backtrace, and
-    # Apache/LLVM libunwind (notably used on Apple platforms) doesn't
+    # https://github.com/libunwind/libunwind
+    # https://github.com/libunwind/libunwind/issues/189
+    # https://stackoverflow.com/questions/27842377/building-libunwind-for-mac
     if [[ "${KERNEL}" != 'Darwin' ]]; then
         check_if_source_exist "${LIBUNWIND_SOURCE}"
         cd "${TP_SOURCE_DIR}/${LIBUNWIND_SOURCE}"

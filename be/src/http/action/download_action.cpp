@@ -25,7 +25,6 @@
 
 #include "common/config.h"
 #include "common/logging.h"
-#include "common/status.h"
 #include "http/http_channel.h"
 #include "http/http_request.h"
 #include "http/utils.h"
@@ -69,7 +68,7 @@ void DownloadAction::handle_normal(HttpRequest* req, const std::string& file_par
         status = check_token(req);
         if (!status.ok()) {
             std::string error_msg = status.to_string();
-            if (status.is<ErrorCode::NOT_AUTHORIZED>()) {
+            if (status.is_not_authorized()) {
                 HttpChannel::send_reply(req, HttpStatus::UNAUTHORIZED, error_msg);
                 return;
             } else {
@@ -82,10 +81,10 @@ void DownloadAction::handle_normal(HttpRequest* req, const std::string& file_par
     status = check_path_is_allowed(file_param);
     if (!status.ok()) {
         std::string error_msg = status.to_string();
-        if (status.is<ErrorCode::NOT_FOUND>() || status.is<ErrorCode::IO_ERROR>()) {
+        if (status.is_not_found() || status.is_io_error()) {
             HttpChannel::send_reply(req, HttpStatus::NOT_FOUND, error_msg);
             return;
-        } else if (status.is<ErrorCode::NOT_AUTHORIZED>()) {
+        } else if (status.is_not_authorized()) {
             HttpChannel::send_reply(req, HttpStatus::UNAUTHORIZED, error_msg);
             return;
         } else {
@@ -114,7 +113,7 @@ void DownloadAction::handle_error_log(HttpRequest* req, const std::string& file_
     Status status = check_log_path_is_allowed(absolute_path);
     if (!status.ok()) {
         std::string error_msg = status.to_string();
-        if (status.is<ErrorCode::NOT_AUTHORIZED>()) {
+        if (status.is_not_authorized()) {
             HttpChannel::send_reply(req, HttpStatus::UNAUTHORIZED, error_msg);
             return;
         } else {
@@ -127,10 +126,10 @@ void DownloadAction::handle_error_log(HttpRequest* req, const std::string& file_
     status = io::global_local_filesystem()->is_directory(absolute_path, &is_dir);
     if (!status.ok()) {
         std::string error_msg = status.to_string();
-        if (status.is<ErrorCode::NOT_FOUND>() || status.is<ErrorCode::IO_ERROR>()) {
+        if (status.is_not_found() || status.is_io_error()) {
             HttpChannel::send_reply(req, HttpStatus::NOT_FOUND, error_msg);
             return;
-        } else if (status.is<ErrorCode::NOT_AUTHORIZED>()) {
+        } else if (status.is_not_authorized()) {
             HttpChannel::send_reply(req, HttpStatus::UNAUTHORIZED, error_msg);
             return;
         } else {

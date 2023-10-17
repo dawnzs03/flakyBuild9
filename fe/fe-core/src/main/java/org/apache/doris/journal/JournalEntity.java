@@ -47,7 +47,6 @@ import org.apache.doris.ha.MasterInfo;
 import org.apache.doris.journal.bdbje.Timestamp;
 import org.apache.doris.load.DeleteInfo;
 import org.apache.doris.load.ExportJob;
-import org.apache.doris.load.ExportJobStateTransfer;
 import org.apache.doris.load.LoadErrorHub;
 import org.apache.doris.load.LoadJob;
 import org.apache.doris.load.StreamLoadRecordMgr.FetchStreamLoadRecord;
@@ -122,7 +121,6 @@ import org.apache.doris.resource.workloadgroup.WorkloadGroup;
 import org.apache.doris.scheduler.job.Job;
 import org.apache.doris.scheduler.job.JobTask;
 import org.apache.doris.statistics.AnalysisInfo;
-import org.apache.doris.statistics.TableStats;
 import org.apache.doris.system.Backend;
 import org.apache.doris.system.Frontend;
 import org.apache.doris.transaction.TransactionState;
@@ -321,7 +319,7 @@ public class JournalEntity implements Writable {
                 isRead = true;
                 break;
             case OperationType.OP_EXPORT_UPDATE_STATE:
-                data = ExportJobStateTransfer.read(in);
+                data = ExportJob.StateTransfer.read(in);
                 isRead = true;
                 break;
             case OperationType.OP_FINISH_DELETE: {
@@ -855,12 +853,7 @@ public class JournalEntity implements Writable {
                 break;
             }
             case OperationType.OP_BARRIER: {
-                data = BarrierLog.read(in);
-                isRead = true;
-                break;
-            }
-            case OperationType.OP_UPDATE_TABLE_STATS: {
-                data = TableStats.read(in);
+                data = new BarrierLog();
                 isRead = true;
                 break;
             }

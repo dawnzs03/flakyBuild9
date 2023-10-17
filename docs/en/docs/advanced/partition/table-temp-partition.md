@@ -1,6 +1,6 @@
 ---
 {
-    "title": "Temporary Partition",
+    "title": "Temporary partition",
     "language": "en"
 }
 ---
@@ -24,7 +24,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-# Temporary Partition
+# Temporary partition
 
 Since version 0.12, Doris supports temporary partitioning.
 

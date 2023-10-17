@@ -272,9 +272,9 @@ public class ScalarType extends Type {
                 return TIME;
             case "DECIMAL":
             case "DECIMALV2":
-                return createDecimalType();
+                return (ScalarType) createDecimalType();
             case "DECIMALV3":
-                return createDecimalV3Type();
+                return (ScalarType) createDecimalV3Type();
             case "LARGEINT":
                 return LARGEINT;
             default:
@@ -517,9 +517,7 @@ public class ScalarType extends Type {
     }
 
     public static ScalarType createVarcharType() {
-        // Because ScalarType is not an immutable class, it will call setLength() sometimes.
-        // So currently don't use DEFAULT_VARCHAR, will improve it in the future.
-        return new ScalarType(PrimitiveType.VARCHAR);
+        return DEFAULT_VARCHAR;
     }
 
     public static ScalarType createHllType() {
@@ -575,7 +573,7 @@ public class ScalarType extends Type {
                 break;
             case VARCHAR:
                 if (isWildcardVarchar()) {
-                    stringBuilder.append("varchar");
+                    stringBuilder.append("varchar(*)");
                 } else if (Strings.isNullOrEmpty(lenStr)) {
                     stringBuilder.append("varchar").append("(").append(len).append(")");
                 } else {

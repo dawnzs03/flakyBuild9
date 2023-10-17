@@ -51,8 +51,6 @@ struct JdbcConnectorParam {
     std::string user;
     std::string passwd;
     std::string query_string;
-    std::string table_name;
-    bool use_transaction;
     TOdbcTableType::type table_type;
 
     const TupleDescriptor* tuple_desc;
@@ -73,13 +71,9 @@ public:
 
     ~JdbcConnector() override;
 
-    Status open(RuntimeState* state, bool read = false);
+    Status open(RuntimeState* state, bool read = false) override;
 
     Status query() override;
-
-    Status append(vectorized::Block* block, const vectorized::VExprContextSPtrs& _output_vexpr_ctxs,
-                  uint32_t start_send_row, uint32_t* num_rows_sent,
-                  TOdbcTableType::type table_type = TOdbcTableType::MYSQL) override;
 
     Status exec_write_sql(const std::u16string& insert_stmt,
                           const fmt::memory_buffer& insert_stmt_buffer) override {
@@ -97,17 +91,9 @@ public:
     Status abort_trans() override; // should be call after transaction abort
     Status finish_trans() override; // should be call after transaction commit
 
-    Status init_to_write(doris::RuntimeProfile* profile) override {
-        init_profile(profile);
-        return Status::OK();
-    }
-
     JdbcStatistic& get_jdbc_statistic() { return _jdbc_statistic; }
 
     Status close() override;
-
-protected:
-    JdbcConnectorParam _conn_param;
 
 private:
     Status _register_func_id(JNIEnv* env);
@@ -124,6 +110,7 @@ private:
                                      vectorized::IColumn* column_ptr, int num_rows,
                                      int column_index);
 
+    const JdbcConnectorParam& _conn_param;
     bool _closed = false;
     jclass _executor_clazz;
     jclass _executor_list_clazz;

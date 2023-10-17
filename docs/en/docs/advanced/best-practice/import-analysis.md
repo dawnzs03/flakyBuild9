@@ -31,7 +31,7 @@ Doris provides a graphical command to help users analyze a specific import more 
 
 > This function is currently only for Broker Load analysis.
 
-## Import Plan Tree
+## Import plan tree
 
 If you don't know much about Doris' query plan tree, please read the previous article [DORIS/best practices/query analysis](./query-analysis.md).
 

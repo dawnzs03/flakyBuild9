@@ -111,7 +111,7 @@ public:
     Status load_segments(const BetaRowsetSharedPtr& rowset, SegmentCacheHandle* cache_handle,
                          bool use_cache = false);
 
-    void erase_segments(const SegmentCache::CacheKey& key);
+    void erase_segment(const SegmentCache::CacheKey& key);
 
 private:
     SegmentLoader();
@@ -128,12 +128,13 @@ private:
 class SegmentCacheHandle {
 public:
     SegmentCacheHandle() = default;
+    SegmentCacheHandle(Cache* cache, Cache::Handle* handle) : _cache(cache), _handle(handle) {}
 
     ~SegmentCacheHandle() {
         if (_handle != nullptr) {
             CHECK(_cache != nullptr);
-            CHECK(_segments.empty()) << _segments.size();
-            CHECK(!_owned);
+            CHECK(segments.empty()) << segments.size();
+            CHECK(!owned);
             // last_visit_time is set when release.
             // because it only be needed when pruning.
             ((SegmentCache::CacheValue*)_cache->value(_handle))->last_visit_time = UnixMillis();
@@ -141,35 +142,35 @@ public:
         }
     }
 
-    [[nodiscard]] bool is_inited() const { return _init; }
-
-    void init(std::vector<segment_v2::SegmentSharedPtr> segments) {
-        DCHECK(!_init);
-        _owned = true;
-        _segments = std::move(segments);
-        _init = true;
+    SegmentCacheHandle(SegmentCacheHandle&& other) noexcept {
+        std::swap(_cache, other._cache);
+        std::swap(_handle, other._handle);
+        this->owned = other.owned;
+        this->segments = std::move(other.segments);
     }
 
-    void init(Cache* cache, Cache::Handle* handle) {
-        DCHECK(!_init);
-        _owned = false;
-        _cache = cache;
-        _handle = handle;
-        _init = true;
+    SegmentCacheHandle& operator=(SegmentCacheHandle&& other) noexcept {
+        std::swap(_cache, other._cache);
+        std::swap(_handle, other._handle);
+        this->owned = other.owned;
+        this->segments = std::move(other.segments);
+        return *this;
     }
 
     std::vector<segment_v2::SegmentSharedPtr>& get_segments() {
-        if (_owned) {
-            return _segments;
+        if (owned) {
+            return segments;
         } else {
             return ((SegmentCache::CacheValue*)_cache->value(_handle))->segments;
         }
     }
 
+public:
+    // If set to true, the loaded segments will be saved in segments, not in lru cache;
+    bool owned = false;
+    std::vector<segment_v2::SegmentSharedPtr> segments;
+
 private:
-    bool _init {false};
-    bool _owned {false};
-    std::vector<segment_v2::SegmentSharedPtr> _segments;
     Cache* _cache = nullptr;
     Cache::Handle* _handle = nullptr;
 

@@ -20,6 +20,7 @@ package org.apache.doris.nereids.trees.plans.logical;
 import org.apache.doris.catalog.Column;
 import org.apache.doris.catalog.OlapTable;
 import org.apache.doris.catalog.Table;
+import org.apache.doris.common.util.Util;
 import org.apache.doris.nereids.memo.GroupExpression;
 import org.apache.doris.nereids.properties.LogicalProperties;
 import org.apache.doris.nereids.rules.rewrite.mv.AbstractSelectMaterializedIndexRule;
@@ -32,17 +33,20 @@ import org.apache.doris.nereids.trees.plans.RelationId;
 import org.apache.doris.nereids.trees.plans.algebra.OlapScan;
 import org.apache.doris.nereids.trees.plans.visitor.PlanVisitor;
 import org.apache.doris.nereids.util.Utils;
+import org.apache.doris.qe.ConnectContext;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Logical OlapScan.
@@ -113,18 +117,18 @@ public class LogicalOlapScan extends LogicalCatalogRelation implements OlapScan 
                 -1, false, PreAggStatus.on(), ImmutableList.of(), ImmutableList.of(), Maps.newHashMap());
     }
 
-    public LogicalOlapScan(RelationId id, OlapTable table, List<String> qualifier, List<Long> tabletIds,
-            List<String> hints) {
+    public LogicalOlapScan(RelationId id, OlapTable table, List<String> qualifier, List<String> hints) {
         this(id, table, qualifier, Optional.empty(), Optional.empty(),
-                table.getPartitionIds(), false, tabletIds,
+                table.getPartitionIds(), false,
+                ImmutableList.of(),
                 -1, false, PreAggStatus.on(), ImmutableList.of(), hints, Maps.newHashMap());
     }
 
     public LogicalOlapScan(RelationId id, OlapTable table, List<String> qualifier, List<Long> specifiedPartitions,
-            List<Long> tabletIds, List<String> hints) {
+            List<String> hints) {
         this(id, table, qualifier, Optional.empty(), Optional.empty(),
                 // must use specifiedPartitions here for prune partition by sql like 'select * from t partition p1'
-                specifiedPartitions, false, tabletIds,
+                specifiedPartitions, false, ImmutableList.of(),
                 -1, false, PreAggStatus.on(), specifiedPartitions, hints, Maps.newHashMap());
     }
 
@@ -286,7 +290,13 @@ public class LogicalOlapScan extends LogicalCatalogRelation implements OlapScan 
         if (selectedIndexId != ((OlapTable) table).getBaseIndexId()) {
             return getOutputByIndex(selectedIndexId);
         }
-        return table.getBaseSchema(true).stream()
+        List<Column> otherColumns = new ArrayList<>();
+        if (!Util.showHiddenColumns() && getTable().hasDeleteSign()
+                && !ConnectContext.get().getSessionVariable()
+                .skipDeleteSign()) {
+            otherColumns.add(getTable().getDeleteSignColumn());
+        }
+        return Stream.concat(table.getBaseSchema().stream(), otherColumns.stream())
                 .map(col -> {
                     if (cacheSlotWithSlotName.containsKey(col.getName())) {
                         return cacheSlotWithSlotName.get(col.getName());

@@ -55,18 +55,14 @@ public class PruneOlapScanTablet extends OneRewriteRuleFactory {
                     LogicalOlapScan olapScan = filter.child();
                     OlapTable table = olapScan.getTable();
                     Builder<Long> selectedTabletIdsBuilder = ImmutableList.builder();
-                    if (olapScan.getSelectedTabletIds().isEmpty()) {
-                        for (Long id : olapScan.getSelectedPartitionIds()) {
-                            Partition partition = table.getPartition(id);
-                            MaterializedIndex index = partition.getIndex(olapScan.getSelectedIndexId());
-                            selectedTabletIdsBuilder
-                                    .addAll(getSelectedTabletIds(filter.getConjuncts(), index,
-                                            olapScan.getSelectedIndexId() == olapScan.getTable()
-                                                    .getBaseIndexId(),
-                                            partition.getDistributionInfo()));
-                        }
-                    } else {
-                        selectedTabletIdsBuilder.addAll(olapScan.getSelectedTabletIds());
+                    for (Long id : olapScan.getSelectedPartitionIds()) {
+                        Partition partition = table.getPartition(id);
+                        MaterializedIndex index = partition.getIndex(olapScan.getSelectedIndexId());
+                        selectedTabletIdsBuilder
+                                .addAll(getSelectedTabletIds(filter.getConjuncts(), index,
+                                        olapScan.getSelectedIndexId() == olapScan.getTable()
+                                                .getBaseIndexId(),
+                                        partition.getDistributionInfo()));
                     }
                     List<Long> selectedTabletIds = selectedTabletIdsBuilder.build();
                     if (new HashSet(selectedTabletIds).equals(new HashSet(olapScan.getSelectedTabletIds()))) {

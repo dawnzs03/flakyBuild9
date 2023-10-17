@@ -113,8 +113,10 @@ public class LogicalPlanDeepCopier extends DefaultPlanRewriter<DeepCopierContext
                 .map(f -> ExpressionDeepCopier.INSTANCE.deepCopy(f, context));
         Optional<MarkJoinSlotReference> markJoinSlotReference = apply.getMarkJoinSlotReference()
                 .map(m -> (MarkJoinSlotReference) ExpressionDeepCopier.INSTANCE.deepCopy(m, context));
+        Optional<Expression> subCorrespondingConjunct = apply.getSubCorrespondingConjunct()
+                .map(c -> ExpressionDeepCopier.INSTANCE.deepCopy(c, context));
         return new LogicalApply<>(correlationSlot, subqueryExpr, correlationFilter,
-                markJoinSlotReference, apply.isNeedAddSubOutputToProjects(), apply.isInProject(), left, right);
+                markJoinSlotReference, subCorrespondingConjunct, apply.isNeedAddSubOutputToProjects(), left, right);
     }
 
     @Override
@@ -160,13 +162,11 @@ public class LogicalPlanDeepCopier extends DefaultPlanRewriter<DeepCopierContext
         LogicalOlapScan newOlapScan;
         if (olapScan.getManuallySpecifiedPartitions().isEmpty()) {
             newOlapScan = new LogicalOlapScan(StatementScopeIdGenerator.newRelationId(),
-                    olapScan.getTable(), olapScan.getQualifier(), olapScan.getSelectedTabletIds(),
-                    olapScan.getHints());
+                    olapScan.getTable(), olapScan.getQualifier(), olapScan.getHints());
         } else {
             newOlapScan = new LogicalOlapScan(StatementScopeIdGenerator.newRelationId(),
                     olapScan.getTable(), olapScan.getQualifier(),
-                    olapScan.getManuallySpecifiedPartitions(), olapScan.getSelectedTabletIds(),
-                    olapScan.getHints());
+                    olapScan.getManuallySpecifiedPartitions(), olapScan.getHints());
         }
         newOlapScan.getOutput();
         context.putRelation(olapScan.getRelationId(), newOlapScan);

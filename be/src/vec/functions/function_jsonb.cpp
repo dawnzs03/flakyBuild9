@@ -392,7 +392,7 @@ public:
             Status st = Impl::vector_vector_v2(
                     context, ldata, loffsets, jsonb_data_const, jsonb_path_columns, path_const,
                     res_data, res_offsets, null_map->get_data(), is_invalid_json_path);
-            if (!st.ok()) {
+            if (st != Status::OK()) {
                 return st;
             }
         } else {
@@ -756,15 +756,7 @@ private:
             }
         } else if constexpr (std::is_same_v<int64_t, typename ValueType::T>) {
             if (value->isInt8() || value->isInt16() || value->isInt32() || value->isInt64()) {
-                res[i] = (int64_t)((const JsonbIntVal*)value)->val();
-            } else {
-                null_map[i] = 1;
-                res[i] = 0;
-            }
-        } else if constexpr (std::is_same_v<int128_t, typename ValueType::T>) {
-            if (value->isInt8() || value->isInt16() || value->isInt32() || value->isInt64() ||
-                value->isInt128()) {
-                res[i] = (int128_t)((const JsonbIntVal*)value)->val();
+                res[i] = ((const JsonbIntVal*)value)->val();
             } else {
                 null_map[i] = 1;
                 res[i] = 0;
@@ -900,13 +892,6 @@ struct JsonbTypeInt64 {
     static const bool only_check_exists = false;
 };
 
-struct JsonbTypeInt128 {
-    using T = int128_t;
-    using ReturnType = DataTypeInt128;
-    using ColumnType = ColumnVector<T>;
-    static const bool only_check_exists = false;
-};
-
 struct JsonbTypeDouble {
     using T = double;
     using ReturnType = DataTypeFloat64;
@@ -963,11 +948,6 @@ struct JsonbExtractBigInt : public JsonbExtractImpl<JsonbTypeInt64> {
     static constexpr auto alias = "jsonb_extract_bigint";
 };
 
-struct JsonbExtractLargeInt : public JsonbExtractImpl<JsonbTypeInt128> {
-    static constexpr auto name = "json_extract_largeint";
-    static constexpr auto alias = "jsonb_extract_largeint";
-};
-
 struct JsonbExtractDouble : public JsonbExtractImpl<JsonbTypeDouble> {
     static constexpr auto name = "json_extract_double";
     static constexpr auto alias = "jsonb_extract_double";
@@ -995,7 +975,6 @@ using FunctionJsonbExtractIsnull = FunctionJsonbExtract<JsonbExtractIsnull>;
 using FunctionJsonbExtractBool = FunctionJsonbExtract<JsonbExtractBool>;
 using FunctionJsonbExtractInt = FunctionJsonbExtract<JsonbExtractInt>;
 using FunctionJsonbExtractBigInt = FunctionJsonbExtract<JsonbExtractBigInt>;
-using FunctionJsonbExtractLargeInt = FunctionJsonbExtract<JsonbExtractLargeInt>;
 using FunctionJsonbExtractDouble = FunctionJsonbExtract<JsonbExtractDouble>;
 using FunctionJsonbExtractString = FunctionJsonbExtract<JsonbExtractString>;
 using FunctionJsonbExtractJsonb = FunctionJsonbExtract<JsonbExtractJsonb>;
@@ -1048,8 +1027,6 @@ void register_function_jsonb(SimpleFunctionFactory& factory) {
     factory.register_alias(FunctionJsonbExtractInt::name, FunctionJsonbExtractInt::alias);
     factory.register_function<FunctionJsonbExtractBigInt>();
     factory.register_alias(FunctionJsonbExtractBigInt::name, FunctionJsonbExtractBigInt::alias);
-    factory.register_function<FunctionJsonbExtractLargeInt>();
-    factory.register_alias(FunctionJsonbExtractLargeInt::name, FunctionJsonbExtractLargeInt::alias);
     factory.register_function<FunctionJsonbExtractDouble>();
     factory.register_alias(FunctionJsonbExtractDouble::name, FunctionJsonbExtractDouble::alias);
     factory.register_function<FunctionJsonbExtractString>();

@@ -178,13 +178,12 @@ public class PhysicalPartitionTopN<CHILD_TYPE extends Plan> extends PhysicalUnar
 
     @Override
     public String toString() {
-        return Utils.toSqlString("PhysicalPartitionTopN[" + id.asInt() + "]" + getGroupIdWithPrefix(),
+        return Utils.toSqlString("PhysicalPartitionTopN[" + id.asInt() + "]" + getGroupIdAsString(),
             "function", function,
             "partitionKeys", partitionKeys,
             "orderKeys", orderKeys,
             "hasGlobalLimit", hasGlobalLimit,
-            "partitionLimit", partitionLimit,
-            "stats", statistics
+            "partitionLimit", partitionLimit
         );
     }
 

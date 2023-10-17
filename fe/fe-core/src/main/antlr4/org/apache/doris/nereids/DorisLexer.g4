@@ -356,7 +356,6 @@ SYSTEM_TIME: 'SYSTEM_TIME';
 SYSTEM_VERSION: 'SYSTEM_VERSION';
 TABLE: 'TABLE';
 TABLES: 'TABLES';
-TABLET: 'TABLET';
 TABLESAMPLE: 'TABLESAMPLE';
 TBLPROPERTIES: 'TBLPROPERTIES';
 TEMPORARY: 'TEMPORARY' | 'TEMP';
@@ -434,7 +433,7 @@ HINT_END: '*/';
 ATSIGN: '@';
 DOUBLEATSIGN: '@@';
 
-STRING_LITERAL
+STRING
     : '\'' ( ~('\''|'\\') | ('\\' .) )* '\''
     | '"' ( ~('"'|'\\') | ('\\' .) )* '"'
     | 'R\'' (~'\'')* '\''

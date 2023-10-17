@@ -21,7 +21,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <atomic>
 #include <iosfwd>
 #include <memory>
 #include <string>
@@ -262,9 +261,6 @@ public:
         return _runtime_filter_slots->ready_finish_publish();
     }
 
-protected:
-    void _probe_side_open_thread(RuntimeState* state, std::promise<Status>* status) override;
-
 private:
     void _init_short_circuit_for_probe() override {
         _short_circuit_for_probe =
@@ -276,9 +272,6 @@ private:
                 (_build_blocks->empty() && _join_op == TJoinOp::RIGHT_SEMI_JOIN) ||
                 (_build_blocks->empty() && _join_op == TJoinOp::RIGHT_ANTI_JOIN);
     }
-
-    bool _enable_hash_join_early_start_probe(RuntimeState* state) const;
-    bool _is_hash_join_early_start_probe_eos(RuntimeState* state) const;
 
     // probe expr
     VExprContextSPtrs _probe_expr_ctxs;
@@ -416,7 +409,6 @@ private:
 
     std::vector<IRuntimeFilter*> _runtime_filters;
     size_t _build_bf_cardinality = 0;
-    std::atomic_bool _probe_open_finish = false;
 };
 } // namespace vectorized
 } // namespace doris

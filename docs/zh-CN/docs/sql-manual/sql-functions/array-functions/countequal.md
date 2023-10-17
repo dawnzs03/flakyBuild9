@@ -1,6 +1,6 @@
 ---
 {
-    "title": "COUNTEQUAL",
+    "title": "countequal",
     "language": "zh-CN"
 }
 ---

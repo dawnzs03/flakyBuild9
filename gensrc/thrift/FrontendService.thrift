@@ -469,7 +469,6 @@ struct TMasterOpRequest {
     22: optional string clientNodeHost
     23: optional i32 clientNodePort
     24: optional bool syncJournalOnly // if set to true, this request means to do nothing but just sync max journal id of master
-    25: optional string defaultCatalog
 }
 
 struct TColumnDefinition {
@@ -606,14 +605,6 @@ struct TStreamLoadPutRequest {
     44: optional bool enable_profile
     45: optional bool partial_update
     46: optional list<string> table_names
-    47: optional string load_sql // insert into sql used by stream load
-    48: optional i64 backend_id
-    49: optional i32 version // version 1 means use load_sql
-    50: optional string label
-    // only valid when file type is CSV
-    51: optional i8 enclose
-    // only valid when file type is CSV
-    52: optional i8 escape
 }
 
 struct TStreamLoadPutResult {
@@ -628,20 +619,6 @@ struct TStreamLoadMultiTablePutResult {
     // valid when status is OK
     2: optional list<PaloInternalService.TExecPlanFragmentParams> params
     3: optional list<PaloInternalService.TPipelineFragmentParams> pipeline_params
-}
-
-// StreamLoadWith request status
-struct TStreamLoadWithLoadStatusRequest {
-    1: optional Types.TUniqueId loadId
-}
-
-struct TStreamLoadWithLoadStatusResult {
-    1: optional Status.TStatus status
-    2: optional i64 txn_id
-    3: optional i64 total_rows
-    4: optional i64 loaded_rows
-    5: optional i64 filtered_rows
-    6: optional i64 unselected_rows
 }
 
 struct TKafkaRLTaskProgress {
@@ -1002,7 +979,6 @@ enum TBinlogType {
   DUMMY = 7,
   ALTER_DATABASE_PROPERTY = 8,
   MODIFY_TABLE_PROPERTY = 9,
-  BARRIER = 10,
 }
 
 struct TBinlog {
@@ -1101,7 +1077,7 @@ struct TGetBinlogLagResult {
 
 struct TUpdateFollowerStatsCacheRequest {
     1: optional string key;
-    2: list<string> statsRows;
+    2: optional string colStats;
 }
 
 struct TAutoIncrementRangeRequest {
@@ -1156,7 +1132,6 @@ service FrontendService {
     TWaitingTxnStatusResult waitingTxnStatus(1: TWaitingTxnStatusRequest request)
 
     TStreamLoadPutResult streamLoadPut(1: TStreamLoadPutRequest request)
-    TStreamLoadWithLoadStatusResult streamLoadWithLoadStatus(1: TStreamLoadWithLoadStatusRequest request)
 
     TStreamLoadMultiTablePutResult streamLoadMultiTablePut(1: TStreamLoadPutRequest request)
 

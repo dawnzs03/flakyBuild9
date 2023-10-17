@@ -19,12 +19,7 @@ package org.apache.doris.nereids.types;
 
 import org.apache.doris.catalog.Type;
 import org.apache.doris.nereids.annotation.Developing;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSortedMap;
-
-import java.util.Map;
-import java.util.Objects;
+import org.apache.doris.nereids.types.coercion.AbstractDataType;
 
 /**
  * Struct type in Nereids.
@@ -36,19 +31,7 @@ public class StructType extends DataType {
 
     public static final int WIDTH = 24;
 
-    private final Map<String, DataType> items;
-
     private StructType() {
-        items = ImmutableMap.of();
-    }
-
-    public StructType(Map<String, DataType> items) {
-        this.items = ImmutableSortedMap.copyOf(Objects.requireNonNull(items, "items should not be null"),
-                String.CASE_INSENSITIVE_ORDER);
-    }
-
-    public Map<String, DataType> getItems() {
-        return items;
     }
 
     @Override
@@ -57,13 +40,18 @@ public class StructType extends DataType {
     }
 
     @Override
-    public boolean acceptsType(DataType other) {
+    public boolean acceptsType(AbstractDataType other) {
         return other instanceof StructType;
     }
 
     @Override
     public String simpleString() {
         return "struct";
+    }
+
+    @Override
+    public DataType defaultConcreteType() {
+        return INSTANCE;
     }
 
     @Override

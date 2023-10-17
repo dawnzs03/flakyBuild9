@@ -1,6 +1,6 @@
 ---
 {
-    "title": "NOW",
+    "title": "now",
     "language": "zh-CN"
 }
 ---

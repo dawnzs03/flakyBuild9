@@ -233,7 +233,7 @@ public:
             }
         }
 
-        if (ret.ok()) {
+        if (ret == Status::OK()) {
             block.replace_by_position(result, ColumnNullable::create(std::move(dst_nested_col),
                                                                      std::move(dst_null_map)));
         }

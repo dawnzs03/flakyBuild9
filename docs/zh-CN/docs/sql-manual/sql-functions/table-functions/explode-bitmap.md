@@ -1,6 +1,6 @@
 ---
 {
-    "title": "EXPLODE_BITMAP",
+    "title": "explode_bitmap",
     "language": "zh-CN"
 }
 ---

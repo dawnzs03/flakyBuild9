@@ -21,21 +21,16 @@
 
 #include <type_traits>
 
+#include "gutil/casts.h"
 #include "vec/columns/column_const.h"
 #include "vec/io/io_helper.h"
 
 namespace doris {
 namespace vectorized {
 
-void DataTypeDate64SerDe::serialize_column_to_text(const IColumn& column, int start_idx,
-                                                   int end_idx, BufferWritable& bw,
-                                                   FormatOptions& options) const {
-    SERIALIZE_COLUMN_TO_TEXT();
-}
-
 void DataTypeDate64SerDe::serialize_one_cell_to_text(const IColumn& column, int row_num,
                                                      BufferWritable& bw,
-                                                     FormatOptions& options) const {
+                                                     const FormatOptions& options) const {
     auto result = check_column_const_set_readability(column, row_num);
     ColumnPtr ptr = result.first;
     row_num = result.second;
@@ -59,29 +54,23 @@ void DataTypeDate64SerDe::serialize_one_cell_to_text(const IColumn& column, int 
         char* pos = value.to_string(buf);
         bw.write(buf, pos - buf - 1);
     }
+    bw.commit();
 }
 
-Status DataTypeDate64SerDe::deserialize_column_from_text_vector(
-        IColumn& column, std::vector<Slice>& slices, int* num_deserialized,
-        const FormatOptions& options) const {
-    DESERIALIZE_COLUMN_FROM_TEXT_VECTOR()
-    return Status::OK();
-}
-
-Status DataTypeDate64SerDe::deserialize_one_cell_from_text(IColumn& column, Slice& slice,
+Status DataTypeDate64SerDe::deserialize_one_cell_from_text(IColumn& column, ReadBuffer& rb,
                                                            const FormatOptions& options) const {
     auto& column_data = assert_cast<ColumnInt64&>(column);
     Int64 val = 0;
     if (options.date_olap_format) {
         tm time_tm;
-        char* res = strptime(slice.data, "%Y-%m-%d", &time_tm);
+        char* res = strptime(rb.position(), "%Y-%m-%d", &time_tm);
         if (nullptr != res) {
             val = (time_tm.tm_year + 1900) * 16 * 32 + (time_tm.tm_mon + 1) * 32 + time_tm.tm_mday;
         } else {
             // 1400 - 01 - 01
             val = 716833;
         }
-    } else if (ReadBuffer rb(slice.data, slice.size); !read_date_text_impl<Int64>(val, rb)) {
+    } else if (!read_date_text_impl<Int64>(val, rb)) {
         return Status::InvalidArgument("parse date fail, string: '{}'",
                                        std::string(rb.position(), rb.count()).c_str());
     }
@@ -89,15 +78,9 @@ Status DataTypeDate64SerDe::deserialize_one_cell_from_text(IColumn& column, Slic
     return Status::OK();
 }
 
-void DataTypeDateTimeSerDe::serialize_column_to_text(const IColumn& column, int start_idx,
-                                                     int end_idx, BufferWritable& bw,
-                                                     FormatOptions& options) const {
-    SERIALIZE_COLUMN_TO_TEXT()
-}
-
 void DataTypeDateTimeSerDe::serialize_one_cell_to_text(const IColumn& column, int row_num,
                                                        BufferWritable& bw,
-                                                       FormatOptions& options) const {
+                                                       const FormatOptions& options) const {
     auto result = check_column_const_set_readability(column, row_num);
     ColumnPtr ptr = result.first;
     row_num = result.second;
@@ -126,22 +109,16 @@ void DataTypeDateTimeSerDe::serialize_one_cell_to_text(const IColumn& column, in
         char* pos = value.to_string(buf);
         bw.write(buf, pos - buf - 1);
     }
+    bw.commit();
 }
 
-Status DataTypeDateTimeSerDe::deserialize_column_from_text_vector(
-        IColumn& column, std::vector<Slice>& slices, int* num_deserialized,
-        const FormatOptions& options) const {
-    DESERIALIZE_COLUMN_FROM_TEXT_VECTOR()
-    return Status::OK();
-}
-
-Status DataTypeDateTimeSerDe::deserialize_one_cell_from_text(IColumn& column, Slice& slice,
+Status DataTypeDateTimeSerDe::deserialize_one_cell_from_text(IColumn& column, ReadBuffer& rb,
                                                              const FormatOptions& options) const {
     auto& column_data = assert_cast<ColumnInt64&>(column);
     Int64 val = 0;
     if (options.date_olap_format) {
         tm time_tm;
-        char* res = strptime(slice.data, "%Y-%m-%d %H:%M:%S", &time_tm);
+        char* res = strptime(rb.position(), "%Y-%m-%d %H:%M:%S", &time_tm);
         if (nullptr != res) {
             val = ((time_tm.tm_year + 1900) * 10000L + (time_tm.tm_mon + 1) * 100L +
                    time_tm.tm_mday) *
@@ -151,7 +128,7 @@ Status DataTypeDateTimeSerDe::deserialize_one_cell_from_text(IColumn& column, Sl
             // 1400 - 01 - 01
             val = 14000101000000L;
         }
-    } else if (ReadBuffer rb(slice.data, slice.size); !read_datetime_text_impl<Int64>(val, rb)) {
+    } else if (!read_datetime_text_impl<Int64>(val, rb)) {
         return Status::InvalidArgument("parse datetime fail, string: '{}'",
                                        std::string(rb.position(), rb.count()).c_str());
     }
@@ -206,7 +183,7 @@ void DataTypeDate64SerDe::read_column_from_arrow(IColumn& column, const arrow::A
     int64_t divisor = 1;
     int64_t multiplier = 1;
     if (arrow_array->type()->id() == arrow::Type::DATE64) {
-        auto concrete_array = dynamic_cast<const arrow::Date64Array*>(arrow_array);
+        auto concrete_array = down_cast<const arrow::Date64Array*>(arrow_array);
         divisor = 1000; //ms => secs
         for (size_t value_i = start; value_i < end; ++value_i) {
             VecDateTimeValue v;
@@ -215,7 +192,7 @@ void DataTypeDate64SerDe::read_column_from_arrow(IColumn& column, const arrow::A
             col_data.emplace_back(binary_cast<VecDateTimeValue, Int64>(v));
         }
     } else if (arrow_array->type()->id() == arrow::Type::TIMESTAMP) {
-        auto concrete_array = dynamic_cast<const arrow::TimestampArray*>(arrow_array);
+        auto concrete_array = down_cast<const arrow::TimestampArray*>(arrow_array);
         const auto type = std::static_pointer_cast<arrow::TimestampType>(arrow_array->type());
         divisor = time_unit_divisor(type->unit());
         if (divisor == 0L) {
@@ -228,7 +205,7 @@ void DataTypeDate64SerDe::read_column_from_arrow(IColumn& column, const arrow::A
             col_data.emplace_back(binary_cast<VecDateTimeValue, Int64>(v));
         }
     } else if (arrow_array->type()->id() == arrow::Type::DATE32) {
-        auto concrete_array = dynamic_cast<const arrow::Date32Array*>(arrow_array);
+        auto concrete_array = down_cast<const arrow::Date32Array*>(arrow_array);
         multiplier = 24 * 60 * 60; // day => secs
         for (size_t value_i = start; value_i < end; ++value_i) {
             VecDateTimeValue v;

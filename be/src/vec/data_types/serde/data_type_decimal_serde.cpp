@@ -23,6 +23,7 @@
 #include <arrow/util/decimal.h>
 
 #include "arrow/type.h"
+#include "gutil/casts.h"
 #include "vec/columns/column_decimal.h"
 #include "vec/common/arithmetic_overflow.h"
 #include "vec/io/io_helper.h"
@@ -32,16 +33,9 @@ namespace doris {
 namespace vectorized {
 
 template <typename T>
-void DataTypeDecimalSerDe<T>::serialize_column_to_text(const IColumn& column, int start_idx,
-                                                       int end_idx, BufferWritable& bw,
-                                                       FormatOptions& options) const {
-    SERIALIZE_COLUMN_TO_TEXT()
-}
-
-template <typename T>
 void DataTypeDecimalSerDe<T>::serialize_one_cell_to_text(const IColumn& column, int row_num,
                                                          BufferWritable& bw,
-                                                         FormatOptions& options) const {
+                                                         const FormatOptions& options) const {
     auto result = check_column_const_set_readability(column, row_num);
     ColumnPtr ptr = result.first;
     row_num = result.second;
@@ -55,26 +49,16 @@ void DataTypeDecimalSerDe<T>::serialize_one_cell_to_text(const IColumn& column, 
         auto length = col.get_element(row_num).to_string(buf, scale, scale_multiplier);
         bw.write(buf, length);
     }
+    bw.commit();
 }
-
 template <typename T>
-Status DataTypeDecimalSerDe<T>::deserialize_column_from_text_vector(
-        IColumn& column, std::vector<Slice>& slices, int* num_deserialized,
-        const FormatOptions& options) const {
-    DESERIALIZE_COLUMN_FROM_TEXT_VECTOR()
-    return Status::OK();
-}
-
-template <typename T>
-Status DataTypeDecimalSerDe<T>::deserialize_one_cell_from_text(IColumn& column, Slice& slice,
+Status DataTypeDecimalSerDe<T>::deserialize_one_cell_from_text(IColumn& column, ReadBuffer& rb,
                                                                const FormatOptions& options) const {
     auto& column_data = assert_cast<ColumnDecimal<T>&>(column).get_data();
-    T val = {};
-    if (ReadBuffer rb(slice.data, slice.size);
-        !read_decimal_text_impl<get_primitive_type(), T>(val, rb, precision, scale)) {
-        return Status::InvalidArgument("parse decimal fail, string: '{}', primitive type: '{}'",
-                                       std::string(rb.position(), rb.count()).c_str(),
-                                       get_primitive_type());
+    T val = 0;
+    if (!read_decimal_text_impl<T>(val, rb, precision, scale)) {
+        return Status::InvalidArgument("parse decimal fail, string: '{}'",
+                                       std::string(rb.position(), rb.count()).c_str());
     }
     column_data.emplace_back(val);
     return Status::OK();
@@ -103,7 +87,7 @@ void DataTypeDecimalSerDe<T>::write_column_to_arrow(const IColumn& column, const
             checkArrowStatus(builder.Append(value), column.get_name(),
                              array_builder->type()->name());
         }
-    } else if constexpr (std::is_same_v<T, Decimal128I>) {
+    } else if constexpr (std::is_same_v<T, Decimal<Int128I>>) {
         std::shared_ptr<arrow::DataType> s_decimal_ptr =
                 std::make_shared<arrow::Decimal128Type>(38, col.get_scale());
         for (size_t i = start; i < end; ++i) {
@@ -157,7 +141,7 @@ template <typename T>
 void DataTypeDecimalSerDe<T>::read_column_from_arrow(IColumn& column,
                                                      const arrow::Array* arrow_array, int start,
                                                      int end, const cctz::time_zone& ctz) const {
-    auto concrete_array = dynamic_cast<const arrow::DecimalArray*>(arrow_array);
+    auto concrete_array = down_cast<const arrow::DecimalArray*>(arrow_array);
     const auto* arrow_decimal_type =
             static_cast<const arrow::DecimalType*>(arrow_array->type().get());
     const auto arrow_scale = arrow_decimal_type->scale();

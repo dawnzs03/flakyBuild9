@@ -24,6 +24,7 @@ import org.apache.doris.statistics.AnalysisInfo.AnalysisMethod;
 import org.apache.doris.statistics.AnalysisInfo.AnalysisMode;
 import org.apache.doris.statistics.AnalysisInfo.AnalysisType;
 import org.apache.doris.statistics.AnalysisInfo.JobType;
+import org.apache.doris.statistics.util.InternalQueryResult.ResultRow;
 import org.apache.doris.utframe.TestWithFeService;
 
 import com.google.common.collect.Maps;
@@ -88,19 +89,8 @@ public class AnalysisTaskExecutorTest extends TestWithFeService {
 
         new MockUp<OlapAnalysisTask>() {
             @Mock
-            public void execSQLs(List<String> sqls) throws Exception {
-            }
+            public void execSQL(String sql) throws Exception {
 
-            @Mock
-            protected void executeWithExceptionOnFail(StmtExecutor stmtExecutor) throws Exception {
-                // DO NOTHING
-            }
-        };
-
-        new MockUp<StatisticsCache>() {
-
-            @Mock
-            public void syncLoadColStats(long tableId, long idxId, String colName) {
             }
         };
 

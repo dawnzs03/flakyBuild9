@@ -1,6 +1,6 @@
 ---
 {
-    "title": "DAYOFMONTH",
+    "title": "dayofmonth",
     "language": "zh-CN"
 }
 ---

@@ -1,6 +1,6 @@
 ---
 {
-    "title": "REGEXP",
+    "title": "regexp",
     "language": "zh-CN"
 }
 ---

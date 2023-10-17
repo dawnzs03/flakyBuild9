@@ -199,7 +199,8 @@ public class RuntimeFilterPruner extends PlanPostProcessor {
         if (probeColumnStat.isUnKnown || buildColumnStat.isUnKnown) {
             return true;
         }
-        return probeColumnStat.notEnclosed(buildColumnStat)
+        return buildColumnStat.selectivity < 1
+                || probeColumnStat.notEnclosed(buildColumnStat)
                 || buildColumnStat.ndv < probeColumnStat.ndv * 0.95;
     }
 }

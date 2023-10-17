@@ -150,15 +150,4 @@ public class ListPartitionItem extends PartitionItem {
 
         return sb.toString();
     }
-
-    // If any partition key is hive default partition, return true.
-    // Only used for hive table.
-    public boolean isHiveDefaultPartition() {
-        for (PartitionKey partitionKey : partitionKeys) {
-            if (partitionKey.isHiveDefaultPartition()) {
-                return true;
-            }
-        }
-        return false;
-    }
 }

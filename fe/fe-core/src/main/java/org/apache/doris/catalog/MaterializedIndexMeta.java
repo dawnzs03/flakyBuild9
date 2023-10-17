@@ -316,8 +316,7 @@ public class MaterializedIndexMeta implements Writable, GsonPostProcessable {
                 try {
                     stmt.analyze(analyzer);
                 } catch (Exception e) {
-                    LOG.warn("CreateMaterializedViewStmt analyze failed, reason=", e);
-                    return;
+                    LOG.warn("CreateMaterializedViewStmt analyze failed, reason=" + e.getMessage());
                 }
             }
 
@@ -328,7 +327,7 @@ public class MaterializedIndexMeta implements Writable, GsonPostProcessable {
                 Map<String, Expr> columnNameToDefineExpr = stmt.parseDefineExpr(analyzer);
                 setColumnsDefineExpr(columnNameToDefineExpr);
             } catch (Exception e) {
-                LOG.warn("CreateMaterializedViewStmt parseDefineExpr failed, reason=", e);
+                LOG.warn("CreateMaterializedViewStmt parseDefineExpr failed, reason=" + e.getMessage());
             }
 
         } catch (Exception e) {

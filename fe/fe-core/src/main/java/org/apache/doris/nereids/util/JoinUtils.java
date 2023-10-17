@@ -254,7 +254,6 @@ public class JoinUtils {
                 || rightHashSpec.getShuffleType() != ShuffleType.NATURAL) {
             return false;
         }
-
         final long leftTableId = leftHashSpec.getTableId();
         final long rightTableId = rightHashSpec.getTableId();
         final Set<Long> leftTablePartitions = leftHashSpec.getPartitionIds();

@@ -130,6 +130,9 @@ public class LogicalGenerate<CHILD_TYPE extends Plan> extends LogicalUnary<CHILD
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+        if (!super.equals(o)) {
+            return false;
+        }
         LogicalGenerate<?> that = (LogicalGenerate<?>) o;
         return generators.equals(that.generators)
                 && generatorOutput.equals(that.generatorOutput);
@@ -137,6 +140,6 @@ public class LogicalGenerate<CHILD_TYPE extends Plan> extends LogicalUnary<CHILD
 
     @Override
     public int hashCode() {
-        return Objects.hash(generators, generatorOutput);
+        return Objects.hash(super.hashCode(), generators, generatorOutput);
     }
 }

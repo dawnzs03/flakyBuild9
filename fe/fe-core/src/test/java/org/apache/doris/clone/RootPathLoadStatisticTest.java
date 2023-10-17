@@ -31,22 +31,18 @@ public class RootPathLoadStatisticTest {
 
     @Test
     public void test() {
-        RootPathLoadStatistic usage1 = new RootPathLoadStatistic(0L, "/home/disk1", 12345L, TStorageMedium.HDD, 4096L,
+        RootPathLoadStatistic usageLow = new RootPathLoadStatistic(0L, "/home/disk1", 12345L, TStorageMedium.HDD, 4096L,
                 1024L, DiskState.ONLINE);
-        RootPathLoadStatistic usage2 = new RootPathLoadStatistic(0L, "/home/disk2", 67890L, TStorageMedium.HDD,
+        RootPathLoadStatistic usageHigh = new RootPathLoadStatistic(0L, "/home/disk2", 67890L, TStorageMedium.HDD,
                 4096L, 2048L, DiskState.ONLINE);
 
         List<RootPathLoadStatistic> list = Lists.newArrayList();
-        list.add(usage1);
-        list.add(usage2);
+        list.add(usageLow);
+        list.add(usageHigh);
 
         // low usage should be ahead
         Collections.sort(list);
-        Assert.assertTrue(list.get(0).getPathHash() == usage1.getPathHash());
-
-        usage1.incrCopingSizeB(2048L);
-        Collections.sort(list);
-        Assert.assertTrue(list.get(1).getPathHash() == usage1.getPathHash());
+        Assert.assertTrue(list.get(0).getPathHash() == usageLow.getPathHash());
     }
 
 }

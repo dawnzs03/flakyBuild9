@@ -214,7 +214,7 @@ public class TabletChecker extends MasterDaemon {
         LOG.debug(stat.incrementalBrief());
     }
 
-    public static class CheckerCounter {
+    private static class CheckerCounter {
         public long totalTabletNum = 0;
         public long unhealthyTabletNum = 0;
         public long addToSchedulerTabletNum = 0;
@@ -281,7 +281,7 @@ public class TabletChecker extends MasterDaemon {
                 continue;
             }
 
-            if (db.isMysqlCompatibleDatabase()) {
+            if (db.isInfoSchemaDb()) {
                 continue;
             }
 

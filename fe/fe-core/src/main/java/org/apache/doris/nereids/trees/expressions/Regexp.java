@@ -20,7 +20,6 @@ package org.apache.doris.nereids.trees.expressions;
 import org.apache.doris.nereids.trees.expressions.visitor.ExpressionVisitor;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
@@ -30,17 +29,13 @@ import java.util.List;
 public class Regexp extends StringRegexPredicate {
 
     public Regexp(Expression left, Expression right) {
-        super("regexp", ImmutableList.of(left, right));
-    }
-
-    private Regexp(List<Expression> children) {
-        super("regexp", children);
+        super("regexp", left, right);
     }
 
     @Override
     public Regexp withChildren(List<Expression> children) {
         Preconditions.checkArgument(children.size() == 2);
-        return new Regexp(children);
+        return new Regexp(children.get(0), children.get(1));
     }
 
     public <R, C> R accept(ExpressionVisitor<R, C> visitor, C context) {

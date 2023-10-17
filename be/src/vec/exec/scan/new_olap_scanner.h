@@ -61,15 +61,6 @@ public:
                    const TPaloScanRange& scan_range, const std::vector<OlapScanRange*>& key_ranges,
                    const std::vector<RowSetSplits>& rs_splits, RuntimeProfile* profile);
 
-    NewOlapScanner(RuntimeState* state, pipeline::ScanLocalState* parent, int64_t limit,
-                   bool aggregation, const TPaloScanRange& scan_range,
-                   const std::vector<OlapScanRange*>& key_ranges, RuntimeProfile* profile);
-
-    NewOlapScanner(RuntimeState* state, pipeline::ScanLocalState* parent, int64_t limit,
-                   bool aggregation, const TPaloScanRange& scan_range,
-                   const std::vector<OlapScanRange*>& key_ranges,
-                   const std::vector<RowSetSplits>& rs_splits, RuntimeProfile* profile);
-
     Status init() override;
 
     Status open(RuntimeState* state) override;

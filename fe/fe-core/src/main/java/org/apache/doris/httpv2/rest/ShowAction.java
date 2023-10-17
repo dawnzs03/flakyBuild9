@@ -198,7 +198,7 @@ public class ShowAction extends RestBaseController {
         } else {
             for (long dbId : Env.getCurrentInternalCatalog().getDbIds()) {
                 DatabaseIf db = Env.getCurrentInternalCatalog().getDbNullable(dbId);
-                if (db == null || !(db instanceof Database) || ((Database) db).isMysqlCompatibleDatabase()) {
+                if (db == null || !(db instanceof Database) || ((Database) db).isInfoSchemaDb()) {
                     continue;
                 }
                 totalSize += getDataSizeOfDatabase(db);

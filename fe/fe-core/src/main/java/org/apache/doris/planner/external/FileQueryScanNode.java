@@ -74,7 +74,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -272,8 +271,6 @@ public abstract class FileQueryScanNode extends FileScanNode {
             params.setProperties(locationProperties);
         }
 
-        boolean enableSqlCache = ConnectContext.get().getSessionVariable().enableFileCache;
-        boolean enableShortCircuitRead = HdfsResource.enableShortCircuitRead(locationProperties);
         List<String> pathPartitionKeys = getPathPartitionKeys();
         for (Split split : inputSplits) {
             FileSplit fileSplit = (FileSplit) split;
@@ -315,7 +312,6 @@ public abstract class FileQueryScanNode extends FileScanNode {
                 tableFormatFileDesc.setTransactionalHiveParams(transactionalHiveDesc);
                 rangeDesc.setTableFormatParams(tableFormatFileDesc);
             }
-
             // external data lake table
             if (fileSplit instanceof IcebergSplit) {
                 // TODO: extract all data lake split to factory
@@ -328,16 +324,9 @@ public abstract class FileQueryScanNode extends FileScanNode {
 
             curLocations.getScanRange().getExtScanRange().getFileScanRange().addToRanges(rangeDesc);
             TScanRangeLocation location = new TScanRangeLocation();
-            Backend selectedBackend;
-            if (enableSqlCache) {
-                // Use consistent hash to assign the same scan range into the same backend among different queries
-                selectedBackend = backendPolicy.getNextConsistentBe(curLocations);
-            } else if (enableShortCircuitRead) {
-                // Try to find a local BE if enable hdfs short circuit read
-                selectedBackend = backendPolicy.getNextLocalBe(Arrays.asList(fileSplit.getHosts()));
-            } else {
-                selectedBackend = backendPolicy.getNextBe();
-            }
+            // Use consistent hash to assign the same scan range into the same backend among different queries
+            Backend selectedBackend = ConnectContext.get().getSessionVariable().enableFileCache
+                    ? backendPolicy.getNextConsistentBe(curLocations) : backendPolicy.getNextBe();
             location.setBackendId(selectedBackend.getId());
             location.setServer(new TNetworkAddress(selectedBackend.getHost(), selectedBackend.getBePort()));
             curLocations.addToLocations(location);
@@ -364,19 +353,14 @@ public abstract class FileQueryScanNode extends FileScanNode {
                 params.setHdfsParams(tHdfsParams);
             }
 
-            if (locationType == TFileType.FILE_BROKER) {
-                params.setProperties(locationProperties);
-
-                if (!params.isSetBrokerAddresses()) {
-                    FsBroker broker = Env.getCurrentEnv().getBrokerMgr().getAnyAliveBroker();
-                    if (broker == null) {
-                        throw new UserException("No alive broker.");
-                    }
-                    params.addToBrokerAddresses(new TNetworkAddress(broker.host, broker.port));
+            if (locationType == TFileType.FILE_BROKER && !params.isSetBrokerAddresses()) {
+                FsBroker broker = Env.getCurrentEnv().getBrokerMgr().getAnyAliveBroker();
+                if (broker == null) {
+                    throw new UserException("No alive broker.");
                 }
+                params.addToBrokerAddresses(new TNetworkAddress(broker.host, broker.port));
             }
-        } else if ((locationType == TFileType.FILE_S3 || locationType == TFileType.FILE_LOCAL)
-                && !params.isSetProperties()) {
+        } else if (locationType == TFileType.FILE_S3 && !params.isSetProperties()) {
             params.setProperties(locationProperties);
         }
 
@@ -417,7 +401,6 @@ public abstract class FileQueryScanNode extends FileScanNode {
             rangeDesc.setPath(fileSplit.getPath().toUri().getPath());
         } else if (locationType == TFileType.FILE_S3
                 || locationType == TFileType.FILE_BROKER
-                || locationType == TFileType.FILE_LOCAL
                 || locationType == TFileType.FILE_NET) {
             // need full path
             rangeDesc.setPath(fileSplit.getPath().toString());
@@ -462,8 +445,6 @@ public abstract class FileQueryScanNode extends FileScanNode {
                 }
                 return Optional.of(TFileType.FILE_S3);
             } else if (location.startsWith(FeConstants.FS_PREFIX_HDFS)) {
-                return Optional.of(TFileType.FILE_HDFS);
-            } else if (location.startsWith(FeConstants.FS_PREFIX_COSN)) {
                 return Optional.of(TFileType.FILE_HDFS);
             } else if (location.startsWith(FeConstants.FS_PREFIX_FILE)) {
                 return Optional.of(TFileType.FILE_LOCAL);

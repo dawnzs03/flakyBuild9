@@ -1,6 +1,6 @@
 ---
 {
-    "title": "Materialized View",
+    "title": "Materialized view",
     "language": "en"
 }
 ---
@@ -24,7 +24,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-# Materialized View
+# Materialized view
 A materialized view is a data set that is pre-calculated (according to a defined SELECT statement) and stored in a special table in Doris.
 
 The emergence of materialized views is mainly to satisfy users. It can analyze any dimension of the original detailed data, but also can quickly analyze and query fixed dimensions.

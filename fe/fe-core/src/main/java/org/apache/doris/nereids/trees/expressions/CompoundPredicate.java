@@ -21,8 +21,7 @@ import org.apache.doris.nereids.exceptions.UnboundException;
 import org.apache.doris.nereids.trees.expressions.visitor.ExpressionVisitor;
 import org.apache.doris.nereids.types.BooleanType;
 import org.apache.doris.nereids.types.DataType;
-
-import java.util.List;
+import org.apache.doris.nereids.types.coercion.AbstractDataType;
 
 /**
  * Compound predicate expression.
@@ -30,8 +29,15 @@ import java.util.List;
  */
 public abstract class CompoundPredicate extends BinaryOperator {
 
-    public CompoundPredicate(List<Expression> children, String symbol) {
-        super(children, symbol);
+    /**
+     * Desc: Constructor for CompoundPredicate.
+     *
+     * @param left  left child of comparison predicate
+     * @param right right child of comparison predicate
+     * @param symbol symbol used in sql
+     */
+    public CompoundPredicate(Expression left, Expression right, String symbol) {
+        super(left, right, symbol);
     }
 
     @Override
@@ -50,7 +56,7 @@ public abstract class CompoundPredicate extends BinaryOperator {
     }
 
     @Override
-    public DataType inputType() {
+    public AbstractDataType inputType() {
         return BooleanType.INSTANCE;
     }
 

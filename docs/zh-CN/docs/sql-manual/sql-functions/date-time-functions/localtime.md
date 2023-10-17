@@ -1,6 +1,6 @@
 ---
 {
-    "title": "LOCALTIME,LOCALTIMESTAMP",
+    "title": "localtime,localtimestamp",
     "language": "zh-CN"
 }
 ---

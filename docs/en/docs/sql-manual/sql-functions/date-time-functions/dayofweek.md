@@ -1,6 +1,6 @@
 ---
 {
-    "title": "DAYOFWEEK",
+    "title": "dayofweek",
     "language": "en"
 }
 ---

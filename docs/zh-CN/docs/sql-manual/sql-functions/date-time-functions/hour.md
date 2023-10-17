@@ -1,6 +1,6 @@
 ---
 {
-    "title": "HOUR",
+    "title": "hour",
     "language": "zh-CN"
 }
 ---

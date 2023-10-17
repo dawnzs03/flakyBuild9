@@ -73,6 +73,7 @@ E(COMPRESS_ERROR, -111);
 E(DECOMPRESS_ERROR, -112);
 E(UNKNOWN_COMPRESSION_TYPE, -113);
 E(MMAP_ERROR, -114);
+E(READ_UNENOUGH, -116);
 E(CANNOT_CREATE_DIR, -117);
 E(UB_NETWORK_ERROR, -118);
 E(FILE_FORMAT_ERROR, -119);
@@ -95,6 +96,8 @@ E(VERSION_NOT_EXIST, -214);
 E(TABLE_NOT_FOUND, -215);
 E(TRY_LOCK_FAILED, -216);
 E(OUT_OF_BOUND, -218);
+E(FILE_DATA_ERROR, -220);
+E(TEST_FILE_ERROR, -221);
 E(INVALID_ROOT_PATH, -222);
 E(NO_AVAILABLE_ROOT_PATH, -223);
 E(CHECK_LINES_ERROR, -224);
@@ -273,7 +276,7 @@ E(INVERTED_INDEX_BUILD_WAITTING, -6008);
 
 // clang-format off
 // whether to capture stacktrace
-consteval bool capture_stacktrace(int code) {
+inline bool capture_stacktrace(int code) {
     return code != ErrorCode::OK
         && code != ErrorCode::END_OF_FILE
         && code != ErrorCode::MEM_LIMIT_EXCEEDED
@@ -311,7 +314,7 @@ consteval bool capture_stacktrace(int code) {
 
 class Status {
 public:
-    Status() : _code(ErrorCode::OK), _err_msg(nullptr) {}
+    Status() : _code(ErrorCode::OK) {}
 
     // copy c'tor makes copy of error detail so Status can be returned by value
     Status(const Status& rhs) { *this = rhs; }
@@ -329,13 +332,7 @@ public:
     }
 
     // move assign
-    Status& operator=(Status&& rhs) noexcept {
-        _code = rhs._code;
-        if (rhs._err_msg) {
-            _err_msg = std::move(rhs._err_msg);
-        }
-        return *this;
-    }
+    Status& operator=(Status&& rhs) noexcept = default;
 
     Status static create(const TStatus& status) {
         return Error<true>(status.status_code,
@@ -349,21 +346,7 @@ public:
 
     template <int code, bool stacktrace = true, typename... Args>
     Status static Error(std::string_view msg, Args&&... args) {
-        Status status;
-        status._code = code;
-        status._err_msg = std::make_unique<ErrMsg>();
-        if constexpr (sizeof...(args) == 0) {
-            status._err_msg->_msg = msg;
-        } else {
-            status._err_msg->_msg = fmt::format(msg, std::forward<Args>(args)...);
-        }
-#ifdef ENABLE_STACKTRACE
-        if constexpr (stacktrace && capture_stacktrace(code)) {
-            status._err_msg->_stack = get_stack_trace();
-            LOG(WARNING) << "meet error status: " << status; // may print too many stacks.
-        }
-#endif
-        return status;
+        return Error<stacktrace>(code, msg, std::forward<Args>(args)...);
     }
 
     template <bool stacktrace = true, typename... Args>
@@ -377,7 +360,7 @@ public:
             status._err_msg->_msg = fmt::format(msg, std::forward<Args>(args)...);
         }
 #ifdef ENABLE_STACKTRACE
-        if constexpr (stacktrace) {
+        if (stacktrace && capture_stacktrace(code)) {
             status._err_msg->_stack = get_stack_trace();
             LOG(WARNING) << "meet error status: " << status; // may print too many stacks.
         }
@@ -430,6 +413,17 @@ public:
 
     bool ok() const { return _code == ErrorCode::OK; }
 
+    bool is_io_error() const {
+        return ErrorCode::IO_ERROR == _code || ErrorCode::READ_UNENOUGH == _code ||
+               ErrorCode::CHECKSUM_ERROR == _code || ErrorCode::FILE_DATA_ERROR == _code ||
+               ErrorCode::TEST_FILE_ERROR == _code;
+    }
+
+    bool is_invalid_argument() const { return ErrorCode::INVALID_ARGUMENT == _code; }
+
+    bool is_not_found() const { return _code == ErrorCode::NOT_FOUND; }
+    bool is_not_authorized() const { return code() == TStatusCode::NOT_AUTHORIZED; }
+
     // Convert into TStatus. Call this if 'status_container' contains an optional
     // TStatus field named 'status'. This also sets __isset.status.
     template <typename T>
@@ -471,12 +465,12 @@ public:
     // if(!status) or if (status) will use this operator
     operator bool() const { return this->ok(); }
 
-    // Used like if ASSERT_EQ(res, Status::OK())
+    // Used like if (res == Status::OK())
     // if the state is ok, then both code and precise code is not initialized properly, so that should check ok state
     // ignore error messages during comparison
     bool operator==(const Status& st) const { return _code == st._code; }
 
-    // Used like if ASSERT_NE(res, Status::OK())
+    // Used like if (res != Status::OK())
     bool operator!=(const Status& st) const { return _code != st._code; }
 
     friend std::ostream& operator<<(std::ostream& ostr, const Status& status);

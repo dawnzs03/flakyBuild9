@@ -406,7 +406,6 @@ private:
         if (data == nullptr) {
             return Status::InternalError("Wrong data type for colum '{}'", col_name);
         }
-        auto* __restrict date_day_offset_dict = get_date_day_offset_dict();
         auto& column_data = static_cast<ColumnVector<DorisColumnType>&>(*data_column).get_data();
         auto origin_size = column_data.size();
         column_data.resize(origin_size + num_values);
@@ -422,15 +421,11 @@ private:
                         continue;
                     }
                 }
-                int64_t date_value = data->data[i] + _offset_days;
-                DCHECK_LT(date_value, 25500);
-                DCHECK_GE(date_value, 0);
+                int64_t& date_value = data->data[i];
+                v.from_unixtime(date_value * 24 * 60 * 60, _time_zone); // day to seconds
                 if constexpr (std::is_same_v<CppType, VecDateTimeValue>) {
-                    v.create_from_date_v2(date_day_offset_dict[date_value], TIME_DATE);
                     // we should cast to date if using date v1.
                     v.cast_to_date();
-                } else {
-                    v = date_day_offset_dict[date_value];
                 }
             } else { // timestamp
                 if constexpr (is_filter) {
@@ -503,7 +498,6 @@ private:
     int64_t _range_size;
     const std::string& _ctz;
     const std::vector<std::string>* _column_names;
-    size_t _offset_days = 0;
     cctz::time_zone _time_zone;
 
     std::list<std::string> _read_cols;

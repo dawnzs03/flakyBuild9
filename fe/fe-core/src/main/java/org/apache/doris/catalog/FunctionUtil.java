@@ -181,8 +181,7 @@ public class FunctionUtil {
         }
     }
 
-    public static void readFields(DataInput in, String dbName,
-            ConcurrentMap<String, ImmutableList<Function>> name2Function)
+    public static void readFields(DataInput in, ConcurrentMap<String, ImmutableList<Function>> name2Function)
             throws IOException {
         int numEntries = in.readInt();
         for (int i = 0; i < numEntries; ++i) {
@@ -192,11 +191,7 @@ public class FunctionUtil {
             for (int j = 0; j < numFunctions; ++j) {
                 builder.add(Function.read(in));
             }
-            ImmutableList<Function> functions = builder.build();
-            name2Function.put(name, functions);
-            for (Function f : functions) {
-                translateToNereids(dbName, f);
-            }
+            name2Function.put(name, builder.build());
         }
     }
 
@@ -239,8 +234,7 @@ public class FunctionUtil {
                 JavaUdaf.translateToNereidsFunction(dbName, ((AggregateFunction) function));
             }
         } catch (Exception e) {
-            LOG.warn("Nereids create function {}:{} failed, caused by: {}", dbName == null ? "_global_" : dbName,
-                    function.getFunctionName().getFunction(), e);
+            LOG.warn("Nereids create function {}:{} failed", dbName, function.getFunctionName().getFunction(), e);
         }
         return true;
     }
@@ -252,8 +246,7 @@ public class FunctionUtil {
                     .collect(Collectors.toList());
             Env.getCurrentEnv().getFunctionRegistry().dropUdf(dbName, fnName, argTypes);
         } catch (Exception e) {
-            LOG.warn("Nereids drop function {}:{} failed, caused by: {}", dbName == null ? "_global_" : dbName,
-                    function.getName(), e);
+            LOG.warn("Nereids drop function {}:{} failed", dbName, function.getName(), e);
         }
         return false;
     }

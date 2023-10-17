@@ -23,14 +23,13 @@ import org.apache.doris.analysis.ShowVariablesStmt;
 import org.apache.doris.common.CaseSensibility;
 import org.apache.doris.common.DdlException;
 import org.apache.doris.common.ExceptionChecker;
+import org.apache.doris.common.ExperimentalUtil.ExperimentalType;
 import org.apache.doris.common.FeConstants;
 import org.apache.doris.common.PatternMatcher;
 import org.apache.doris.common.PatternMatcherWrapper;
-import org.apache.doris.common.VariableAnnotation;
 import org.apache.doris.common.util.ProfileManager;
 import org.apache.doris.common.util.RuntimeProfile;
 import org.apache.doris.load.ExportJob;
-import org.apache.doris.load.ExportJobState;
 import org.apache.doris.task.ExportExportingTask;
 import org.apache.doris.thrift.TQueryOptions;
 import org.apache.doris.utframe.TestWithFeService;
@@ -133,7 +132,7 @@ public class SessionVariablesTest extends TestWithFeService {
             matcher = PatternMatcherWrapper.createMysqlPattern(showStmt.getPattern(),
                     CaseSensibility.VARIABLES.getCaseSensibility());
         }
-        int num = sessionVar.getVariableNumByVariableAnnotation(VariableAnnotation.EXPERIMENTAL);
+        int num = sessionVar.getVariableNumByExperimentalType(ExperimentalType.EXPERIMENTAL);
         List<List<String>> result = VariableMgr.dump(showStmt.getType(), sessionVar, matcher);
         Assert.assertEquals(num, result.size());
     }
@@ -172,14 +171,14 @@ public class SessionVariablesTest extends TestWithFeService {
 
             ExportStmt exportStmt = (ExportStmt)
                     parseAndAnalyzeStmt("EXPORT TABLE test_d.test_t1 TO \"file:///tmp/test_t1\"", connectContext);
-            ExportJob job = exportStmt.getExportJob();
-            job.setId(1234);
+            ExportJob job = new ExportJob(1234);
+            job.setJob(exportStmt);
 
             new Expectations(job) {
                 {
                     job.getState();
                     minTimes = 0;
-                    result = ExportJobState.EXPORTING;
+                    result = ExportJob.JobState.EXPORTING;
                 }
             };
 
@@ -202,14 +201,14 @@ public class SessionVariablesTest extends TestWithFeService {
 
             ExportStmt exportStmt = (ExportStmt)
                     parseAndAnalyzeStmt("EXPORT TABLE test_d.test_t1 TO \"file:///tmp/test_t1\"", connectContext);
-            ExportJob job = exportStmt.getExportJob();
-            job.setId(1234);
+            ExportJob job = new ExportJob(1234);
+            job.setJob(exportStmt);
 
             new Expectations(job) {
                 {
                     job.getState();
                     minTimes = 0;
-                    result = ExportJobState.EXPORTING;
+                    result = ExportJob.JobState.EXPORTING;
                 }
             };
 

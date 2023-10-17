@@ -46,36 +46,17 @@ PipelineTask::PipelineTask(PipelinePtr& pipeline, uint32_t index, RuntimeState* 
                            RuntimeProfile* parent_profile)
         : _index(index),
           _pipeline(pipeline),
-          _prepared(false),
-          _opened(false),
-          _state(state),
-          _cur_state(PipelineTaskState::NOT_READY),
-          _data_state(SourceState::DEPEND_ON_SOURCE),
-          _fragment_context(fragment_context),
-          _parent_profile(parent_profile),
           _operators(operators),
           _source(_operators.front()),
           _root(_operators.back()),
-          _sink(sink) {
-    _pipeline_task_watcher.start();
-}
-
-PipelineTask::PipelineTask(PipelinePtr& pipeline, uint32_t index, RuntimeState* state,
-                           PipelineFragmentContext* fragment_context,
-                           RuntimeProfile* parent_profile)
-        : _index(index),
-          _pipeline(pipeline),
+          _sink(sink),
           _prepared(false),
           _opened(false),
           _state(state),
           _cur_state(PipelineTaskState::NOT_READY),
           _data_state(SourceState::DEPEND_ON_SOURCE),
           _fragment_context(fragment_context),
-          _parent_profile(parent_profile),
-          _operators({}),
-          _source(nullptr),
-          _root(nullptr),
-          _sink(nullptr) {
+          _parent_profile(parent_profile) {
     _pipeline_task_watcher.start();
 }
 
@@ -238,11 +219,11 @@ Status PipelineTask::execute(bool* eos) {
             set_state(PipelineTaskState::BLOCKED_FOR_DEPENDENCY);
             return Status::OK();
         }
-        if (!source_can_read()) {
+        if (!_source->can_read()) {
             set_state(PipelineTaskState::BLOCKED_FOR_SOURCE);
             return Status::OK();
         }
-        if (!sink_can_write()) {
+        if (!_sink->can_write()) {
             set_state(PipelineTaskState::BLOCKED_FOR_SINK);
             return Status::OK();
         }
@@ -250,11 +231,11 @@ Status PipelineTask::execute(bool* eos) {
 
     this->set_begin_execute_time();
     while (!_fragment_context->is_canceled()) {
-        if (_data_state != SourceState::MORE_DATA && !source_can_read()) {
+        if (_data_state != SourceState::MORE_DATA && !_source->can_read()) {
             set_state(PipelineTaskState::BLOCKED_FOR_SOURCE);
             break;
         }
-        if (!sink_can_write()) {
+        if (!_sink->can_write()) {
             set_state(PipelineTaskState::BLOCKED_FOR_SINK);
             break;
         }
@@ -274,7 +255,6 @@ Status PipelineTask::execute(bool* eos) {
             RETURN_IF_ERROR(_root->get_block(_state, block, _data_state));
         }
         *eos = _data_state == SourceState::FINISHED;
-
         if (_block->rows() != 0 || *eos) {
             SCOPED_TIMER(_sink_timer);
             auto status = _sink->sink(_state, block, _data_state);
@@ -385,7 +365,7 @@ void PipelineTask::set_state(PipelineTaskState state) {
 std::string PipelineTask::debug_string() {
     fmt::memory_buffer debug_string_buffer;
 
-    fmt::format_to(debug_string_buffer, "QueryId: {}\n", print_id(query_context()->query_id()));
+    fmt::format_to(debug_string_buffer, "QueryId: {}\n", print_id(query_context()->query_id));
     fmt::format_to(debug_string_buffer, "InstanceId: {}\n",
                    print_id(fragment_context()->get_fragment_instance_id()));
 

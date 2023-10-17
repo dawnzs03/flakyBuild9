@@ -28,8 +28,6 @@ import org.apache.doris.nereids.trees.plans.physical.PhysicalDeferMaterializeTop
 import org.apache.doris.nereids.trees.plans.physical.PhysicalTopN;
 import org.apache.doris.qe.ConnectContext;
 
-import com.google.common.collect.ImmutableList;
-
 /**
  * topN opt
  * refer to:
@@ -41,29 +39,7 @@ public class TopNScanOpt extends PlanPostProcessor {
 
     @Override
     public PhysicalTopN<? extends Plan> visitPhysicalTopN(PhysicalTopN<? extends Plan> topN, CascadesContext ctx) {
-        Plan child = topN.child().accept(this, ctx);
-        topN = rewriteTopN(topN);
-        if (child != topN.child()) {
-            topN.withChildren(child);
-        }
-        return topN;
-    }
-
-    @Override
-    public Plan visitPhysicalDeferMaterializeTopN(PhysicalDeferMaterializeTopN<? extends Plan> topN,
-            CascadesContext context) {
-        Plan child = topN.child().accept(this, context);
-        if (child != topN.child()) {
-            topN = topN.withChildren(ImmutableList.of(child));
-        }
-        PhysicalTopN<? extends Plan> rewrittenTopN = rewriteTopN(topN.getPhysicalTopN());
-        if (topN.getPhysicalTopN() != rewrittenTopN) {
-            topN = topN.withPhysicalTopN(rewrittenTopN);
-        }
-        return topN;
-    }
-
-    private PhysicalTopN<? extends Plan> rewriteTopN(PhysicalTopN<? extends Plan> topN) {
+        topN.child().accept(this, ctx);
         Plan child = topN.child();
         if (topN.getSortPhase() != SortPhase.LOCAL_SORT) {
             return topN;
@@ -103,10 +79,16 @@ public class TopNScanOpt extends PlanPostProcessor {
         olapScan = (OlapScan) child;
 
         if (olapScan.getTable().isDupKeysOrMergeOnWrite()) {
-            return topN.withEnableRuntimeFilter(true);
+            topN.setMutableState(PhysicalTopN.TOPN_RUNTIME_FILTER, true);
         }
 
         return topN;
+    }
+
+    @Override
+    public Plan visitPhysicalDeferMaterializeTopN(PhysicalDeferMaterializeTopN<? extends Plan> topN,
+            CascadesContext context) {
+        return topN.withPhysicalTopN(visitPhysicalTopN(topN.getPhysicalTopN(), context));
     }
 
     private long getTopNOptLimitThreshold() {

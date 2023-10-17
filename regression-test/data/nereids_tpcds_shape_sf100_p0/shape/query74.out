@@ -12,14 +12,16 @@ PhysicalCteAnchor ( cteId=CTEId#0 )
 ------------------PhysicalDistribute
 --------------------hashJoin[INNER_JOIN](store_sales.ss_sold_date_sk = date_dim.d_date_sk)
 ----------------------PhysicalProject
-------------------------PhysicalOlapScan[store_sales]
+------------------------filter('s' IN ('s', 'w'))
+--------------------------PhysicalOlapScan[store_sales]
 ----------------------PhysicalDistribute
 ------------------------PhysicalProject
---------------------------filter(d_year IN (2000, 1999))
+--------------------------filter('s' IN ('s', 'w')d_year IN (2000, 1999))
 ----------------------------PhysicalOlapScan[date_dim]
 ------------------PhysicalDistribute
 --------------------PhysicalProject
-----------------------PhysicalOlapScan[customer]
+----------------------filter('s' IN ('s', 'w'))
+------------------------PhysicalOlapScan[customer]
 ------PhysicalProject
 --------hashAgg[GLOBAL]
 ----------PhysicalDistribute
@@ -29,14 +31,16 @@ PhysicalCteAnchor ( cteId=CTEId#0 )
 ------------------PhysicalDistribute
 --------------------hashJoin[INNER_JOIN](web_sales.ws_sold_date_sk = date_dim.d_date_sk)
 ----------------------PhysicalProject
-------------------------PhysicalOlapScan[web_sales]
+------------------------filter('w' IN ('s', 'w'))
+--------------------------PhysicalOlapScan[web_sales]
 ----------------------PhysicalDistribute
 ------------------------PhysicalProject
---------------------------filter(d_year IN (2000, 1999))
+--------------------------filter(d_year IN (2000, 1999)'w' IN ('s', 'w'))
 ----------------------------PhysicalOlapScan[date_dim]
 ------------------PhysicalDistribute
 --------------------PhysicalProject
-----------------------PhysicalOlapScan[customer]
+----------------------filter('w' IN ('s', 'w'))
+------------------------PhysicalOlapScan[customer]
 --PhysicalResultSink
 ----PhysicalTopN
 ------PhysicalDistribute

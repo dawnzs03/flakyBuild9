@@ -74,7 +74,6 @@ suite("test_list_partition_datatype", "p0") {
                 assertEquals(15, json.NumberLoadedRows)
             }
         }
-        sql """sync"""
         test {
             sql "SELECT * FROM ${tableName} ORDER BY k1, k2"
             resultFile "expect_baseall.out"

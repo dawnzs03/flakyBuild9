@@ -1,6 +1,6 @@
 ---
 {
-    "title": "WINDOW_FUNCTION_LAG",
+    "title": "WINDOW-FUNCTION-LAG",
     "language": "zh-CN"
 }
 ---

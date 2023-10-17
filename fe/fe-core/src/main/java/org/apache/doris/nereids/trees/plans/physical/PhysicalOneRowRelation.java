@@ -108,7 +108,7 @@ public class PhysicalOneRowRelation extends PhysicalRelation implements OneRowRe
 
     @Override
     public String toString() {
-        return Utils.toSqlString("PhysicalOneRowRelation[" + id.asInt() + "]" + getGroupIdWithPrefix(),
+        return Utils.toSqlString("PhysicalOneRowRelation[" + id.asInt() + "]" + getGroupIdAsString(),
                 "expressions", projects
         );
     }

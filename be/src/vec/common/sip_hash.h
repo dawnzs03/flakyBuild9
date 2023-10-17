@@ -169,9 +169,10 @@ public:
         }
     }
 
+    /// NOTE: std::has_unique_object_representations is only available since clang 6. As of Mar 2017 we still use clang 5 sometimes.
     template <typename T>
-        requires std::is_standard_layout_v<T>
-    void update(const T& x) {
+    std::enable_if_t<std::/*has_unique_object_representations_v*/ is_standard_layout_v<T>, void>
+    update(const T& x) {
         update(reinterpret_cast<const char*>(&x), sizeof(x));
     }
 
@@ -224,8 +225,9 @@ inline doris::vectorized::UInt64 sip_hash64(const char* data, const size_t size)
 }
 
 template <typename T>
-    requires std::is_standard_layout_v<T>
-doris::vectorized::UInt64 sip_hash64(const T& x) {
+std::enable_if_t<std::/*has_unique_object_representations_v*/ is_standard_layout_v<T>,
+                 doris::vectorized::UInt64>
+sip_hash64(const T& x) {
     SipHash hash;
     hash.update(x);
     return hash.get64();

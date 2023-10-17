@@ -1,6 +1,6 @@
 ---
 {
-    "title": "ESQUERY",
+    "title": "esquery",
     "language": "zh-CN"
 }
 ---

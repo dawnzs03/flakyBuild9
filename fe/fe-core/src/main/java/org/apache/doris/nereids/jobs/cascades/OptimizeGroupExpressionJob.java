@@ -43,17 +43,11 @@ public class OptimizeGroupExpressionJob extends Job {
         List<Rule> implementationRules = getRuleSet().getImplementationRules();
         List<Rule> explorationRules = getExplorationRules();
 
-        for (Rule rule : explorationRules) {
-            if (rule.isInvalid(disableRules, groupExpression)) {
-                continue;
-            }
+        for (Rule rule : getValidRules(groupExpression, explorationRules)) {
             pushJob(new ApplyRuleJob(groupExpression, rule, context));
         }
 
-        for (Rule rule : implementationRules) {
-            if (rule.isInvalid(disableRules, groupExpression)) {
-                continue;
-            }
+        for (Rule rule : getValidRules(groupExpression, implementationRules)) {
             pushJob(new ApplyRuleJob(groupExpression, rule, context));
         }
     }

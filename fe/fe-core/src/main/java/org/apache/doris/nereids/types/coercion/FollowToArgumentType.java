@@ -20,24 +20,17 @@ package org.apache.doris.nereids.types.coercion;
 import org.apache.doris.catalog.Type;
 import org.apache.doris.nereids.types.DataType;
 
-import java.util.Locale;
-
 /**
  * FollowArgumentType is used to auto compute the return type by the argument type.
  *
  * e.g. the FunctionSignature.retArg(0).args(AnyDataType.INSTANCE)
  *      will return `IntegerType.INSTANCE` if the first argument type is `IntegerType.INSTANCE`.
  */
-public class FollowToArgumentType extends DataType {
+public class FollowToArgumentType implements AbstractDataType {
     public final int argumentIndex;
 
     public FollowToArgumentType(int argumentIndex) {
         this.argumentIndex = argumentIndex;
-    }
-
-    @Override
-    public String toSql() {
-        return simpleString().toUpperCase(Locale.ROOT);
     }
 
     @Override
@@ -46,7 +39,7 @@ public class FollowToArgumentType extends DataType {
     }
 
     @Override
-    public boolean acceptsType(DataType other) {
+    public boolean acceptsType(AbstractDataType other) {
         throw new RuntimeException("Unsupported operation.");
     }
 
@@ -57,11 +50,6 @@ public class FollowToArgumentType extends DataType {
 
     @Override
     public String simpleString() {
-        return "followArgumentType#" + argumentIndex;
-    }
-
-    @Override
-    public int width() {
-        return -1;
+        return "argumentType#" + argumentIndex;
     }
 }

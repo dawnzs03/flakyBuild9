@@ -1,6 +1,6 @@
 ---
 {
-"title": "SQL Mode",
+"title": "SQL MODE",
 "language": "en"
 }
 ---
@@ -24,7 +24,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-# SQL Mode
+# SQL MODE
 
 The sql mode newly supported by Doris refers to the sql mode management mechanism of Mysql. Each client can set its own sql mode, and database administrators with Admin privileges can set the global sql mode.
 ## sql mode introduce

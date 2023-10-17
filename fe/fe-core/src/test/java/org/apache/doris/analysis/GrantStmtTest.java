@@ -18,7 +18,6 @@
 package org.apache.doris.analysis;
 
 import org.apache.doris.catalog.AccessPrivilege;
-import org.apache.doris.catalog.AccessPrivilegeWithCols;
 import org.apache.doris.catalog.Env;
 import org.apache.doris.common.AnalysisException;
 import org.apache.doris.common.UserException;
@@ -84,13 +83,13 @@ public class GrantStmtTest {
     public void testNormal() throws AnalysisException, UserException {
         GrantStmt stmt;
 
-        List<AccessPrivilegeWithCols> privileges = Lists.newArrayList(new AccessPrivilegeWithCols(AccessPrivilege.ALL));
+        List<AccessPrivilege> privileges = Lists.newArrayList(AccessPrivilege.ALL);
         stmt = new GrantStmt(new UserIdentity("testUser", "%"), null, new TablePattern("testDb", "*"), privileges);
         stmt.analyze(analyzer);
         Assert.assertEquals("testCluster:testUser", stmt.getUserIdent().getQualifiedUser());
         Assert.assertEquals("testCluster:testDb", stmt.getTblPattern().getQualifiedDb());
 
-        privileges = Lists.newArrayList(new AccessPrivilegeWithCols(AccessPrivilege.READ_ONLY), new AccessPrivilegeWithCols(AccessPrivilege.ALL));
+        privileges = Lists.newArrayList(AccessPrivilege.READ_ONLY, AccessPrivilege.ALL);
         stmt = new GrantStmt(new UserIdentity("testUser", "%"), null, new TablePattern("testDb", "*"), privileges);
         stmt.analyze(analyzer);
     }
@@ -98,7 +97,7 @@ public class GrantStmtTest {
     @Test
     public void testResourceNormal() throws UserException {
         String resourceName = "spark0";
-        List<AccessPrivilegeWithCols> privileges = Lists.newArrayList(new AccessPrivilegeWithCols(AccessPrivilege.USAGE_PRIV));
+        List<AccessPrivilege> privileges = Lists.newArrayList(AccessPrivilege.USAGE_PRIV);
         GrantStmt stmt = new GrantStmt(new UserIdentity("testUser", "%"), null, new ResourcePattern(resourceName), privileges);
         stmt.analyze(analyzer);
         Assert.assertEquals(resourceName, stmt.getResourcePattern().getResourceName());
@@ -114,7 +113,7 @@ public class GrantStmtTest {
     public void testUserFail() throws AnalysisException, UserException {
         GrantStmt stmt;
 
-        List<AccessPrivilegeWithCols> privileges = Lists.newArrayList(new AccessPrivilegeWithCols(AccessPrivilege.ALL));
+        List<AccessPrivilege> privileges = Lists.newArrayList(AccessPrivilege.ALL);
         stmt = new GrantStmt(new UserIdentity("", "%"), null, new TablePattern("testDb", "*"), privileges);
         stmt.analyze(analyzer);
         Assert.fail("No exception throws.");

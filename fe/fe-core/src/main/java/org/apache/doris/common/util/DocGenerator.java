@@ -19,6 +19,8 @@ package org.apache.doris.common.util;
 
 import org.apache.doris.common.Config;
 import org.apache.doris.common.ConfigBase.ConfField;
+import org.apache.doris.common.ExperimentalUtil;
+import org.apache.doris.common.ExperimentalUtil.ExperimentalType;
 import org.apache.doris.qe.GlobalVariable;
 import org.apache.doris.qe.SessionVariable;
 import org.apache.doris.qe.VariableMgr;
@@ -160,7 +162,10 @@ public class DocGenerator {
         if (confField == null) {
             return null;
         }
-        String configName = confField.varType().getPrefix() + field.getName();
+        String configName = field.getName();
+        if (confField.expType() == ExperimentalType.EXPERIMENTAL) {
+            configName = ExperimentalUtil.EXPERIMENTAL_PREFIX + configName;
+        }
         sb.append("### `").append(configName).append("`\n\n");
         sb.append(confField.description()[lang.idx]).append("\n\n");
         sb.append(TYPE[lang.idx]).append("`").append(field.getType().getSimpleName()).append("`\n\n");
@@ -238,7 +243,10 @@ public class DocGenerator {
             return null;
         }
         StringBuilder sb = new StringBuilder();
-        String varName = varAttr.varType().getPrefix() + varAttr.name();
+        String varName = varAttr.name();
+        if (varAttr.expType() == ExperimentalType.EXPERIMENTAL) {
+            varName = ExperimentalUtil.EXPERIMENTAL_PREFIX + varName;
+        }
         sb.append("### `").append(varName).append("`\n\n");
         sb.append(varAttr.description()[lang.idx]).append("\n\n");
         sb.append(TYPE[lang.idx]).append("`").append(field.getType().getSimpleName()).append("`\n\n");

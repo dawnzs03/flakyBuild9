@@ -21,7 +21,6 @@
 #include <gen_cpp/PlanNodes_types.h>
 #include <gen_cpp/Types_types.h>
 
-#include <mutex>
 #include <utility>
 
 #include "common/config.h"
@@ -150,6 +149,7 @@ Status FileFactory::create_pipe_reader(const TUniqueId& load_id, io::FileReaderS
     if (!stream_load_ctx) {
         return Status::InternalError("unknown stream load id: {}", UniqueId(load_id).to_string());
     }
+
     *file_reader = stream_load_ctx->pipe;
 
     if (file_reader->get() == nullptr) {

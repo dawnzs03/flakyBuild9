@@ -1,6 +1,6 @@
 ---
 {
-    "title": "Window Functions Overview",
+    "title": "WINDOW-FUNCTION",
     "language": "en"
 }
 ---

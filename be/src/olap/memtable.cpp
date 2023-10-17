@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "bvar/bvar.h"
 #include "common/config.h"
 #include "olap/memtable_memory_limiter.h"
 #include "olap/olap_define.h"
@@ -42,9 +41,6 @@
 #include "vec/columns/column.h"
 
 namespace doris {
-
-bvar::Adder<int64_t> g_memtable_cnt("memtable_cnt");
-
 using namespace ErrorCode;
 
 MemTable::MemTable(int64_t tablet_id, const TabletSchema* tablet_schema,
@@ -63,7 +59,6 @@ MemTable::MemTable(int64_t tablet_id, const TabletSchema* tablet_schema,
           _offsets_of_aggregate_states(tablet_schema->num_columns()),
           _total_size_of_aggregate_states(0),
           _mem_usage(0) {
-    g_memtable_cnt << 1;
 #ifndef BE_TEST
     _insert_mem_tracker_use_hook = std::make_unique<MemTracker>(
             fmt::format("MemTableHookInsert:TabletId={}", std::to_string(tablet_id)),
@@ -134,7 +129,6 @@ void MemTable::_init_agg_functions(const vectorized::Block* block) {
 }
 
 MemTable::~MemTable() {
-    g_memtable_cnt << -1;
     if (_keys_type != KeysType::DUP_KEYS) {
         for (auto it = _row_in_blocks.begin(); it != _row_in_blocks.end(); it++) {
             if (!(*it)->has_init_agg()) {
@@ -167,7 +161,12 @@ void MemTable::insert(const vectorized::Block* input_block, const std::vector<in
                       bool is_append) {
     SCOPED_CONSUME_MEM_TRACKER(_insert_mem_tracker_use_hook.get());
     vectorized::Block target_block = *input_block;
-    target_block = input_block->copy_block(_column_offset);
+    if (!_tablet_schema->is_dynamic_schema()) {
+        // This insert may belong to a rollup tablet, rollup columns is a subset of base table
+        // but for dynamic table, it's need full columns, so input_block should ignore _column_offset
+        // of each column and avoid copy_block
+        target_block = input_block->copy_block(_column_offset);
+    }
     if (_is_first_insertion) {
         _is_first_insertion = false;
         auto cloneBlock = target_block.clone_without_columns();

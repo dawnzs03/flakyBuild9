@@ -43,8 +43,6 @@ class TUniqueId;
 using InstanceLoId = int64_t;
 
 namespace vectorized {
-class VDataStreamSender;
-template <typename>
 class PipChannel;
 
 template <typename T>
@@ -85,16 +83,14 @@ private:
 } // namespace vectorized
 
 namespace pipeline {
-template <typename Parent>
 struct TransmitInfo {
-    vectorized::PipChannel<Parent>* channel;
+    vectorized::PipChannel* channel;
     std::unique_ptr<PBlock> block;
     bool eos;
 };
 
-template <typename Parent>
 struct BroadcastTransmitInfo {
-    vectorized::PipChannel<Parent>* channel;
+    vectorized::PipChannel* channel;
     vectorized::BroadcastPBlockHolder* block_holder;
     bool eos;
 };
@@ -164,15 +160,13 @@ struct ExchangeRpcContext {
 };
 
 // Each ExchangeSinkOperator have one ExchangeSinkBuffer
-template <typename Parent>
 class ExchangeSinkBuffer {
 public:
     ExchangeSinkBuffer(PUniqueId, int, PlanNodeId, int, PipelineFragmentContext*);
     ~ExchangeSinkBuffer();
     void register_sink(TUniqueId);
-
-    Status add_block(TransmitInfo<Parent>&& request);
-    Status add_block(BroadcastTransmitInfo<Parent>&& request);
+    Status add_block(TransmitInfo&& request);
+    Status add_block(BroadcastTransmitInfo&& request);
     bool can_write() const;
     bool is_pending_finish();
     void close();
@@ -183,12 +177,11 @@ private:
     phmap::flat_hash_map<InstanceLoId, std::unique_ptr<std::mutex>>
             _instance_to_package_queue_mutex;
     // store data in non-broadcast shuffle
-    phmap::flat_hash_map<InstanceLoId,
-                         std::queue<TransmitInfo<Parent>, std::list<TransmitInfo<Parent>>>>
+    phmap::flat_hash_map<InstanceLoId, std::queue<TransmitInfo, std::list<TransmitInfo>>>
             _instance_to_package_queue;
     // store data in broadcast shuffle
-    phmap::flat_hash_map<InstanceLoId, std::queue<BroadcastTransmitInfo<Parent>,
-                                                  std::list<BroadcastTransmitInfo<Parent>>>>
+    phmap::flat_hash_map<InstanceLoId,
+                         std::queue<BroadcastTransmitInfo, std::list<BroadcastTransmitInfo>>>
             _instance_to_broadcast_package_queue;
     using PackageSeq = int64_t;
     // must init zero

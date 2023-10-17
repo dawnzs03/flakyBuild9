@@ -58,9 +58,8 @@ size_t FileCacheFactory::try_release(const std::string& base_path) {
     return 0;
 }
 
-void FileCacheFactory::create_file_cache(const std::string& cache_base_path,
-                                         const FileCacheSettings& file_cache_settings,
-                                         Status* status) {
+Status FileCacheFactory::create_file_cache(const std::string& cache_base_path,
+                                           const FileCacheSettings& file_cache_settings) {
     if (config::clear_file_cache) {
         auto fs = global_local_filesystem();
         bool res = false;
@@ -72,22 +71,12 @@ void FileCacheFactory::create_file_cache(const std::string& cache_base_path,
 
     std::unique_ptr<IFileCache> cache =
             std::make_unique<LRUFileCache>(cache_base_path, file_cache_settings);
-    *status = cache->initialize();
-    if (!status->ok()) {
-        return;
-    }
-
-    {
-        // the create_file_cache() may be called concurrently,
-        // so need to protect it with lock
-        std::lock_guard<std::mutex> lock(_cache_mutex);
-        _path_to_cache[cache_base_path] = cache.get();
-        _caches.push_back(std::move(cache));
-    }
+    RETURN_IF_ERROR(cache->initialize());
+    _path_to_cache[cache_base_path] = cache.get();
+    _caches.push_back(std::move(cache));
     LOG(INFO) << "[FileCache] path: " << cache_base_path
               << " total_size: " << file_cache_settings.total_size;
-    *status = Status::OK();
-    return;
+    return Status::OK();
 }
 
 CloudFileCachePtr FileCacheFactory::get_by_path(const IFileCache::Key& key) {

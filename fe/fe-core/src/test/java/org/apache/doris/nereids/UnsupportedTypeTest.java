@@ -60,26 +60,24 @@ public class UnsupportedTypeTest extends TestWithFeService {
     public void testUnsupportedTypeThrowException() {
         String[] sqls = {
                 "select id from type_tb",
+                "select jsonb_parse('{\"k1\":\"v31\",\"k2\":300}')",
                 "select karr from type_tb",
                 "select array_range(10)",
-                "select jsonb_parse('{\"k1\":\"v31\",\"k2\":300}')",
                 "select kmap from type_tb1",
                 "select * from type_tb",
                 "select * from type_tb1",
         };
         Class[] exceptions = {
                 null,
-                null,
-                null,
+                AnalysisException.class,
+                AnalysisException.class,
                 AnalysisException.class,
                 AnalysisException.class,
                 AnalysisException.class,
                 AnalysisException.class
         };
-        for (int i = 0; i < 3; ++i) {
-            runPlanner(sqls[i]);
-        }
-        for (int i = 3; i < sqls.length; ++i) {
+        runPlanner(sqls[0]);
+        for (int i = 1; i < sqls.length; ++i) {
             int iCopy = i;
             Assertions.assertThrows(exceptions[i], () -> runPlanner(sqls[iCopy]));
         }

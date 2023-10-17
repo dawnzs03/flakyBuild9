@@ -56,7 +56,7 @@ public class PartitionInMemoryInfoCollector extends MasterDaemon {
                 LOG.warn("Database [" + dbId + "] does not exist, skip to update database used data quota");
                 continue;
             }
-            if (db.isMysqlCompatibleDatabase()) {
+            if (db.isInfoSchemaDb()) {
                 continue;
             }
             try {

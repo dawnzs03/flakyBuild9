@@ -1,6 +1,6 @@
 ---
 {
-    "title": "INITCAP",
+    "title": "initcap",
     "language": "en"
 }
 ---

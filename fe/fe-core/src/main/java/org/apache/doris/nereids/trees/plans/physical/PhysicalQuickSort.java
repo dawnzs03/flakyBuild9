@@ -101,9 +101,9 @@ public class PhysicalQuickSort<CHILD_TYPE extends Plan> extends AbstractPhysical
 
     @Override
     public String toString() {
-        return Utils.toSqlString("PhysicalQuickSort[" + id.asInt() + "]" + getGroupIdWithPrefix(),
+        return Utils.toSqlString("PhysicalQuickSort[" + id.asInt() + "]" + getGroupIdAsString(),
                 "orderKeys", orderKeys,
-                "phase", phase.toString(), "stats", statistics
+                "phase", phase.toString()
         );
     }
 

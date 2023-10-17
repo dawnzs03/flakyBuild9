@@ -45,7 +45,11 @@ std::string get_stack_trace() {
     } else if (tool == "glibc") {
         return get_stack_trace_by_glibc();
     } else if (tool == "libunwind") {
+#if USE_UNWIND
         return get_stack_trace_by_libunwind();
+#else
+        return get_stack_trace_by_glog();
+#endif
     } else {
         return "no stack";
     }
@@ -78,7 +82,7 @@ std::string get_stack_trace_by_glibc() {
 }
 
 std::string get_stack_trace_by_libunwind() {
-    return "\n" + StackTrace().toString();
+    return StackTrace().toString();
 }
 
 } // namespace doris

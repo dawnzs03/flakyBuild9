@@ -269,9 +269,11 @@ public:
         }
         float percent_arg_value = percent_arg->get_value<Float32>();
         if (percent_arg_value < 0 || percent_arg_value > 1) {
-            return Status::InternalError(
-                    "the input argument of percentage: {} is not valid, must be in range [0,1] ",
-                    percent_arg_value);
+            std::stringstream ss;
+            ss << "the input argument of percentage: " << percent_arg_value
+               << " is not valid, must be in range [0,1] ";
+            LOG(WARNING) << ss.str();
+            return Status::InternalError(ss.str());
         }
 
         res.reserve(input_rows_count);

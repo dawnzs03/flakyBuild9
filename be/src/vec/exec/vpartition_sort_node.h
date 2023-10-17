@@ -33,7 +33,6 @@
 #include "vec/common/sort/partition_sorter.h"
 #include "vec/common/sort/vsort_exec_exprs.h"
 #include "vec/core/block.h"
-#include "vec/exec/vaggregation_node.h"
 
 namespace doris {
 namespace vectorized {
@@ -193,7 +192,7 @@ struct PartitionMethodStringNoCache {
 
 /// For the case where there is one numeric key.
 /// FieldType is UInt8/16/32/64 for any type with corresponding bit width.
-template <typename FieldType, typename TData>
+template <typename FieldType, typename TData, bool consecutive_keys_optimization = false>
 struct PartitionMethodOneNumber {
     using Data = TData;
     using Key = typename Data::key_type;
@@ -211,7 +210,7 @@ struct PartitionMethodOneNumber {
 
     /// To use one `Method` in different threads, use different `State`.
     using State = ColumnsHashing::HashMethodOneNumber<typename Data::value_type, Mapped, FieldType,
-                                                      false>;
+                                                      consecutive_keys_optimization>;
 };
 
 template <typename Base>
@@ -305,70 +304,134 @@ using PartitionedMethodVariants =
                      PartitionMethodSingleNullableColumn<PartitionMethodStringNoCache<
                              PartitionDataWithNullKey<PartitionDataWithShortStringKey>>>>;
 
-struct PartitionedHashMapVariants
-        : public DataVariants<PartitionedMethodVariants, PartitionMethodSingleNullableColumn,
-                              PartitionMethodOneNumber, PartitionMethodKeysFixed,
-                              PartitionDataWithNullKey> {
-    template <bool nullable>
-    void init(Type type) {
+struct PartitionedHashMapVariants {
+    PartitionedHashMapVariants() = default;
+    PartitionedHashMapVariants(const PartitionedHashMapVariants&) = delete;
+    PartitionedHashMapVariants& operator=(const PartitionedHashMapVariants&) = delete;
+    PartitionedMethodVariants _partition_method_variant;
+
+    enum class Type {
+        EMPTY = 0,
+        serialized,
+        int8_key,
+        int16_key,
+        int32_key,
+        int64_key,
+        int128_key,
+        int64_keys,
+        int128_keys,
+        int256_keys,
+        string_key,
+    };
+
+    Type _type = Type::EMPTY;
+
+    void init(Type type, bool is_nullable = false) {
         _type = type;
         switch (_type) {
         case Type::serialized: {
-            method_variant.emplace<PartitionMethodSerialized<PartitionDataWithStringKey>>();
+            _partition_method_variant
+                    .emplace<PartitionMethodSerialized<PartitionDataWithStringKey>>();
             break;
         }
         case Type::int8_key: {
-            emplace_single<UInt8, PartitionDataWithUInt8Key, nullable>();
+            if (is_nullable) {
+                _partition_method_variant
+                        .emplace<PartitionMethodSingleNullableColumn<PartitionMethodOneNumber<
+                                UInt8, PartitionDataWithNullKey<PartitionDataWithUInt8Key>>>>();
+            } else {
+                _partition_method_variant
+                        .emplace<PartitionMethodOneNumber<UInt8, PartitionDataWithUInt8Key>>();
+            }
             break;
         }
         case Type::int16_key: {
-            emplace_single<UInt16, PartitionDataWithUInt16Key, nullable>();
+            if (is_nullable) {
+                _partition_method_variant
+                        .emplace<PartitionMethodSingleNullableColumn<PartitionMethodOneNumber<
+                                UInt16, PartitionDataWithNullKey<PartitionDataWithUInt16Key>>>>();
+            } else {
+                _partition_method_variant
+                        .emplace<PartitionMethodOneNumber<UInt16, PartitionDataWithUInt16Key>>();
+            }
             break;
         }
         case Type::int32_key: {
-            emplace_single<UInt32, PartitionDataWithUInt32Key, nullable>();
+            if (is_nullable) {
+                _partition_method_variant
+                        .emplace<PartitionMethodSingleNullableColumn<PartitionMethodOneNumber<
+                                UInt32, PartitionDataWithNullKey<PartitionDataWithUInt32Key>>>>();
+            } else {
+                _partition_method_variant
+                        .emplace<PartitionMethodOneNumber<UInt32, PartitionDataWithUInt32Key>>();
+            }
             break;
         }
         case Type::int64_key: {
-            emplace_single<UInt64, PartitionDataWithUInt64Key, nullable>();
+            if (is_nullable) {
+                _partition_method_variant
+                        .emplace<PartitionMethodSingleNullableColumn<PartitionMethodOneNumber<
+                                UInt64, PartitionDataWithNullKey<PartitionDataWithUInt64Key>>>>();
+            } else {
+                _partition_method_variant
+                        .emplace<PartitionMethodOneNumber<UInt64, PartitionDataWithUInt64Key>>();
+            }
             break;
         }
         case Type::int128_key: {
-            emplace_single<UInt128, PartitionDataWithUInt128Key, nullable>();
+            if (is_nullable) {
+                _partition_method_variant
+                        .emplace<PartitionMethodSingleNullableColumn<PartitionMethodOneNumber<
+                                UInt128, PartitionDataWithNullKey<PartitionDataWithUInt128Key>>>>();
+            } else {
+                _partition_method_variant
+                        .emplace<PartitionMethodOneNumber<UInt128, PartitionDataWithUInt128Key>>();
+            }
             break;
         }
         case Type::int64_keys: {
-            emplace_fixed<PartitionDataWithUInt64Key, nullable>();
+            if (is_nullable) {
+                _partition_method_variant
+                        .emplace<PartitionMethodKeysFixed<PartitionDataWithUInt64Key, true>>();
+            } else {
+                _partition_method_variant
+                        .emplace<PartitionMethodKeysFixed<PartitionDataWithUInt64Key, false>>();
+            }
             break;
         }
         case Type::int128_keys: {
-            emplace_fixed<PartitionDataWithUInt128Key, nullable>();
+            if (is_nullable) {
+                _partition_method_variant
+                        .emplace<PartitionMethodKeysFixed<PartitionDataWithUInt128Key, true>>();
+            } else {
+                _partition_method_variant
+                        .emplace<PartitionMethodKeysFixed<PartitionDataWithUInt128Key, false>>();
+            }
             break;
         }
         case Type::int256_keys: {
-            emplace_fixed<PartitionDataWithUInt256Key, nullable>();
+            if (is_nullable) {
+                _partition_method_variant
+                        .emplace<PartitionMethodKeysFixed<PartitionDataWithUInt256Key, true>>();
+            } else {
+                _partition_method_variant
+                        .emplace<PartitionMethodKeysFixed<PartitionDataWithUInt256Key, false>>();
+            }
             break;
         }
         case Type::string_key: {
-            if (nullable) {
-                method_variant
+            if (is_nullable) {
+                _partition_method_variant
                         .emplace<PartitionMethodSingleNullableColumn<PartitionMethodStringNoCache<
                                 PartitionDataWithNullKey<PartitionDataWithShortStringKey>>>>();
             } else {
-                method_variant
+                _partition_method_variant
                         .emplace<PartitionMethodStringNoCache<PartitionDataWithShortStringKey>>();
             }
             break;
         }
         default:
-            throw Exception(ErrorCode::INTERNAL_ERROR, "meet invalid key type, type={}", type);
-        }
-    }
-    void init(Type type, bool is_nullable = false) {
-        if (is_nullable) {
-            init<true>(type);
-        } else {
-            init<false>(type);
+            DCHECK(false) << "Do not have a rigth partition by data type: ";
         }
     }
 };

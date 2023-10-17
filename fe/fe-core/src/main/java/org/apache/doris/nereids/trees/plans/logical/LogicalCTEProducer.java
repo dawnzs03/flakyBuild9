@@ -102,12 +102,15 @@ public class LogicalCTEProducer<CHILD_TYPE extends Plan> extends LogicalUnary<CH
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+        if (!super.equals(o)) {
+            return false;
+        }
         LogicalCTEProducer<?> that = (LogicalCTEProducer<?>) o;
         return Objects.equals(cteId, that.cteId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(cteId);
+        return Objects.hash(super.hashCode(), cteId);
     }
 }

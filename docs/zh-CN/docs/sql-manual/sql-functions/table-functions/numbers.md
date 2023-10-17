@@ -1,6 +1,6 @@
 ---
 {
-    "title": "NUMBERS",
+    "title": "numbers",
     "language": "zh-CN"
 }
 ---

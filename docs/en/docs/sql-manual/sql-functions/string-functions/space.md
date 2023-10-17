@@ -1,6 +1,6 @@
 ---
 {
-    "title": "SPACE",
+    "title": "space",
     "language": "en"
 }
 ---

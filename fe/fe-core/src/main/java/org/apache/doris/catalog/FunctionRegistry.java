@@ -157,6 +157,7 @@ public class FunctionRegistry {
                 .collect(Collectors.joining(", ", "[", "]"));
     }
 
+
     public void addUdf(String dbName, String name, UdfBuilder builder) {
         if (dbName == null) {
             dbName = GLOBAL_FUNCTION;

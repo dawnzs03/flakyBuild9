@@ -21,37 +21,12 @@ import org.apache.doris.catalog.Type;
 import org.apache.doris.nereids.exceptions.AnalysisException;
 import org.apache.doris.nereids.types.DataType;
 
-import java.util.Locale;
-
 /**
  * Represent any datatype in type coercion.
  */
-public class AnyDataType extends DataType {
+public class AnyDataType implements AbstractDataType {
 
-    public static final AnyDataType INSTANCE_WITHOUT_INDEX = new AnyDataType(-1);
-
-    private final int index;
-
-    public AnyDataType(int index) {
-        if (index < 0) {
-            index = -1;
-        }
-        this.index = index;
-    }
-
-    public int getIndex() {
-        return index;
-    }
-
-    @Override
-    public String toSql() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(simpleString().toUpperCase(Locale.ROOT));
-        if (index >= 0) {
-            sb.append("#").append(index);
-        }
-        return sb.toString();
-    }
+    public static final AnyDataType INSTANCE = new AnyDataType();
 
     @Override
     public DataType defaultConcreteType() {
@@ -59,7 +34,7 @@ public class AnyDataType extends DataType {
     }
 
     @Override
-    public boolean acceptsType(DataType other) {
+    public boolean acceptsType(AbstractDataType other) {
         return true;
     }
 
@@ -71,10 +46,5 @@ public class AnyDataType extends DataType {
     @Override
     public String simpleString() {
         return "any";
-    }
-
-    @Override
-    public int width() {
-        return -1;
     }
 }

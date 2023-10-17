@@ -317,10 +317,6 @@ public class TableRef implements ParseNode, Writable {
         return sampleTabletIds;
     }
 
-    public ArrayList<String> getCommonHints() {
-        return commonHints;
-    }
-
     public TableSample getTableSample() {
         return tableSample;
     }

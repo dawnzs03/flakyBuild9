@@ -1,6 +1,6 @@
 ---
 {
-    "title": "TRIM",
+    "title": "trim",
     "language": "zh-CN"
 }
 ---

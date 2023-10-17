@@ -126,11 +126,6 @@ Status VScanNode::init(const TPlanNode& tnode, RuntimeState* state) {
     } else {
         _push_down_agg_type = TPushAggOp::type::NONE;
     }
-
-    if (tnode.__isset.push_down_count) {
-        _push_down_count = tnode.push_down_count;
-    }
-
     return Status::OK();
 }
 
@@ -183,6 +178,7 @@ Status VScanNode::alloc_resource(RuntimeState* state) {
     if (_opened) {
         return Status::OK();
     }
+    _input_tuple_desc = state->desc_tbl().get_tuple_descriptor(_input_tuple_id);
     _output_tuple_desc = state->desc_tbl().get_tuple_descriptor(_output_tuple_id);
     RETURN_IF_ERROR(ExecNode::alloc_resource(state));
     RETURN_IF_ERROR(_acquire_runtime_filter());
@@ -320,11 +316,12 @@ Status VScanNode::_start_scanners(const std::list<VScannerSPtr>& scanners,
     if (_is_pipeline_scan) {
         int max_queue_size = _shared_scan_opt ? std::max(query_parallel_instance_num, 1) : 1;
         _scanner_ctx = pipeline::PipScannerContext::create_shared(
-                _state, this, _output_tuple_desc, scanners, limit(), _state->scan_queue_mem_limit(),
-                _col_distribute_ids, max_queue_size);
+                _state, this, _input_tuple_desc, _output_tuple_desc, scanners, limit(),
+                _state->scan_queue_mem_limit(), _col_distribute_ids, max_queue_size);
     } else {
-        _scanner_ctx = ScannerContext::create_shared(_state, this, _output_tuple_desc, scanners,
-                                                     limit(), _state->scan_queue_mem_limit());
+        _scanner_ctx =
+                ScannerContext::create_shared(_state, this, _input_tuple_desc, _output_tuple_desc,
+                                              scanners, limit(), _state->scan_queue_mem_limit());
     }
     return Status::OK();
 }
@@ -549,8 +546,7 @@ Status VScanNode::_normalize_predicate(const VExprSPtr& conjunct_expr_root, VExp
                 return Status::OK();
             }
 
-            if (pdt == PushDownType::ACCEPTABLE &&
-                (_is_key_column(slot->col_name()) || _storage_no_merge())) {
+            if (pdt == PushDownType::ACCEPTABLE && _is_key_column(slot->col_name())) {
                 output_expr = nullptr;
                 return Status::OK();
             } else {

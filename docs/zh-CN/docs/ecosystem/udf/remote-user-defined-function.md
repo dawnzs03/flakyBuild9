@@ -1,6 +1,6 @@
 ---
 {
-    "title": "远程 UDF",
+    "title": "远程UDF",
     "language": "zh-CN"
 }
 ---

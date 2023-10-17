@@ -18,7 +18,6 @@
 package org.apache.doris.nereids;
 
 import org.apache.doris.analysis.StatementBase;
-import org.apache.doris.catalog.View;
 import org.apache.doris.common.IdGenerator;
 import org.apache.doris.common.Pair;
 import org.apache.doris.nereids.memo.Group;
@@ -35,12 +34,9 @@ import org.apache.doris.nereids.trees.plans.logical.LogicalPlan;
 import org.apache.doris.qe.ConnectContext;
 import org.apache.doris.qe.OriginStatement;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import java.util.HashMap;
 import java.util.List;
@@ -54,8 +50,6 @@ import javax.annotation.concurrent.GuardedBy;
 public class StatementContext {
 
     private ConnectContext connectContext;
-
-    private final Stopwatch stopwatch = Stopwatch.createUnstarted();
 
     @GuardedBy("this")
     private final Map<String, Supplier<Object>> contextCacheMap = Maps.newLinkedHashMap();
@@ -84,7 +78,6 @@ public class StatementContext {
     // Used to update consumer's stats
     private final Map<CTEId, List<Pair<Map<Slot, Slot>, Group>>> cteIdToConsumerGroup = new HashMap<>();
     private final Map<CTEId, LogicalPlan> rewrittenCtePlan = new HashMap<>();
-    private final Set<View> views = Sets.newHashSet();
 
     public StatementContext() {
         this.connectContext = ConnectContext.get();
@@ -109,10 +102,6 @@ public class StatementContext {
 
     public OriginStatement getOriginStatement() {
         return originStatement;
-    }
-
-    public Stopwatch getStopwatch() {
-        return stopwatch;
     }
 
     public void setMaxNAryInnerJoin(int maxNAryInnerJoin) {
@@ -217,13 +206,5 @@ public class StatementContext {
 
     public Map<CTEId, LogicalPlan> getRewrittenCtePlan() {
         return rewrittenCtePlan;
-    }
-
-    public void addView(View view) {
-        this.views.add(view);
-    }
-
-    public List<View> getViews() {
-        return ImmutableList.copyOf(views);
     }
 }

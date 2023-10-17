@@ -31,16 +31,12 @@ import org.apache.logging.log4j.Logger;
 public class SqlCache extends Cache {
     private static final Logger LOG = LogManager.getLogger(SqlCache.class);
 
-    private String originSql;
-
     public SqlCache(TUniqueId queryId, SelectStmt selectStmt) {
         super(queryId, selectStmt);
     }
 
-    // For SetOperationStmt and Nereids
-    public SqlCache(TUniqueId queryId, String originSql) {
+    public SqlCache(TUniqueId queryId) {
         super(queryId);
-        this.originSql = originSql;
     }
 
     public void setCacheInfo(CacheAnalyzer.CacheTable latestTable, String allViewExpandStmtListStr) {
@@ -49,10 +45,11 @@ public class SqlCache extends Cache {
     }
 
     public String getSqlWithViewStmt() {
-        String originSql = selectStmt != null ? selectStmt.toSql() : this.originSql;
-        String cacheKey = originSql + "|" + allViewExpandStmtListStr;
-        LOG.debug("Cache key: {}", cacheKey);
-        return cacheKey;
+        if (selectStmt != null)  {
+            return selectStmt.toSql() + "|" + allViewExpandStmtListStr;
+        } else {
+            return allViewExpandStmtListStr;
+        }
     }
 
     public InternalService.PFetchCacheResult getCacheData(Status status) {
@@ -80,9 +77,6 @@ public class SqlCache extends Cache {
     public void copyRowBatch(RowBatch rowBatch) {
         if (rowBatchBuilder == null) {
             rowBatchBuilder = new RowBatchBuilder(CacheAnalyzer.CacheMode.Sql);
-        }
-        if (!super.checkRowLimit()) {
-            return;
         }
         rowBatchBuilder.copyRowData(rowBatch);
     }

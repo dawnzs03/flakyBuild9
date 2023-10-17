@@ -15,9 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-suite("load") {
+suite("load_nereids_test_query_db") {
     sql "SET enable_nereids_planner=true"
-    sql "set forbid_unknown_col_stats=false"
     sql "SET enable_fallback_to_original_planner=false"
     // init query case data
     def dbName = "nereids_test_query_db"

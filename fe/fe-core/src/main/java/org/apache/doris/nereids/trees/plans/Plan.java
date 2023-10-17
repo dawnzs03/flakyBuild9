@@ -26,7 +26,6 @@ import org.apache.doris.nereids.trees.expressions.Expression;
 import org.apache.doris.nereids.trees.expressions.NamedExpression;
 import org.apache.doris.nereids.trees.expressions.Slot;
 import org.apache.doris.nereids.trees.plans.visitor.PlanVisitor;
-import org.apache.doris.nereids.util.MutableState;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -41,6 +40,7 @@ import java.util.stream.Collectors;
  * Abstract class for all plan node.
  */
 public interface Plan extends TreeNode<Plan> {
+
     PlanType getType();
 
     // cache GroupExpression for fast exit from Memo.copyIn.
@@ -55,12 +55,17 @@ public interface Plan extends TreeNode<Plan> {
     boolean canBind();
 
     default boolean bound() {
-        // TODO: avoid to use getLogicalProperties()
         return !(getLogicalProperties() instanceof UnboundLogicalProperties);
     }
 
     default boolean hasUnboundExpression() {
         return getExpressions().stream().anyMatch(Expression::hasUnbound);
+    }
+
+    default boolean childrenBound() {
+        return children()
+                .stream()
+                .allMatch(Plan::bound);
     }
 
     default LogicalProperties computeLogicalProperties() {
@@ -159,26 +164,5 @@ public interface Plan extends TreeNode<Plan> {
      */
     default String shapeInfo() {
         return this.getClass().getSimpleName();
-    }
-
-    /**
-     * used in treeString()
-     *
-     * @return "" if groupExpression is empty, o.w. string format of group id
-     */
-    default String getGroupIdAsString() {
-        String groupId;
-        if (getGroupExpression().isPresent()) {
-            groupId = getGroupExpression().get().getOwnerGroup().getGroupId().asInt() + "";
-        } else if (getMutableState(MutableState.KEY_GROUP).isPresent()) {
-            groupId = getMutableState(MutableState.KEY_GROUP).get().toString();
-        } else {
-            groupId = "";
-        }
-        return groupId;
-    }
-
-    default String getGroupIdWithPrefix() {
-        return "@" + getGroupIdAsString();
     }
 }

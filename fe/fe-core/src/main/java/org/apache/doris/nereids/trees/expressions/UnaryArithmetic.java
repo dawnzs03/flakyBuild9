@@ -23,8 +23,6 @@ import org.apache.doris.nereids.trees.expressions.functions.PropagateNullable;
 import org.apache.doris.nereids.trees.expressions.visitor.ExpressionVisitor;
 import org.apache.doris.nereids.types.DataType;
 
-import java.util.List;
-
 /**
  * binary arithmetic operator. Such as +, -, *, /.
  */
@@ -32,7 +30,7 @@ public abstract class UnaryArithmetic extends UnaryOperator implements Propagate
 
     private final Operator legacyOperator;
 
-    protected UnaryArithmetic(List<Expression> child, Operator legacyOperator) {
+    public UnaryArithmetic(Expression child, Operator legacyOperator) {
         super(child, legacyOperator.toString());
         this.legacyOperator = legacyOperator;
     }

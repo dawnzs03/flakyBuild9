@@ -24,17 +24,16 @@ import org.apache.doris.nereids.trees.expressions.functions.PropagateNullable;
 import org.apache.doris.nereids.trees.expressions.visitor.ExpressionVisitor;
 import org.apache.doris.nereids.types.BooleanType;
 import org.apache.doris.nereids.types.DataType;
+import org.apache.doris.nereids.types.coercion.AbstractDataType;
 import org.apache.doris.nereids.types.coercion.AnyDataType;
-
-import java.util.List;
 
 /**
  * like expression: a MATCH 'hello'.
  */
 public abstract class Match extends BinaryOperator implements PropagateNullable {
 
-    public Match(List<Expression> children, String symbol) {
-        super(children, symbol);
+    public Match(Expression left, Expression right, String symbol) {
+        super(left, right, symbol);
     }
 
     /**
@@ -50,7 +49,7 @@ public abstract class Match extends BinaryOperator implements PropagateNullable 
             case "MATCH_PHRASE":
                 return Operator.MATCH_PHRASE;
             default:
-                throw new AnalysisException("UnSupported type for match: " + symbol);
+                throw new AnalysisException("UnSupported type: " + symbol);
         }
     }
 
@@ -60,8 +59,8 @@ public abstract class Match extends BinaryOperator implements PropagateNullable 
     }
 
     @Override
-    public DataType inputType() {
-        return AnyDataType.INSTANCE_WITHOUT_INDEX;
+    public AbstractDataType inputType() {
+        return AnyDataType.INSTANCE;
     }
 
     @Override

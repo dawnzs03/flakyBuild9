@@ -67,8 +67,6 @@ struct BlockRowPos {
 
 class AggFnEvaluator;
 
-enum AnalyticFnScope { PARTITION, RANGE, ROWS };
-
 class VAnalyticEvalNode : public ExecNode {
 public:
     ~VAnalyticEvalNode() override = default;
@@ -136,6 +134,7 @@ private:
     void _release_mem();
 
 private:
+    enum AnalyticFnScope { PARTITION, RANGE, ROWS };
     std::vector<Block> _input_blocks;
     std::vector<int64_t> input_block_first_row_positions;
     std::vector<AggFnEvaluator*> _agg_functions;

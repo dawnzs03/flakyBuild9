@@ -1,6 +1,6 @@
 ---
 {
-"title": "BITXOR",
+"title": "bitxor",
 "language": "zh-CN"
 }
 ---

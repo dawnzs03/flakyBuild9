@@ -29,6 +29,7 @@ import org.apache.doris.nereids.memo.GroupExpression;
 import org.apache.doris.nereids.memo.Memo;
 import org.apache.doris.nereids.properties.LogicalProperties;
 import org.apache.doris.nereids.properties.PhysicalProperties;
+import org.apache.doris.nereids.trees.expressions.EqualTo;
 import org.apache.doris.nereids.trees.expressions.Expression;
 import org.apache.doris.nereids.trees.expressions.NamedExpression;
 import org.apache.doris.nereids.trees.expressions.Slot;
@@ -246,8 +247,13 @@ public class PlanReceiver implements AbstractReceiver {
             }
             Preconditions.checkArgument(joinType == null || joinType == edge.getJoinType());
             joinType = edge.getJoinType();
-            hashConjuncts.addAll(edge.getHashJoinConjuncts());
-            otherConjuncts.addAll(edge.getOtherJoinConjuncts());
+            for (Expression expression : edge.getExpressions()) {
+                if (expression instanceof EqualTo) {
+                    hashConjuncts.add(expression);
+                } else {
+                    otherConjuncts.add(expression);
+                }
+            }
         }
         return joinType;
     }

@@ -17,19 +17,12 @@
 
 package org.apache.doris.planner;
 
-import org.apache.doris.analysis.ArrayLiteral;
-import org.apache.doris.analysis.DecimalLiteral;
 import org.apache.doris.analysis.DescriptorTable;
 import org.apache.doris.analysis.ExplainOptions;
-import org.apache.doris.analysis.FloatLiteral;
-import org.apache.doris.analysis.LiteralExpr;
-import org.apache.doris.analysis.NullLiteral;
 import org.apache.doris.analysis.StatementBase;
 import org.apache.doris.common.UserException;
 import org.apache.doris.common.profile.PlanTreeBuilder;
 import org.apache.doris.common.profile.PlanTreePrinter;
-import org.apache.doris.common.util.LiteralUtils;
-import org.apache.doris.qe.ResultSet;
 import org.apache.doris.thrift.TQueryOptions;
 
 import com.google.common.base.Preconditions;
@@ -39,7 +32,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public abstract class Planner {
 
@@ -88,20 +80,6 @@ public abstract class Planner {
         return str.toString();
     }
 
-    protected void handleLiteralInFe(LiteralExpr literalExpr, List<String> data) {
-        if (literalExpr instanceof NullLiteral) {
-            data.add(null);
-        } else if (literalExpr instanceof FloatLiteral) {
-            data.add(LiteralUtils.getStringValue((FloatLiteral) literalExpr));
-        } else if (literalExpr instanceof DecimalLiteral) {
-            data.add(((DecimalLiteral) literalExpr).getValue().toPlainString());
-        } else if (literalExpr instanceof ArrayLiteral) {
-            data.add(LiteralUtils.getStringValue((ArrayLiteral) literalExpr));
-        } else {
-            data.add(literalExpr.getStringValue());
-        }
-    }
-
     public void appendTupleInfo(StringBuilder stringBuilder) {}
 
     public List<PlanFragment> getFragments() {
@@ -115,7 +93,5 @@ public abstract class Planner {
     public abstract DescriptorTable getDescTable();
 
     public abstract List<RuntimeFilter> getRuntimeFilters();
-
-    public abstract Optional<ResultSet> handleQueryInFe(StatementBase parsedStmt);
 
 }

@@ -1,6 +1,6 @@
 ---
 {
-    "title": "WINDOW_FUNCTION_LEAD",
+    "title": "WINDOW-FUNCTION-LEAD",
     "language": "zh-CN"
 }
 ---

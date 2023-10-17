@@ -1,6 +1,6 @@
 ---
 {
-    "title": "FRONTENDS",
+    "title": "frontends",
     "language": "zh-CN"
 }
 ---

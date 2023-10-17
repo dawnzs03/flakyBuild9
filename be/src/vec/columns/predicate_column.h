@@ -21,7 +21,6 @@
 
 #include "olap/decimal12.h"
 #include "olap/uint24.h"
-#include "runtime/define_primitive_type.h"
 #include "runtime/primitive_type.h"
 #include "vec/columns/column.h"
 #include "vec/columns/column_decimal.h"
@@ -45,7 +44,6 @@ private:
     PredicateColumnType(const size_t n) : data(n) {}
     friend class COWHelper<IColumn, PredicateColumnType<Type>>;
     using T = typename PredicatePrimitiveTypeTraits<Type>::PredicateFieldType;
-    using ColumnType = typename PrimitiveTypeTraits<Type>::ColumnType;
 
     PredicateColumnType(const PredicateColumnType& src) : data(src.data.begin(), src.data.end()) {}
 
@@ -62,7 +60,15 @@ private:
     }
 
     void insert_date_to_res_column(const uint16_t* sel, size_t sel_size,
-                                   ColumnVector<Int64>* res_ptr) {
+                                   vectorized::ColumnVector<Int64>* res_ptr) {
+        for (size_t i = 0; i < sel_size; i++) {
+            VecDateTimeValue date = VecDateTimeValue::create_from_olap_date(get_date_at(sel[i]));
+            res_ptr->insert_data(reinterpret_cast<char*>(&date), 0);
+        }
+    }
+
+    void insert_date32_to_res_column(const uint16_t* sel, size_t sel_size,
+                                     vectorized::ColumnVector<Int64>* res_ptr) {
         res_ptr->reserve(sel_size);
         auto& res_data = res_ptr->get_data();
 
@@ -76,15 +82,17 @@ private:
     }
 
     void insert_datetime_to_res_column(const uint16_t* sel, size_t sel_size,
-                                       ColumnVector<Int64>* res_ptr) {
+                                       vectorized::ColumnVector<Int64>* res_ptr) {
         for (size_t i = 0; i < sel_size; i++) {
             uint64_t value = data[sel[i]];
-            VecDateTimeValue datetime = VecDateTimeValue::create_from_olap_datetime(value);
+            vectorized::VecDateTimeValue datetime =
+                    VecDateTimeValue::create_from_olap_datetime(value);
             res_ptr->insert_data(reinterpret_cast<char*>(&datetime), 0);
         }
     }
 
-    void insert_string_to_res_column(const uint16_t* sel, size_t sel_size, ColumnString* res_ptr) {
+    void insert_string_to_res_column(const uint16_t* sel, size_t sel_size,
+                                     vectorized::ColumnString* res_ptr) {
         StringRef refs[sel_size];
         size_t length = 0;
         for (size_t i = 0; i < sel_size; i++) {
@@ -100,7 +108,7 @@ private:
     }
 
     void insert_decimal_to_res_column(const uint16_t* sel, size_t sel_size,
-                                      ColumnDecimal<Decimal128>* res_ptr) {
+                                      vectorized::ColumnDecimal<Decimal128>* res_ptr) {
         for (size_t i = 0; i < sel_size; i++) {
             uint16_t n = sel[i];
             auto& dv = reinterpret_cast<const decimal12_t&>(data[n]);
@@ -109,9 +117,9 @@ private:
         }
     }
 
-    template <typename Y, template <typename> typename ColumnContainer>
+    template <typename Y>
     void insert_default_value_res_column(const uint16_t* sel, size_t sel_size,
-                                         ColumnContainer<Y>* res_ptr) {
+                                         vectorized::ColumnVector<Y>* res_ptr) {
         static_assert(std::is_same_v<T, Y>);
         auto& res_data = res_ptr->get_data();
         DCHECK(res_data.empty());
@@ -123,7 +131,8 @@ private:
         res_data.set_end_ptr(y + sel_size);
     }
 
-    void insert_byte_to_res_column(const uint16_t* sel, size_t sel_size, IColumn* res_ptr) {
+    void insert_byte_to_res_column(const uint16_t* sel, size_t sel_size,
+                                   vectorized::IColumn* res_ptr) {
         for (size_t i = 0; i < sel_size; i++) {
             uint16_t n = sel[i];
             char* ch_val = reinterpret_cast<char*>(&data[n]);
@@ -217,7 +226,7 @@ public:
             insert_string_value(data_ptr, length);
         } else if constexpr (std::is_same_v<T, decimal12_t>) {
             insert_decimal_value(data_ptr, length);
-        } else if constexpr (std::is_same_v<T, Int128>) {
+        } else if constexpr (std::is_same_v<T, doris::vectorized::Int128>) {
             insert_in_copy_way(data_ptr, length);
         } else {
             insert_default_type(data_ptr, length);
@@ -242,7 +251,7 @@ public:
     void insert_many_fix_len_data(const char* data_ptr, size_t num) override {
         if constexpr (std::is_same_v<T, decimal12_t>) {
             insert_many_in_copy_way(data_ptr, num);
-        } else if constexpr (std::is_same_v<T, Int128>) {
+        } else if constexpr (std::is_same_v<T, doris::vectorized::Int128>) {
             insert_many_in_copy_way(data_ptr, num);
         } else if constexpr (std::is_same_v<T, StringRef>) {
             // here is unreachable, just for compilation to be able to pass
@@ -389,10 +398,6 @@ public:
         LOG(FATAL) << "get field not supported in PredicateColumnType";
     }
 
-    void replicate(const uint32_t* indexs, size_t target_size, IColumn& column) const override {
-        LOG(FATAL) << "not support";
-    }
-
     // it's impossible to use ComplexType as key , so we don't have to implement them
     [[noreturn]] StringRef serialize_value_into_arena(size_t n, Arena& arena,
                                                       char const*& begin) const override {
@@ -461,32 +466,74 @@ public:
     }
 
     Status filter_by_selector(const uint16_t* sel, size_t sel_size, IColumn* col_ptr) override {
-        ColumnType* column = assert_cast<ColumnType*>(col_ptr);
-        if constexpr (std::is_same_v<ColumnVector<T>, ColumnType>) {
-            insert_default_value_res_column(sel, sel_size, column);
-        } else if constexpr (std::is_same_v<ColumnDecimal<T>, ColumnType>) {
-            insert_default_value_res_column(sel, sel_size, column);
-        } else if constexpr (std::is_same_v<T, StringRef>) {
-            insert_string_to_res_column(sel, sel_size, column);
+        if constexpr (std::is_same_v<T, StringRef>) {
+            insert_string_to_res_column(sel, sel_size,
+                                        reinterpret_cast<vectorized::ColumnString*>(col_ptr));
         } else if constexpr (std::is_same_v<T, decimal12_t>) {
-            insert_decimal_to_res_column(sel, sel_size, column);
+            insert_decimal_to_res_column(
+                    sel, sel_size,
+                    reinterpret_cast<vectorized::ColumnDecimal<Decimal128>*>(col_ptr));
+        } else if constexpr (std::is_same_v<T, doris::vectorized::Int8>) {
+            insert_default_value_res_column(
+                    sel, sel_size,
+                    reinterpret_cast<vectorized::ColumnVector<doris::vectorized::Int8>*>(col_ptr));
+        } else if constexpr (std::is_same_v<T, doris::vectorized::Int16>) {
+            insert_default_value_res_column(
+                    sel, sel_size,
+                    reinterpret_cast<vectorized::ColumnVector<doris::vectorized::Int16>*>(col_ptr));
+        } else if constexpr (std::is_same_v<T, doris::vectorized::Int32>) {
+            insert_default_value_res_column(
+                    sel, sel_size,
+                    reinterpret_cast<vectorized::ColumnVector<doris::vectorized::Int32>*>(col_ptr));
+        } else if constexpr (std::is_same_v<T, doris::vectorized::Int64>) {
+            insert_default_value_res_column(
+                    sel, sel_size,
+                    reinterpret_cast<vectorized::ColumnVector<doris::vectorized::Int64>*>(col_ptr));
+        } else if constexpr (std::is_same_v<T, doris::vectorized::Float32>) {
+            insert_default_value_res_column(
+                    sel, sel_size,
+                    reinterpret_cast<vectorized::ColumnVector<doris::vectorized::Float32>*>(
+                            col_ptr));
+        } else if constexpr (std::is_same_v<T, doris::vectorized::Float64>) {
+            insert_default_value_res_column(
+                    sel, sel_size,
+                    reinterpret_cast<vectorized::ColumnVector<doris::vectorized::Float64>*>(
+                            col_ptr));
         } else if constexpr (std::is_same_v<T, uint64_t>) {
-            if constexpr (Type == TYPE_DATETIMEV2) {
-                insert_default_value_res_column(sel, sel_size, column);
+            if (const vectorized::ColumnVector<UInt64>* date_col =
+                        check_and_get_column<vectorized::ColumnVector<UInt64>>(
+                                const_cast<const IColumn*>(col_ptr))) {
+                insert_default_value_res_column(
+                        sel, sel_size, const_cast<vectorized::ColumnVector<UInt64>*>(date_col));
             } else {
-                insert_datetime_to_res_column(sel, sel_size, column);
+                insert_datetime_to_res_column(
+                        sel, sel_size, reinterpret_cast<vectorized::ColumnVector<Int64>*>(col_ptr));
             }
+        } else if constexpr (std::is_same_v<T, uint24_t>) {
+            insert_date_to_res_column(sel, sel_size,
+                                      reinterpret_cast<vectorized::ColumnVector<Int64>*>(col_ptr));
         } else if constexpr (std::is_same_v<T, uint32_t>) {
-            if constexpr (Type == TYPE_DATEV2) {
-                insert_default_value_res_column(sel, sel_size, column);
+            if (const vectorized::ColumnVector<Int64>* date_col =
+                        check_and_get_column<vectorized::ColumnVector<Int64>>(
+                                const_cast<const IColumn*>(col_ptr))) {
+                // a trick type judge, need refactor it.
+                insert_date32_to_res_column(sel, sel_size,
+                                            const_cast<vectorized::ColumnVector<Int64>*>(date_col));
             } else {
-                insert_date_to_res_column(sel, sel_size, column);
+                insert_default_value_res_column(
+                        sel, sel_size,
+                        reinterpret_cast<vectorized::ColumnVector<doris::vectorized::UInt32>*>(
+                                col_ptr));
             }
+        } else if constexpr (std::is_same_v<T, doris::vectorized::Int128>) {
+            insert_default_value_res_column(
+                    sel, sel_size,
+                    reinterpret_cast<vectorized::ColumnVector<doris::vectorized::Int128>*>(
+                            col_ptr));
         } else if (std::is_same_v<T, bool>) {
             insert_byte_to_res_column(sel, sel_size, col_ptr);
         } else {
-            return Status::NotSupported("not supported output type in predicate_column, type={}",
-                                        type_to_string(Type));
+            return Status::NotSupported("not supported output type in predicate_column");
         }
         return Status::OK();
     }

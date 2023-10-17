@@ -43,7 +43,6 @@
 // IWYU pragma: no_include <opentelemetry/common/threadlocal.h>
 #include "common/compiler_util.h" // IWYU pragma: keep
 #include "common/status.h"
-#include "runtime/exec_env.h"
 #include "runtime/runtime_state.h"
 #include "udf/udf.h"
 #include "util/jsonb_document.h"
@@ -126,13 +125,13 @@ struct TimeCast {
     // '300' -> 00:03:00 '20:23' ->  20:23:00 '20:23:24' -> 20:23:24
     template <typename T>
     static bool try_parse_time(char* s, size_t len, T& x, const cctz::time_zone& local_time_zone,
-                               ZoneList& time_zone_cache, std::shared_mutex& cache_lock) {
+                               ZoneList& time_zone_cache) {
         /// TODO: Maybe we can move Timecast to the io_helper.
         if (try_as_time(s, len, x, local_time_zone)) {
             return true;
         } else {
             if (VecDateTimeValue dv {};
-                dv.from_date_str(s, len, local_time_zone, time_zone_cache, &cache_lock)) {
+                dv.from_date_str(s, len, local_time_zone, time_zone_cache)) {
                 // can be parse as a datetime
                 x = dv.hour() * 3600 + dv.minute() * 60 + dv.second();
                 return true;
@@ -443,8 +442,7 @@ struct ConvertImpl {
 /** If types are identical, just take reference to column.
   */
 template <typename T, typename Name>
-    requires(!T::is_parametric)
-struct ConvertImpl<T, T, Name> {
+struct ConvertImpl<std::enable_if_t<!T::is_parametric, T>, T, Name> {
     static Status execute(FunctionContext* context, Block& block, const ColumnNumbers& arguments,
                           size_t result, size_t /*input_rows_count*/) {
         block.get_by_position(result).column = block.get_by_position(arguments[0]).column;
@@ -543,15 +541,19 @@ struct ConvertImplGenericToString {
     }
 };
 //this is for data in compound type
+template <typename StringColumnType>
 struct ConvertImplGenericFromString {
     static Status execute(FunctionContext* context, Block& block, const ColumnNumbers& arguments,
                           const size_t result, size_t input_rows_count) {
+        static_assert(std::is_same_v<StringColumnType, ColumnString>,
+                      "Can be used only to parse from ColumnString");
         const auto& col_with_type_and_name = block.get_by_position(arguments[0]);
         const IColumn& col_from = *col_with_type_and_name.column;
         // result column must set type
         DCHECK(block.get_by_position(result).type != nullptr);
         auto data_type_to = block.get_by_position(result).type;
-        if (const ColumnString* col_from_string = check_and_get_column<ColumnString>(&col_from)) {
+        if (const StringColumnType* col_from_string =
+                    check_and_get_column<StringColumnType>(&col_from)) {
             auto col_to = data_type_to->create_column();
 
             size_t size = col_from.size();
@@ -559,14 +561,14 @@ struct ConvertImplGenericFromString {
 
             ColumnUInt8::MutablePtr col_null_map_to = ColumnUInt8::create(size);
             ColumnUInt8::Container* vec_null_map_to = &col_null_map_to->get_data();
-            const bool is_complex = is_complex_type(data_type_to);
+
             for (size_t i = 0; i < size; ++i) {
                 const auto& val = col_from_string->get_data_at(i);
                 // Note: here we should handle the null element
                 if (val.size == 0) {
                     col_to->insert_default();
                     // empty string('') is an invalid format for complex type, set null_map to 1
-                    if (is_complex) {
+                    if (is_complex_type(data_type_to)) {
                         (*vec_null_map_to)[i] = 1;
                     }
                     continue;
@@ -616,8 +618,6 @@ struct ConvertImplNumberToJsonb {
                 writer.writeInt32(data[i]);
             } else if constexpr (std::is_same_v<ColumnInt64, ColumnType>) {
                 writer.writeInt64(data[i]);
-            } else if constexpr (std::is_same_v<ColumnInt128, ColumnType>) {
-                writer.writeInt128(data[i]);
             } else if constexpr (std::is_same_v<ColumnFloat64, ColumnType>) {
                 writer.writeDouble(data[i]);
             } else {
@@ -723,7 +723,7 @@ struct ConvertImplFromJsonb {
                     }
                 } else if constexpr (type_index == TypeIndex::Int8) {
                     if (value->isInt8()) {
-                        res[i] = (int8_t)((const JsonbIntVal*)value)->val();
+                        res[i] = ((const JsonbIntVal*)value)->val();
                     } else {
                         null_map[i] = 1;
                         res[i] = 0;
@@ -745,15 +745,7 @@ struct ConvertImplFromJsonb {
                 } else if constexpr (type_index == TypeIndex::Int64) {
                     if (value->isInt8() || value->isInt16() || value->isInt32() ||
                         value->isInt64()) {
-                        res[i] = (int64_t)((const JsonbIntVal*)value)->val();
-                    } else {
-                        null_map[i] = 1;
-                        res[i] = 0;
-                    }
-                } else if constexpr (type_index == TypeIndex::Int128) {
-                    if (value->isInt8() || value->isInt16() || value->isInt32() ||
-                        value->isInt64() || value->isInt128()) {
-                        res[i] = (int128_t)((const JsonbIntVal*)value)->val();
+                        res[i] = ((const JsonbIntVal*)value)->val();
                     } else {
                         null_map[i] = 1;
                         res[i] = 0;
@@ -854,24 +846,22 @@ struct NameToDateTime {
 template <typename DataType, typename Additions = void*, typename FromDataType = void*>
 bool try_parse_impl(typename DataType::FieldType& x, ReadBuffer& rb,
                     const cctz::time_zone& local_time_zone, ZoneList& time_zone_cache,
-                    std::shared_mutex& cache_lock,
                     Additions additions [[maybe_unused]] = Additions()) {
     if constexpr (IsDateTimeType<DataType>) {
-        return try_read_datetime_text(x, rb, local_time_zone, time_zone_cache, cache_lock);
+        return try_read_datetime_text(x, rb);
     }
 
     if constexpr (IsDateType<DataType>) {
-        return try_read_date_text(x, rb, local_time_zone, time_zone_cache, cache_lock);
+        return try_read_date_text(x, rb);
     }
 
     if constexpr (IsDateV2Type<DataType>) {
-        return try_read_date_v2_text(x, rb, local_time_zone, time_zone_cache, cache_lock);
+        return try_read_date_v2_text(x, rb, local_time_zone, time_zone_cache);
     }
 
     if constexpr (IsDateTimeV2Type<DataType>) {
         UInt32 scale = additions;
-        return try_read_datetime_v2_text(x, rb, local_time_zone, time_zone_cache, cache_lock,
-                                         scale);
+        return try_read_datetime_v2_text(x, rb, local_time_zone, time_zone_cache, scale);
     }
 
     if constexpr (std::is_same_v<DataTypeString, FromDataType> &&
@@ -880,8 +870,7 @@ bool try_parse_impl(typename DataType::FieldType& x, ReadBuffer& rb,
         auto len = rb.count();
         auto s = rb.position();
         rb.position() = rb.end(); // make is_all_read = true
-        auto ret =
-                TimeCast::try_parse_time(s, len, x, local_time_zone, time_zone_cache, cache_lock);
+        auto ret = TimeCast::try_parse_time(s, len, x, local_time_zone, time_zone_cache);
         x *= (1000 * 1000);
         return ret;
     }
@@ -898,24 +887,9 @@ bool try_parse_impl(typename DataType::FieldType& x, ReadBuffer& rb,
         return try_read_int_text(x, rb);
     }
 
-    if constexpr (IsDataTypeDecimalV2<DataType>) {
+    if constexpr (IsDataTypeDecimal<DataType>) {
         UInt32 scale = additions;
-        return try_read_decimal_text<TYPE_DECIMALV2>(x, rb, DataType::max_precision(), scale);
-    }
-
-    if constexpr (std::is_same_v<DataTypeDecimal<Decimal32>, DataType>) {
-        UInt32 scale = additions;
-        return try_read_decimal_text<TYPE_DECIMAL32>(x, rb, DataType::max_precision(), scale);
-    }
-
-    if constexpr (std::is_same_v<DataTypeDecimal<Decimal64>, DataType>) {
-        UInt32 scale = additions;
-        return try_read_decimal_text<TYPE_DECIMAL64>(x, rb, DataType::max_precision(), scale);
-    }
-
-    if constexpr (IsDataTypeDecimal128I<DataType>) {
-        UInt32 scale = additions;
-        return try_read_decimal_text<TYPE_DECIMAL128I>(x, rb, DataType::max_precision(), scale);
+        return try_read_decimal_text(x, rb, DataType::max_precision(), scale);
     }
 }
 
@@ -1179,6 +1153,7 @@ using FunctionToFloat32 =
 using FunctionToFloat64 =
         FunctionConvert<DataTypeFloat64, NameToFloat64, ToNumberMonotonicity<Float64>>;
 
+using FunctionToTime = FunctionConvert<DataTypeTime, NameToFloat64, ToNumberMonotonicity<Float64>>;
 using FunctionToTimeV2 =
         FunctionConvert<DataTypeTimeV2, NameToFloat64, ToNumberMonotonicity<Float64>>;
 using FunctionToString = FunctionConvert<DataTypeString, NameToString, ToStringMonotonicity>;
@@ -1276,6 +1251,10 @@ struct FunctionTo<DataTypeDateTimeV2> {
     using Type = FunctionToDateTimeV2;
 };
 template <>
+struct FunctionTo<DataTypeTime> {
+    using Type = FunctionToTime;
+};
+template <>
 struct FunctionTo<DataTypeTimeV2> {
     using Type = FunctionToTimeV2;
 };
@@ -1331,8 +1310,10 @@ struct ConvertThroughParsing {
                                             ColumnDecimal<ToFieldType>, ColumnVector<ToFieldType>>;
 
         // For datelike type, only from FunctionConvertFromString. So we can use its' context。
-        ZoneList& time_zone_cache = context->state()->exec_env()->global_zone_cache();
-        std::shared_mutex& cache_lock = context->state()->exec_env()->zone_cache_rw_lock();
+        auto convert_ctx = reinterpret_cast<ConvertTzCtx*>(
+                context->get_function_state(FunctionContext::FunctionStateScope::THREAD_LOCAL));
+        ZoneList time_zone_cache_;
+        auto& time_zone_cache = convert_ctx ? convert_ctx->time_zone_cache : time_zone_cache_;
 
         const IColumn* col_from = block.get_by_position(arguments[0]).column.get();
         const ColumnString* col_from_string = check_and_get_column<ColumnString>(col_from);
@@ -1388,17 +1369,17 @@ struct ConvertThroughParsing {
                         if constexpr (IsDataTypeDecimal<ToDataType>) {
                             parsed = try_parse_impl<ToDataType>(
                                     vec_to[i], read_buffer, context->state()->timezone_obj(),
-                                    time_zone_cache, cache_lock, vec_to.get_scale());
+                                    time_zone_cache, vec_to.get_scale());
                         } else if constexpr (IsDataTypeDateTimeV2<ToDataType>) {
                             auto type = check_and_get_data_type<DataTypeDateTimeV2>(
                                     block.get_by_position(result).type.get());
-                            parsed = try_parse_impl<ToDataType>(
-                                    vec_to[i], read_buffer, context->state()->timezone_obj(),
-                                    time_zone_cache, cache_lock, type->get_scale());
+                            parsed = try_parse_impl<ToDataType>(vec_to[i], read_buffer,
+                                                                context->state()->timezone_obj(),
+                                                                time_zone_cache, type->get_scale());
                         } else {
                             parsed = try_parse_impl<ToDataType, void*, FromDataType>(
                                     vec_to[i], read_buffer, context->state()->timezone_obj(),
-                                    time_zone_cache, cache_lock);
+                                    time_zone_cache);
                         }
                         (*vec_null_map_to)[i] = !parsed || !is_all_read(read_buffer);
                         if constexpr (is_load_ && is_strict_insert_) {
@@ -1453,6 +1434,14 @@ public:
 
     ColumnNumbers get_arguments_that_are_always_constant() const override { return {1}; }
 
+    Status open(FunctionContext* context, FunctionContext::FunctionStateScope scope) override {
+        if (scope != FunctionContext::THREAD_LOCAL) {
+            return Status::OK();
+        }
+        context->set_function_state(scope, std::make_unique<ConvertTzCtx>());
+        return Status::OK();
+    }
+
     // This function should not be called for get DateType Ptr
     // using the FunctionCast::get_return_type_impl
     DataTypePtr get_return_type_impl(const ColumnsWithTypeAndName& arguments) const override {
@@ -1460,9 +1449,8 @@ public:
         if constexpr (IsDataTypeDecimal<ToDataType>) {
             LOG(FATAL) << "Someting wrong with toDecimalNNOrZero() or toDecimalNNOrNull()";
 
-        } else {
+        } else
             res = std::make_shared<ToDataType>();
-        }
 
         return res;
     }
@@ -1703,7 +1691,7 @@ private:
                                    const DataTypeHLL& to_type) const {
         /// Conversion from String through parsing.
         if (check_and_get_data_type<DataTypeString>(from_type_untyped.get())) {
-            return &ConvertImplGenericFromString::execute;
+            return &ConvertImplGenericFromString<ColumnString>::execute;
         }
 
         //TODO if from is not string, it must be HLL?
@@ -1722,7 +1710,7 @@ private:
                                      const DataTypeArray& to_type) const {
         /// Conversion from String through parsing.
         if (check_and_get_data_type<DataTypeString>(from_type_untyped.get())) {
-            return &ConvertImplGenericFromString::execute;
+            return &ConvertImplGenericFromString<ColumnString>::execute;
         }
 
         const auto* from_type = check_and_get_data_type<DataTypeArray>(from_type_untyped.get());
@@ -1803,8 +1791,6 @@ private:
             return &ConvertImplFromJsonb<TypeIndex::Int32, ColumnInt32>::execute;
         case TypeIndex::Int64:
             return &ConvertImplFromJsonb<TypeIndex::Int64, ColumnInt64>::execute;
-        case TypeIndex::Int128:
-            return &ConvertImplFromJsonb<TypeIndex::Int128, ColumnInt128>::execute;
         case TypeIndex::Float64:
             return &ConvertImplFromJsonb<TypeIndex::Float64, ColumnFloat64>::execute;
         default:
@@ -1829,12 +1815,10 @@ private:
             return &ConvertImplNumberToJsonb<ColumnInt32>::execute;
         case TypeIndex::Int64:
             return &ConvertImplNumberToJsonb<ColumnInt64>::execute;
-        case TypeIndex::Int128:
-            return &ConvertImplNumberToJsonb<ColumnInt128>::execute;
         case TypeIndex::Float64:
             return &ConvertImplNumberToJsonb<ColumnFloat64>::execute;
         case TypeIndex::String:
-            return &ConvertImplGenericFromString::execute;
+            return &ConvertImplGenericFromString<ColumnString>::execute;
         default:
             return &ConvertImplGenericToJsonb::execute;
         }
@@ -1844,7 +1828,7 @@ private:
     WrapperType create_map_wrapper(const DataTypePtr& from_type, const DataTypeMap& to_type) const {
         switch (from_type->get_type_id()) {
         case TypeIndex::String:
-            return &ConvertImplGenericFromString::execute;
+            return &ConvertImplGenericFromString<ColumnString>::execute;
         default:
             return create_unsupport_wrapper(from_type->get_name(), to_type.get_name());
         }
@@ -1871,7 +1855,7 @@ private:
                                       const DataTypeStruct& to_type) const {
         // support CAST AS Struct from string
         if (from_type->get_type_id() == TypeIndex::String) {
-            return &ConvertImplGenericFromString::execute;
+            return &ConvertImplGenericFromString<ColumnString>::execute;
         }
 
         // only support CAST AS Struct from struct or string types
@@ -2073,6 +2057,7 @@ private:
                           std::is_same_v<ToDataType, DataTypeDateTime> ||
                           std::is_same_v<ToDataType, DataTypeDateV2> ||
                           std::is_same_v<ToDataType, DataTypeDateTimeV2> ||
+                          std::is_same_v<ToDataType, DataTypeTime> ||
                           std::is_same_v<ToDataType, DataTypeTimeV2>) {
                 ret = create_wrapper(from_type, check_and_get_data_type<ToDataType>(to_type.get()),
                                      requested_result_is_nullable);

@@ -1,6 +1,6 @@
 ---
 {
-    "title": "BloomFilter 索引",
+    "title": "BloomFilter索引",
     "language": "zh-CN"
 }
 ---

@@ -36,7 +36,6 @@ import org.apache.doris.catalog.Tablet;
 import org.apache.doris.catalog.View;
 import org.apache.doris.common.io.Text;
 import org.apache.doris.common.util.TimeUtils;
-import org.apache.doris.persist.BarrierLog;
 import org.apache.doris.task.AgentBatchTask;
 import org.apache.doris.task.AgentTask;
 import org.apache.doris.task.AgentTaskExecutor;
@@ -377,7 +376,7 @@ public class BackupJob extends AbstractJob {
                         OlapTable olapTable = (OlapTable) tbl;
                         checkOlapTable(olapTable, tableRef);
                         if (getContent() == BackupContent.ALL) {
-                            prepareSnapshotTaskForOlapTableWithoutLock(db, (OlapTable) tbl, tableRef, batchTask);
+                            prepareSnapshotTaskForOlapTableWithoutLock((OlapTable) tbl, tableRef, batchTask);
                         }
                         prepareBackupMetaForOlapTableWithoutLock(tableRef, olapTable, copiedTables);
                         break;
@@ -431,15 +430,10 @@ public class BackupJob extends AbstractJob {
         }
     }
 
-    private void prepareSnapshotTaskForOlapTableWithoutLock(Database db, OlapTable olapTable,
+    private void prepareSnapshotTaskForOlapTableWithoutLock(OlapTable olapTable,
             TableRef backupTableRef, AgentBatchTask batchTask) {
         // Add barrier editolog for barrier commit seq
-        long dbId = db.getId();
-        String dbName = db.getFullName();
-        long tableId = olapTable.getId();
-        String tableName = olapTable.getName();
-        BarrierLog barrierLog = new BarrierLog(dbId, dbName, tableId, tableName);
-        long commitSeq = env.getEditLog().logBarrier(barrierLog);
+        long commitSeq = env.getEditLog().logBarrier();
         // format as "table:{tableId}"
         String tableKey = String.format("%s%d", TABLE_COMMIT_SEQ_PREFIX, olapTable.getId());
         properties.put(tableKey, String.valueOf(commitSeq));

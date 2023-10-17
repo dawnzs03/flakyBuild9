@@ -355,7 +355,7 @@ public class SystemInfoService {
     }
 
     public int getBackendsNumber(boolean needAlive) {
-        int beNumber = ConnectContext.get().getSessionVariable().getBeNumberForTest();
+        int beNumber = ConnectContext.get().getSessionVariable().getBeNumber();
         if (beNumber < 0) {
             beNumber = getAllBackendIds(needAlive).size();
         }
@@ -854,8 +854,7 @@ public class SystemInfoService {
                 DiskInfo diskInfo = pathHashToDiskInfo.get(pathHash);
                 if (diskInfo != null && diskInfo.exceedLimit(floodStage)) {
                     return new Status(TStatusCode.CANCELLED,
-                            "disk " + diskInfo.getRootPath() + " on backend "
-                                    + beId + " exceed limit usage, path hash: " + pathHash);
+                            "disk " + pathHash + " on backend " + beId + " exceed limit usage");
                 }
             }
         }

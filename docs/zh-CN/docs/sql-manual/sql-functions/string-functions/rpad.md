@@ -1,6 +1,6 @@
 ---
 {
-    "title": "RPAD",
+    "title": "rpad",
     "language": "zh-CN"
 }
 ---

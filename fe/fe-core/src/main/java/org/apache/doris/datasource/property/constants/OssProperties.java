@@ -26,7 +26,6 @@ import java.util.Map;
 public class OssProperties extends BaseProperties {
 
     public static final String OSS_PREFIX = "oss.";
-    public static final String OSS_REGION_PREFIX = "oss-";
     public static final String OSS_FS_PREFIX = "fs.oss";
 
     public static final String ENDPOINT = "oss.endpoint";

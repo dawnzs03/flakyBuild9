@@ -1,6 +1,6 @@
 ---
 {
-    "title": "DAYOFYEAR",
+    "title": "dayofyear",
     "language": "en"
 }
 ---

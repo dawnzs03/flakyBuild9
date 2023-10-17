@@ -29,7 +29,6 @@ under the License.
 ## Request
 
 `POST /api/compaction/run?tablet_id={int}&compact_type={enum}`
-`POST /api/compaction/run?table_id={int}&compact_type=full` Note that table_id=xxx will take effect only when compact_type=full is specified.
 `GET /api/compaction/run_status?tablet_id={int}`
 
 
@@ -42,11 +41,8 @@ Used to manually trigger the comparison and show status.
 * `tablet_id`
     - ID of the tablet
 
-* `table_id`
-    - ID of table. Note that table_id=xxx will take effect only when compact_type=full is specified, and only one tablet_id and table_id can be specified, and cannot be specified at the same time. After specifying table_id, full_compaction will be automatically executed for all tablets under this table.
-
 * `compact_type`
-    - The value is `base` or `cumulative` or `full`. For usage scenarios of full_compaction, please refer to [Data Recovery](../../data-admin/data-recovery.md).
+    - The value is `base` or `cumulative`
 
 ## Request body
 

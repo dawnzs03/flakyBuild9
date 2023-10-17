@@ -1,6 +1,6 @@
 ---
 {
-    "title": "WEEKDAY",
+    "title": "weekday",
     "language": "zh-CN"
 }
 ---
