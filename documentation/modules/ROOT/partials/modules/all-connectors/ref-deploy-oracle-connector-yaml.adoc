@@ -1,1 +1,0 @@
-include::../{partialsdir}/modules/all-connectors/ref-deploy-db2-ora-connector-yaml.adoc[]
