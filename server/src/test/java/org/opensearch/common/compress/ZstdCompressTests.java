@@ -8,8 +8,6 @@
 
 package org.opensearch.common.compress;
 
-import org.opensearch.core.common.compress.Compressor;
-
 /**
  * Test streaming compression
  */

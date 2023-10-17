@@ -6,7 +6,7 @@
  * compatible open source license.
  */
 
-package org.opensearch.core.tasks.resourcetracker;
+package org.opensearch.tasks;
 
 import org.opensearch.Version;
 import org.opensearch.core.common.Strings;
@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.opensearch.tasks.Task.THREAD_INFO;
+
 /**
  * Resource information about a currently running task.
  * <p>
@@ -34,8 +36,6 @@ import java.util.Objects;
 public class TaskResourceStats implements Writeable, ToXContentFragment {
     private final Map<String, TaskResourceUsage> resourceUsage;
     private final TaskThreadUsage threadUsage;
-
-    public static final String THREAD_INFO = "thread_info";
 
     public TaskResourceStats(Map<String, TaskResourceUsage> resourceUsage, TaskThreadUsage threadUsage) {
         this.resourceUsage = Objects.requireNonNull(resourceUsage, "resource usage is required");

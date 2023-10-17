@@ -6,7 +6,7 @@
  * compatible open source license.
  */
 
-package org.opensearch.core.tasks.resourcetracker;
+package org.opensearch.tasks;
 
 /**
  * Resource consumption information about a particular execution of thread.

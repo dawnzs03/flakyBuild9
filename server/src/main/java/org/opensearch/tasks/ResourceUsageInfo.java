@@ -6,7 +6,7 @@
  * compatible open source license.
  */
 
-package org.opensearch.core.tasks.resourcetracker;
+package org.opensearch.tasks;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -89,7 +89,7 @@ public class ResourceUsageInfo {
     /**
      *  Defines resource stats information.
      */
-    public static class ResourceStatsInfo {
+    static class ResourceStatsInfo {
         private final long startValue;
         private final AtomicLong endValue;
 

@@ -30,7 +30,7 @@
  * GitHub history for details.
  */
 
-package org.opensearch.core.action;
+package org.opensearch.action;
 
 import org.opensearch.test.OpenSearchTestCase;
 

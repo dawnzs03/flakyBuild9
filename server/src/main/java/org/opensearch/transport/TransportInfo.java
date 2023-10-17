@@ -40,7 +40,7 @@ import org.opensearch.common.network.InetAddresses;
 import org.opensearch.core.common.transport.BoundTransportAddress;
 import org.opensearch.core.common.transport.TransportAddress;
 import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.core.service.ReportingService;
+import org.opensearch.node.ReportingService;
 
 import java.io.IOException;
 import java.util.HashMap;

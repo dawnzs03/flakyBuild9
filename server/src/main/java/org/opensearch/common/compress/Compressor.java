@@ -30,7 +30,7 @@
  * GitHub history for details.
  */
 
-package org.opensearch.core.common.compress;
+package org.opensearch.common.compress;
 
 import org.opensearch.core.common.bytes.BytesReference;
 

@@ -30,7 +30,7 @@
  * GitHub history for details.
  */
 
-package org.opensearch.core.tasks;
+package org.opensearch.tasks;
 
 import org.opensearch.OpenSearchParseException;
 import org.opensearch.core.common.Strings;

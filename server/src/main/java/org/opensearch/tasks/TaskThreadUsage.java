@@ -6,7 +6,7 @@
  * compatible open source license.
  */
 
-package org.opensearch.core.tasks.resourcetracker;
+package org.opensearch.tasks;
 
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.common.io.stream.StreamInput;

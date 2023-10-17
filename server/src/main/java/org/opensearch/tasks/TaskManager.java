@@ -39,9 +39,9 @@ import org.opensearch.core.Assertions;
 import org.opensearch.ExceptionsHelper;
 import org.opensearch.OpenSearchException;
 import org.opensearch.OpenSearchTimeoutException;
-import org.opensearch.core.action.ActionListener;
-import org.opensearch.core.action.ActionResponse;
-import org.opensearch.core.action.NotifyOnceListener;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.ActionResponse;
+import org.opensearch.action.NotifyOnceListener;
 import org.opensearch.cluster.ClusterChangedEvent;
 import org.opensearch.cluster.ClusterStateApplier;
 import org.opensearch.cluster.node.DiscoveryNode;
@@ -58,8 +58,6 @@ import org.opensearch.common.util.concurrent.ConcurrentMapLong;
 import org.opensearch.common.util.concurrent.ThreadContext;
 import org.opensearch.common.lease.Releasable;
 import org.opensearch.common.lease.Releasables;
-import org.opensearch.core.tasks.TaskCancelledException;
-import org.opensearch.core.tasks.TaskId;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TcpChannel;
 
@@ -366,7 +364,7 @@ public class TaskManager implements ClusterStateApplier {
         }
         final TaskResult taskResult;
         try {
-            taskResult = task.result(localNode.getId(), error);
+            taskResult = task.result(localNode, error);
         } catch (IOException ex) {
             logger.warn(() -> new ParameterizedMessage("couldn't store error {}", ExceptionsHelper.detailedMessage(error)), ex);
             listener.onFailure(ex);
@@ -399,7 +397,7 @@ public class TaskManager implements ClusterStateApplier {
         }
         final TaskResult taskResult;
         try {
-            taskResult = task.result(localNode.getId(), response);
+            taskResult = task.result(localNode, response);
         } catch (IOException ex) {
             logger.warn(() -> new ParameterizedMessage("couldn't store response {}", response), ex);
             listener.onFailure(ex);
