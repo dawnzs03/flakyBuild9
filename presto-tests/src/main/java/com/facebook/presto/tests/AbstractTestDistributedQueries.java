@@ -390,8 +390,7 @@ public abstract class AbstractTestDistributedQueries
         assertFalse(getQueryRunner().tableExists(session, table));
     }
 
-    // Flaky test: https://github.com/prestodb/presto/issues/20764
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Regexp matching interrupted", timeOut = 30_000, enabled = false)
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Regexp matching interrupted", timeOut = 30_000)
     public void testRunawayRegexAnalyzerTimeout()
     {
         Session session = Session.builder(getSession())
