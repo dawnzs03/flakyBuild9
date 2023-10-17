@@ -279,7 +279,6 @@ class StructuredTaskScopeTest {
                 executed.set(true);
                 return null;
             });
-            scope.join();
             assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
             assertThrows(IllegalStateException.class, subtask::get);
             assertThrows(IllegalStateException.class, subtask::exception);
@@ -671,6 +670,22 @@ class StructuredTaskScopeTest {
             // join should complete
             scope.join();
             assertEquals("foo", subtask.get());
+        }
+    }
+
+    /**
+     * Test that shutdown prevents new threads from starting.
+     */
+    @Test
+    void testShutdownWithFork() throws Exception {
+        ThreadFactory factory = task -> null;
+        try (var scope = new StructuredTaskScope<Object>(null, factory)) {
+            scope.shutdown();
+            // should not invoke the ThreadFactory to create thread
+            Subtask<Void> subtask = scope.fork(() -> null);
+            assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
+            assertThrows(IllegalStateException.class, subtask::get);
+            assertThrows(IllegalStateException.class, subtask::exception);
         }
     }
 
@@ -1362,7 +1377,6 @@ class StructuredTaskScopeTest {
 
             // fork after shutdown
             Subtask<Void> subtask = scope.fork(task);
-            scope.join();
             assertEquals(task, subtask.task());
             assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
             assertThrows(IllegalStateException.class, subtask::get);

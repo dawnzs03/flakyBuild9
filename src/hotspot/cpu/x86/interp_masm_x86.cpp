@@ -795,10 +795,7 @@ void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
   lea(_bcp_register, Address(rsp, wordSize));
   // record last_sp
-  mov(rcx, _bcp_register);
-  subptr(rcx, rbp);
-  sarptr(rcx, LogBytesPerWord);
-  movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), rcx);
+  movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), _bcp_register);
 }
 
 

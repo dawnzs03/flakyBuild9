@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,10 @@ import static gc.testlibrary.Allocation.blackHole;
 
 public class TestCSLocker extends Thread
 {
-    static int timeoutMillis = 5000;
+    static int timeout = 5000;
     public static void main(String args[]) throws Exception {
+        long startTime = System.currentTimeMillis();
+
         // start garbage producer thread
         GarbageProducer garbageProducer = new GarbageProducer(1000000, 10);
         garbageProducer.start();
@@ -59,7 +61,9 @@ public class TestCSLocker extends Thread
         // code until unlock() is called below.
 
         // check timeout to success deadlocking
-        sleep(timeoutMillis);
+        while (System.currentTimeMillis() < startTime + timeout) {
+            sleep(1000);
+        }
 
         csLocker.unlock();
         garbageProducer.interrupt();

@@ -303,4 +303,5 @@ public final class PlatformLayouts {
         public static final AddressLayout C_POINTER = SharedUtils.C_POINTER;
 
     }
+
 }

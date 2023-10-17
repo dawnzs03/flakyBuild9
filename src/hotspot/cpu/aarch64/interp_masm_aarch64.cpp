@@ -430,9 +430,7 @@ void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
   mov(r19_sender_sp, sp);
   // record last_sp
-  sub(rscratch1, esp, rfp);
-  asr(rscratch1, rscratch1, Interpreter::logStackElementSize);
-  str(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  str(esp, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 }
 
 // Jump to from_interpreted entry of a call unless single stepping is possible

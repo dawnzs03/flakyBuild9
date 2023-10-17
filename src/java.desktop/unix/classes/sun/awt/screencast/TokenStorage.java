@@ -324,10 +324,6 @@ final class TokenStorage {
                         return tokenItem;
                     })
                     .filter(Objects::nonNull)
-                    .sorted((t1, t2) -> //Token with more screens preferred
-                            t2.allowedScreensBounds.size()
-                            - t1.allowedScreensBounds.size()
-                    )
                     .toList();
         }
 

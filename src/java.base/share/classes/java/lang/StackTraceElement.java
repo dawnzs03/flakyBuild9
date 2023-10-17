@@ -102,9 +102,8 @@ public final class StackTraceElement implements java.io.Serializable {
      * #getModuleVersion module version} of the stack trace element will
      * be {@code null}.
      *
-     * @param declaringClass the {@linkplain ClassLoader##binary-name binary name}
-     *        of the class containing the execution point represented by
-     *        the stack trace element
+     * @param declaringClass the fully qualified name of the class containing
+     *        the execution point represented by the stack trace element
      * @param methodName the name of the method containing the execution point
      *        represented by the stack trace element
      * @param fileName the name of the file containing the execution point
@@ -138,9 +137,8 @@ public final class StackTraceElement implements java.io.Serializable {
      * @param moduleVersion the module version if the class containing the
      *        execution point represented by the stack trace is in a named
      *        module that has a version; otherwise {@code null}
-     * @param declaringClass the {@linkplain ClassLoader##binary-name binary name}
-     *        of the class containing the execution point represented by
-     *        the stack trace element
+     * @param declaringClass the fully qualified name of the class containing
+     *        the execution point represented by the stack trace element
      * @param methodName the name of the method containing the execution point
      *        represented by the stack trace element
      * @param fileName the name of the file containing the execution point
@@ -251,9 +249,11 @@ public final class StackTraceElement implements java.io.Serializable {
     }
 
     /**
-     * {@return the {@linkplain ClassLoader##binary-name binary name}
-     * of the {@code Class} containing the execution point represented
-     * by this stack trace element}
+     * Returns the fully qualified name of the class containing the
+     * execution point represented by this stack trace element.
+     *
+     * @return the fully qualified name of the {@code Class} containing
+     *         the execution point represented by this stack trace element.
      */
     public String getClassName() {
         return declaringClass;
@@ -332,7 +332,7 @@ public final class StackTraceElement implements java.io.Serializable {
      * the name of the class loader.  The second element "{@code foo@9.0}"
      * is the module name and version.  The third element is the method
      * containing the execution point; "{@code com.foo.Main"}" is the
-     * binary name and "{@code run}" is the name of the method.
+     * fully-qualified class name and "{@code run}" is the name of the method.
      * "{@code Main.java}" is the source file name and "{@code 101}" is
      * the line number.
      *

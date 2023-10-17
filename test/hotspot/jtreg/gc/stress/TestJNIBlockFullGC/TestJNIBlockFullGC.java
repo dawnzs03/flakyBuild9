@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017 SAP SE and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -62,12 +62,12 @@ public class TestJNIBlockFullGC {
         }
     }
 
-    public static void warmUp(long warmupEndTimeNanos, int size, long seed) {
+    public static void warmUp(long warmupEndTime, int size, long seed) {
         Random r = new Random(seed);
         // First let the GC assume most of our objects will die.
         Node[] roots = new Node[size];
 
-        while (System.nanoTime() - warmupEndTimeNanos < 0) {
+        while (System.currentTimeMillis() < warmupEndTime) {
             int index = (int) (r.nextDouble() * roots.length);
             roots[index] = new Node(1);
         }
@@ -78,7 +78,7 @@ public class TestJNIBlockFullGC {
         }
     }
 
-    public static void runTest(long endTimeNanos, int size, double alive, long seed) {
+    public static void runTest(long endTime, int size, double alive, long seed) {
         Random r = new Random(seed);
         final int length = 10000;
         int[] array1 = new int[length];
@@ -91,7 +91,7 @@ public class TestJNIBlockFullGC {
             int index = 0;
             roots[0] = new Node(0);
 
-            while (!hadError && (System.nanoTime() - endTimeNanos < 0)) {
+            while (!hadError && (System.currentTimeMillis() < endTime)) {
                 int test_val1 = TestCriticalArray0(array1);
 
                 if (r.nextDouble() > alive) {
@@ -136,15 +136,15 @@ public class TestJNIBlockFullGC {
         int warmupThreads = Integer.parseInt(args[0]);
         System.out.println("# Warmup Threads = " + warmupThreads);
 
-        long warmupDurationNanos = 1_000_000L * Integer.parseInt(args[1]);
-        System.out.println("WarmUp Duration Millis = " + args[1]);
+        int warmupDuration = Integer.parseInt(args[1]);
+        System.out.println("WarmUp Duration = " + warmupDuration);
         int warmupIterations = Integer.parseInt(args[2]);
         System.out.println("# Warmup Iterations = "+ warmupIterations);
 
         int mainThreads = Integer.parseInt(args[3]);
         System.out.println("# Main Threads = " + mainThreads);
-        long mainDurationNanos = 1_000_000L * Integer.parseInt(args[4]);
-        System.out.println("Main Duration Millis = " + args[4]);
+        int mainDuration = Integer.parseInt(args[4]);
+        System.out.println("Main Duration = " + mainDuration);
         int mainIterations = Integer.parseInt(args[5]);
         System.out.println("# Main Iterations = " + mainIterations);
 
@@ -154,12 +154,12 @@ public class TestJNIBlockFullGC {
         Thread threads[] = new Thread[Math.max(warmupThreads, mainThreads)];
 
         System.out.println("Start warm-up threads!");
-        long warmupStartTimeNanos = System.nanoTime();
+        long warmupStartTime = System.currentTimeMillis();
         for (int i = 0; i < warmupThreads; i++) {
             long seed = rng.nextLong();
             threads[i] = new Thread() {
                 public void run() {
-                    warmUp(warmupStartTimeNanos + warmupDurationNanos, warmupIterations, seed);
+                    warmUp(warmupStartTime + warmupDuration, warmupIterations, seed);
                 };
             };
             threads[i].start();
@@ -170,12 +170,12 @@ public class TestJNIBlockFullGC {
         System.gc();
         System.out.println("Keep alive a lot");
 
-        long startTimeNanos = System.nanoTime();
+        long startTime = System.currentTimeMillis();
         for (int i = 0; i < mainThreads; i++) {
             long seed = rng.nextLong();
             threads[i] = new Thread() {
                 public void run() {
-                    runTest(startTimeNanos + mainDurationNanos, mainIterations, liveFrac, seed);
+                    runTest(startTime + mainDuration, mainIterations, liveFrac, seed);
                 };
             };
             threads[i].start();

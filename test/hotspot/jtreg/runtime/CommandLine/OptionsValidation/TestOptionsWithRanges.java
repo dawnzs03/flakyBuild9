@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (1 of 10)
- * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -39,7 +38,6 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (2 of 10)
- * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -51,7 +49,6 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (3 of 10)
- * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -63,7 +60,6 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (4 of 10)
- * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -75,7 +71,6 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (5 of 10)
- * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -87,7 +82,6 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (6 of 10)
- * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -99,7 +93,6 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (7 of 10)
- * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -111,7 +104,6 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (8 of 10)
- * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -123,7 +115,6 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (9 of 10)
- * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -135,7 +126,6 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (10 of 10)
- * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -38,7 +38,6 @@
 #include "metaspaceGtestContexts.hpp"
 #include "metaspaceGtestSparseArray.hpp"
 
-using metaspace::AllocationAlignmentByteSize;
 using metaspace::ArenaGrowthPolicy;
 using metaspace::ChunkManager;
 using metaspace::IntCounter;
@@ -51,6 +50,11 @@ using metaspace::InUseChunkStats;
 // Little randomness helper
 static bool fifty_fifty() {
   return IntRange(100).random_value() < 50;
+}
+
+// See metaspaceArena.cpp : needed for predicting commit sizes.
+namespace metaspace {
+  extern size_t get_raw_word_size_for_requested_word_size(size_t net_word_size);
 }
 
 // A MetaspaceArenaTestBed contains a single MetaspaceArena and its lock.
@@ -175,8 +179,7 @@ public:
     size_t word_size = 1 + _allocation_range.random_value();
     MetaWord* p = _arena->allocate(word_size);
     if (p != NULL) {
-      EXPECT_TRUE(is_aligned(p, AllocationAlignmentByteSize));
-
+      EXPECT_TRUE(is_aligned(p, sizeof(MetaWord)));
       allocation_t* a = NEW_C_HEAP_OBJ(allocation_t, mtInternal);
       a->word_size = word_size;
       a->p = p;

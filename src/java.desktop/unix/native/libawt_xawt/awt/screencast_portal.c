@@ -777,10 +777,6 @@ int portalScreenCastOpenPipewireRemote() {
 }
 
 void portalScreenCastCleanup() {
-    if (!portal) {
-        return;
-    }
-
     if (portal->screenCastSessionHandle) {
         gtk->g_dbus_connection_call_sync(
                 portal->connection,
@@ -800,6 +796,9 @@ void portalScreenCastCleanup() {
         portal->screenCastSessionHandle = NULL;
     }
 
+    if (!portal) {
+        return;
+    }
     if (portal->connection) {
         gtk->g_object_unref(portal->connection);
         portal->connection = NULL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,16 +78,16 @@ class MemoryWatcher {
     private MemoryPoolMXBean bean;
     private final int thresholdPromille = 750;
     private final int criticalThresholdPromille = 800;
-    private final long minGCWaitNanos = 1_000_000_000L;
-    private final long minFreeWaitElapsedNanos = 30L * 1_000_000_000L;
-    private final long minFreeCriticalWaitNanos;
+    private final int minGCWaitMS = 1000;
+    private final int minFreeWaitElapsedMS = 30000;
+    private final int minFreeCriticalWaitMS;
 
     private int lastUsage = 0;
-    private long lastGCDetectedNanos = System.nanoTime();
-    private long lastFreeNanos = System.nanoTime();
+    private long lastGCDetected = System.currentTimeMillis();
+    private long lastFree = System.currentTimeMillis();
 
-    public MemoryWatcher(String mxBeanName, long minFreeCriticalWaitNanos) {
-        this.minFreeCriticalWaitNanos = minFreeCriticalWaitNanos;
+    public MemoryWatcher(String mxBeanName, int minFreeCriticalWaitMS) {
+        this.minFreeCriticalWaitMS = minFreeCriticalWaitMS;
         List<MemoryPoolMXBean> memoryBeans = ManagementFactory.getMemoryPoolMXBeans();
         for (MemoryPoolMXBean bean : memoryBeans) {
             if (bean.getName().equals(mxBeanName)) {
@@ -111,25 +111,25 @@ class MemoryWatcher {
 
     public synchronized boolean shouldFreeUpSpace() {
         int usage = getMemoryUsage();
-        long nowNanos = System.nanoTime();
+        long now = System.currentTimeMillis();
 
         boolean detectedGC = false;
         if (usage < lastUsage) {
-            lastGCDetectedNanos = nowNanos;
+            lastGCDetected = now;
             detectedGC = true;
         }
 
         lastUsage = usage;
 
-        long elapsedNanos = nowNanos - lastFreeNanos;
-        long timeSinceLastGCNanos = nowNanos - lastGCDetectedNanos;
+        long elapsed = now - lastFree;
+        long timeSinceLastGC = now - lastGCDetected;
 
-        if (usage > criticalThresholdPromille && elapsedNanos > minFreeCriticalWaitNanos) {
-            lastFreeNanos = nowNanos;
+        if (usage > criticalThresholdPromille && elapsed > minFreeCriticalWaitMS) {
+            lastFree = now;
             return true;
         } else if (usage > thresholdPromille && !detectedGC) {
-            if (elapsedNanos > minFreeWaitElapsedNanos || timeSinceLastGCNanos > minGCWaitNanos) {
-                lastFreeNanos = nowNanos;
+            if (elapsed > minFreeWaitElapsedMS || timeSinceLastGC > minGCWaitMS) {
+                lastFree = now;
                 return true;
             }
         }
@@ -152,8 +152,8 @@ class MemoryUser extends Exitable implements Runnable {
         cache.add(new Filler());
     }
 
-    public MemoryUser(String mxBeanName, long minFreeCriticalWaitNanos) {
-        watcher = new MemoryWatcher(mxBeanName, minFreeCriticalWaitNanos);
+    public MemoryUser(String mxBeanName, int minFreeCriticalWaitMS) {
+        watcher = new MemoryWatcher(mxBeanName, minFreeCriticalWaitMS);
     }
 
     @Override
@@ -192,8 +192,8 @@ public class TestGCLocker {
         return task;
     }
 
-    private static Exitable startMemoryUser(String mxBeanName, long minFreeCriticalWaitNanos) {
-        MemoryUser task = new MemoryUser(mxBeanName, minFreeCriticalWaitNanos);
+    private static Exitable startMemoryUser(String mxBeanName, int minFreeCriticalWaitMS) {
+        MemoryUser task = new MemoryUser(mxBeanName, minFreeCriticalWaitMS);
 
         Thread thread = new Thread(task);
         thread.setName("Memory User");
@@ -207,18 +207,17 @@ public class TestGCLocker {
 
         long durationMinutes = args.length > 0 ? Long.parseLong(args[0]) : 5;
         String mxBeanName = args.length > 1 ? args[1] : null;
-        long minFreeCriticalWaitNanos = args.length > 2
-            ? Integer.parseInt(args[2]) * 1_000_000L
-            : 500_000_000L;
+        int minFreeCriticalWaitMS = args.length > 2 ? Integer.parseInt(args[2]) : 500;
+
+        long startMS = System.currentTimeMillis();
 
         Exitable stresser1 = startGCLockerStresser("GCLockerStresser1");
         Exitable stresser2 = startGCLockerStresser("GCLockerStresser2");
-        Exitable memoryUser = startMemoryUser(mxBeanName, minFreeCriticalWaitNanos);
+        Exitable memoryUser = startMemoryUser(mxBeanName, minFreeCriticalWaitMS);
 
-        try {
-            Thread.sleep(durationMinutes * 60_000L);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Test Failure, did not except an InterruptedException", e);
+        long durationMS = durationMinutes * 60 * 1000;
+        while ((System.currentTimeMillis() - startMS) < durationMS) {
+            ThreadUtils.sleep(10 * 1010);
         }
 
         stresser1.exit();

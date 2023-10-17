@@ -249,12 +249,6 @@ class frame {
   // Interpreter frames in continuation stacks are on the heap, and internal addresses are relative to fp.
   intptr_t  at_relative(int index) const         { return (intptr_t)(fp() + fp()[index]); }
 
-  intptr_t  at_relative_or_null(int index) const {
-    return (fp()[index] != 0)
-      ? (intptr_t)(fp() + fp()[index])
-      : 0;
-  }
-
   intptr_t at(int index) const                   {
     return _on_heap ? at_relative(index) : at_absolute(index);
   }
@@ -525,7 +519,8 @@ class FrameValues {
     return checked_cast<int>(a->location - b->location);
   }
 
-  void print_on(outputStream* out, int min_index, int max_index, intptr_t* v0, intptr_t* v1);
+  void print_on(outputStream* out, int min_index, int max_index, intptr_t* v0, intptr_t* v1,
+                bool on_heap = false);
 
  public:
   // Used by frame functions to describe locations.

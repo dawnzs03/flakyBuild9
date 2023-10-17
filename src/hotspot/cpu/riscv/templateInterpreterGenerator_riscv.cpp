@@ -426,8 +426,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   address entry = __ pc();
 
   // Restore stack bottom in case i2c adjusted stack
-  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
+  __ ld(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   // and null it as marker that esp is now tos until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ restore_bcp();
@@ -484,8 +483,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   __ restore_sp_after_call();  // Restore SP to extended SP
 
   // Restore expression stack pointer
-  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
+  __ ld(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   // null last_sp until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
@@ -1606,8 +1604,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                        /* notify_jvmdi */ false);
 
   // Restore the last_sp and null it out
-  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
+  __ ld(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   __ restore_bcp();

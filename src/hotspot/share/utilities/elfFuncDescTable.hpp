@@ -133,7 +133,7 @@ public:
   ~ElfFuncDescTable();
 
   // return the function address for the function descriptor at 'index' or null on error
-  address lookup(Elf_Addr index);
+  address lookup(Elf_Word index);
 
   int get_index() const { return _index; };
 
