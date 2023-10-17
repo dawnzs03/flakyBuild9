@@ -19,7 +19,6 @@ import io.quarkus.gizmo.BytecodeCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.hal.HalService;
-import io.quarkus.rest.data.panache.deployment.properties.ResourceProperties;
 import io.quarkus.resteasy.links.runtime.hal.ResteasyHalService;
 import io.quarkus.resteasy.reactive.links.runtime.hal.ResteasyReactiveHalService;
 
@@ -45,12 +44,17 @@ public final class ResponseImplementor {
         return creator.invokeVirtualMethod(ofMethod(ResponseBuilder.class, "build", Response.class), builder);
     }
 
-    public ResultHandle created(BytecodeCreator creator, ResultHandle entity, ResourceProperties resourceProperties) {
-        if (resourceProperties.isHal()) {
-            return doCreated(creator, entity, getEntityUrl(creator, entity));
-        }
+    public ResultHandle created(BytecodeCreator creator, ResultHandle entity) {
+        return created(creator, entity, getEntityUrl(creator, entity));
+    }
 
-        return doCreated(creator, entity, null);
+    public ResultHandle created(BytecodeCreator creator, ResultHandle entity, ResultHandle location) {
+        ResultHandle builder = getResponseBuilder(creator, Response.Status.CREATED.getStatusCode());
+        creator.invokeVirtualMethod(
+                ofMethod(ResponseBuilder.class, "entity", ResponseBuilder.class, Object.class), builder, entity);
+        creator.invokeVirtualMethod(
+                ofMethod(ResponseBuilder.class, "location", ResponseBuilder.class, URI.class), builder, location);
+        return creator.invokeVirtualMethod(ofMethod(ResponseBuilder.class, "build", Response.class), builder);
     }
 
     public ResultHandle getEntityUrl(BytecodeCreator creator, ResultHandle entity) {
@@ -83,18 +87,6 @@ public final class ResponseImplementor {
     public ResultHandle notFoundException(BytecodeCreator creator) {
         return creator.newInstance(MethodDescriptor.ofConstructor(WebApplicationException.class, int.class),
                 creator.load(Response.Status.NOT_FOUND.getStatusCode()));
-    }
-
-    private ResultHandle doCreated(BytecodeCreator creator, ResultHandle entity, ResultHandle location) {
-        ResultHandle builder = getResponseBuilder(creator, Response.Status.CREATED.getStatusCode());
-        creator.invokeVirtualMethod(
-                ofMethod(ResponseBuilder.class, "entity", ResponseBuilder.class, Object.class), builder, entity);
-        if (location != null) {
-            creator.invokeVirtualMethod(
-                    ofMethod(ResponseBuilder.class, "location", ResponseBuilder.class, URI.class), builder, location);
-        }
-
-        return creator.invokeVirtualMethod(ofMethod(ResponseBuilder.class, "build", Response.class), builder);
     }
 
     private ResultHandle status(BytecodeCreator creator, int status) {

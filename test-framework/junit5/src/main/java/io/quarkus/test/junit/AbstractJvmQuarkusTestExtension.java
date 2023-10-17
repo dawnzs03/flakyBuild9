@@ -13,14 +13,12 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import jakarta.enterprise.inject.Alternative;
 
 import org.jboss.jandex.Index;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import io.quarkus.bootstrap.BootstrapConstants;
@@ -215,42 +213,7 @@ public class AbstractJvmQuarkusTestExtension extends AbstractQuarkusTestWithCont
     }
 
     protected Class<? extends QuarkusTestProfile> getQuarkusTestProfile(ExtensionContext extensionContext) {
-        // If the current class or any enclosing class in its hierarchy is annotated with `@TestProfile`.
-        Class<? extends QuarkusTestProfile> testProfile = findTestProfileAnnotation(extensionContext.getRequiredTestClass());
-        if (testProfile != null) {
-            return testProfile;
-        }
-
-        // Otherwise, if the current class is annotated with `@Nested`:
-        if (extensionContext.getRequiredTestClass().isAnnotationPresent(Nested.class)) {
-            // let's try to find the `@TestProfile` from the enclosing classes:
-            testProfile = findTestProfileAnnotation(extensionContext.getRequiredTestClass().getEnclosingClass());
-            if (testProfile != null) {
-                return testProfile;
-            }
-
-            // if not found, let's try the parents
-            Optional<ExtensionContext> parentContext = extensionContext.getParent();
-            while (parentContext.isPresent()) {
-                ExtensionContext currentExtensionContext = parentContext.get();
-                if (currentExtensionContext.getTestClass().isEmpty()) {
-                    break;
-                }
-
-                testProfile = findTestProfileAnnotation(currentExtensionContext.getTestClass().get());
-                if (testProfile != null) {
-                    return testProfile;
-                }
-
-                parentContext = currentExtensionContext.getParent();
-            }
-        }
-
-        return null;
-    }
-
-    private Class<? extends QuarkusTestProfile> findTestProfileAnnotation(Class<?> clazz) {
-        Class<?> testClass = clazz;
+        Class<?> testClass = extensionContext.getRequiredTestClass();
         while (testClass != null) {
             TestProfile annotation = testClass.getAnnotation(TestProfile.class);
             if (annotation != null) {

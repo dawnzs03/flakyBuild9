@@ -57,7 +57,6 @@ import io.quarkus.maven.dependency.GACT;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.configuration.ConfigurationException;
-import io.quarkus.runtime.metrics.MetricsFactory;
 import io.quarkus.smallrye.graphql.runtime.SmallRyeGraphQLConfig;
 import io.quarkus.smallrye.graphql.runtime.SmallRyeGraphQLConfigMapping;
 import io.quarkus.smallrye.graphql.runtime.SmallRyeGraphQLLocaleResolver;
@@ -85,10 +84,10 @@ import io.smallrye.graphql.api.federation.Provides;
 import io.smallrye.graphql.api.federation.Requires;
 import io.smallrye.graphql.api.federation.Shareable;
 import io.smallrye.graphql.api.federation.Tag;
+import io.smallrye.graphql.cdi.config.ConfigKey;
 import io.smallrye.graphql.cdi.config.MicroProfileConfig;
 import io.smallrye.graphql.cdi.producer.GraphQLProducer;
 import io.smallrye.graphql.cdi.tracing.TracingService;
-import io.smallrye.graphql.config.ConfigKey;
 import io.smallrye.graphql.schema.Annotations;
 import io.smallrye.graphql.schema.SchemaBuilder;
 import io.smallrye.graphql.schema.model.Argument;
@@ -103,7 +102,6 @@ import io.smallrye.graphql.schema.model.Type;
 import io.smallrye.graphql.schema.model.UnionType;
 import io.smallrye.graphql.spi.EventingService;
 import io.smallrye.graphql.spi.LookupService;
-import io.smallrye.graphql.spi.config.Config;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 
@@ -145,8 +143,6 @@ public class SmallRyeGraphQLProcessor {
     private static final String SUBPROTOCOL_GRAPHQL_TRANSPORT_WS = "graphql-transport-ws";
     private static final List<String> SUPPORTED_WEBSOCKET_SUBPROTOCOLS = List.of(SUBPROTOCOL_GRAPHQL_WS,
             SUBPROTOCOL_GRAPHQL_TRANSPORT_WS);
-
-    private static final int GRAPHQL_WEBSOCKET_HANDLER_ORDER = -10000;
 
     @BuildStep
     void feature(BuildProducer<FeatureBuildItem> featureProducer) {
@@ -372,7 +368,7 @@ public class SmallRyeGraphQLProcessor {
                         runBlocking);
 
         HttpRootPathBuildItem.Builder subscriptionsBuilder = httpRootPathBuildItem.routeBuilder()
-                .orderedRoute(graphQLConfig.rootPath, GRAPHQL_WEBSOCKET_HANDLER_ORDER)
+                .orderedRoute(graphQLConfig.rootPath, Integer.MIN_VALUE)
                 .handler(graphqlOverWebsocketHandler);
         routeProducer.produce(subscriptionsBuilder.build());
 
@@ -596,21 +592,15 @@ public class SmallRyeGraphQLProcessor {
     void activateMetrics(Capabilities capabilities,
             Optional<MetricsCapabilityBuildItem> metricsCapability,
             SmallRyeGraphQLConfig graphQLConfig,
-            BuildProducer<SystemPropertyBuildItem> systemProperties, BuildProducer<ServiceProviderBuildItem> serviceProvider) {
+            BuildProducer<SystemPropertyBuildItem> systemProperties) {
 
-        if (graphQLConfig.metricsEnabled.orElse(false)
-                || Config.get().getConfigValue(ConfigKey.ENABLE_METRICS, boolean.class, false)) {
-            metricsCapability.ifPresentOrElse(capability -> {
-                if (capability.metricsSupported(MetricsFactory.MICROMETER)) {
-                    serviceProvider.produce(new ServiceProviderBuildItem("io.smallrye.graphql.spi.MetricsService",
-                            "io.smallrye.graphql.cdi.metrics.MicrometerMetricsService"));
-                }
-                if (capability.metricsSupported(MetricsFactory.MP_METRICS)) {
-                    serviceProvider.produce(new ServiceProviderBuildItem("io.smallrye.graphql.spi.MetricsService",
-                            "io.smallrye.graphql.cdi.metrics.MPMetricsService"));
-                }
-            }, () -> LOG
-                    .warn("GraphQL metrics are enabled but no supported metrics implementation is available on the classpath"));
+        boolean activate = shouldActivateService(graphQLConfig.metricsEnabled,
+                metricsCapability.isPresent(),
+                "quarkus-smallrye-metrics",
+                "metrics",
+                "quarkus.smallrye-graphql.metrics.enabled",
+                false);
+        if (activate) {
             systemProperties.produce(new SystemPropertyBuildItem(ConfigKey.ENABLE_METRICS, TRUE));
         } else {
             systemProperties.produce(new SystemPropertyBuildItem(ConfigKey.ENABLE_METRICS, FALSE));

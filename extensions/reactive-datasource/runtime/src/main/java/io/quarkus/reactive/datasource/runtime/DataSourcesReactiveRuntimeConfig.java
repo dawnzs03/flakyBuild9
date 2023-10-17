@@ -6,46 +6,48 @@ import io.quarkus.datasource.common.runtime.DataSourceUtil;
 import io.quarkus.runtime.annotations.ConfigDocMapKey;
 import io.quarkus.runtime.annotations.ConfigDocSection;
 import io.quarkus.runtime.annotations.ConfigGroup;
+import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefaults;
-import io.smallrye.config.WithName;
-import io.smallrye.config.WithParentName;
 
-@ConfigMapping(prefix = "quarkus.datasource")
-@ConfigRoot(phase = ConfigPhase.RUN_TIME)
-public interface DataSourcesReactiveRuntimeConfig {
+@ConfigRoot(name = "datasource", phase = ConfigPhase.RUN_TIME)
+public class DataSourcesReactiveRuntimeConfig {
 
     /**
      * The default datasource.
      */
-    @WithName("reactive")
-    DataSourceReactiveRuntimeConfig defaultDataSource();
+    @ConfigItem(name = "reactive")
+    public DataSourceReactiveRuntimeConfig defaultDataSource;
 
     /**
      * Additional named datasources.
      */
     @ConfigDocSection
     @ConfigDocMapKey("datasource-name")
-    @WithParentName
-    @WithDefaults
-    Map<String, DataSourceReactiveOuterNamedRuntimeConfig> namedDataSources();
+    @ConfigItem(name = ConfigItem.PARENT)
+    public Map<String, DataSourceReactiveOuterNamedRuntimeConfig> namedDataSources;
 
-    default DataSourceReactiveRuntimeConfig getDataSourceReactiveRuntimeConfig(String dataSourceName) {
+    public DataSourceReactiveRuntimeConfig getDataSourceReactiveRuntimeConfig(String dataSourceName) {
         if (DataSourceUtil.isDefault(dataSourceName)) {
-            return defaultDataSource();
+            return defaultDataSource;
         }
 
-        return namedDataSources().get(dataSourceName).reactive();
+        DataSourceReactiveOuterNamedRuntimeConfig dataSourceReactiveOuterNamedRuntimeConfig = namedDataSources
+                .get(dataSourceName);
+        if (dataSourceReactiveOuterNamedRuntimeConfig == null) {
+            return new DataSourceReactiveRuntimeConfig();
+        }
+
+        return dataSourceReactiveOuterNamedRuntimeConfig.reactive;
     }
 
     @ConfigGroup
-    public interface DataSourceReactiveOuterNamedRuntimeConfig {
+    public static class DataSourceReactiveOuterNamedRuntimeConfig {
 
         /**
          * The JDBC runtime configuration.
          */
-        public DataSourceReactiveRuntimeConfig reactive();
+        @ConfigItem
+        public DataSourceReactiveRuntimeConfig reactive;
     }
 }

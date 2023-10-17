@@ -44,6 +44,8 @@ public class HttpServerOptionsUtils {
 
         ServerSslConfig sslConfig = httpConfiguration.ssl;
 
+        final Optional<Path> certFile = sslConfig.certificate.file;
+        final Optional<Path> keyFile = sslConfig.certificate.keyFile;
         final List<Path> keys = new ArrayList<>();
         final List<Path> certificates = new ArrayList<>();
         if (sslConfig.certificate.keyFiles.isPresent()) {
@@ -51,6 +53,12 @@ public class HttpServerOptionsUtils {
         }
         if (sslConfig.certificate.files.isPresent()) {
             certificates.addAll(sslConfig.certificate.files.get());
+        }
+        if (keyFile.isPresent()) {
+            keys.add(keyFile.get());
+        }
+        if (certFile.isPresent()) {
+            certificates.add(certFile.get());
         }
 
         // credentials provider
@@ -137,6 +145,8 @@ public class HttpServerOptionsUtils {
 
         ServerSslConfig sslConfig = httpConfiguration.ssl;
 
+        final Optional<Path> certFile = sslConfig.certificate.file;
+        final Optional<Path> keyFile = sslConfig.certificate.keyFile;
         final List<Path> keys = new ArrayList<>();
         final List<Path> certificates = new ArrayList<>();
         if (sslConfig.certificate.keyFiles.isPresent()) {
@@ -144,6 +154,12 @@ public class HttpServerOptionsUtils {
         }
         if (sslConfig.certificate.files.isPresent()) {
             certificates.addAll(sslConfig.certificate.files.get());
+        }
+        if (keyFile.isPresent()) {
+            keys.add(keyFile.get());
+        }
+        if (certFile.isPresent()) {
+            certificates.add(certFile.get());
         }
 
         // credentials provider

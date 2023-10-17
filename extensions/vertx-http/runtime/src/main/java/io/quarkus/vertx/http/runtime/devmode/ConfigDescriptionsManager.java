@@ -16,7 +16,6 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import io.quarkus.devconsole.runtime.spi.DevConsolePostHandler;
-import io.quarkus.devui.runtime.config.ConfigDescription;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 import io.vertx.core.MultiMap;

@@ -88,11 +88,11 @@ class HibernateOrmPanacheRestProcessor {
         ResourceImplementor resourceImplementor = new ResourceImplementor(new EntityClassHelper(index.getComputingIndex()));
         ClassOutput classOutput = new GeneratedBeanGizmoAdaptor(implementationsProducer);
 
-        for (ClassInfo resourceInterface : index.getComputingIndex()
-                .getKnownDirectImplementors(PANACHE_ENTITY_RESOURCE_INTERFACE)) {
-            validateResource(index.getComputingIndex(), resourceInterface);
+        for (ClassInfo classInfo : index.getComputingIndex().getKnownDirectImplementors(PANACHE_ENTITY_RESOURCE_INTERFACE)) {
+            validateResource(index.getComputingIndex(), classInfo);
 
-            List<Type> generics = getGenericTypes(resourceInterface);
+            List<Type> generics = getGenericTypes(classInfo);
+            String resourceInterface = classInfo.name().toString();
             String entityType = generics.get(0).name().toString();
             String idType = generics.get(1).name().toString();
 
@@ -120,11 +120,12 @@ class HibernateOrmPanacheRestProcessor {
         ResourceImplementor resourceImplementor = new ResourceImplementor(new EntityClassHelper(index.getComputingIndex()));
         ClassOutput classOutput = new GeneratedBeanGizmoAdaptor(implementationsProducer);
 
-        for (ClassInfo resourceInterface : index.getComputingIndex()
+        for (ClassInfo classInfo : index.getComputingIndex()
                 .getKnownDirectImplementors(PANACHE_REPOSITORY_RESOURCE_INTERFACE)) {
-            validateResource(index.getComputingIndex(), resourceInterface);
+            validateResource(index.getComputingIndex(), classInfo);
 
-            List<Type> generics = getGenericTypes(resourceInterface);
+            List<Type> generics = getGenericTypes(classInfo);
+            String resourceInterface = classInfo.name().toString();
             String repositoryClassName = generics.get(0).name().toString();
             String entityType = generics.get(1).name().toString();
             String idType = generics.get(2).name().toString();

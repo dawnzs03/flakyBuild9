@@ -84,10 +84,6 @@
             <artifactId>opentelemetry-semconv</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-api-events</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-instrumentation-api</artifactId>
         </dependency>

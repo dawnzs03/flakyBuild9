@@ -16,6 +16,7 @@ import com.arjuna.ats.arjuna.common.RecoveryEnvironmentBean;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
 import com.arjuna.ats.arjuna.coordinator.TxControl;
+import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 import com.arjuna.ats.internal.arjuna.objectstore.jdbc.JDBCStore;
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
 import com.arjuna.ats.jta.common.jtaPropertyManager;
@@ -157,14 +158,7 @@ public class NarayanaJtaRecorder {
     public void handleShutdown(ShutdownContext context, TransactionManagerConfiguration transactions) {
         context.addLastShutdownTask(() -> {
             if (transactions.enableRecovery) {
-                try {
-                    QuarkusRecoveryService.getInstance().stop();
-                } catch (Exception e) {
-                    // the recovery manager throws IllegalStateException if it has already been shutdown
-                    log.warn("The recovery manager has already been shutdown", e);
-                } finally {
-                    QuarkusRecoveryService.getInstance().destroy();
-                }
+                RecoveryManager.manager().terminate(true);
             }
             TransactionReaper.terminate(false);
         });

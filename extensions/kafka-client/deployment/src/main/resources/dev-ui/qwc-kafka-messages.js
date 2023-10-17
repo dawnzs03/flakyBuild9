@@ -28,9 +28,6 @@ export class QwcKafkaMessages extends QwcHotReloadElement {
             align-items: baseline;
             gap: 20px;
         }
-        .backButton{
-            margin-left: 10px;
-        }
         .detail-block {
             width: 50%;
             padding: 10px;
@@ -97,7 +94,7 @@ export class QwcKafkaMessages extends QwcHotReloadElement {
     _renderTopBar(){
             return html`
                     <div class="top-bar">
-                        <vaadin-button @click="${this._backAction}" class="backButton">
+                        <vaadin-button @click="${this._backAction}">
                             <vaadin-icon icon="font-awesome-solid:caret-left" slot="prefix"></vaadin-icon>
                             Back
                         </vaadin-button>

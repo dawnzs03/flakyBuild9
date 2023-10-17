@@ -53,7 +53,11 @@ public final class MicrometerConfig {
     public boolean checkRegistryEnabledWithDefault(CapabilityEnabled config) {
         if (enabled) {
             Optional<Boolean> configValue = config.getEnabled();
-            return configValue.orElseGet(() -> registryEnabledDefault);
+            if (configValue.isPresent()) {
+                return configValue.get();
+            } else {
+                return registryEnabledDefault;
+            }
         }
         return false;
     }
@@ -66,7 +70,11 @@ public final class MicrometerConfig {
     public boolean checkBinderEnabledWithDefault(CapabilityEnabled config) {
         if (enabled) {
             Optional<Boolean> configValue = config.getEnabled();
-            return configValue.orElseGet(() -> binderEnabledDefault);
+            if (configValue.isPresent()) {
+                return configValue.get();
+            } else {
+                return binderEnabledDefault;
+            }
         }
         return false;
     }
@@ -117,8 +125,6 @@ public final class MicrometerConfig {
         public Optional<Boolean> system;
 
         public VertxConfigGroup vertx;
-
-        public NettyConfigGroup netty;
     }
 
     /** Build / static runtime config for exporters */

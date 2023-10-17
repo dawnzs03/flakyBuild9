@@ -148,7 +148,7 @@ public final class UpdateMethodImplementor extends StandardMethodImplementor {
         addContextAnnotation(methodCreator.getParameterAnnotations(2));
         addConsumesAnnotation(methodCreator, APPLICATION_JSON);
         addProducesJsonAnnotation(methodCreator, resourceProperties);
-        addLinksAnnotation(methodCreator, resourceProperties, resourceMetadata.getEntityType(), REL);
+        addLinksAnnotation(methodCreator, resourceMetadata.getEntityType(), REL);
         addMethodAnnotations(methodCreator, resourceProperties.getMethodAnnotations(RESOURCE_UPDATE_METHOD_NAME));
         addOpenApiResponseAnnotation(methodCreator, Response.Status.CREATED, resourceMetadata.getEntityType());
         addSecurityAnnotations(methodCreator, resourceProperties);
@@ -162,9 +162,9 @@ public final class UpdateMethodImplementor extends StandardMethodImplementor {
         ResultHandle entityToSave = methodCreator.getMethodParam(1);
 
         if (isNotReactivePanache()) {
-            implementClassicVersion(methodCreator, resourceMetadata, resourceProperties, resource, id, entityToSave);
+            implementClassicVersion(methodCreator, resourceMetadata, resource, id, entityToSave);
         } else {
-            implementReactiveVersion(methodCreator, resourceMetadata, resourceProperties, resource, id, entityToSave);
+            implementReactiveVersion(methodCreator, resourceMetadata, resource, id, entityToSave);
         }
 
         methodCreator.close();
@@ -175,8 +175,8 @@ public final class UpdateMethodImplementor extends StandardMethodImplementor {
         return RESOURCE_UPDATE_METHOD_NAME;
     }
 
-    private void implementReactiveVersion(MethodCreator methodCreator, ResourceMetadata resourceMetadata,
-            ResourceProperties resourceProperties, ResultHandle resource, ResultHandle id, ResultHandle entityToSave) {
+    private void implementReactiveVersion(MethodCreator methodCreator, ResourceMetadata resourceMetadata, ResultHandle resource,
+            ResultHandle id, ResultHandle entityToSave) {
         ResultHandle uniResponse = methodCreator.invokeVirtualMethod(
                 ofMethod(resourceMetadata.getResourceClass(), RESOURCE_GET_METHOD_NAME, Uni.class, Object.class),
                 resource, id);
@@ -193,16 +193,15 @@ public final class UpdateMethodImplementor extends StandardMethodImplementor {
                             (updateBody, itemUpdated) -> {
                                 BranchResult ifEntityIsNew = updateBody.ifNull(itemWasFound);
                                 ifEntityIsNew.trueBranch()
-                                        .returnValue(responseImplementor.created(ifEntityIsNew.trueBranch(), itemUpdated,
-                                                resourceProperties));
+                                        .returnValue(responseImplementor.created(ifEntityIsNew.trueBranch(), itemUpdated));
                                 ifEntityIsNew.falseBranch()
                                         .returnValue(responseImplementor.noContent(ifEntityIsNew.falseBranch()));
                             }));
                 }));
     }
 
-    private void implementClassicVersion(MethodCreator methodCreator, ResourceMetadata resourceMetadata,
-            ResourceProperties resourceProperties, ResultHandle resource, ResultHandle id, ResultHandle entityToSave) {
+    private void implementClassicVersion(MethodCreator methodCreator, ResourceMetadata resourceMetadata, ResultHandle resource,
+            ResultHandle id, ResultHandle entityToSave) {
         // Invoke resource methods inside a supplier function which will be given to an update executor.
         // For ORM, this update executor will have the @Transactional annotation to make
         // sure that all database operations are executed in a single transaction.
@@ -215,8 +214,7 @@ public final class UpdateMethodImplementor extends StandardMethodImplementor {
                 updateExecutor, updateFunction);
 
         BranchResult createdNewEntity = tryBlock.ifNotNull(newEntity);
-        createdNewEntity.trueBranch()
-                .returnValue(responseImplementor.created(createdNewEntity.trueBranch(), newEntity, resourceProperties));
+        createdNewEntity.trueBranch().returnValue(responseImplementor.created(createdNewEntity.trueBranch(), newEntity));
         createdNewEntity.falseBranch().returnValue(responseImplementor.noContent(createdNewEntity.falseBranch()));
     }
 

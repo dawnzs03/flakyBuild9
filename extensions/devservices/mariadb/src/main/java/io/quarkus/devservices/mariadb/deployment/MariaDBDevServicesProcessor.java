@@ -13,7 +13,6 @@ import org.jboss.logging.Logger;
 import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import io.quarkus.datasource.common.runtime.DataSourceUtil;
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceContainerConfig;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceProvider;
@@ -40,7 +39,7 @@ public class MariaDBDevServicesProcessor {
             @SuppressWarnings("unchecked")
             @Override
             public RunningDevServicesDatasource startDatabase(Optional<String> username, Optional<String> password,
-                    String datasourceName, DevServicesDatasourceContainerConfig containerConfig,
+                    Optional<String> datasourceName, DevServicesDatasourceContainerConfig containerConfig,
                     LaunchMode launchMode, Optional<Duration> startupTimeout) {
                 QuarkusMariaDBContainer container = new QuarkusMariaDBContainer(containerConfig.getImageName(),
                         containerConfig.getFixedExposedPort(),
@@ -49,8 +48,7 @@ public class MariaDBDevServicesProcessor {
 
                 String effectiveUsername = containerConfig.getUsername().orElse(username.orElse(DEFAULT_DATABASE_USERNAME));
                 String effectivePassword = containerConfig.getPassword().orElse(password.orElse(DEFAULT_DATABASE_PASSWORD));
-                String effectiveDbName = containerConfig.getDbName().orElse(
-                        DataSourceUtil.isDefault(datasourceName) ? DEFAULT_DATABASE_NAME : datasourceName);
+                String effectiveDbName = containerConfig.getDbName().orElse(datasourceName.orElse(DEFAULT_DATABASE_NAME));
 
                 container.withUsername(effectiveUsername)
                         .withPassword(effectivePassword)

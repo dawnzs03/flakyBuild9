@@ -7,124 +7,149 @@ import java.util.OptionalInt;
 import java.util.Set;
 
 import io.quarkus.runtime.annotations.ConfigGroup;
+import io.quarkus.runtime.annotations.ConfigItem;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @ConfigGroup
-public interface NetConfig {
+public class NetConfig {
 
     /**
      * Set the ALPN usage.
      */
-    Optional<Boolean> alpn();
+    @ConfigItem
+    public Optional<Boolean> alpn;
 
     /**
      * Sets the list of application-layer protocols to provide to the server during the
      * {@code Application-Layer Protocol Negotiation}.
      */
-    Optional<List<String>> applicationLayerProtocols();
+    @ConfigItem
+    public Optional<List<String>> applicationLayerProtocols;
 
     /**
      * Sets the list of enabled SSL/TLS protocols.
      */
-    Optional<Set<String>> secureTransportProtocols();
+    @ConfigItem
+    public Optional<Set<String>> secureTransportProtocols;
 
     /**
      * Set the idle timeout.
      */
-    Optional<Duration> idleTimeout();
+    @ConfigItem
+    public Optional<Duration> idleTimeout;
 
     /**
      * Set the connect timeout.
      */
-    Optional<Duration> connectionTimeout();
+    @ConfigItem
+    public Optional<Duration> connectionTimeout;
 
     /**
      * Set a list of remote hosts that are not proxied when the client is configured to use a proxy.
      */
-    Optional<List<String>> nonProxyHosts();
+    @ConfigItem
+    public Optional<List<String>> nonProxyHosts;
 
     /**
      * Set proxy options for connections via CONNECT proxy
      */
-    ProxyConfig proxyOptions();
+    @ConfigItem
+    public Optional<ProxyConfig> proxyOptions;
 
     /**
      * Set the read idle timeout.
      */
-    Optional<Duration> readIdleTimeout();
+    @ConfigItem
+    public Optional<Duration> readIdleTimeout;
 
     /**
      * Set the TCP receive buffer size.
      */
-    OptionalInt receiveBufferSize();
+    @ConfigItem
+    public OptionalInt receiveBufferSize;
 
     /**
      * Set the value of reconnect attempts.
      */
-    OptionalInt reconnectAttempts();
+    @ConfigItem
+    public OptionalInt reconnectAttempts;
 
     /**
      * Set the reconnect interval.
      */
-    Optional<Duration> reconnectInterval();
+    @ConfigItem
+    public Optional<Duration> reconnectInterval;
 
     /**
      * Whether to reuse the address.
      */
-    Optional<Boolean> reuseAddress();
+    @ConfigItem
+    public Optional<Boolean> reuseAddress;
 
     /**
      * Whether to reuse the port.
      */
-    Optional<Boolean> reusePort();
+    @ConfigItem
+    public Optional<Boolean> reusePort;
 
     /**
      * Set the TCP send buffer size.
      */
-    OptionalInt sendBufferSize();
+    @ConfigItem
+    public OptionalInt sendBufferSize;
 
     /**
      * Set the {@code SO_linger} keep alive duration.
      */
-    Optional<Duration> soLinger();
+    @ConfigItem
+    public Optional<Duration> soLinger;
 
     /**
      * Enable the {@code TCP_CORK} option - only with linux native transport.
      */
-    Optional<Boolean> cork();
+    @ConfigItem
+    public Optional<Boolean> cork;
 
     /**
      * Enable the {@code TCP_FASTOPEN} option - only with linux native transport.
      */
-    Optional<Boolean> fastOpen();
+    @ConfigItem
+    public Optional<Boolean> fastOpen;
 
     /**
      * Set whether keep alive is enabled
      */
-    Optional<Boolean> keepAlive();
+    @ConfigItem
+    public Optional<Boolean> keepAlive;
 
     /**
      * Set whether no delay is enabled
      */
-    Optional<Boolean> noDelay();
+    @ConfigItem
+    public Optional<Boolean> noDelay;
 
     /**
      * Enable the {@code TCP_QUICKACK} option - only with linux native transport.
      */
-    Optional<Boolean> quickAck();
+    @ConfigItem
+    public Optional<Boolean> quickAck;
 
     /**
      * Set the value of traffic class.
      */
-    OptionalInt trafficClass();
+    @ConfigItem
+    public OptionalInt trafficClass;
 
     /**
      * Set the write idle timeout.
      */
-    Optional<Duration> writeIdleTimeout();
+    @ConfigItem
+    public Optional<Duration> writeIdleTimeout;
 
     /**
      * Set the local interface to bind for network connections.
      * When the local address is null, it will pick any local address, the default local address is null.
      */
-    Optional<String> localAddress();
+    @ConfigItem
+    public Optional<String> localAddress;
 }

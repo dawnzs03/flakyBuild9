@@ -80,7 +80,12 @@ class ReactiveOracleClientProcessor {
 
         feature.produce(new FeatureBuildItem(Feature.REACTIVE_ORACLE_CLIENT));
 
-        for (String dataSourceName : dataSourcesBuildTimeConfig.dataSources().keySet()) {
+        createPoolIfDefined(recorder, vertx, eventLoopCount, shutdown, oraclePool, vertxPool, syntheticBeans,
+                DataSourceUtil.DEFAULT_DATASOURCE_NAME, dataSourcesBuildTimeConfig,
+                dataSourcesRuntimeConfig, dataSourcesReactiveBuildTimeConfig, dataSourcesReactiveRuntimeConfig,
+                dataSourcesReactiveOracleConfig, defaultDataSourceDbKindBuildItems, curateOutcomeBuildItem);
+
+        for (String dataSourceName : dataSourcesBuildTimeConfig.namedDataSources.keySet()) {
             createPoolIfDefined(recorder, vertx, eventLoopCount, shutdown, oraclePool, vertxPool, syntheticBeans,
                     dataSourceName,
                     dataSourcesBuildTimeConfig, dataSourcesRuntimeConfig, dataSourcesReactiveBuildTimeConfig,
@@ -161,7 +166,7 @@ class ReactiveOracleClientProcessor {
 
         healthChecks.produce(
                 new HealthBuildItem("io.quarkus.reactive.oracle.client.runtime.health.ReactiveOracleDataSourcesHealthCheck",
-                        dataSourcesBuildTimeConfig.healthEnabled()));
+                        dataSourcesBuildTimeConfig.healthEnabled));
     }
 
     private void createPoolIfDefined(OraclePoolRecorder recorder,
@@ -225,21 +230,21 @@ class ReactiveOracleClientProcessor {
             List<DefaultDataSourceDbKindBuildItem> defaultDataSourceDbKindBuildItems,
             CurateOutcomeBuildItem curateOutcomeBuildItem) {
         DataSourceBuildTimeConfig dataSourceBuildTimeConfig = dataSourcesBuildTimeConfig
-                .dataSources().get(dataSourceName);
+                .getDataSourceRuntimeConfig(dataSourceName);
         DataSourceReactiveBuildTimeConfig dataSourceReactiveBuildTimeConfig = dataSourcesReactiveBuildTimeConfig
                 .getDataSourceReactiveBuildTimeConfig(dataSourceName);
 
-        Optional<String> dbKind = DefaultDataSourceDbKindBuildItem.resolve(dataSourceBuildTimeConfig.dbKind(),
+        Optional<String> dbKind = DefaultDataSourceDbKindBuildItem.resolve(dataSourceBuildTimeConfig.dbKind,
                 defaultDataSourceDbKindBuildItems,
-                !DataSourceUtil.isDefault(dataSourceName) || dataSourceBuildTimeConfig.devservices().enabled()
-                        .orElse(!dataSourcesBuildTimeConfig.hasNamedDataSources()),
+                !DataSourceUtil.isDefault(dataSourceName) || dataSourceBuildTimeConfig.devservices.enabled
+                        .orElse(dataSourcesBuildTimeConfig.namedDataSources.isEmpty()),
                 curateOutcomeBuildItem);
         if (!dbKind.isPresent()) {
             return false;
         }
 
         if (!DatabaseKind.isOracle(dbKind.get())
-                || !dataSourceReactiveBuildTimeConfig.enabled()) {
+                || !dataSourceReactiveBuildTimeConfig.enabled) {
             return false;
         }
 
@@ -255,7 +260,7 @@ class ReactiveOracleClientProcessor {
             return true;
         }
 
-        for (String dataSourceName : dataSourcesBuildTimeConfig.dataSources().keySet()) {
+        for (String dataSourceName : dataSourcesBuildTimeConfig.namedDataSources.keySet()) {
             if (isReactiveOraclePoolDefined(dataSourcesBuildTimeConfig, dataSourcesReactiveBuildTimeConfig,
                     dataSourceName, defaultDataSourceDbKindBuildItems, curateOutcomeBuildItem)) {
                 return true;

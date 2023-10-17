@@ -6,46 +6,48 @@ import io.quarkus.datasource.common.runtime.DataSourceUtil;
 import io.quarkus.runtime.annotations.ConfigDocMapKey;
 import io.quarkus.runtime.annotations.ConfigDocSection;
 import io.quarkus.runtime.annotations.ConfigGroup;
+import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefaults;
-import io.smallrye.config.WithName;
-import io.smallrye.config.WithParentName;
 
-@ConfigMapping(prefix = "quarkus.datasource")
-@ConfigRoot(phase = ConfigPhase.BUILD_AND_RUN_TIME_FIXED)
-public interface DataSourcesReactiveBuildTimeConfig {
+@ConfigRoot(name = "datasource", phase = ConfigPhase.BUILD_AND_RUN_TIME_FIXED)
+public class DataSourcesReactiveBuildTimeConfig {
 
     /**
      * The default datasource.
      */
-    @WithName("reactive")
-    DataSourceReactiveBuildTimeConfig defaultDataSource();
+    @ConfigItem(name = "reactive")
+    public DataSourceReactiveBuildTimeConfig defaultDataSource;
 
     /**
      * Additional named datasources.
      */
     @ConfigDocSection
     @ConfigDocMapKey("datasource-name")
-    @WithParentName
-    @WithDefaults
-    Map<String, DataSourceReactiveOuterNamedBuildTimeConfig> namedDataSources();
+    @ConfigItem(name = ConfigItem.PARENT)
+    public Map<String, DataSourceReactiveOuterNamedBuildTimeConfig> namedDataSources;
 
-    default DataSourceReactiveBuildTimeConfig getDataSourceReactiveBuildTimeConfig(String dataSourceName) {
+    public DataSourceReactiveBuildTimeConfig getDataSourceReactiveBuildTimeConfig(String dataSourceName) {
         if (DataSourceUtil.isDefault(dataSourceName)) {
-            return defaultDataSource();
+            return defaultDataSource;
         }
 
-        return namedDataSources().get(dataSourceName).reactive();
+        DataSourceReactiveOuterNamedBuildTimeConfig dataSourceReactiveOuterNamedBuildTimeConfig = namedDataSources
+                .get(dataSourceName);
+        if (dataSourceReactiveOuterNamedBuildTimeConfig == null) {
+            return new DataSourceReactiveBuildTimeConfig();
+        }
+
+        return dataSourceReactiveOuterNamedBuildTimeConfig.reactive;
     }
 
     @ConfigGroup
-    public interface DataSourceReactiveOuterNamedBuildTimeConfig {
+    public static class DataSourceReactiveOuterNamedBuildTimeConfig {
 
         /**
-         * The Reactive build time configuration.
+         * The JDBC build time configuration.
          */
-        public DataSourceReactiveBuildTimeConfig reactive();
+        @ConfigItem
+        public DataSourceReactiveBuildTimeConfig reactive;
     }
 }

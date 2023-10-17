@@ -3,24 +3,20 @@ package io.quarkus.redis.runtime.client.config;
 import java.util.Map;
 
 import io.quarkus.runtime.annotations.ConfigDocMapKey;
+import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithParentName;
 
-@ConfigMapping(prefix = "quarkus.redis")
-@ConfigRoot(phase = ConfigPhase.RUN_TIME)
-public interface RedisConfig {
-
+@ConfigRoot(phase = ConfigPhase.RUN_TIME, name = RedisConfig.REDIS_CONFIG_ROOT_NAME)
+public class RedisConfig {
     public final static String REDIS_CONFIG_ROOT_NAME = "redis";
     public final static String HOSTS_CONFIG_NAME = "hosts";
     public static final String DEFAULT_CLIENT_NAME = "<default>";
-
     /**
      * The default redis client
      */
-    @WithParentName
-    RedisClientConfig defaultRedisClient();
+    @ConfigItem(name = ConfigItem.PARENT)
+    public RedisClientConfig defaultRedisClient;
 
     /**
      * Configures additional (named) Redis clients.
@@ -49,18 +45,19 @@ public interface RedisConfig {
      * }
      * </pre>
      */
-    @WithParentName
+    @ConfigItem(name = ConfigItem.PARENT)
     @ConfigDocMapKey("redis-client-name")
-    Map<String, RedisClientConfig> namedRedisClients();
+    public Map<String, RedisClientConfig> namedRedisClients;
 
-    static boolean isDefaultClient(String name) {
+    public static boolean isDefaultClient(String name) {
         return DEFAULT_CLIENT_NAME.equalsIgnoreCase(name);
     }
 
-    static String propertyKey(String name, String radical) {
+    public static String propertyKey(String name, String radical) {
         String prefix = DEFAULT_CLIENT_NAME.equals(name)
                 ? "quarkus.redis."
                 : "quarkus.redis.\"" + name + "\".";
         return prefix + radical;
     }
+
 }

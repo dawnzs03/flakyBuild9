@@ -25,10 +25,8 @@ public class ExtensionsFilter {
         boolean result = AUTHORIZED_GROUPS.stream()
                 .anyMatch(groupId::startsWith);
         if (!result) {
-            if (log.isDebugEnabled()) {
-                log.debug("[Quarkus build analytics] Extension with group ID: " + groupId +
-                        " will not be included in the build analytics because it's not part of the Quarkus platform extensions.");
-            }
+            log.info("[Quarkus build analytics] Extension with group ID: " + groupId +
+                    " will not be included in the build analytics because it's not part of the Quarkus platform extensions.");
         }
         return result;
     }

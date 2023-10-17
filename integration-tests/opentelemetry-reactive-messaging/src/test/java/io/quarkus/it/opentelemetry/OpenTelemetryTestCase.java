@@ -1,6 +1,5 @@
 package io.quarkus.it.opentelemetry;
 
-import static io.opentelemetry.instrumentation.api.instrumenter.messaging.MessageOperation.PUBLISH;
 import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -135,11 +134,12 @@ public class OpenTelemetryTestCase {
         Assertions.assertNotNull(spanData.get("spanId"));
         verifyResource(spanData, parentSpanData);
 
-        Assertions.assertEquals(topic + " " + PUBLISH.name().toLowerCase(), spanData.get("name"));
+        Assertions.assertEquals(topic + " send", spanData.get("name"));
         Assertions.assertEquals(SpanKind.PRODUCER.toString(), spanData.get("kind"));
         Assertions.assertTrue((Boolean) spanData.get("ended"));
         Assertions.assertFalse((Boolean) spanData.get("parent_remote"));
 
+        Assertions.assertEquals("topic", spanData.get("attr_messaging.destination.kind"));
         Assertions.assertEquals("kafka", spanData.get("attr_messaging.system"));
         Assertions.assertEquals(topic, spanData.get("attr_messaging.destination.name"));
     }
@@ -157,6 +157,7 @@ public class OpenTelemetryTestCase {
         Assertions.assertTrue((Boolean) spanData.get("ended"));
         Assertions.assertEquals(parentRemote, spanData.get("parent_remote"));
 
+        Assertions.assertEquals("topic", spanData.get("attr_messaging.destination.kind"));
         Assertions.assertEquals("opentelemetry-integration-test - kafka-consumer-" + channel,
                 spanData.get("attr_messaging.consumer.id"));
         Assertions.assertEquals("kafka", spanData.get("attr_messaging.system"));

@@ -7,7 +7,6 @@ import java.util.Map;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.FieldInfo;
 import org.jboss.logging.Logger;
 
@@ -38,9 +37,8 @@ class ResourceImplementor {
         this.entityClassHelper = entityClassHelper;
     }
 
-    String implement(ClassOutput classOutput, DataAccessImplementor dataAccessImplementor, ClassInfo resourceInterface,
+    String implement(ClassOutput classOutput, DataAccessImplementor dataAccessImplementor, String resourceType,
             String entityType) {
-        String resourceType = resourceInterface.name().toString();
         String className = resourceType + "Impl_" + HashUtil.sha1(resourceType);
         LOGGER.tracef("Starting generation of '%s'", className);
         ClassCreator classCreator = ClassCreator.builder()

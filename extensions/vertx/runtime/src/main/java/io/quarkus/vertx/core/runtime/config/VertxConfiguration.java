@@ -3,66 +3,66 @@ package io.quarkus.vertx.core.runtime.config;
 import java.time.Duration;
 import java.util.OptionalInt;
 
+import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefault;
 
-@ConfigMapping(prefix = "quarkus.vertx")
 @ConfigRoot(phase = ConfigPhase.RUN_TIME)
-public interface VertxConfiguration {
+public class VertxConfiguration {
 
     /**
      * Enables or disables the Vert.x cache.
      */
-    @WithDefault("true")
-    boolean caching();
+    @ConfigItem(defaultValue = "true")
+    public boolean caching;
 
     /**
      * Enables or disabled the Vert.x classpath resource resolver.
      */
-    @WithDefault("true")
-    boolean classpathResolving();
+    @ConfigItem(defaultValue = "true")
+    public boolean classpathResolving;
 
     /**
      * The number of event loops. By default, it matches the number of CPUs detected on the system.
      */
-    OptionalInt eventLoopsPoolSize();
+    @ConfigItem
+    public OptionalInt eventLoopsPoolSize;
 
     /**
      * The maximum amount of time the event loop can be blocked.
      */
-    @WithDefault("2")
-    Duration maxEventLoopExecuteTime();
+    @ConfigItem(defaultValue = "2")
+    public Duration maxEventLoopExecuteTime;
 
     /**
      * The amount of time before a warning is displayed if the event loop is blocked.
      */
-    @WithDefault("2")
-    Duration warningExceptionTime();
+    @ConfigItem(defaultValue = "2")
+    public Duration warningExceptionTime;
 
     /**
      * The size of the worker thread pool.
      */
-    @WithDefault("20")
-    int workerPoolSize();
+    @ConfigItem(defaultValue = "20")
+    public int workerPoolSize;
 
     /**
      * The maximum amount of time the worker thread can be blocked.
      */
-    @WithDefault("60")
-    Duration maxWorkerExecuteTime();
+    @ConfigItem(defaultValue = "60")
+    public Duration maxWorkerExecuteTime;
 
     /**
      * The size of the internal thread pool (used for the file system).
      */
-    @WithDefault("20")
-    int internalBlockingPoolSize();
+    @ConfigItem(defaultValue = "20")
+    public int internalBlockingPoolSize;
 
     /**
      * The queue size. For most applications this should be unbounded
      */
-    OptionalInt queueSize();
+    @ConfigItem
+    public OptionalInt queueSize;
 
     /**
      * The executor growth resistance.
@@ -72,48 +72,51 @@ public interface VertxConfiguration {
      * threads beyond the core size should be created as aggressively as threads within it; a value of {@code 1.0f}
      * implies that threads beyond the core size should never be created.
      */
-    @WithDefault("0")
-    float growthResistance();
+    @ConfigItem
+    public float growthResistance;
 
     /**
      * The amount of time a thread will stay alive with no work.
      */
-    @WithDefault("30")
-    Duration keepAliveTime();
+    @ConfigItem(defaultValue = "30")
+    public Duration keepAliveTime;
 
     /**
      * Prefill thread pool when creating a new Executor.
      * When {@link io.vertx.core.spi.ExecutorServiceFactory#createExecutor} is called,
      * initialise with the number of defined threads at startup
      */
-    @WithDefault("false")
-    boolean prefill();
+    @ConfigItem(defaultValue = "false")
+    public boolean prefill;
 
     /**
      * Enables the async DNS resolver.
      */
-    @WithDefault("false")
-    boolean useAsyncDNS();
+    @ConfigItem
+    public boolean useAsyncDNS;
 
     /**
      * The event bus configuration.
      */
-    EventBusConfiguration eventbus();
+    @ConfigItem
+    public EventBusConfiguration eventbus;
 
     /**
      * The cluster configuration.
      */
-    ClusterConfiguration cluster();
+    @ConfigItem
+    public ClusterConfiguration cluster;
 
     /**
      * The address resolver configuration.
      */
-    AddressResolverConfiguration resolver();
+    @ConfigItem
+    public AddressResolverConfiguration resolver;
 
     /**
      * Enable or disable native transport
      */
-    @WithDefault("false")
-    boolean preferNativeTransport();
+    @ConfigItem
+    public boolean preferNativeTransport;
 
 }

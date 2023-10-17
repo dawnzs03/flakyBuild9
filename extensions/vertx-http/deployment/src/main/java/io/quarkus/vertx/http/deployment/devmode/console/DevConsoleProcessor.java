@@ -37,6 +37,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.quarkus.bootstrap.classloading.ClassPathElement;
 import io.quarkus.bootstrap.classloading.QuarkusClassLoader;
+import io.quarkus.builder.item.SimpleBuildItem;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -48,8 +49,10 @@ import io.quarkus.deployment.builditem.ConfigDescriptionBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
 import io.quarkus.deployment.builditem.ServiceStartBuildItem;
 import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
+import io.quarkus.deployment.builditem.WebSocketLogHandlerBuildItem;
 import io.quarkus.deployment.console.ConsoleCommand;
 import io.quarkus.deployment.console.ConsoleStateManager;
+import io.quarkus.deployment.dev.devservices.DevServiceDescriptionBuildItem;
 import io.quarkus.deployment.ide.EffectiveIdeBuildItem;
 import io.quarkus.deployment.ide.Ide;
 import io.quarkus.deployment.logging.LoggingSetupBuildItem;
@@ -84,6 +87,7 @@ import io.quarkus.qute.UserTagSectionHelper;
 import io.quarkus.qute.ValueResolver;
 import io.quarkus.qute.ValueResolvers;
 import io.quarkus.qute.Variant;
+import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.TemplateHtmlBuilder;
 import io.quarkus.utilities.OS;
 import io.quarkus.vertx.http.deployment.BodyHandlerBuildItem;
@@ -98,6 +102,8 @@ import io.quarkus.vertx.http.runtime.devmode.DevConsoleFilter;
 import io.quarkus.vertx.http.runtime.devmode.DevConsoleRecorder;
 import io.quarkus.vertx.http.runtime.devmode.RedirectHandler;
 import io.quarkus.vertx.http.runtime.devmode.RuntimeDevConsoleRoute;
+import io.quarkus.vertx.http.runtime.logstream.LogStreamRecorder;
+import io.quarkus.vertx.http.runtime.logstream.WebSocketLogHandler;
 import io.quarkus.vertx.http.runtime.management.ManagementInterfaceBuildTimeConfig;
 import io.smallrye.common.vertx.VertxContext;
 import io.smallrye.config.common.utils.StringUtil;
@@ -317,6 +323,17 @@ public class DevConsoleProcessor {
         recorder.initConfigFun();
     }
 
+    @BuildStep(onlyIf = IsDevelopment.class)
+    @Record(ExecutionTime.STATIC_INIT)
+    public void handler(BuildProducer<HistoryHandlerBuildItem> historyProducer,
+            BuildProducer<WebSocketLogHandlerBuildItem> webSocketLogHandlerBuildItem,
+            LogStreamRecorder recorder, DevUIConfig devUiConfig) {
+        RuntimeValue<Optional<WebSocketLogHandler>> handler = recorder.logHandler(devUiConfig.historySize);
+
+        webSocketLogHandlerBuildItem.produce(new WebSocketLogHandlerBuildItem((RuntimeValue) handler));
+        historyProducer.produce(new HistoryHandlerBuildItem(handler));
+    }
+
     @Consume(LoggingSetupBuildItem.class)
     @BuildStep(onlyIf = IsDevelopment.class)
     public ServiceStartBuildItem setupDeploymentSideHandling(List<DevTemplatePathBuildItem> devTemplatePaths,
@@ -418,13 +435,20 @@ public class DevConsoleProcessor {
         }
     }
 
+    @BuildStep(onlyIf = { IsDevelopment.class })
+    public DevConsoleTemplateInfoBuildItem config(List<DevServiceDescriptionBuildItem> serviceDescriptions) {
+        return new DevConsoleTemplateInfoBuildItem("devServices", serviceDescriptions);
+    }
+
     @Record(ExecutionTime.RUNTIME_INIT)
     @Consume(LoggingSetupBuildItem.class)
     @BuildStep(onlyIf = IsDevelopment.class)
     public void setupDevConsoleRoutes(
             DevUIConfig devUIConfig,
             DevConsoleRecorder recorder,
+            LogStreamRecorder logStreamRecorder,
             List<DevConsoleRouteBuildItem> routes,
+            HistoryHandlerBuildItem historyHandlerBuildItem,
             NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem,
             ShutdownContextBuildItem shutdownContext,
             BuildProducer<RouteBuildItem> routeBuildItemBuildProducer,
@@ -442,6 +466,12 @@ public class DevConsoleProcessor {
                 .route("dev-v1/resources/*")
                 .handler(recorder.fileSystemStaticHandler(
                         result.getWebRootConfigurations(), shutdownContext))
+                .build());
+
+        // Add the log stream
+        routeBuildItemBuildProducer.produce(nonApplicationRootPathBuildItem.routeBuilder()
+                .route("dev-v1/logstream")
+                .handler(logStreamRecorder.websocketHandler(historyHandlerBuildItem.value))
                 .build());
 
         for (DevConsoleRouteBuildItem i : routes) {
@@ -850,6 +880,14 @@ public class DevConsoleProcessor {
                     "<br><strong>@deprecated</strong>");
             // No need to escape special characters
             return CompletableFuture.completedFuture(new RawString(val));
+        }
+    }
+
+    public static final class HistoryHandlerBuildItem extends SimpleBuildItem {
+        final RuntimeValue<Optional<WebSocketLogHandler>> value;
+
+        public HistoryHandlerBuildItem(RuntimeValue<Optional<WebSocketLogHandler>> value) {
+            this.value = value;
         }
     }
 

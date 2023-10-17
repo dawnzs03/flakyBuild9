@@ -10,8 +10,6 @@ import jakarta.enterprise.event.Observes;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.openapi.OASFilter;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.jboss.jandex.IndexView;
-import org.jboss.jandex.Indexer;
 
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.smallrye.openapi.runtime.filter.DisabledRestEndpointsFilter;
@@ -30,7 +28,6 @@ import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 public class OpenApiDocumentService implements OpenApiDocumentHolder {
 
     private static final String OPENAPI_SERVERS = "mp.openapi.servers";
-    private static final IndexView EMPTY_INDEX = new Indexer().complete();
     private final OpenApiDocumentHolder documentHolder;
     private final String previousOpenApiServersSystemPropertyValue;
 
@@ -93,7 +90,7 @@ public class OpenApiDocumentService implements OpenApiDocumentHolder {
                             document.filter(autoFilter);
                         }
                         document.filter(new DisabledRestEndpointsFilter());
-                        document.filter(OpenApiProcessor.getFilter(openApiConfig, cl, EMPTY_INDEX));
+                        document.filter(OpenApiProcessor.getFilter(openApiConfig, cl));
                         document.initialize();
 
                         this.jsonDocument = OpenApiSerializer.serialize(document.get(), Format.JSON)
@@ -136,7 +133,7 @@ public class OpenApiDocumentService implements OpenApiDocumentHolder {
                 if (is != null) {
                     try (OpenApiStaticFile staticFile = new OpenApiStaticFile(is, Format.JSON)) {
                         this.openApiConfig = new OpenApiConfigImpl(config);
-                        this.userFilter = OpenApiProcessor.getFilter(openApiConfig, cl, EMPTY_INDEX);
+                        this.userFilter = OpenApiProcessor.getFilter(openApiConfig, cl);
                         this.autoFilter = autoFilter;
                         this.generatedOnBuild = OpenApiProcessor.modelFromStaticFile(this.openApiConfig, staticFile);
                         this.disabledEndpointsFilter = new DisabledRestEndpointsFilter();

@@ -6,43 +6,57 @@ import io.quarkus.datasource.common.runtime.DataSourceUtil;
 import io.quarkus.runtime.annotations.ConfigDocMapKey;
 import io.quarkus.runtime.annotations.ConfigDocSection;
 import io.quarkus.runtime.annotations.ConfigGroup;
+import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefaults;
-import io.smallrye.config.WithParentName;
-import io.smallrye.config.WithUnnamedKey;
 
-@ConfigMapping(prefix = "quarkus.datasource")
-@ConfigRoot(phase = ConfigPhase.RUN_TIME)
-public interface DataSourcesReactiveMSSQLConfig {
+@ConfigRoot(name = "datasource", phase = ConfigPhase.RUN_TIME)
+public class DataSourcesReactiveMSSQLConfig {
 
     /**
-     * Datasources.
+     * The default datasource.
+     */
+    @ConfigItem(name = "reactive.mssql")
+    public DataSourceReactiveMSSQLConfig defaultDataSource;
+
+    /**
+     * Additional named datasources.
      */
     @ConfigDocSection
     @ConfigDocMapKey("datasource-name")
-    @WithParentName
-    @WithDefaults
-    @WithUnnamedKey(DataSourceUtil.DEFAULT_DATASOURCE_NAME)
-    Map<String, DataSourceReactiveMSSQLOuterNamedConfig> dataSources();
+    @ConfigItem(name = ConfigItem.PARENT)
+    public Map<String, DataSourceReactiveMSSQLOuterNamedConfig> namedDataSources;
 
-    @ConfigGroup
-    public interface DataSourceReactiveMSSQLOuterNamedConfig {
+    public DataSourceReactiveMSSQLConfig getDataSourceReactiveRuntimeConfig(String dataSourceName) {
+        if (DataSourceUtil.isDefault(dataSourceName)) {
+            return defaultDataSource;
+        }
 
-        /**
-         * The MSSQL-specific configuration.
-         */
-        DataSourceReactiveMSSQLOuterNestedNamedConfig reactive();
+        DataSourceReactiveMSSQLOuterNamedConfig dataSourceReactiveMSSQLOuterNamedConfig = namedDataSources
+                .get(dataSourceName);
+        if (dataSourceReactiveMSSQLOuterNamedConfig == null) {
+            return new DataSourceReactiveMSSQLConfig();
+        }
+
+        return dataSourceReactiveMSSQLOuterNamedConfig.reactive.mssql;
     }
 
     @ConfigGroup
-    public interface DataSourceReactiveMSSQLOuterNestedNamedConfig {
+    public static class DataSourceReactiveMSSQLOuterNamedConfig {
 
         /**
          * The MSSQL-specific configuration.
          */
-        DataSourceReactiveMSSQLConfig mssql();
+        public DataSourceReactiveMSSQLOuterNestedNamedConfig reactive;
+    }
+
+    @ConfigGroup
+    public static class DataSourceReactiveMSSQLOuterNestedNamedConfig {
+
+        /**
+         * The MSSQL-specific configuration.
+         */
+        public DataSourceReactiveMSSQLConfig mssql;
     }
 
 }

@@ -6,6 +6,7 @@ import static io.quarkus.grpc.runtime.GrpcTestPortUtils.testPort;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.BindException;
 import java.time.Duration;
 import java.util.AbstractMap;
@@ -19,10 +20,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import jakarta.enterprise.inject.Instance;
@@ -59,7 +63,7 @@ import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
 import io.quarkus.vertx.http.runtime.PortSystemProperties;
-import io.quarkus.virtual.threads.VirtualThreadsRecorder;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -67,6 +71,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -583,8 +588,7 @@ public class GrpcServerRecorder {
             List<String> virtuals = virtualMethodsPerService.get(service.getImplementationClassName());
             if (list != null || virtuals != null) {
                 interceptors
-                        .add(new BlockingServerInterceptor(vertx, list, virtuals,
-                                VirtualThreadsRecorder.getCurrent(), devMode));
+                        .add(new BlockingServerInterceptor(vertx, list, virtuals, VIRTUAL_EXECUTOR_SUPPLIER.get(), devMode));
             }
         }
         return ServerInterceptors.intercept(service.definition, interceptors);
@@ -724,4 +728,74 @@ public class GrpcServerRecorder {
         }
     }
 
+    public static final Supplier<Executor> VIRTUAL_EXECUTOR_SUPPLIER = new Supplier<>() {
+        Executor current = null;
+
+        /**
+         * This method uses reflection in order to allow developers to quickly test quarkus-loom without needing to
+         * change --release, --source, --target flags and to enable previews.
+         * Since we try to load the "Loom-preview" classes/methods at runtime, the application can even be compiled
+         * using java 11 and executed with a loom-compliant JDK.
+         * <p>
+         * IMPORTANT: we still need to use a duplicated context to have all the propagation working.
+         * Thus, the context is captured and applied/terminated in the virtual thread.
+         */
+        @Override
+        public Executor get() {
+            if (current == null) {
+                try {
+                    var virtual = (Executor) Executors.class.getMethod("newVirtualThreadPerTaskExecutor")
+                            .invoke(this);
+                    current = new Executor() {
+                        @Override
+                        public void execute(Runnable command) {
+                            var context = Vertx.currentContext();
+                            if (!(context instanceof ContextInternal)) {
+                                virtual.execute(command);
+                            } else {
+                                virtual.execute(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        final var previousContext = ((ContextInternal) context).beginDispatch();
+                                        try {
+                                            command.run();
+                                        } finally {
+                                            ((ContextInternal) context).endDispatch(previousContext);
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    };
+                } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+                    logger.debug("Unable to invoke java.util.concurrent.Executors#newVirtualThreadPerTaskExecutor", e);
+                    //quite ugly but works
+                    logger.warnf("You weren't able to create an executor that spawns virtual threads, the default" +
+                            " blocking executor will be used, please check that your JDK is compatible with " +
+                            "virtual threads");
+                    //if for some reason a class/method can't be loaded or invoked we return the traditional executor,
+                    // wrapping executeBlocking.
+                    current = new Executor() {
+                        @Override
+                        public void execute(Runnable command) {
+                            var context = Vertx.currentContext();
+                            if (!(context instanceof ContextInternal)) {
+                                Infrastructure.getDefaultWorkerPool().execute(command);
+                            } else {
+                                context.executeBlocking(fut -> {
+                                    try {
+                                        command.run();
+                                        fut.complete(null);
+                                    } catch (Exception e) {
+                                        fut.fail(e);
+                                    }
+                                });
+                            }
+                        }
+                    };
+                }
+            }
+            return current;
+        }
+    };
 }

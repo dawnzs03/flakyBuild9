@@ -73,6 +73,7 @@ import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.annotations.ProduceWeak;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.annotations.Weak;
+import io.quarkus.deployment.builditem.BootstrapConfigSetupCompleteBuildItem;
 import io.quarkus.deployment.builditem.BytecodeRecorderObjectLoaderBuildItem;
 import io.quarkus.deployment.builditem.ConfigurationBuildItem;
 import io.quarkus.deployment.builditem.MainBytecodeRecorderBuildItem;
@@ -734,7 +735,8 @@ public final class ExtensionLoader {
                 throw reportError(method, "Unsupported method return type " + returnType);
             }
 
-            if (methodConsumingConfigPhases.contains(ConfigPhase.RUN_TIME)) {
+            if (methodConsumingConfigPhases.contains(ConfigPhase.BOOTSTRAP)
+                    || methodConsumingConfigPhases.contains(ConfigPhase.RUN_TIME)) {
                 if (isRecorder && recordAnnotation.value() == ExecutionTime.STATIC_INIT) {
                     throw reportError(method,
                             "Bytecode recorder is static but an injected config object is declared as run time");
@@ -743,6 +745,10 @@ public final class ExtensionLoader {
                 methodStepConfig = methodStepConfig
                         .andThen(bsb -> bsb.consumes(RunTimeConfigurationProxyBuildItem.class));
 
+                if (methodConsumingConfigPhases.contains(ConfigPhase.BOOTSTRAP)) {
+                    methodStepConfig = methodStepConfig
+                            .andThen(bsb -> bsb.afterProduce(BootstrapConfigSetupCompleteBuildItem.class));
+                }
                 if (methodConsumingConfigPhases.contains(ConfigPhase.RUN_TIME)) {
                     methodStepConfig = methodStepConfig
                             .andThen(bsb -> bsb.afterProduce(RuntimeConfigSetupCompleteBuildItem.class));

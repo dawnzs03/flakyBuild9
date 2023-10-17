@@ -323,6 +323,7 @@
                 <module>logging-gelf</module>
                 <module>cache</module>
                 <module>qute</module>
+                <module>bootstrap-config</module>
                 <module>injectmock</module>
                 <module>reactive-messaging-amqp</module>
                 <module>reactive-messaging-kafka</module>
@@ -357,7 +358,7 @@
                 <module>opentelemetry-vertx</module>
                 <module>opentelemetry-reactive</module>
                 <module>opentelemetry-grpc</module>
-                <module>opentelemetry-vertx-exporter</module>
+                <module>opentelemetry-vertx-grpc-exporter</module>
                 <module>opentelemetry-reactive-messaging</module>
                 <module>logging-json</module>
                 <module>jaxb</module>

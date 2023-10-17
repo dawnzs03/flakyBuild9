@@ -4,22 +4,21 @@ import java.util.List;
 import java.util.Optional;
 
 import io.quarkus.runtime.annotations.ConfigGroup;
-import io.smallrye.config.WithDefault;
-import io.smallrye.config.WithParentName;
+import io.quarkus.runtime.annotations.ConfigItem;
 
 @ConfigGroup
-public interface PemTrustCertConfiguration {
+public class PemTrustCertConfiguration {
 
     /**
      * PEM Trust config is disabled by default.
      */
-    @WithParentName
-    @WithDefault("false")
-    boolean enabled();
+    @ConfigItem(name = ConfigItem.PARENT, defaultValue = "false")
+    public boolean enabled = false;
 
     /**
      * Comma-separated list of the trust certificate files (Pem format).
      */
-    Optional<List<String>> certs();
+    @ConfigItem
+    public Optional<List<String>> certs = Optional.empty();
 
 }

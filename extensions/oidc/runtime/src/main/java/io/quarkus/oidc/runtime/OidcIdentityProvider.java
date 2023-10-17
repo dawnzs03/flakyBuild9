@@ -9,6 +9,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.jwt.Claims;
 import org.jboss.logging.Logger;
@@ -30,7 +31,6 @@ import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.TokenAuthenticationRequest;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
-import io.quarkus.security.spi.runtime.BlockingSecurityExecutor;
 import io.quarkus.vertx.http.runtime.security.HttpSecurityUtils;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -47,17 +47,12 @@ public class OidcIdentityProvider implements IdentityProvider<TokenAuthenticatio
     private static final Uni<TokenVerificationResult> NULL_CODE_ACCESS_TOKEN_UNI = Uni.createFrom().nullItem();
     private static final String CODE_ACCESS_TOKEN_RESULT = "code_flow_access_token_result";
 
-    private final DefaultTenantConfigResolver tenantResolver;
-    private final BlockingTaskRunner<Void> uniVoidOidcContext;
-    private final BlockingTaskRunner<TokenIntrospection> getIntrospectionRequestContext;
-    private final BlockingTaskRunner<UserInfo> getUserInfoRequestContext;
+    @Inject
+    DefaultTenantConfigResolver tenantResolver;
 
-    public OidcIdentityProvider(DefaultTenantConfigResolver tenantResolver, BlockingSecurityExecutor blockingExecutor) {
-        this.tenantResolver = tenantResolver;
-        this.uniVoidOidcContext = new BlockingTaskRunner<>(blockingExecutor);
-        this.getIntrospectionRequestContext = new BlockingTaskRunner<>(blockingExecutor);
-        this.getUserInfoRequestContext = new BlockingTaskRunner<>(blockingExecutor);
-    }
+    private BlockingTaskRunner<Void> uniVoidOidcContext = new BlockingTaskRunner<Void>();
+    private BlockingTaskRunner<TokenIntrospection> getIntrospectionRequestContext = new BlockingTaskRunner<TokenIntrospection>();
+    private BlockingTaskRunner<UserInfo> getUserInfoRequestContext = new BlockingTaskRunner<UserInfo>();
 
     @Override
     public Class<TokenAuthenticationRequest> getRequestType() {

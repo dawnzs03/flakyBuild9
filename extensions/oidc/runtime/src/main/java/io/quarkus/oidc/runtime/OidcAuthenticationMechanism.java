@@ -14,7 +14,6 @@ import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.AuthenticationRequest;
 import io.quarkus.security.identity.request.TokenAuthenticationRequest;
-import io.quarkus.security.spi.runtime.BlockingSecurityExecutor;
 import io.quarkus.vertx.http.runtime.security.ChallengeData;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.quarkus.vertx.http.runtime.security.HttpCredentialTransport;
@@ -29,12 +28,11 @@ public class OidcAuthenticationMechanism implements HttpAuthenticationMechanism 
             HttpCredentialTransport.Type.AUTHORIZATION_CODE, OidcConstants.CODE_FLOW_CODE);
 
     private final BearerAuthenticationMechanism bearerAuth = new BearerAuthenticationMechanism();
-    private final CodeAuthenticationMechanism codeAuth;
+    private final CodeAuthenticationMechanism codeAuth = new CodeAuthenticationMechanism();
     private final DefaultTenantConfigResolver resolver;
 
-    public OidcAuthenticationMechanism(DefaultTenantConfigResolver resolver, BlockingSecurityExecutor blockingExecutor) {
+    public OidcAuthenticationMechanism(DefaultTenantConfigResolver resolver) {
         this.resolver = resolver;
-        this.codeAuth = new CodeAuthenticationMechanism(blockingExecutor);
         this.bearerAuth.init(this, resolver);
         this.codeAuth.init(this, resolver);
     }

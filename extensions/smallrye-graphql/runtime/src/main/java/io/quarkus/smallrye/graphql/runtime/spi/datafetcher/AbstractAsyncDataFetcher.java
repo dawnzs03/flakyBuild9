@@ -34,10 +34,9 @@ public abstract class AbstractAsyncDataFetcher<K, T> extends AbstractDataFetcher
             DataFetchingEnvironment dfe,
             DataFetcherResult.Builder<Object> resultBuilder,
             Object[] transformedArguments) throws Exception {
-        ManagedContext requestContext = Arc.container().requestContext();
 
+        ManagedContext requestContext = Arc.container().requestContext();
         try {
-            measurementIds.add(metricsEmitter.start(c));
             RequestContextHelper.reactivate(requestContext, dfe);
             Uni<?> uni = handleUserMethodCall(dfe, transformedArguments);
             return (O) uni
@@ -70,7 +69,6 @@ public abstract class AbstractAsyncDataFetcher<K, T> extends AbstractDataFetcher
                                 te.appendDataFetcherResult(resultBuilder, dfe);
                             } finally {
                                 eventEmitter.fireAfterDataFetch(c);
-                                metricsEmitter.end(measurementIds.remove());
                             }
                         }
                         emitter.complete(resultBuilder.build());

@@ -6,43 +6,57 @@ import io.quarkus.datasource.common.runtime.DataSourceUtil;
 import io.quarkus.runtime.annotations.ConfigDocMapKey;
 import io.quarkus.runtime.annotations.ConfigDocSection;
 import io.quarkus.runtime.annotations.ConfigGroup;
+import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefaults;
-import io.smallrye.config.WithParentName;
-import io.smallrye.config.WithUnnamedKey;
 
-@ConfigMapping(prefix = "quarkus.datasource")
-@ConfigRoot(phase = ConfigPhase.RUN_TIME)
-public interface DataSourcesReactiveOracleConfig {
+@ConfigRoot(name = "datasource", phase = ConfigPhase.RUN_TIME)
+public class DataSourcesReactiveOracleConfig {
 
     /**
-     * Datasources.
+     * The default datasource.
+     */
+    @ConfigItem(name = "reactive.oracle")
+    public DataSourceReactiveOracleConfig defaultDataSource;
+
+    /**
+     * Additional named datasources.
      */
     @ConfigDocSection
     @ConfigDocMapKey("datasource-name")
-    @WithParentName
-    @WithDefaults
-    @WithUnnamedKey(DataSourceUtil.DEFAULT_DATASOURCE_NAME)
-    Map<String, DataSourceReactiveOracleOuterNamedConfig> dataSources();
+    @ConfigItem(name = ConfigItem.PARENT)
+    public Map<String, DataSourceReactiveOracleOuterNamedConfig> namedDataSources;
 
-    @ConfigGroup
-    public interface DataSourceReactiveOracleOuterNamedConfig {
+    public DataSourceReactiveOracleConfig getDataSourceReactiveRuntimeConfig(String dataSourceName) {
+        if (DataSourceUtil.isDefault(dataSourceName)) {
+            return defaultDataSource;
+        }
 
-        /**
-         * The Oracle-specific configuration.
-         */
-        DataSourceReactiveOracleOuterNestedNamedConfig reactive();
+        DataSourceReactiveOracleOuterNamedConfig dataSourceReactiveOracleOuterNamedConfig = namedDataSources
+                .get(dataSourceName);
+        if (dataSourceReactiveOracleOuterNamedConfig == null) {
+            return new DataSourceReactiveOracleConfig();
+        }
+
+        return dataSourceReactiveOracleOuterNamedConfig.reactive.oracle;
     }
 
     @ConfigGroup
-    public interface DataSourceReactiveOracleOuterNestedNamedConfig {
+    public static class DataSourceReactiveOracleOuterNamedConfig {
 
         /**
          * The Oracle-specific configuration.
          */
-        DataSourceReactiveOracleConfig oracle();
+        public DataSourceReactiveOracleOuterNestedNamedConfig reactive;
+    }
+
+    @ConfigGroup
+    public static class DataSourceReactiveOracleOuterNestedNamedConfig {
+
+        /**
+         * The Oracle-specific configuration.
+         */
+        public DataSourceReactiveOracleConfig oracle;
     }
 
 }

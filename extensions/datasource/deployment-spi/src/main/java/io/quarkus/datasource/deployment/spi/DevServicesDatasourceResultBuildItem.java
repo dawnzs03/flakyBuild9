@@ -3,36 +3,34 @@ package io.quarkus.datasource.deployment.spi;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import io.quarkus.builder.item.SimpleBuildItem;
 import io.quarkus.datasource.common.runtime.DataSourceUtil;
 
 public final class DevServicesDatasourceResultBuildItem extends SimpleBuildItem {
 
-    final Map<String, DbResult> dataSources;
+    final DbResult defaultDatasource;
+    final Map<String, DbResult> namedDatasources;
 
-    public DevServicesDatasourceResultBuildItem(Map<String, DbResult> dataSources) {
-        this.dataSources = Collections.unmodifiableMap(dataSources);
+    public DevServicesDatasourceResultBuildItem(DbResult defaultDatasource, Map<String, DbResult> namedDatasources) {
+        this.defaultDatasource = defaultDatasource;
+        this.namedDatasources = Collections.unmodifiableMap(namedDatasources);
     }
 
     public DbResult getDefaultDatasource() {
-        return dataSources.get(DataSourceUtil.DEFAULT_DATASOURCE_NAME);
+        return defaultDatasource;
     }
 
     public Map<String, DbResult> getNamedDatasources() {
-        return dataSources.entrySet().stream()
-                .filter(e -> !DataSourceUtil.isDefault(e.getKey()))
-                .collect(Collectors.toUnmodifiableMap(e -> e.getKey(), e -> e.getValue()));
-    }
-
-    public Map<String, DbResult> getDatasources() {
-        return dataSources;
+        return namedDatasources;
     }
 
     public static DbResult resolve(Optional<DevServicesDatasourceResultBuildItem> devDbResultBuildItem, String dataSourceName) {
         if (devDbResultBuildItem.isPresent()) {
-            return devDbResultBuildItem.get().dataSources.get(dataSourceName);
+            if (dataSourceName.equals(DataSourceUtil.DEFAULT_DATASOURCE_NAME)) {
+                return devDbResultBuildItem.get().defaultDatasource;
+            }
+            return devDbResultBuildItem.get().namedDatasources.get(dataSourceName);
         }
         return null;
     }

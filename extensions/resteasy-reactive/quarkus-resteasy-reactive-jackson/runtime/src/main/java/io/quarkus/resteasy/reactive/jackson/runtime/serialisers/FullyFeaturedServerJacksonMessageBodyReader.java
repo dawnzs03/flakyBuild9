@@ -1,15 +1,11 @@
 package io.quarkus.resteasy.reactive.jackson.runtime.serialisers;
 
-import static org.jboss.resteasy.reactive.server.jackson.JacksonMessageBodyWriterUtil.setNecessaryJsonFactoryConfig;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import jakarta.inject.Inject;
@@ -21,7 +17,6 @@ import jakarta.ws.rs.ext.ContextResolver;
 import jakarta.ws.rs.ext.Providers;
 
 import org.jboss.resteasy.reactive.common.util.StreamUtil;
-import org.jboss.resteasy.reactive.server.core.CurrentRequestManager;
 import org.jboss.resteasy.reactive.server.jackson.JacksonBasicMessageBodyReader;
 import org.jboss.resteasy.reactive.server.spi.ResteasyReactiveResourceInfo;
 import org.jboss.resteasy.reactive.server.spi.ServerMessageBodyReader;
@@ -34,21 +29,15 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
-import io.quarkus.resteasy.reactive.jackson.runtime.ResteasyReactiveServerJacksonRecorder;
-
 public class FullyFeaturedServerJacksonMessageBodyReader extends JacksonBasicMessageBodyReader
         implements ServerMessageBodyReader<Object> {
 
-    private final ObjectMapper originalMapper;
     private final Providers providers;
-    private final ConcurrentMap<String, ObjectReader> perMethodReader = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ObjectReader> perTypeReader = new ConcurrentHashMap<>();
     private final ConcurrentMap<ObjectMapper, ObjectReader> contextResolverMap = new ConcurrentHashMap<>();
 
     @Inject
     public FullyFeaturedServerJacksonMessageBodyReader(ObjectMapper mapper, Providers providers) {
         super(mapper);
-        this.originalMapper = mapper;
         this.providers = providers;
     }
 
@@ -104,7 +93,7 @@ public class FullyFeaturedServerJacksonMessageBodyReader extends JacksonBasicMes
             return null;
         }
         try {
-            ObjectReader reader = getEffectiveReader(type, genericType, responseMediaType);
+            ObjectReader reader = getEffectiveReader(type, responseMediaType);
             return reader.forType(reader.getTypeFactory().constructType(genericType != null ? genericType : type))
                     .readValue(entityStream);
         } catch (MismatchedInputException e) {
@@ -120,71 +109,23 @@ public class FullyFeaturedServerJacksonMessageBodyReader extends JacksonBasicMes
         return e.getMessage().startsWith("No content");
     }
 
-    private ObjectReader getObjectReaderFromAnnotations(ResteasyReactiveResourceInfo resourceInfo, Type type,
-            ObjectMapper mapper) {
-        // Check `@CustomDeserialization` annotated in methods
-        String methodId = resourceInfo.getMethodId();
-        var customDeserializationValue = ResteasyReactiveServerJacksonRecorder.customDeserializationForMethod(methodId);
-        if (customDeserializationValue != null) {
-            return perMethodReader.computeIfAbsent(methodId,
-                    new FullyFeaturedServerJacksonMessageBodyReader.MethodObjectReaderFunction(customDeserializationValue, type,
-                            mapper));
+    private ObjectReader getEffectiveReader(Class<Object> type, MediaType responseMediaType) {
+        ObjectMapper effectiveMapper = getObjectMapperFromContext(type, responseMediaType);
+        if (effectiveMapper == null) {
+            return getEffectiveReader();
         }
 
-        // Otherwise, check `@CustomDeserialization` annotated in class. In this case, we use the effective type for caching up
-        // the object.
-        customDeserializationValue = ResteasyReactiveServerJacksonRecorder
-                .customDeserializationForClass(resourceInfo.getResourceClass());
-        if (customDeserializationValue != null) {
-            Type effectiveType = type;
-            if (type instanceof ParameterizedType) {
-                effectiveType = ((ParameterizedType) type).getActualTypeArguments()[0];
+        return contextResolverMap.computeIfAbsent(effectiveMapper, new Function<>() {
+            @Override
+            public ObjectReader apply(ObjectMapper objectMapper) {
+                return objectMapper.reader();
             }
-
-            return perTypeReader.computeIfAbsent(effectiveType.getTypeName(),
-                    new FullyFeaturedServerJacksonMessageBodyReader.MethodObjectReaderFunction(customDeserializationValue, type,
-                            mapper));
-        }
-
-        return null;
+        });
     }
 
-    private ObjectReader getEffectiveReader(Class<Object> type, Type genericType, MediaType responseMediaType) {
-        ObjectMapper effectiveMapper = getEffectiveMapper(type, responseMediaType);
-        ObjectReader effectiveReader = defaultReader;
-        if (effectiveMapper != originalMapper) {
-            // Effective reader based on the context
-            effectiveReader = contextResolverMap.computeIfAbsent(effectiveMapper, new Function<>() {
-                @Override
-                public ObjectReader apply(ObjectMapper objectMapper) {
-                    return objectMapper.reader();
-                }
-            });
-        }
-
-        // Get object reader from context if configured
-        ServerRequestContext context = CurrentRequestManager.get();
-        if (context != null) {
-            ResteasyReactiveResourceInfo resourceInfo = context.getResteasyReactiveResourceInfo();
-            if (resourceInfo != null) {
-                ObjectReader readerFromAnnotation = getObjectReaderFromAnnotations(resourceInfo, genericType, effectiveMapper);
-                if (readerFromAnnotation != null) {
-                    effectiveReader = readerFromAnnotation;
-                }
-
-                Class<?> jsonViewValue = ResteasyReactiveServerJacksonRecorder.jsonViewForMethod(resourceInfo.getMethodId());
-                if (jsonViewValue != null) {
-                    return effectiveReader.withView(jsonViewValue);
-                }
-            }
-        }
-
-        return effectiveReader;
-    }
-
-    private ObjectMapper getEffectiveMapper(Class<Object> type, MediaType responseMediaType) {
+    private ObjectMapper getObjectMapperFromContext(Class<Object> type, MediaType responseMediaType) {
         if (providers == null) {
-            return originalMapper;
+            return null;
         }
 
         ContextResolver<ObjectMapper> contextResolver = providers.getContextResolver(ObjectMapper.class,
@@ -197,31 +138,6 @@ public class FullyFeaturedServerJacksonMessageBodyReader extends JacksonBasicMes
             return contextResolver.getContext(type);
         }
 
-        return originalMapper;
-    }
-
-    private static class MethodObjectReaderFunction implements Function<String, ObjectReader> {
-        private final Class<? extends BiFunction<ObjectMapper, Type, ObjectReader>> clazz;
-        private final Type genericType;
-        private final ObjectMapper originalMapper;
-
-        public MethodObjectReaderFunction(Class<? extends BiFunction<ObjectMapper, Type, ObjectReader>> clazz, Type genericType,
-                ObjectMapper originalMapper) {
-            this.clazz = clazz;
-            this.genericType = genericType;
-            this.originalMapper = originalMapper;
-        }
-
-        @Override
-        public ObjectReader apply(String methodId) {
-            try {
-                BiFunction<ObjectMapper, Type, ObjectReader> biFunctionInstance = clazz.getDeclaredConstructor().newInstance();
-                ObjectReader objectReader = biFunctionInstance.apply(originalMapper, genericType);
-                setNecessaryJsonFactoryConfig(objectReader.getFactory());
-                return objectReader;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+        return null;
     }
 }

@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 
 import org.jboss.logging.Logger;
 
+import io.quarkus.runtime.BlockingOperationControl;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.IdentityProvider;
@@ -37,7 +38,22 @@ public class QuarkusIdentityProviderManagerImpl implements IdentityProviderManag
     private final AuthenticationRequestContext blockingRequestContext = new AuthenticationRequestContext() {
         @Override
         public Uni<SecurityIdentity> runBlocking(Supplier<SecurityIdentity> function) {
-            return blockingExecutor.executeBlocking(function);
+            return Uni.createFrom().deferred(new Supplier<Uni<? extends SecurityIdentity>>() {
+                @Override
+                public Uni<SecurityIdentity> get() {
+                    if (BlockingOperationControl.isBlockingAllowed()) {
+                        try {
+                            SecurityIdentity result = function.get();
+                            return Uni.createFrom().item(result);
+                        } catch (Throwable t) {
+                            return Uni.createFrom().failure(t);
+                        }
+                    } else {
+                        return blockingExecutor.executeBlocking(function);
+                    }
+                }
+            });
+
         }
     };
 

@@ -236,8 +236,7 @@ class ConfigDocItemFinder {
                 } else if (annotationName.equals(ANNOTATION_CONFIG_DOC_DEFAULT)) {
                     defaultValueDoc = annotationMirror.getElementValues().values().iterator().next().getValue().toString();
                 } else if (annotationName.equals(ANNOTATION_CONFIG_WITH_DEFAULT)) {
-                    defaultValue = annotationMirror.getElementValues().values().isEmpty() ? null
-                            : annotationMirror.getElementValues().values().iterator().next().getValue().toString();
+                    defaultValue = annotationMirror.getElementValues().values().iterator().next().getValue().toString();
                 } else if (annotationName.equals(ANNOTATION_CONFIG_WITH_UNNAMED_KEY)) {
                     unnamedMapKey = true;
                 }

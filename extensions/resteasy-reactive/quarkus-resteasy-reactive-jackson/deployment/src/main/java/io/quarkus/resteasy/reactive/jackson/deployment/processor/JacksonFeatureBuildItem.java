@@ -19,7 +19,6 @@ public final class JacksonFeatureBuildItem extends MultiBuildItem {
 
     public enum Feature {
         JSON_VIEW,
-        CUSTOM_SERIALIZATION,
-        CUSTOM_DESERIALIZATION
+        CUSTOM_SERIALIZATION
     }
 }

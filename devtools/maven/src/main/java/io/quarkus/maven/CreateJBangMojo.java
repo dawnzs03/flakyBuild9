@@ -26,7 +26,6 @@ import io.quarkus.devtools.commands.CreateJBangProject;
 import io.quarkus.devtools.commands.data.QuarkusCommandException;
 import io.quarkus.devtools.messagewriter.MessageWriter;
 import io.quarkus.devtools.project.BuildTool;
-import io.quarkus.devtools.project.JavaVersion;
 import io.quarkus.devtools.project.QuarkusProject;
 import io.quarkus.devtools.project.QuarkusProjectHelper;
 import io.quarkus.maven.utilities.MojoUtils;
@@ -118,7 +117,7 @@ public class CreateJBangMojo extends AbstractMojo {
                 .artifactResolver(mvn)
                 .build();
         final CreateJBangProject createJBangProject = new CreateJBangProject(QuarkusProject.of(projectDirPath, catalog,
-                codestartsResourceLoader, log, BuildTool.MAVEN, new JavaVersion(javaVersion)))
+                codestartsResourceLoader, log, BuildTool.MAVEN))
                 .extensions(extensions)
                 .javaVersion(javaVersion)
                 .setValue(NO_JBANG_WRAPPER, noJBangWrapper);

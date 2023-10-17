@@ -15,7 +15,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.utility.DockerImageName;
 
-import io.quarkus.datasource.common.runtime.DataSourceUtil;
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceContainerConfig;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceProvider;
@@ -46,7 +45,7 @@ public class PostgresqlDevServicesProcessor {
             @SuppressWarnings("unchecked")
             @Override
             public RunningDevServicesDatasource startDatabase(Optional<String> username, Optional<String> password,
-                    String datasourceName, DevServicesDatasourceContainerConfig containerConfig,
+                    Optional<String> datasourceName, DevServicesDatasourceContainerConfig containerConfig,
                     LaunchMode launchMode, Optional<Duration> startupTimeout) {
                 QuarkusPostgreSQLContainer container = new QuarkusPostgreSQLContainer(containerConfig.getImageName(),
                         containerConfig.getFixedExposedPort(),
@@ -55,8 +54,7 @@ public class PostgresqlDevServicesProcessor {
 
                 String effectiveUsername = containerConfig.getUsername().orElse(username.orElse(DEFAULT_DATABASE_USERNAME));
                 String effectivePassword = containerConfig.getPassword().orElse(password.orElse(DEFAULT_DATABASE_PASSWORD));
-                String effectiveDbName = containerConfig.getDbName().orElse(
-                        DataSourceUtil.isDefault(datasourceName) ? DEFAULT_DATABASE_NAME : datasourceName);
+                String effectiveDbName = containerConfig.getDbName().orElse(datasourceName.orElse(DEFAULT_DATABASE_NAME));
 
                 container.withUsername(effectiveUsername)
                         .withPassword(effectivePassword)

@@ -29,7 +29,6 @@ import io.quarkus.bootstrap.resolver.maven.BootstrapMavenException;
 import io.quarkus.bootstrap.resolver.maven.MavenArtifactResolver;
 import io.quarkus.devtools.messagewriter.MessageWriter;
 import io.quarkus.devtools.project.BuildTool;
-import io.quarkus.devtools.project.JavaVersion;
 import io.quarkus.devtools.project.QuarkusProject;
 import io.quarkus.devtools.project.QuarkusProjectHelper;
 import io.quarkus.devtools.project.buildfile.MavenProjectBuildFile;
@@ -107,7 +106,7 @@ public abstract class QuarkusProjectMojoBase extends AbstractMojo {
             final List<ResourceLoader> codestartsResourceLoader = getCodestartResourceLoaders(resolveExtensionCatalog());
             quarkusProject = QuarkusProject.of(baseDir(), resolveExtensionCatalog(),
                     codestartsResourceLoader,
-                    log, buildTool, JavaVersion.NA);
+                    log, buildTool);
         }
 
         doExecute(quarkusProject, getMessageWriter());

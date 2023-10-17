@@ -2,7 +2,6 @@ package io.quarkus.rest.data.panache.deployment;
 
 import java.util.Map;
 
-import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.Type;
 
 public class ResourceMetadata {
@@ -20,7 +19,7 @@ public class ResourceMetadata {
     /**
      * Application interface that extends RestDataResource interface.
      */
-    private final ClassInfo resourceInterface;
+    private final String resourceInterface;
 
     /**
      * Entity class that is used by the resource.
@@ -37,12 +36,12 @@ public class ResourceMetadata {
      */
     private final Map<String, Type> fields;
 
-    public ResourceMetadata(String resourceClass, ClassInfo resourceInterface, String entityType, String idType,
+    public ResourceMetadata(String resourceClass, String resourceInterface, String entityType, String idType,
             Map<String, Type> fields) {
-        this(resourceClass, resourceInterface.name().toString(), resourceInterface, entityType, idType, fields);
+        this(resourceClass, resourceInterface, resourceInterface, entityType, idType, fields);
     }
 
-    public ResourceMetadata(String resourceClass, String resourceName, ClassInfo resourceInterface, String entityType,
+    public ResourceMetadata(String resourceClass, String resourceName, String resourceInterface, String entityType,
             String idType, Map<String, Type> fields) {
         this.resourceClass = resourceClass;
         this.resourceName = resourceName;
@@ -60,7 +59,7 @@ public class ResourceMetadata {
         return resourceName;
     }
 
-    public ClassInfo getResourceInterface() {
+    public String getResourceInterface() {
         return resourceInterface;
     }
 

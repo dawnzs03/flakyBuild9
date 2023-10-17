@@ -11,12 +11,7 @@ import io.quarkus.arc.processor.InjectionPointInfo;
 import io.quarkus.arc.processor.ObserverInfo;
 import io.quarkus.builder.item.SimpleBuildItem;
 
-/**
- * It's made public so that you can make use of the abstraction.
- * e.g. if you need to do a similar inspection over {@link BeanDiscoveryFinishedBuildItem} and
- * {@link SynthesisFinishedBuildItem}
- */
-public abstract class RegisteredComponentsBuildItem extends SimpleBuildItem {
+abstract class RegisteredComponentsBuildItem extends SimpleBuildItem {
 
     private final Collection<BeanInfo> beans;
     private final Collection<InjectionPointInfo> injectionPoints;

@@ -6,13 +6,16 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
+import org.hibernate.reactive.mutiny.Mutiny;
 
+import io.quarkus.hibernate.reactive.panache.Panache;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
-import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.smallrye.common.vertx.ContextLocals;
 import io.smallrye.common.vertx.VertxContext;
 import io.smallrye.mutiny.Uni;
@@ -24,25 +27,34 @@ public class KafkaReceivers {
 
     private final List<Person> people = new CopyOnWriteArrayList<>();
 
+    @Inject
+    Mutiny.SessionFactory sf;
+
     @Incoming("fruits-in")
     @Outgoing("fruits-persisted")
-    @WithTransaction
     public Uni<Message<Fruit>> persistFruit(Message<Fruit> fruit) {
         assert VertxContext.isOnDuplicatedContext();
         Fruit payload = fruit.getPayload();
-        payload.name = "fruit-" + payload.name;
-        return payload.persist().map(x -> {
-            // ContextLocals is only callable on duplicated context;
-            ContextLocals.put("fruit-id", payload.id);
-            return fruit;
+        return sf.withTransaction(session -> {
+            return session.persist(payload).chain(x -> session.fetch(payload).map(p -> {
+                // ContextLocals is only callable on duplicated context
+                ContextLocals.put("fruit-id", p.id);
+                return fruit.withPayload(payload);
+            }));
         });
     }
 
     @Blocking
     @Incoming("fruits-persisted")
-    public void consumeFruit(Fruit fruit) {
+    @ActivateRequestContext
+    public Uni<Void> consumeFruit(Message<Fruit> fruit) {
         assert VertxContext.isOnDuplicatedContext();
-        assert Objects.equals(ContextLocals.get("fruit-id").get(), fruit.id);
+        Fruit payload = fruit.getPayload();
+        assert Objects.equals(ContextLocals.get("fruit-id").get(), payload.id);
+        return Panache.withTransaction(() -> {
+            payload.name = "fruit-" + payload.name;
+            return payload.persist().chain(() -> Uni.createFrom().completionStage(fruit.ack()));
+        });
     }
 
     @Incoming("people-in")

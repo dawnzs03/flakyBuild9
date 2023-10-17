@@ -14,11 +14,12 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import io.quarkus.runtime.annotations.Recorder;
+import io.quarkus.vertx.http.runtime.devmode.ConfigDescription;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 
 @Recorder
-public class ConfigDevUIRecorder {
+public class ConfigDevUiRecorder {
     private static final String QUOTED_DOT = "\".\"";
     private static final String QUOTED_DOT_KEY = "$$QUOTED_DOT$$";
 
@@ -26,8 +27,8 @@ public class ConfigDevUIRecorder {
     private static Set<String> devServicesConfig;
 
     public void registerConfigs(final List<ConfigDescription> configDescriptions, final Set<String> devServicesConfig) {
-        ConfigDevUIRecorder.configDescriptions = configDescriptions;
-        ConfigDevUIRecorder.devServicesConfig = devServicesConfig;
+        ConfigDevUiRecorder.configDescriptions = configDescriptions;
+        ConfigDevUiRecorder.devServicesConfig = devServicesConfig;
     }
 
     public Supplier<ConfigDescriptionBean> configDescriptionBean() {

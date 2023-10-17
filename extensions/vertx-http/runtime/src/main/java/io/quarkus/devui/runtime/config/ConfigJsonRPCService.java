@@ -18,6 +18,7 @@ import org.jboss.logging.Logger;
 import io.quarkus.dev.console.DevConsoleManager;
 import io.quarkus.devui.runtime.comms.JsonRpcMessage;
 import io.quarkus.devui.runtime.comms.MessageType;
+import io.quarkus.vertx.http.runtime.devmode.ConfigDescription;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 

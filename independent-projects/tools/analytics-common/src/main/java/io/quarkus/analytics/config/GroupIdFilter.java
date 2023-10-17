@@ -28,10 +28,8 @@ public class GroupIdFilter {
         boolean result = DENIED_GROUPS.stream()
                 .noneMatch(groupId::startsWith);
         if (!result) {
-            if (log.isDebugEnabled()) {
-                log.debug("[Quarkus build analytics] Artifact with group ID: " + groupId +
-                        " will not send analytics because it's on the default deny list.");
-            }
+            log.info("[Quarkus build analytics] Artifact with group ID: " + groupId +
+                    " will not send analytics because it's on the default deny list.");
         }
         return result;
     }

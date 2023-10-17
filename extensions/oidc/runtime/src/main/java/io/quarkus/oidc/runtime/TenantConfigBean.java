@@ -1,6 +1,7 @@
 package io.quarkus.oidc.runtime;
 
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 import jakarta.enterprise.context.spi.CreationalContext;
@@ -20,7 +21,8 @@ public class TenantConfigBean {
             Map<String, TenantConfigContext> staticTenantsConfig,
             Map<String, TenantConfigContext> dynamicTenantsConfig,
             TenantConfigContext defaultTenant,
-            Function<OidcTenantConfig, Uni<TenantConfigContext>> tenantConfigContextFactory) {
+            Function<OidcTenantConfig, Uni<TenantConfigContext>> tenantConfigContextFactory,
+            Executor blockingExecutor) {
         this.staticTenantsConfig = staticTenantsConfig;
         this.dynamicTenantsConfig = dynamicTenantsConfig;
         this.defaultTenant = defaultTenant;

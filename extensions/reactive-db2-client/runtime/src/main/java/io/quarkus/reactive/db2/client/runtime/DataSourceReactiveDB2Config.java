@@ -1,15 +1,15 @@
 package io.quarkus.reactive.db2.client.runtime;
 
 import io.quarkus.runtime.annotations.ConfigGroup;
-import io.smallrye.config.WithDefault;
+import io.quarkus.runtime.annotations.ConfigItem;
 
 @ConfigGroup
-public interface DataSourceReactiveDB2Config {
+public class DataSourceReactiveDB2Config {
 
     /**
      * Whether SSL/TLS is enabled.
      */
-    @WithDefault("false")
-    public boolean ssl();
+    @ConfigItem(defaultValue = "false")
+    public boolean ssl = false;
 
 }
