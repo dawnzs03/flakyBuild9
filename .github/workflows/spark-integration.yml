@@ -14,8 +14,6 @@ on:
 
 
 
-
-
 jobs:
   spark-integration:
     runs-on: ubuntu-latest

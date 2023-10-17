@@ -383,13 +383,6 @@ public abstract class AbstractTestNativeGeneralQueries
         // Round-trip tests of casts for Json.
         assertQuery("SELECT cast(cast(name as JSON) as VARCHAR), cast(cast(size as JSON) as INTEGER), cast(cast(size + 0.01 as JSON) as DOUBLE), cast(cast(size > 5 as JSON) as BOOLEAN) FROM part");
         assertQuery("SELECT cast(cast(array[suppkey, nationkey] as JSON) as ARRAY(INTEGER)), cast(cast(map(array[name, address, phone], array[1.1, 2.2, 3.3]) as JSON) as MAP(VARCHAR(40), DOUBLE)), cast(cast(map(array[name], array[phone]) as JSON) as MAP(VARCHAR(25), JSON)), cast(cast(array[array[suppkey], array[nationkey]] as JSON) as ARRAY(JSON)) from supplier");
-
-        // Cast from date to timestamp
-        assertQuery("SELECT CAST(date(shipdate) AS timestamp) FROM lineitem");
-        Session session = Session.builder(getSession())
-                .setSystemProperty("legacy_timestamp", "false")
-                .build();
-        assertQuery(session, "SELECT CAST(date(shipdate) AS timestamp) FROM lineitem");
     }
 
     @Test
@@ -667,9 +660,6 @@ public abstract class AbstractTestNativeGeneralQueries
         assertQuery("SELECT substr(comment, 1, 10), length(comment), ltrim(comment) FROM orders");
         assertQuery("SELECT substr(comment, 1, 10), length(comment), rtrim(comment) FROM orders");
 
-        assertQueryFails("SELECT trim(comment, '.') FROM orders",
-                ".*Scalar function presto.default.trim not registered with arguments.*\n.*");
-
         // Split
         assertQueryOrdered("SELECT shipmode, comment, split(comment, 'ly') FROM lineitem order by 1,2");
         assertQueryOrdered("SELECT shipmode, comment, split(comment, 'i', 3) FROM lineitem order by 1,2");
@@ -929,7 +919,7 @@ public abstract class AbstractTestNativeGeneralQueries
         String tmpTableName = generateRandomTableName();
         String[] unsupportedTableFormats = {"ORC", "JSON"};
         for (String unsupportedTableFormat : unsupportedTableFormats) {
-            assertQueryFails(String.format("CREATE TABLE %s WITH (format = '" + unsupportedTableFormat + "') AS SELECT * FROM nation", tmpTableName), " Unsupported file format in TableWrite: \"" + unsupportedTableFormat + "\".");
+            assertQueryFails(String.format("CREATE TABLE %s WITH (format = '" + unsupportedTableFormat + "') AS SELECT * FROM nation", tmpTableName), " Unsupported file format: \"" + unsupportedTableFormat + "\".");
         }
     }
 
@@ -1143,6 +1133,7 @@ public abstract class AbstractTestNativeGeneralQueries
         assertQuery("SELECT ln(totalprice) FROM orders");
         assertQuery("SELECT sqrt(totalprice) FROM orders");
         assertQuery("SELECT radians(totalprice) FROM orders");
+        assertQuery("SELECT beta_cdf(nationkey, 0.2, 0.2) from nation where nationkey > 0");
     }
 
     @Test

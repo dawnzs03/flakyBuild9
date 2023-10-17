@@ -37,6 +37,7 @@ public class HiveHadoopContainer
     public static final String HOST_NAME = "hadoop-master";
 
     public static final int PROXY_PORT = 1180;
+    public static final int HIVE_SERVER_PORT = 10000;
     public static final int HIVE_METASTORE_PORT = 9083;
 
     public static Builder builder()
@@ -68,7 +69,8 @@ public class HiveHadoopContainer
     {
         super.startContainer();
         log.info(format(
-                "HiveHadoop container started with address, HiveMetastore: http://%s and SocksProxy: http://%s",
+                "HiveHadoop container started with address for HiveServer: http://%s, HiveMetastore: http://%s and SocksProxy: http://%s",
+                getHiveServerEndpoint().toString(),
                 getHiveMetastoreEndpoint().toString(),
                 getMappedHdfsSocksProxy().toString()));
     }
@@ -76,6 +78,11 @@ public class HiveHadoopContainer
     public HostAndPort getMappedHdfsSocksProxy()
     {
         return getMappedHostAndPortForExposedPort(PROXY_PORT);
+    }
+
+    public HostAndPort getHiveServerEndpoint()
+    {
+        return getMappedHostAndPortForExposedPort(HIVE_SERVER_PORT);
     }
 
     public HostAndPort getHiveMetastoreEndpoint()

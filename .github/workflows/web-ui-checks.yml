@@ -10,8 +10,6 @@ on:
 
 
 
-
-
 jobs:
   web-ui-checks:
     runs-on: ubuntu-latest

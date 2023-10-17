@@ -67,7 +67,6 @@ struct ResultRequest {
 
 struct PrestoTask {
   const PrestoTaskId id;
-  const long startProcessCpuTime;
   std::shared_ptr<velox::exec::Task> task;
 
   // Has the task been normally created and started.
@@ -99,14 +98,7 @@ struct PrestoTask {
   /// Info request. May arrive before there is a Task.
   PromiseHolderWeakPtr<std::unique_ptr<protocol::TaskInfo>> infoRequest;
 
-  /// @param taskId Task ID.
-  /// @param nodeId Node ID.
-  /// @param startCpuTime CPU time in nanoseconds recorded when request to
-  /// create this task arrived.
-  PrestoTask(
-      const std::string& taskId,
-      const std::string& nodeId,
-      long startProcessCpuTime = 0);
+  explicit PrestoTask(const std::string& taskId, const std::string& nodeId);
 
   /// Updates when this task was touched last time.
   void updateHeartbeatLocked();
@@ -129,18 +121,10 @@ struct PrestoTask {
   static std::string taskNumbersToString(
       const std::array<size_t, 5>& taskNumbers);
 
-  /// Returns process-wide CPU time in nanoseconds.
-  static long getProcessCpuTime();
-
   protocol::TaskStatus updateStatusLocked();
   protocol::TaskInfo updateInfoLocked();
 
   std::string toJsonString() const;
-
- private:
-  void recordProcessCpuTime();
-
-  long processCpuTime_{0};
 };
 
 using TaskMap =

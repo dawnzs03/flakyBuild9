@@ -68,8 +68,7 @@ class TaskResource {
       const std::vector<std::string>& pathMatch,
       const std::function<std::unique_ptr<protocol::TaskInfo>(
           const protocol::TaskId&,
-          const std::string&,
-          long)>& createOrUpdateFunc);
+          const std::string&)>& createOrUpdateFunc);
 
   proxygen::RequestHandler* deleteTask(
       proxygen::HTTPMessage* message,

@@ -179,15 +179,12 @@ proxygen::RequestHandler* TaskResource::createOrUpdateTaskImpl(
     proxygen::HTTPMessage* /*message*/,
     const std::vector<std::string>& pathMatch,
     const std::function<std::unique_ptr<protocol::TaskInfo>(
-        const protocol::TaskId& taskId,
-        const std::string& updateJson,
-        long startProcessCpuTime)>& createOrUpdateFunc) {
+        const protocol::TaskId&,
+        const std::string&)>& createOrUpdateFunc) {
   protocol::TaskId taskId = pathMatch[1];
 
-  const auto startProcessCpuTime = PrestoTask::getProcessCpuTime();
-
   return new http::CallbackRequestHandler(
-      [this, taskId, createOrUpdateFunc, startProcessCpuTime](
+      [this, taskId, createOrUpdateFunc](
           proxygen::HTTPMessage* /*message*/,
           const std::vector<std::unique_ptr<folly::IOBuf>>& body,
           proxygen::ResponseHandler* downstream) {
@@ -200,14 +197,13 @@ proxygen::RequestHandler* TaskResource::createOrUpdateTaskImpl(
 
         std::unique_ptr<protocol::TaskInfo> taskInfo;
         try {
-          taskInfo =
-              createOrUpdateFunc(taskId, updateJson, startProcessCpuTime);
+          taskInfo = createOrUpdateFunc(taskId, updateJson);
         } catch (const velox::VeloxException& e) {
           // Creating an empty task, putting errors inside so that next status
           // fetch from coordinator will catch the error and well categorize it.
           try {
             taskInfo = taskManager_.createOrUpdateErrorTask(
-                taskId, std::current_exception(), startProcessCpuTime);
+                taskId, std::current_exception());
           } catch (const velox::VeloxUserError& e) {
             http::sendErrorResponse(downstream, e.what());
             return;
@@ -231,9 +227,7 @@ proxygen::RequestHandler* TaskResource::createOrUpdateBatchTask(
   return createOrUpdateTaskImpl(
       message,
       pathMatch,
-      [&](const protocol::TaskId& taskId,
-          const std::string& updateJson,
-          long startProcessCpuTime) {
+      [&](const protocol::TaskId& taskId, const std::string& updateJson) {
         protocol::BatchTaskUpdateRequest batchUpdateRequest =
             json::parse(updateJson);
         auto updateRequest = batchUpdateRequest.taskUpdateRequest;
@@ -267,11 +261,7 @@ proxygen::RequestHandler* TaskResource::createOrUpdateBatchTask(
             prestoPlan, updateRequest.tableWriteInfo, taskId);
 
         return taskManager_.createOrUpdateBatchTask(
-            taskId,
-            batchUpdateRequest,
-            planFragment,
-            std::move(queryCtx),
-            startProcessCpuTime);
+            taskId, batchUpdateRequest, planFragment, std::move(queryCtx));
       });
 }
 
@@ -281,9 +271,7 @@ proxygen::RequestHandler* TaskResource::createOrUpdateTask(
   return createOrUpdateTaskImpl(
       message,
       pathMatch,
-      [&](const protocol::TaskId& taskId,
-          const std::string& updateJson,
-          long startProcessCpuTime) {
+      [&](const protocol::TaskId& taskId, const std::string& updateJson) {
         protocol::TaskUpdateRequest updateRequest = json::parse(updateJson);
         velox::core::PlanFragment planFragment;
         std::shared_ptr<velox::core::QueryCtx> queryCtx;
@@ -302,11 +290,7 @@ proxygen::RequestHandler* TaskResource::createOrUpdateTask(
         }
 
         return taskManager_.createOrUpdateTask(
-            taskId,
-            updateRequest,
-            planFragment,
-            std::move(queryCtx),
-            startProcessCpuTime);
+            taskId, updateRequest, planFragment, std::move(queryCtx));
       });
 }
 

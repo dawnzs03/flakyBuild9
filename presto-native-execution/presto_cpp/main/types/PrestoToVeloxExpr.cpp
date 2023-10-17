@@ -162,11 +162,9 @@ std::vector<TypedExprPtr> VeloxExprConverter::toVeloxExpr(
 namespace {
 /// Converts cast and try_cast functions to CastTypedExpr with nullOnFailure
 /// flag set to false and true appropriately.
-/// Removes cast to Re2JRegExp type. Velox doesn't have such type and uses
+/// Removed cast to Re2JRegExp type. Velox doesn't have such type and uses
 /// different mechanism (stateful vector functions) to avoid re-compiling
 /// regular expressions needlessly.
-/// Removes cast to CodePoints type. Velox doesn't have such type and uses
-/// different mechanisms to implement trim functions efficiently.
 std::optional<TypedExprPtr> tryConvertCast(
     const protocol::Signature& signature,
     const std::string& returnType,
@@ -182,7 +180,6 @@ std::optional<TypedExprPtr> tryConvertCast(
 
   static const char* kRe2JRegExp = "Re2JRegExp";
   static const char* kJsonPath = "JsonPath";
-  static const char* kCodePoints = "CodePoints";
 
   if (signature.kind != protocol::FunctionKind::SCALAR) {
     return std::nullopt;
@@ -212,10 +209,6 @@ std::optional<TypedExprPtr> tryConvertCast(
   }
 
   if (returnType == kJsonPath) {
-    return args[0];
-  }
-
-  if (returnType == kCodePoints) {
     return args[0];
   }
 

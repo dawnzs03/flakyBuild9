@@ -48,6 +48,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Primitives;
 import io.airlift.slice.Slice;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -344,6 +345,7 @@ public class CursorProcessorCompiler
         Parameter cursor = arg("cursor", RecordCursor.class);
 
         ImmutableList.Builder<MethodDefinition> methods = ImmutableList.builder();
+        Map<VariableReferenceExpression, CommonSubExpressionFields> cseMap = new HashMap<>();
         int startLevel = commonSubExpressionsByLevel.keySet().stream().reduce(Math::min).get();
         int maxLevel = commonSubExpressionsByLevel.keySet().stream().reduce(Math::max).get();
         for (int i = startLevel; i <= maxLevel; i++) {
@@ -383,6 +385,7 @@ public class CursorProcessorCompiler
                             .retObject();
 
                     methods.add(method);
+                    cseMap.put(cseVariable, cseFields);
                 }
             }
         }

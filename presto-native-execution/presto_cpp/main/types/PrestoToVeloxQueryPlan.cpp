@@ -17,14 +17,10 @@
 #include <velox/type/Filter.h>
 #include <velox/type/fbhive/HiveTypeParser.h>
 #include "velox/connectors/hive/HiveConnector.h"
-#include "velox/connectors/hive/HiveDataSink.h"
 #include "velox/connectors/hive/HivePartitionFunction.h"
-#include "velox/connectors/hive/TableHandle.h"
 #include "velox/connectors/tpch/TpchConnector.h"
-#include "velox/core/QueryCtx.h"
 #include "velox/exec/HashPartitionFunction.h"
 #include "velox/exec/RoundRobinPartitionFunction.h"
-#include "velox/expression/Expr.h"
 #include "velox/vector/ComplexVector.h"
 #include "velox/vector/FlatVector.h"
 #include "presto_cpp/main/types/TypeSignatureTypeConverter.h"
@@ -187,8 +183,7 @@ velox::common::CompressionKind toFileCompressionKind(
 }
 
 dwio::common::FileFormat toFileFormat(
-    const protocol::HiveStorageFormat storageFormat,
-    const char* usage) {
+    const protocol::HiveStorageFormat storageFormat) {
   switch (storageFormat) {
     case protocol::HiveStorageFormat::DWRF:
       return dwio::common::FileFormat::DWRF;
@@ -196,9 +191,7 @@ dwio::common::FileFormat toFileFormat(
       return dwio::common::FileFormat::PARQUET;
     default:
       VELOX_UNSUPPORTED(
-          "Unsupported file format in {}: {}.",
-          usage,
-          toJsonString(storageFormat));
+          "Unsupported file format: {}.", toJsonString(storageFormat));
   }
 }
 
@@ -2080,7 +2073,7 @@ VeloxQueryPlanConverterBase::toVeloxQueryPlan(
     hiveTableHandle = std::make_shared<connector::hive::HiveInsertTableHandle>(
         inputColumns,
         toLocationHandle(hiveOutputTableHandle->locationHandle),
-        toFileFormat(hiveOutputTableHandle->tableStorageFormat, "TableWrite"),
+        toFileFormat(hiveOutputTableHandle->tableStorageFormat),
         toHiveBucketProperty(
             inputColumns, hiveOutputTableHandle->bucketProperty),
         std::optional(
@@ -2106,7 +2099,7 @@ VeloxQueryPlanConverterBase::toVeloxQueryPlan(
     hiveTableHandle = std::make_shared<connector::hive::HiveInsertTableHandle>(
         inputColumns,
         toLocationHandle(hiveInsertTableHandle->locationHandle),
-        toFileFormat(hiveInsertTableHandle->tableStorageFormat, "TableWrite"),
+        toFileFormat(hiveInsertTableHandle->tableStorageFormat),
         toHiveBucketProperty(
             inputColumns, hiveInsertTableHandle->bucketProperty),
         std::optional(
@@ -2766,14 +2759,14 @@ velox::core::PlanFragment VeloxBatchQueryPlanConverter::toVeloxQueryPlan(
     // TODO - Use original plan node with root node and aggregate operator
     // stats for additional nodes.
     auto broadcastWriteNode = std::make_shared<operators::BroadcastWriteNode>(
-        fmt::format("{}.bw", partitionedOutputNode->id()),
+        "broadcast-write",
         *broadcastBasePath_,
         core::LocalPartitionNode::gather(
             "broadcast-write-gather",
             std::vector<core::PlanNodePtr>{partitionedOutputNode->sources()}));
 
     planFragment.planNode = core::PartitionedOutputNode::broadcast(
-        partitionedOutputNode->id(),
+        "partitioned-output",
         1,
         broadcastWriteNode->outputType(),
         {broadcastWriteNode});
@@ -2798,7 +2791,7 @@ velox::core::PlanFragment VeloxBatchQueryPlanConverter::toVeloxQueryPlan(
 
   auto partitionAndSerializeNode =
       std::make_shared<operators::PartitionAndSerializeNode>(
-          fmt::format("{}.ps", partitionedOutputNode->id()),
+          "shuffle-partition-serialize",
           partitionedOutputNode->keys(),
           partitionedOutputNode->numPartitions(),
           partitionedOutputNode->outputType(),
@@ -2807,12 +2800,12 @@ velox::core::PlanFragment VeloxBatchQueryPlanConverter::toVeloxQueryPlan(
           partitionedOutputNode->partitionFunctionSpecPtr());
 
   planFragment.planNode = std::make_shared<operators::ShuffleWriteNode>(
-      fmt::format("{}.sw", partitionedOutputNode->id()),
+      "root",
       partitionedOutputNode->numPartitions(),
       shuffleName_,
       std::move(*serializedShuffleWriteInfo_),
       core::LocalPartitionNode::gather(
-          fmt::format("{}.g", partitionedOutputNode->id()),
+          "shuffle-gather",
           std::vector<core::PlanNodePtr>{partitionAndSerializeNode}));
   return planFragment;
 }

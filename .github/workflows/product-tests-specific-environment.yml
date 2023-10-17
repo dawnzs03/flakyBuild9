@@ -13,8 +13,6 @@ on:
 
 
 
-
-
 jobs:
   product-tests-specific-environment1:
     runs-on: ubuntu-latest
