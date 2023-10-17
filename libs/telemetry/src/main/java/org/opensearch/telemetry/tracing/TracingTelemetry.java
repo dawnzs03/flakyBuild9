@@ -8,9 +8,8 @@
 
 package org.opensearch.telemetry.tracing;
 
-import org.opensearch.telemetry.tracing.attributes.Attributes;
-
 import java.io.Closeable;
+import org.opensearch.telemetry.tracing.attributes.Attributes;
 
 /**
  * Interface for tracing telemetry providers

@@ -8,6 +8,7 @@
 
 package org.opensearch.remotestore;
 
+import org.junit.Before;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.common.UUIDs;
@@ -20,7 +21,6 @@ import org.opensearch.index.store.RemoteSegmentStoreDirectory;
 import org.opensearch.indices.replication.common.ReplicationType;
 import org.opensearch.snapshots.AbstractSnapshotIntegTestCase;
 import org.opensearch.test.FeatureFlagSetter;
-import org.junit.Before;
 
 import java.io.IOException;
 import java.nio.file.Path;

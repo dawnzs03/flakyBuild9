@@ -11,7 +11,6 @@ package org.opensearch.compress;
 import com.github.luben.zstd.RecyclingBufferPool;
 import com.github.luben.zstd.ZstdInputStreamNoFinalizer;
 import com.github.luben.zstd.ZstdOutputStreamNoFinalizer;
-
 import org.opensearch.common.annotation.PublicApi;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.compress.Compressor;

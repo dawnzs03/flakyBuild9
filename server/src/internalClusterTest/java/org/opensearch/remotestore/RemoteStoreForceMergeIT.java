@@ -8,6 +8,7 @@
 
 package org.opensearch.remotestore;
 
+import org.junit.Before;
 import org.opensearch.action.admin.cluster.remotestore.restore.RestoreRemoteStoreRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.support.PlainActionFuture;
@@ -16,7 +17,6 @@ import org.opensearch.plugins.Plugin;
 import org.opensearch.test.InternalTestCluster;
 import org.opensearch.test.OpenSearchIntegTestCase;
 import org.opensearch.test.transport.MockTransportService;
-import org.junit.Before;
 
 import java.io.IOException;
 import java.util.ArrayList;

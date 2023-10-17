@@ -33,7 +33,6 @@
 package org.opensearch.search;
 
 import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import org.opensearch.OpenSearchException;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.common.settings.Settings;

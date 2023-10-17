@@ -33,7 +33,6 @@
 package org.opensearch.plugins;
 
 import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import org.apache.lucene.tests.util.LuceneTestCase;
@@ -64,10 +63,10 @@ import org.opensearch.cli.UserException;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.hash.MessageDigests;
+import org.opensearch.core.util.FileSystemUtils;
 import org.opensearch.common.io.PathUtils;
 import org.opensearch.common.io.PathUtilsForTesting;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.core.util.FileSystemUtils;
 import org.opensearch.env.Environment;
 import org.opensearch.env.TestEnvironment;
 import org.opensearch.test.OpenSearchTestCase;
