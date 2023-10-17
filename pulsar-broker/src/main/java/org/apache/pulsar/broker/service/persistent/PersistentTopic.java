@@ -2576,14 +2576,8 @@ public class PersistentTopic extends AbstractTopic implements Topic, AddEntryCal
     public CompletableFuture<Void> checkClusterMigration() {
         Optional<ClusterUrl> clusterUrl = getMigratedClusterUrl();
         if (!isMigrated() && clusterUrl.isPresent()) {
-            return ledger.asyncMigrate().thenApply(__ -> {
-                subscriptions.forEach((name, sub) -> {
-                    if (sub.isSubsciptionMigrated()) {
-                        sub.getConsumers().forEach(Consumer::checkAndApplyTopicMigration);
-                    }
-                });
-                return null;
-            });
+            log.info("{} triggering topic migration", topic);
+            return ledger.asyncMigrate().thenCompose(r -> null);
         } else {
             return CompletableFuture.completedFuture(null);
         }
