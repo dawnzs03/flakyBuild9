@@ -20,7 +20,6 @@ import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.xcontent.ContextParser;
 import org.opensearch.core.xcontent.MediaType;
-import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.core.xcontent.ToXContentObject;
 import org.opensearch.core.xcontent.XContentBuilder;
@@ -131,7 +130,7 @@ public class PipelineConfiguration extends AbstractDiffable<PipelineConfiguratio
 
     @Override
     public String toString() {
-        return Strings.toString(MediaTypeRegistry.JSON, this);
+        return Strings.toString(XContentType.JSON, this);
     }
 
     @Override

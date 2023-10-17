@@ -57,7 +57,6 @@ import org.opensearch.search.aggregations.InternalMultiBucketAggregation;
 import org.opensearch.search.aggregations.InternalOrder;
 import org.opensearch.search.aggregations.LeafBucketCollector;
 import org.opensearch.search.aggregations.LeafBucketCollectorBase;
-import org.opensearch.search.aggregations.bucket.LocalBucketCountThresholds;
 import org.opensearch.search.aggregations.bucket.terms.SignificanceLookup.BackgroundFrequencyForBytes;
 import org.opensearch.search.aggregations.bucket.terms.heuristic.SignificanceHeuristic;
 import org.opensearch.search.aggregations.support.ValuesSource;
@@ -604,7 +603,6 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
         TB extends InternalMultiBucketAggregation.InternalBucket> implements Releasable {
 
         private InternalAggregation[] buildAggregations(long[] owningBucketOrds) throws IOException {
-            LocalBucketCountThresholds localBucketCountThresholds = context.asLocalBucketCountThresholds(bucketCountThresholds);
             if (valueCount == 0) { // no context in this reader
                 InternalAggregation[] results = new InternalAggregation[owningBucketOrds.length];
                 for (int ordIdx = 0; ordIdx < owningBucketOrds.length; ordIdx++) {
@@ -617,11 +615,11 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
             long[] otherDocCount = new long[owningBucketOrds.length];
             for (int ordIdx = 0; ordIdx < owningBucketOrds.length; ordIdx++) {
                 final int size;
-                if (localBucketCountThresholds.getMinDocCount() == 0) {
+                if (bucketCountThresholds.getMinDocCount() == 0) {
                     // if minDocCount == 0 then we can end up with more buckets then maxBucketOrd() returns
-                    size = (int) Math.min(valueCount, localBucketCountThresholds.getRequiredSize());
+                    size = (int) Math.min(valueCount, bucketCountThresholds.getShardSize());
                 } else {
-                    size = (int) Math.min(maxBucketOrd(), localBucketCountThresholds.getRequiredSize());
+                    size = (int) Math.min(maxBucketOrd(), bucketCountThresholds.getShardSize());
                 }
                 PriorityQueue<TB> ordered = buildPriorityQueue(size);
                 final int finalOrdIdx = ordIdx;
@@ -632,7 +630,7 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
                     @Override
                     public void accept(long globalOrd, long bucketOrd, long docCount) throws IOException {
                         otherDocCount[finalOrdIdx] += docCount;
-                        if (docCount >= localBucketCountThresholds.getMinDocCount()) {
+                        if (docCount >= bucketCountThresholds.getShardMinDocCount()) {
                             if (spare == null) {
                                 spare = buildEmptyTemporaryBucket();
                             }
@@ -801,14 +799,15 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
                 name,
                 reduceOrder,
                 order,
+                bucketCountThresholds.getRequiredSize(),
+                bucketCountThresholds.getMinDocCount(),
                 metadata(),
                 format,
                 bucketCountThresholds.getShardSize(),
                 showTermDocCountError,
                 otherDocCount,
                 Arrays.asList(topBuckets),
-                0,
-                bucketCountThresholds
+                0
             );
         }
 
@@ -925,13 +924,14 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
         SignificantStringTerms buildResult(long owningBucketOrd, long otherDocCount, SignificantStringTerms.Bucket[] topBuckets) {
             return new SignificantStringTerms(
                 name,
+                bucketCountThresholds.getRequiredSize(),
+                bucketCountThresholds.getMinDocCount(),
                 metadata(),
                 format,
                 subsetSize(owningBucketOrd),
                 supersetSize,
                 significanceHeuristic,
-                Arrays.asList(topBuckets),
-                bucketCountThresholds
+                Arrays.asList(topBuckets)
             );
         }
 

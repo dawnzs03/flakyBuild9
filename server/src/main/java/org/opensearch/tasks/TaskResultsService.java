@@ -57,6 +57,7 @@ import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.common.util.io.Streams;
 import org.opensearch.threadpool.ThreadPool;
 
@@ -145,7 +146,7 @@ public class TaskResultsService {
                 client.admin()
                     .indices()
                     .preparePutMapping(TASK_INDEX)
-                    .setSource(taskResultIndexMapping(), MediaTypeRegistry.JSON)
+                    .setSource(taskResultIndexMapping(), XContentType.JSON)
                     .execute(ActionListener.delegateFailure(listener, (l, r) -> doStoreResult(taskResult, listener)));
             } else {
                 doStoreResult(taskResult, listener);

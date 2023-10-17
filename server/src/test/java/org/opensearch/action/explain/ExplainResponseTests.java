@@ -41,6 +41,7 @@ import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.index.get.GetResult;
 import org.opensearch.test.AbstractSerializingTestCase;
 import org.opensearch.test.RandomObjects;
@@ -113,7 +114,7 @@ public class ExplainResponseTests extends AbstractSerializingTestCase<ExplainRes
         );
         ExplainResponse response = new ExplainResponse(index, id, exist, explanation, getResult);
 
-        XContentBuilder builder = MediaTypeRegistry.contentBuilder(MediaTypeRegistry.JSON);
+        XContentBuilder builder = MediaTypeRegistry.contentBuilder(XContentType.JSON);
         response.toXContent(builder, ToXContent.EMPTY_PARAMS);
 
         String generatedResponse = BytesReference.bytes(builder).utf8ToString().replaceAll("\\s+", "");

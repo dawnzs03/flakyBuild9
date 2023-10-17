@@ -117,14 +117,14 @@ public class RestRequest implements ToXContent.Params {
         HttpChannel httpChannel,
         long requestId
     ) {
-        final MediaType mediaType;
+        final MediaType xContentType;
         try {
-            mediaType = parseContentType(headers.get("Content-Type"));
+            xContentType = parseContentType(headers.get("Content-Type"));
         } catch (final IllegalArgumentException e) {
             throw new ContentTypeHeaderException(e);
         }
-        if (mediaType != null) {
-            this.mediaType.set(mediaType);
+        if (xContentType != null) {
+            this.mediaType.set(xContentType);
         }
         this.xContentRegistry = xContentRegistry;
         this.httpRequest = httpRequest;

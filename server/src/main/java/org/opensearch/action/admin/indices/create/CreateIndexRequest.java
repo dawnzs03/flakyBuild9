@@ -220,7 +220,7 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
     /**
      * The settings to create the index with (using a generic MediaType)
      */
-    public CreateIndexRequest settings(String source, MediaType mediaType) {
+    private CreateIndexRequest settings(String source, MediaType mediaType) {
         this.settings = Settings.builder().loadFromSource(source, mediaType).build();
         return this;
     }

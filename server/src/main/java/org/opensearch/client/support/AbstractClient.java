@@ -413,7 +413,7 @@ import org.opensearch.common.Nullable;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.concurrent.ThreadContext;
-import org.opensearch.core.xcontent.MediaType;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.tasks.TaskId;
 import org.opensearch.threadpool.ThreadPool;
 
@@ -1224,8 +1224,8 @@ public abstract class AbstractClient implements Client {
         }
 
         @Override
-        public PutPipelineRequestBuilder preparePutPipeline(String id, BytesReference source, MediaType mediaType) {
-            return new PutPipelineRequestBuilder(this, PutPipelineAction.INSTANCE, id, source, mediaType);
+        public PutPipelineRequestBuilder preparePutPipeline(String id, BytesReference source, XContentType xContentType) {
+            return new PutPipelineRequestBuilder(this, PutPipelineAction.INSTANCE, id, source, xContentType);
         }
 
         @Override
@@ -1274,8 +1274,8 @@ public abstract class AbstractClient implements Client {
         }
 
         @Override
-        public SimulatePipelineRequestBuilder prepareSimulatePipeline(BytesReference source, MediaType mediaType) {
-            return new SimulatePipelineRequestBuilder(this, SimulatePipelineAction.INSTANCE, source, mediaType);
+        public SimulatePipelineRequestBuilder prepareSimulatePipeline(BytesReference source, XContentType xContentType) {
+            return new SimulatePipelineRequestBuilder(this, SimulatePipelineAction.INSTANCE, source, xContentType);
         }
 
         @Override

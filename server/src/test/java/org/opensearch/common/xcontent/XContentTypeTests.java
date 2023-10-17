@@ -32,7 +32,6 @@
 package org.opensearch.common.xcontent;
 
 import org.opensearch.core.xcontent.MediaType;
-import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.test.OpenSearchTestCase;
 
 import java.util.Locale;
@@ -44,7 +43,7 @@ public class XContentTypeTests extends OpenSearchTestCase {
 
     public void testFromJson() throws Exception {
         String mediaType = "application/json";
-        MediaType expectedXContentType = MediaTypeRegistry.JSON;
+        XContentType expectedXContentType = XContentType.JSON;
         assertThat(MediaType.fromMediaType(mediaType), equalTo(expectedXContentType));
         assertThat(MediaType.fromMediaType(mediaType + ";"), equalTo(expectedXContentType));
         assertThat(MediaType.fromMediaType(mediaType + "; charset=UTF-8"), equalTo(expectedXContentType));
@@ -52,7 +51,7 @@ public class XContentTypeTests extends OpenSearchTestCase {
 
     public void testFromNdJson() throws Exception {
         String mediaType = "application/x-ndjson";
-        MediaType expectedXContentType = MediaTypeRegistry.JSON;
+        XContentType expectedXContentType = XContentType.JSON;
         assertThat(MediaType.fromMediaType(mediaType), equalTo(expectedXContentType));
         assertThat(MediaType.fromMediaType(mediaType + ";"), equalTo(expectedXContentType));
         assertThat(MediaType.fromMediaType(mediaType + "; charset=UTF-8"), equalTo(expectedXContentType));
@@ -60,7 +59,7 @@ public class XContentTypeTests extends OpenSearchTestCase {
 
     public void testFromJsonUppercase() throws Exception {
         String mediaType = "application/json".toUpperCase(Locale.ROOT);
-        MediaType expectedXContentType = MediaTypeRegistry.JSON;
+        XContentType expectedXContentType = XContentType.JSON;
         assertThat(MediaType.fromMediaType(mediaType), equalTo(expectedXContentType));
         assertThat(MediaType.fromMediaType(mediaType + ";"), equalTo(expectedXContentType));
         assertThat(MediaType.fromMediaType(mediaType + "; charset=UTF-8"), equalTo(expectedXContentType));
@@ -90,14 +89,14 @@ public class XContentTypeTests extends OpenSearchTestCase {
 
     public void testFromWildcard() throws Exception {
         String mediaType = "application/*";
-        MediaType expectedXContentType = MediaTypeRegistry.JSON;
+        XContentType expectedXContentType = XContentType.JSON;
         assertThat(MediaType.fromMediaType(mediaType), equalTo(expectedXContentType));
         assertThat(MediaType.fromMediaType(mediaType + ";"), equalTo(expectedXContentType));
     }
 
     public void testFromWildcardUppercase() throws Exception {
         String mediaType = "APPLICATION/*";
-        MediaType expectedXContentType = MediaTypeRegistry.JSON;
+        XContentType expectedXContentType = XContentType.JSON;
         assertThat(MediaType.fromMediaType(mediaType), equalTo(expectedXContentType));
         assertThat(MediaType.fromMediaType(mediaType + ";"), equalTo(expectedXContentType));
     }
@@ -110,15 +109,15 @@ public class XContentTypeTests extends OpenSearchTestCase {
     }
 
     public void testVersionedMediaType() throws Exception {
-        assertThat(MediaType.fromMediaType("application/vnd.opensearch+json;compatible-with=7"), equalTo(MediaTypeRegistry.JSON));
+        assertThat(MediaType.fromMediaType("application/vnd.opensearch+json;compatible-with=7"), equalTo(XContentType.JSON));
         assertThat(MediaType.fromMediaType("application/vnd.opensearch+yaml;compatible-with=7"), equalTo(XContentType.YAML));
         assertThat(MediaType.fromMediaType("application/vnd.opensearch+cbor;compatible-with=7"), equalTo(XContentType.CBOR));
         assertThat(MediaType.fromMediaType("application/vnd.opensearch+smile;compatible-with=7"), equalTo(XContentType.SMILE));
 
-        assertThat(MediaType.fromMediaType("application/vnd.opensearch+json ;compatible-with=7"), equalTo(MediaTypeRegistry.JSON));
+        assertThat(MediaType.fromMediaType("application/vnd.opensearch+json ;compatible-with=7"), equalTo(XContentType.JSON));
 
         String mthv = "application/vnd.opensearch+json ;compatible-with=7;charset=utf-8";
-        assertThat(MediaType.fromMediaType(mthv), equalTo(MediaTypeRegistry.JSON));
-        assertThat(MediaType.fromMediaType(mthv.toUpperCase(Locale.ROOT)), equalTo(MediaTypeRegistry.JSON));
+        assertThat(MediaType.fromMediaType(mthv), equalTo(XContentType.JSON));
+        assertThat(MediaType.fromMediaType(mthv.toUpperCase(Locale.ROOT)), equalTo(XContentType.JSON));
     }
 }

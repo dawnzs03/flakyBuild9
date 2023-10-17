@@ -45,7 +45,6 @@ import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.common.io.stream.Writeable;
 import org.opensearch.core.xcontent.MediaType;
-import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
@@ -166,7 +165,7 @@ public class UpdateHelper {
                         DocWriteResponse.Result.NOOP
                     );
                     update.setGetResult(getResult);
-                    return new Result(update, DocWriteResponse.Result.NOOP, upsertResult.v2(), MediaTypeRegistry.JSON);
+                    return new Result(update, DocWriteResponse.Result.NOOP, upsertResult.v2(), XContentType.JSON);
                 default:
                     // It's fine to throw an exception here, the leniency is handled/logged by `executeScriptedUpsert`
                     throw new IllegalArgumentException("unknown upsert operation, got: " + upsertResult.v1());
@@ -402,13 +401,13 @@ public class UpdateHelper {
         private final Writeable action;
         private final DocWriteResponse.Result result;
         private final Map<String, Object> updatedSourceAsMap;
-        private final MediaType updateSourceContentType;
+        private final XContentType updateSourceContentType;
 
         public Result(
             Writeable action,
             DocWriteResponse.Result result,
             Map<String, Object> updatedSourceAsMap,
-            MediaType updateSourceContentType
+            XContentType updateSourceContentType
         ) {
             this.action = action;
             this.result = result;
@@ -429,7 +428,7 @@ public class UpdateHelper {
             return updatedSourceAsMap;
         }
 
-        public MediaType updateSourceContentType() {
+        public XContentType updateSourceContentType() {
             return updateSourceContentType;
         }
     }

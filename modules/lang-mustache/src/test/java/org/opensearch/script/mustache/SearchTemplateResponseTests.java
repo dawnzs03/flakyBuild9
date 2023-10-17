@@ -130,7 +130,7 @@ public class SearchTemplateResponseTests extends AbstractXContentTestCase<Search
         assertEquals(expectedSource == null, newSource == null);
         if (expectedSource != null) {
             try {
-                assertToXContentEquivalent(expectedSource, newSource, MediaTypeRegistry.JSON);
+                assertToXContentEquivalent(expectedSource, newSource, XContentType.JSON);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

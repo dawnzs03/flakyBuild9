@@ -12,8 +12,6 @@ import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.core.xcontent.AbstractXContentParser;
 import org.opensearch.core.xcontent.DeprecationHandler;
-import org.opensearch.core.xcontent.MediaType;
-import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentLocation;
@@ -72,7 +70,7 @@ public class JsonToStringXContentParser extends AbstractXContentParser {
         builder.field(this.fieldTypeName + VALUE_SUFFIX, valueList);
         builder.field(this.fieldTypeName + VALUE_AND_PATH_SUFFIX, valueAndPathList);
         builder.endObject();
-        String jString = XContentHelper.convertToJson(BytesReference.bytes(builder), false, MediaTypeRegistry.JSON);
+        String jString = XContentHelper.convertToJson(BytesReference.bytes(builder), false, XContentType.JSON);
         return JsonXContent.jsonXContent.createParser(this.xContentRegistry, this.deprecationHandler, String.valueOf(jString));
     }
 
@@ -134,8 +132,8 @@ public class JsonToStringXContentParser extends AbstractXContentParser {
     }
 
     @Override
-    public MediaType contentType() {
-        return MediaTypeRegistry.JSON;
+    public XContentType contentType() {
+        return XContentType.JSON;
     }
 
     @Override

@@ -46,6 +46,7 @@ import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.common.util.CollectionUtils;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentHelper;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.xcontent.MediaType;
 import org.opensearch.core.xcontent.MediaTypeRegistry;
@@ -298,7 +299,7 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
      */
     public PutMappingRequest source(Map<String, ?> mappingSource) {
         try {
-            XContentBuilder builder = MediaTypeRegistry.contentBuilder(MediaTypeRegistry.JSON);
+            XContentBuilder builder = MediaTypeRegistry.contentBuilder(XContentType.JSON);
             builder.map(mappingSource);
             return source(BytesReference.bytes(builder), builder.contentType());
         } catch (IOException e) {
@@ -309,8 +310,8 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
     /**
      * The mapping source definition.
      */
-    public PutMappingRequest source(String mappingSource, MediaType mediaType) {
-        return source(new BytesArray(mappingSource), mediaType);
+    public PutMappingRequest source(String mappingSource, XContentType xContentType) {
+        return source(new BytesArray(mappingSource), xContentType);
     }
 
     /**
@@ -353,7 +354,7 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         if (source != null) {
             try (InputStream stream = new BytesArray(source).streamInput()) {
-                builder.rawValue(stream, MediaTypeRegistry.JSON);
+                builder.rawValue(stream, XContentType.JSON);
             }
         } else {
             builder.startObject().endObject();

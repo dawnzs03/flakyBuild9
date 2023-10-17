@@ -57,7 +57,6 @@ import org.opensearch.search.aggregations.InternalAggregation;
 import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.aggregations.MultiBucketConsumerService;
 import org.opensearch.search.aggregations.bucket.terms.StringTerms;
-import org.opensearch.search.aggregations.bucket.terms.TermsAggregator;
 import org.opensearch.search.aggregations.pipeline.PipelineAggregator;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.query.QuerySearchResult;
@@ -171,14 +170,15 @@ public class TermsReduceBenchmark {
                 "terms",
                 BucketOrder.key(true),
                 BucketOrder.count(false),
+                topNSize,
+                1,
                 Collections.emptyMap(),
                 DocValueFormat.RAW,
                 numShards,
                 true,
                 0,
                 buckets,
-                0,
-                new TermsAggregator.BucketCountThresholds(1, 0, topNSize, numShards)
+                0
             );
         }
 

@@ -140,10 +140,10 @@ public class PutStoredScriptRequest extends AcknowledgedRequest<PutStoredScriptR
     /**
      * Set the script source and the content type of the bytes.
      */
-    public PutStoredScriptRequest content(BytesReference content, MediaType mediaType) {
+    public PutStoredScriptRequest content(BytesReference content, XContentType xContentType) {
         this.content = content;
-        this.mediaType = Objects.requireNonNull(mediaType);
-        this.source = StoredScriptSource.parse(content, mediaType);
+        this.mediaType = Objects.requireNonNull(xContentType);
+        this.source = StoredScriptSource.parse(content, xContentType);
         return this;
     }
 

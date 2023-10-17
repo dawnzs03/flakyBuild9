@@ -48,9 +48,8 @@ import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.client.ResponseListener;
 import org.opensearch.common.SetOnce;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.common.Strings;
-import org.opensearch.core.xcontent.MediaType;
-import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.plugins.PluginsService;
 import org.opensearch.script.MockScriptPlugin;
@@ -99,12 +98,12 @@ public class SearchRestCancellationIT extends HttpSmokeTestCase {
         Request searchRequest = new Request("GET", "/test/_search");
         SearchSourceBuilder searchSource = new SearchSourceBuilder().query(scriptQuery(
             new Script(ScriptType.INLINE, "mockscript", ScriptedBlockPlugin.SCRIPT_NAME, Collections.emptyMap())));
-        searchRequest.setJsonEntity(Strings.toString(MediaTypeRegistry.JSON, searchSource));
+        searchRequest.setJsonEntity(Strings.toString(XContentType.JSON, searchSource));
         verifyCancellationDuringQueryPhase(SearchAction.NAME, searchRequest);
     }
 
     public void testAutomaticCancellationMultiSearchDuringQueryPhase() throws Exception {
-        MediaType contentType = MediaTypeRegistry.JSON;
+        XContentType contentType = XContentType.JSON;
         MultiSearchRequest multiSearchRequest = new MultiSearchRequest().add(new SearchRequest("test")
             .source(new SearchSourceBuilder().scriptField("test_field",
                 new Script(ScriptType.INLINE, "mockscript", ScriptedBlockPlugin.SCRIPT_NAME, Collections.emptyMap()))));
@@ -148,12 +147,12 @@ public class SearchRestCancellationIT extends HttpSmokeTestCase {
         Request searchRequest = new Request("GET", "/test/_search");
         SearchSourceBuilder searchSource = new SearchSourceBuilder().scriptField("test_field",
             new Script(ScriptType.INLINE, "mockscript", ScriptedBlockPlugin.SCRIPT_NAME, Collections.emptyMap()));
-        searchRequest.setJsonEntity(Strings.toString(MediaTypeRegistry.JSON, searchSource));
+        searchRequest.setJsonEntity(Strings.toString(XContentType.JSON, searchSource));
         verifyCancellationDuringFetchPhase(SearchAction.NAME, searchRequest);
     }
 
     public void testAutomaticCancellationMultiSearchDuringFetchPhase() throws Exception {
-        MediaType contentType = MediaTypeRegistry.JSON;
+        XContentType contentType = XContentType.JSON;
         MultiSearchRequest multiSearchRequest = new MultiSearchRequest().add(new SearchRequest("test")
             .source(new SearchSourceBuilder().scriptField("test_field",
                 new Script(ScriptType.INLINE, "mockscript", ScriptedBlockPlugin.SCRIPT_NAME, Collections.emptyMap()))));
@@ -299,7 +298,7 @@ public class SearchRestCancellationIT extends HttpSmokeTestCase {
         }
     }
 
-    private static ContentType createContentType(final MediaType mediaType) {
-        return ContentType.create(mediaType.mediaTypeWithoutParameters(), (Charset) null);
+    private static ContentType createContentType(final XContentType xContentType) {
+        return ContentType.create(xContentType.mediaTypeWithoutParameters(), (Charset) null);
     }
 }

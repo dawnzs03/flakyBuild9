@@ -44,7 +44,7 @@ import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.xcontent.XContentFactory;
-import org.opensearch.core.xcontent.MediaTypeRegistry;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.env.Environment;
 import org.opensearch.test.OpenSearchTestCase;
 import org.junit.Before;
@@ -375,11 +375,7 @@ public class ScriptServiceTests extends OpenSearchTestCase {
                 .endObject()
                 .endObject()
         );
-        ScriptMetadata scriptMetadata = ScriptMetadata.putStoredScript(
-            null,
-            "_id",
-            StoredScriptSource.parse(script, MediaTypeRegistry.JSON)
-        );
+        ScriptMetadata scriptMetadata = ScriptMetadata.putStoredScript(null, "_id", StoredScriptSource.parse(script, XContentType.JSON));
         assertNotNull(scriptMetadata);
         assertEquals("abc", scriptMetadata.getStoredScript("_id").getSource());
     }
@@ -388,7 +384,7 @@ public class ScriptServiceTests extends OpenSearchTestCase {
         ScriptMetadata scriptMetadata = ScriptMetadata.putStoredScript(
             null,
             "_id",
-            StoredScriptSource.parse(new BytesArray("{\"script\": {\"lang\": \"_lang\", \"source\": \"abc\"} }"), MediaTypeRegistry.JSON)
+            StoredScriptSource.parse(new BytesArray("{\"script\": {\"lang\": \"_lang\", \"source\": \"abc\"} }"), XContentType.JSON)
         );
         scriptMetadata = ScriptMetadata.deleteStoredScript(scriptMetadata, "_id");
         assertNotNull(scriptMetadata);
@@ -412,7 +408,7 @@ public class ScriptServiceTests extends OpenSearchTestCase {
                             "_id",
                             StoredScriptSource.parse(
                                 new BytesArray("{\"script\": {\"lang\": \"_lang\", \"source\": \"abc\"} }"),
-                                MediaTypeRegistry.JSON
+                                XContentType.JSON
                             )
                         ).build()
                     )

@@ -82,8 +82,6 @@ import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchScrollRequest;
 import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.core.xcontent.MediaType;
-import org.opensearch.core.xcontent.MediaTypeRegistry;
 
 /**
  * A handy one stop shop for creating requests (make sure to import static this class).
@@ -100,7 +98,7 @@ public class Requests {
     /**
      * The default content type to use to generate source documents when indexing.
      */
-    public static MediaType INDEX_CONTENT_TYPE = MediaTypeRegistry.JSON;
+    public static XContentType INDEX_CONTENT_TYPE = XContentType.JSON;
 
     public static IndexRequest indexRequest() {
         return new IndexRequest();

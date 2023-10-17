@@ -33,7 +33,6 @@
 package org.opensearch.common.xcontent.smile;
 
 import org.opensearch.common.io.stream.BytesStreamOutput;
-import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.xcontent.XContentGenerator;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.common.xcontent.XContentType;
@@ -51,7 +50,7 @@ public class JsonVsSmileTests extends OpenSearchTestCase {
         XContentGenerator xsonGen = XContentType.SMILE.xContent().createGenerator(xsonOs);
 
         BytesStreamOutput jsonOs = new BytesStreamOutput();
-        XContentGenerator jsonGen = MediaTypeRegistry.JSON.xContent().createGenerator(jsonOs);
+        XContentGenerator jsonGen = XContentType.JSON.xContent().createGenerator(jsonOs);
 
         xsonGen.writeStartObject();
         jsonGen.writeStartObject();
