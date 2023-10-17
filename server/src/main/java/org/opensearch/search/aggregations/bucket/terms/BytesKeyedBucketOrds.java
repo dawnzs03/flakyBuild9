@@ -131,7 +131,7 @@ public abstract class BytesKeyedBucketOrds implements Releasable {
         private final BytesRefHash ords;
 
         private FromSingle(BigArrays bigArrays) {
-            ords = new BytesRefHash(bigArrays);
+            ords = new BytesRefHash(1, bigArrays);
         }
 
         @Override
@@ -190,7 +190,7 @@ public abstract class BytesKeyedBucketOrds implements Releasable {
         private final LongKeyedBucketOrds longToBucketOrds;
 
         private FromMany(BigArrays bigArrays) {
-            bytesToLong = new BytesRefHash(bigArrays);
+            bytesToLong = new BytesRefHash(1, bigArrays);
             longToBucketOrds = LongKeyedBucketOrds.build(bigArrays, CardinalityUpperBound.MANY);
         }
 

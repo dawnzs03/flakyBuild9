@@ -9,7 +9,6 @@
 package org.opensearch.telemetry.tracing;
 
 import org.opensearch.telemetry.tracing.attributes.Attributes;
-import org.opensearch.telemetry.tracing.http.HttpTracer;
 
 import java.io.Closeable;
 
@@ -19,7 +18,7 @@ import java.io.Closeable;
  *
  * All methods on the Tracer object are multi-thread safe.
  */
-public interface Tracer extends HttpTracer, Closeable {
+public interface Tracer extends Closeable {
 
     /**
      * Starts the {@link Span} with given name

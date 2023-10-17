@@ -199,16 +199,6 @@ public interface Repository extends LifecycleComponent {
     long getRestoreThrottleTimeInNanos();
 
     /**
-     * Returns restore throttle time in nanoseconds
-     */
-    long getRemoteUploadThrottleTimeInNanos();
-
-    /**
-     * Returns restore throttle time in nanoseconds
-     */
-    long getRemoteDownloadThrottleTimeInNanos();
-
-    /**
      * Returns stats on the repository usage
      */
     default RepositoryStats stats() {

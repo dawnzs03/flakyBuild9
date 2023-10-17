@@ -13,8 +13,6 @@ import org.opensearch.telemetry.tracing.attributes.Attributes;
 import org.opensearch.telemetry.tracing.noop.NoopTracer;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Wrapper implementation of Tracer. This delegates call to right tracer based on the tracer settings
@@ -44,7 +42,7 @@ final class WrappedTracer implements Tracer {
 
     @Override
     public SpanScope startSpan(String spanName, Attributes attributes) {
-        return startSpan(spanName, (SpanContext) null, attributes);
+        return startSpan(spanName, null, attributes);
     }
 
     @Override
@@ -67,10 +65,5 @@ final class WrappedTracer implements Tracer {
     // visible for testing
     Tracer getDelegateTracer() {
         return telemetrySettings.isTracingEnabled() ? defaultTracer : NoopTracer.INSTANCE;
-    }
-
-    @Override
-    public SpanScope startSpan(String spanName, Map<String, List<String>> headers, Attributes attributes) {
-        return defaultTracer.startSpan(spanName, headers, attributes);
     }
 }

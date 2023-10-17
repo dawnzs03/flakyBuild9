@@ -169,16 +169,12 @@ public class RemoteStoreBaseIntegTestCase extends OpenSearchIntegTestCase {
     }
 
     public static Settings remoteStoreClusterSettings(String segmentRepoName, String translogRepoName) {
-        Settings.Builder settingsBuilder = Settings.builder()
+        return Settings.builder()
+            .put(CLUSTER_REPLICATION_TYPE_SETTING.getKey(), ReplicationType.SEGMENT)
             .put(CLUSTER_REMOTE_STORE_ENABLED_SETTING.getKey(), true)
             .put(CLUSTER_REMOTE_SEGMENT_STORE_REPOSITORY_SETTING.getKey(), segmentRepoName)
-            .put(CLUSTER_REMOTE_TRANSLOG_REPOSITORY_SETTING.getKey(), translogRepoName);
-
-        if (randomBoolean()) {
-            settingsBuilder.put(CLUSTER_REPLICATION_TYPE_SETTING.getKey(), ReplicationType.SEGMENT);
-        }
-
-        return settingsBuilder.build();
+            .put(CLUSTER_REMOTE_TRANSLOG_REPOSITORY_SETTING.getKey(), translogRepoName)
+            .build();
     }
 
     private Settings defaultIndexSettings() {
