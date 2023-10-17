@@ -48,7 +48,6 @@ import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpHost;
-import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.message.BasicHeader;
@@ -74,7 +73,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -300,70 +298,37 @@ public class RestClientSingleHostIntegTests extends RestClientTestCase {
                 httpGet.reset();
                 assertFalse(httpGet.isAborted());
 
-                final Phaser phaser = new Phaser(2);
-                phaser.register();
+                Future<ClassicHttpResponse> future = client.execute(getRequestProducer(httpGet, httpHost), getResponseConsumer(), null);
+                httpGet.setDependency((org.apache.hc.core5.concurrent.Cancellable) future);
+                httpGet.abort();
 
                 try {
-                    Future<ClassicHttpResponse> future = client.execute(
-                        getRequestProducer(httpGet, httpHost),
-                        getResponseConsumer(phaser),
-                        null
-                    );
-                    httpGet.setDependency((org.apache.hc.core5.concurrent.Cancellable) future);
-                    httpGet.abort();
-
-                    try {
-                        phaser.arriveAndDeregister();
-                        future.get();
-                        fail("expected cancellation exception");
-                    } catch (CancellationException e) {
-                        // expected
-                    }
-                    assertTrue(future.isCancelled());
-                } finally {
-                    // Forcing termination since the AsyncResponseConsumer may not be reached,
-                    // the request is aborted right before
-                    phaser.forceTermination();
+                    future.get();
+                    fail("expected cancellation exception");
+                } catch (CancellationException e) {
+                    // expected
                 }
+                assertTrue(future.isCancelled());
             }
             {
-                final Phaser phaser = new Phaser(2);
-                phaser.register();
-
+                httpGet.reset();
+                Future<ClassicHttpResponse> future = client.execute(getRequestProducer(httpGet, httpHost), getResponseConsumer(), null);
+                assertFalse(httpGet.isAborted());
+                httpGet.setDependency((org.apache.hc.core5.concurrent.Cancellable) future);
+                httpGet.abort();
+                assertTrue(httpGet.isAborted());
                 try {
-                    httpGet.reset();
-                    Future<ClassicHttpResponse> future = client.execute(
-                        getRequestProducer(httpGet, httpHost),
-                        getResponseConsumer(phaser),
-                        null
-                    );
-                    assertFalse(httpGet.isAborted());
-                    httpGet.setDependency((org.apache.hc.core5.concurrent.Cancellable) future);
-                    httpGet.abort();
-                    assertTrue(httpGet.isAborted());
-                    try {
-                        phaser.arriveAndDeregister();
-                        assertTrue(future.isCancelled());
-                        future.get();
-                        throw new AssertionError("exception should have been thrown");
-                    } catch (CancellationException e) {
-                        // expected
-                    }
-                } finally {
-                    // Forcing termination since the AsyncResponseConsumer may not be reached,
-                    // the request is aborted right before
-                    phaser.forceTermination();
+                    assertTrue(future.isCancelled());
+                    future.get();
+                    throw new AssertionError("exception should have been thrown");
+                } catch (CancellationException e) {
+                    // expected
                 }
             }
             {
                 httpGet.reset();
                 assertFalse(httpGet.isAborted());
-                final Phaser phaser = new Phaser(0);
-                Future<ClassicHttpResponse> future = client.execute(
-                    getRequestProducer(httpGet, httpHost),
-                    getResponseConsumer(phaser),
-                    null
-                );
+                Future<ClassicHttpResponse> future = client.execute(getRequestProducer(httpGet, httpHost), getResponseConsumer(), null);
                 assertFalse(httpGet.isAborted());
                 assertEquals(200, future.get().getCode());
                 assertFalse(future.isCancelled());
@@ -589,15 +554,8 @@ public class RestClientSingleHostIntegTests extends RestClientTestCase {
         return esResponse;
     }
 
-    private AsyncResponseConsumer<ClassicHttpResponse> getResponseConsumer(Phaser phaser) {
-        phaser.register();
-        return new HeapBufferedAsyncResponseConsumer(1024) {
-            @Override
-            protected ClassicHttpResponse buildResult(HttpResponse response, byte[] entity, ContentType contentType) {
-                phaser.arriveAndAwaitAdvance();
-                return super.buildResult(response, entity, contentType);
-            }
-        };
+    private AsyncResponseConsumer<ClassicHttpResponse> getResponseConsumer() {
+        return new HeapBufferedAsyncResponseConsumer(1024);
     }
 
     private HttpUriRequestProducer getRequestProducer(HttpUriRequestBase request, HttpHost host) {
