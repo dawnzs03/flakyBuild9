@@ -1,18 +1,25 @@
-# Reporting security issues
+# Security Policy
 
-If you think you have found a security vulnerability, please send a report to security@datahubproject.io. This address can be used for all of Acryl Data’s open source and commercial products (including but not limited to DataHub and Acryl Data). We can accept only vulnerability reports at this address.
+## Supported Versions
 
-It's not mandatory, but if you'd like to encrypt your message to us; please use our PGP key. The key fingerprint is:
+We do not support any old versions, all updates for bugs/features/security
+will be released in next planned version.
 
-A50B10A86CC21F4B7BE102E170764C95B4FACEBF
+| Version     | Supported          |
+|-------------|--------------------|
+| LATEST only | :white_check_mark: |
 
-The key is available from [keyserver.ubuntu.com](https://keyserver.ubuntu.com/pks/lookup?search=A50B10A86CC21F4B7BE102E170764C95B4FACEBF&fingerprint=on&op=index).
+## Reporting a Vulnerability
 
-Acryl Data will send you a response indicating the next steps in handling your report. After the initial reply to your report, the security team will keep you informed of the progress towards a fix and full announcement, and may ask for additional information or guidance.
+List of maintainers: https://checkstyle.org/team.html
+Mail-list for any questions: https://checkstyle.org/mailing-lists.html
+You can find admin emails in mail-list.
+You can find emails of maintainers in commits, you can clone our repo and see it by "git log".
 
-**Important:** We ask you to not disclose the vulnerability before it have been fixed and announced, unless you received a response from the Acryl Data security team that you can do so.
+If we are not responding, please keep pining us. As final resort, create an issue at
+https://github.com/checkstyle/checkstyle/issues with a note that you have a security issue.
 
-## Security announcements
-
-We maintain [Security Advisories](https://github.com/datahub-project/datahub/security/advisories) on the DataHub project GitHub repository,
-where we will post a summary, remediation, and mitigation details for any patch containing security fixes.
+If the vulnerability is accepted, we will create an issue (without much details)
+on GitHub Issue tracker and we put label "approved" on it.
+If the vulnerability is declined, we can keep it private
+or if you would like to keep record of it in issue tracker, you can do this also.

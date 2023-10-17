@@ -1,170 +1,198 @@
-<!--HOSTED_DOCS_ONLY
-import useBaseUrl from '@docusaurus/useBaseUrl';
+# ![](https://raw.githubusercontent.com/checkstyle/resources/master/img/checkstyle-logos/checkstyle-logo-260x99.png)
 
-export const Logo = (props) => {
-  return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "20px", height: "190px" }}>
-      <img
-        alt="DataHub Logo"
-        src={useBaseUrl("/img/datahub-logo-color-mark.svg")}
-        {...props}
-      />
-    </div>
-  );
-};
+Checkstyle is a tool for checking Java source code for adherence to a Code Standard
+or set of validation rules (best practices).
 
-<Logo />
+[![][travis img]][travis]
+[![][appveyor img]][appveyor]
+[![][circleci img]][circleci]
+[![][cirrusci img]][cirrusci]
+[![][coverage img]][coverage]
+[![][snyk img]][snyk]
+[![][semaphoreci img]][semaphoreci]
+[![][azure img]][azure]
+[![][error prone img]][error prone]
+[![][pitest img]][pitest]
+[![][checker framework img]][checker framework]
 
-<!--
-HOSTED_DOCS_ONLY-->
-<p align="center">
-<img alt="DataHub" src="docs/imgs/datahub-logo-color-mark.svg" height="150" />
-</p>
-<!-- -->
+[![][dependabot img]][dependabot]
 
-# DataHub: The Metadata Platform for the Modern Data Stack
-## Built with ❤️ by <img src="https://datahubproject.io/img/acryl-logo-light-mark.png" width="25"/> [Acryl Data](https://acryldata.io) and <img src="https://datahubproject.io/img/LI-In-Bug.png" width="25"/> [LinkedIn](https://engineering.linkedin.com)
-[![Version](https://img.shields.io/github/v/release/datahub-project/datahub?include_prereleases)](https://github.com/datahub-project/datahub/releases/latest)
-[![PyPI version](https://badge.fury.io/py/acryl-datahub.svg)](https://badge.fury.io/py/acryl-datahub)
-[![build & test](https://github.com/datahub-project/datahub/workflows/build%20&%20test/badge.svg?branch=master&event=push)](https://github.com/datahub-project/datahub/actions?query=workflow%3A%22build+%26+test%22+branch%3Amaster+event%3Apush)
-[![Docker Pulls](https://img.shields.io/docker/pulls/linkedin/datahub-gms.svg)](https://hub.docker.com/r/linkedin/datahub-gms)
-[![Slack](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://slack.datahubproject.io)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/datahub-project/datahub/blob/master/docs/CONTRIBUTING.md)
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/datahub-project/datahub)](https://github.com/datahub-project/datahub/pulls?q=is%3Apr)
-[![License](https://img.shields.io/github/license/datahub-project/datahub)](https://github.com/datahub-project/datahub/blob/master/LICENSE)
-[![YouTube](https://img.shields.io/youtube/channel/subscribers/UC3qFQC5IiwR5fvWEqi_tJ5w?style=social)](https://www.youtube.com/channel/UC3qFQC5IiwR5fvWEqi_tJ5w)
-[![Medium](https://img.shields.io/badge/Medium-12100E?style=for-the-badge&logo=medium&logoColor=white)](https://medium.com/datahub-project)
-[![Follow](https://img.shields.io/twitter/follow/datahubproject?label=Follow&style=social)](https://twitter.com/datahubproject)
-### 🏠 Hosted DataHub Docs (Courtesy of Acryl Data): [datahubproject.io](https://datahubproject.io/docs)
+[![][mavenbadge img]][mavenbadge]
+[![][sonar img]][sonar]
 
----
+[![][release notes/version img]][release notes/version]
 
-[Quickstart](https://datahubproject.io/docs/quickstart) |
-[Features](https://datahubproject.io/docs/features) |
-[Roadmap](https://feature-requests.datahubproject.io/roadmap) |
-[Adoption](#adoption) |
-[Demo](https://demo.datahubproject.io/) |
-[Town Hall](https://datahubproject.io/docs/townhalls)
+[![][closed issues img]][closed issues]
+[![][link check img]][link check]
 
----
-> 📣 DataHub Town Hall is the 4th Thursday at 9am US PT of every month - [add it to your calendar!](https://rsvp.datahubproject.io/)
->
-> - Town-hall Zoom link: [zoom.datahubproject.io](https://zoom.datahubproject.io)
-> - [Meeting details](docs/townhalls.md) & [past recordings](docs/townhall-history.md)
+[![][milestone img]][milestone]
 
-> ✨ DataHub Community Highlights:
->
-> - Read our Monthly Project Updates [here](https://blog.datahubproject.io/tagged/project-updates).
-> - Bringing The Power Of The DataHub Real-Time Metadata Graph To Everyone At Acryl Data: [Data Engineering Podcast](https://www.dataengineeringpodcast.com/acryl-data-datahub-metadata-graph-episode-230/)
-> - Check out our most-read blog post, [DataHub: Popular Metadata Architectures Explained](https://engineering.linkedin.com/blog/2020/datahub-popular-metadata-architectures-explained) @ LinkedIn Engineering Blog.
-> - Join us on [Slack](docs/slack.md)! Ask questions and keep up with the latest announcements.
+Members chat: [![][gitter_mem img]][gitter_mem]
+Contributors chat: [![][gitter_con img]][gitter_con]
 
-## Introduction
+The latest release version can be found at
+[GitHub releases](https://github.com/checkstyle/checkstyle/releases/)
+or at [Maven repo](https://repo1.maven.org/maven2/com/puppycrawl/tools/checkstyle/).
 
-DataHub is an open-source metadata platform for the modern data stack. Read about the architectures of different metadata systems and why DataHub excels [here](https://engineering.linkedin.com/blog/2020/datahub-popular-metadata-architectures-explained). Also read our
-[LinkedIn Engineering blog post](https://engineering.linkedin.com/blog/2019/data-hub), check out our [Strata presentation](https://speakerdeck.com/shirshanka/the-evolution-of-metadata-linkedins-journey-strata-nyc-2019) and watch our [Crunch Conference Talk](https://www.youtube.com/watch?v=OB-O0Y6OYDE). You should also visit [DataHub Architecture](docs/architecture/architecture.md) to get a better understanding of how DataHub is implemented.
+Each-commit builds of maven artifacts can be found at
+[Maven Snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/com/puppycrawl/tools/checkstyle/).
 
-## Features & Roadmap
+Documentation is available in HTML format, see https://checkstyle.org/checks.html.
 
-Check out DataHub's [Features](docs/features.md) & [Roadmap](https://feature-requests.datahubproject.io/roadmap).
+## Build instructions and Contribution
 
-## Demo and Screenshots
+[Build instructions](https://checkstyle.org/contributing.html#Build)
 
-There's a [hosted demo environment](https://demo.datahubproject.io/) courtesy of [Acryl Data](https://acryldata.io) where you can explore DataHub without installing it locally
+[Setup IDE for development](https://checkstyle.org/beginning_development.html)
 
-## Quickstart
+[Explanation on how to create your own module](https://checkstyle.org/extending.html)
 
-Please follow the [DataHub Quickstart Guide](https://datahubproject.io/docs/quickstart) to get a copy of DataHub up & running locally using [Docker](https://docker.com). As the guide assumes some basic knowledge of Docker, we'd recommend you to go through the "Hello World" example of [A Docker Tutorial for Beginners](https://docker-curriculum.com) if Docker is completely foreign to you.
+[Verification of code quality](https://checkstyle.org/contributing.html#Quality_matters)
 
-## Development
+[Sending Pull Request](https://checkstyle.org/contributing.html#Submitting_your_contribution)
 
-If you're looking to build & modify datahub please take a look at our [Development Guide](https://datahubproject.io/docs/developers).
+[Report Issue](https://checkstyle.org/contributing.html#Report_an_issue)
 
-[![DataHub Demo GIF](docs/imgs/entity.png)](https://demo.datahubproject.io/)
+## Continuous integration and Quality reports
 
-## Source Code and Repositories
+See our CIs statuses.
 
-- [datahub-project/datahub](https://github.com/datahub-project/datahub): This repository contains the complete source code for DataHub's metadata model, metadata services, integration connectors and the web application.
-- [acryldata/datahub-actions](https://github.com/acryldata/datahub-actions): DataHub Actions is a framework for responding to changes to your DataHub Metadata Graph in real time.
-- [acryldata/datahub-helm](https://github.com/acryldata/datahub-helm): Repository of helm charts for deploying DataHub on a Kubernetes cluster
-- [acryldata/meta-world](https://github.com/acryldata/meta-world): A repository to store recipes, custom sources, transformations and other things to make your DataHub experience magical
+Quality reports: https://checkstyle.org/project-reports.html
 
-## Releases
+JavaScript, CSS and Java source file analysis on Codacy: [![][codacy img]][codacy]
 
-See [Releases](https://github.com/datahub-project/datahub/releases) page for more details. We follow the [SemVer Specification](https://semver.org) when versioning the releases and adopt the [Keep a Changelog convention](https://keepachangelog.com/) for the changelog format.
+## Feedback/Support
 
-## Contributing
+Please send any feedback to https://groups.google.com/forum/?hl=en#!forum/checkstyle
 
-We welcome contributions from the community. Please refer to our [Contributing Guidelines](docs/CONTRIBUTING.md) for more details. We also have a [contrib](contrib) directory for incubating experimental features.
+Questions and Answers from community: [![][stackoverflow img]][stackoverflow]
 
-## Community
+Bugs and Feature requests (not the questions): https://github.com/checkstyle/checkstyle/issues
 
-Join our [Slack workspace](https://slack.datahubproject.io) for discussions and important announcements. You can also find out more about our upcoming [town hall meetings](docs/townhalls.md) and view past recordings.
+## Support/Sponsor checkstyle
 
-## Adoption
+If you want to speed up fixing of issue and want to encourage somebody in
+internet to resolve any issue:
+[![][bountysource img]][bountysource]
+[![][salt.bountysource img]][salt.bountysource]
+[![][flattr img]][flattr]
+[![][liberapay img]][liberapay]
+[![][backers.opencollective img]][backers.opencollective]
+[![][sponsors.opencollective img]][sponsors.opencollective]
 
-Here are the companies that have officially adopted DataHub. Please feel free to add yours to the list if we missed it.
+## Licensing
 
-- [ABLY](https://ably.team/)
-- [Adevinta](https://www.adevinta.com/)
-- [Banksalad](https://www.banksalad.com)
-- [Cabify](https://cabify.tech/)
-- [ClassDojo](https://www.classdojo.com/)
-- [Coursera](https://www.coursera.org/)
-- [DefinedCrowd](http://www.definedcrowd.com)
-- [DFDS](https://www.dfds.com/)
-- [Digital Turbine](https://www.digitalturbine.com/)
-- [Expedia Group](http://expedia.com)
-- [Experius](https://www.experius.nl)
-- [Geotab](https://www.geotab.com)
-- [Grofers](https://grofers.com)
-- [Haibo Technology](https://www.botech.com.cn)
-- [hipages](https://hipages.com.au/)
-- [inovex](https://www.inovex.de/)
-- [IOMED](https://iomed.health)
-- [Klarna](https://www.klarna.com)
-- [LinkedIn](http://linkedin.com)
-- [Moloco](https://www.moloco.com/en)
-- [N26](https://n26brasil.com/)
-- [Optum](https://www.optum.com/)
-- [Peloton](https://www.onepeloton.com)
-- [PITS Global Data Recovery Services](https://www.pitsdatarecovery.net/)
-- [Razer](https://www.razer.com)
-- [Saxo Bank](https://www.home.saxo)
-- [Showroomprive](https://www.showroomprive.com/)
-- [SpotHero](https://spothero.com)
-- [Stash](https://www.stash.com)
-- [Shanghai HuaRui Bank](https://www.shrbank.com)
-- [ThoughtWorks](https://www.thoughtworks.com)
-- [TypeForm](http://typeform.com)
-- [Udemy](https://www.udemy.com/)
-- [Uphold](https://uphold.com)
-- [Viasat](https://viasat.com)
-- [Wikimedia](https://www.wikimedia.org)
-- [Wolt](https://wolt.com)
-- [Zynga](https://www.zynga.com)
+[![][license img]][license]
 
+This software is licensed under the terms in the file named "LICENSE" in this
+directory.
 
-## Select Articles & Talks
+The software uses the ANTLR package (https://www.antlr.org/). Its license terms
+are in the file named "RIGHTS.antlr" in this directory.
 
-- [DataHub Blog](https://blog.datahubproject.io/)
-- [DataHub YouTube Channel](https://www.youtube.com/channel/UC3qFQC5IiwR5fvWEqi_tJ5w)
-- [Optum: Data Mesh via DataHub](https://optum.github.io/blog/2022/03/23/data-mesh-via-datahub/)
-- [Saxo Bank: Enabling Data Discovery in Data Mesh](https://medium.com/datahub-project/enabling-data-discovery-in-a-data-mesh-the-saxo-journey-451b06969c8f)
-- [Bringing The Power Of The DataHub Real-Time Metadata Graph To Everyone At Acryl Data](https://www.dataengineeringpodcast.com/acryl-data-datahub-metadata-graph-episode-230/)
-- [DataHub: Popular Metadata Architectures Explained](https://engineering.linkedin.com/blog/2020/datahub-popular-metadata-architectures-explained)
-- [Driving DataOps Culture with LinkedIn DataHub](https://www.youtube.com/watch?v=ccsIKK9nVxk) @ [DataOps Unleashed 2021](https://dataopsunleashed.com/#shirshanka-session)
-- [The evolution of metadata: LinkedIn’s story](https://speakerdeck.com/shirshanka/the-evolution-of-metadata-linkedins-journey-strata-nyc-2019) @ [Strata Data Conference 2019](https://conferences.oreilly.com/strata/strata-ny-2019.html)
-- [Journey of metadata at LinkedIn](https://www.youtube.com/watch?v=OB-O0Y6OYDE) @ [Crunch Data Conference 2019](https://crunchconf.com/2019)
-- [DataHub Journey with Expedia Group](https://www.youtube.com/watch?v=ajcRdB22s5o)
-- [Data Discoverability at SpotHero](https://www.slideshare.net/MaggieHays/data-discoverability-at-spothero)
-- [Data Catalogue — Knowing your data](https://medium.com/albert-franzi/data-catalogue-knowing-your-data-15f7d0724900)
-- [DataHub: A Generalized Metadata Search & Discovery Tool](https://engineering.linkedin.com/blog/2019/data-hub)
-- [Open sourcing DataHub: LinkedIn’s metadata search and discovery platform](https://engineering.linkedin.com/blog/2020/open-sourcing-datahub--linkedins-metadata-search-and-discovery-p)
-- [Emerging Architectures for Modern Data Infrastructure](https://future.com/emerging-architectures-for-modern-data-infrastructure-2020/)
+This product includes software developed by
+The Apache Software Foundation (https://www.apache.org/).
 
-See the full list [here](docs/links.md).
+The software uses the Logging and Beanutils packages from the
+Apache Commons project (https://commons.apache.org/). The license terms
+of these packages are in the file named "LICENSE.apache20" in this
+directory.
 
-## License
+The software uses the Google Guava Libraries
+(https://github.com/google/guava/). The license terms of
+these packages are in the file named "LICENSE.apache20" in this
+directory.
 
-[Apache License 2.0](./LICENSE).
+The software uses the Picocli Library
+(https://github.com/remkop/picocli/). Its license terms
+are in the file named "LICENSE.apache20" in this directory.
+
+[travis]:https://travis-ci.com/github/checkstyle/checkstyle/builds
+[travis img]:https://api.travis-ci.com/checkstyle/checkstyle.svg
+
+[appveyor]:https://ci.appveyor.com/project/checkstyle/checkstyle/history
+[appveyor img]:https://ci.appveyor.com/api/projects/status/rw6bw3dl9kph6ucc?svg=true
+
+[sonar]:https://sonarcloud.io/dashboard?id=org.checkstyle%3Acheckstyle
+[sonar img]:https://sonarcloud.io/api/project_badges/measure?project=org.checkstyle%3Acheckstyle&metric=sqale_index
+
+[codacy]:https://www.codacy.com/app/checkstyle/checkstyle
+[codacy img]:https://api.codacy.com/project/badge/3adf12d434314ba8b38277ea46d3c44b
+
+[coverage]:https://codecov.io/github/checkstyle/checkstyle?branch=master
+[coverage img]:https://codecov.io/github/checkstyle/checkstyle/coverage.svg?branch=master
+
+[license]:LICENSE
+[license img]:https://img.shields.io/badge/license-GNU%20LGPL%20v2.1-blue.svg
+
+[mavenbadge]:https://search.maven.org/search?q=g:%22com.puppycrawl.tools%22%20AND%20a:%22checkstyle%22
+[mavenbadge img]:https://img.shields.io/maven-central/v/com.puppycrawl.tools/checkstyle.svg?label=Maven%20Central
+
+[gitter_mem]:https://gitter.im/checkstyle
+[gitter_mem img]:https://img.shields.io/badge/gitter-JOIN%20CHAT-blue.svg
+
+[gitter_con]:https://gitter.im/checkstyle/checkstyle
+[gitter_con img]:https://badges.gitter.im/Join%20Chat.svg
+
+[stackoverflow]:https://stackoverflow.com/questions/tagged/checkstyle
+[stackoverflow img]:https://img.shields.io/badge/stackoverflow-CHECKSTYLE-blue.svg
+
+[teamcity]:https://teamcity.jetbrains.com/viewType.html?buildTypeId=Checkstyle_IdeaInspectionsMaster
+[teamcity img]:https://teamcity.jetbrains.com/app/rest/builds/buildType:(id:Checkstyle_IdeaInspectionsMaster)/statusIcon
+
+[circleci]: https://circleci.com/gh/checkstyle/checkstyle/tree/master
+[circleci img]: https://circleci.com/gh/checkstyle/checkstyle/tree/master.svg?style=svg
+
+[cirrusci]: https://cirrus-ci.com/github/checkstyle/checkstyle
+[cirrusci img]: https://api.cirrus-ci.com/github/checkstyle/checkstyle.svg?branch=master
+
+[snyk]: https://snyk.io/test/github/checkstyle/checkstyle?targetFile=pom.xml
+[snyk img]: https://snyk.io/test/github/checkstyle/checkstyle/badge.svg
+
+[semaphoreci]: https://checkstyle.semaphoreci.com/projects/checkstyle
+[semaphoreci img]: https://checkstyle.semaphoreci.com/badges/checkstyle/branches/master.svg?style=shields
+
+[flattr]:https://flattr.com/submit/auto?fid=g39d10&amp;url=https%3A%2F%2Fcheckstyle.org
+[flattr img]:https://button.flattr.com/flattr-badge-large.png
+
+[azure]:https://dev.azure.com/romanivanovjr/romanivanovjr/_build/latest?definitionId=1&branchName=master
+[azure img]:https://dev.azure.com/romanivanovjr/romanivanovjr/_apis/build/status/checkstyle.checkstyle?branchName=master
+
+[liberapay]:https://liberapay.com/checkstyle/
+[liberapay img]:https://liberapay.com/assets/widgets/donate.svg
+
+[bountysource]:https://www.bountysource.com/teams/checkstyle/issues
+[bountysource img]:https://api.bountysource.com/badge/team?team_id=3568&style=bounties_posted
+
+[salt.bountysource]:https://salt.bountysource.com/teams/checkstyle
+[salt.bountysource img]:https://img.shields.io/bountysource/team/checkstyle/activity.svg?label=salt.bountysource
+
+[backers.opencollective]:https://opencollective.com/checkstyle/
+[backers.opencollective img]:https://opencollective.com/checkstyle/backers/badge.svg
+
+[sponsors.opencollective]:https://opencollective.com/checkstyle/
+[sponsors.opencollective img]:https://opencollective.com/checkstyle/sponsors/badge.svg
+
+[dependabot]:https://dependabot.com
+[dependabot img]:https://api.dependabot.com/badges/status?host=github&repo=checkstyle/checkstyle
+
+[closed issues]:https://github.com/checkstyle/checkstyle/actions/workflows/no-old-refs.yml
+[closed issues img]:https://github.com/checkstyle/checkstyle/actions/workflows/no-old-refs.yml/badge.svg
+
+[release notes/version]:https://github.com/checkstyle/checkstyle/actions/workflows/releasenotes-gen.yml
+[release notes/version img]:https://github.com/checkstyle/checkstyle/actions/workflows/releasenotes-gen.yml/badge.svg
+
+[link check]:https://github.com/checkstyle/checkstyle/actions/workflows/run-link-check.yml
+[link check img]:https://github.com/checkstyle/checkstyle/actions/workflows/run-link-check.yml/badge.svg
+
+[error prone]:https://github.com/checkstyle/checkstyle/actions/workflows/error-prone.yml
+[error prone img]:https://github.com/checkstyle/checkstyle/actions/workflows/error-prone.yml/badge.svg
+
+[pitest]:https://github.com/checkstyle/checkstyle/actions/workflows/pitest.yml
+[pitest img]:https://github.com/checkstyle/checkstyle/actions/workflows/pitest.yml/badge.svg
+
+[checker framework]:https://github.com/checkstyle/checkstyle/actions/workflows/checker-framework.yml
+[checker framework img]:https://github.com/checkstyle/checkstyle/actions/workflows/checker-framework.yml/badge.svg
+
+[milestone]:https://github.com/checkstyle/checkstyle/actions/workflows/set-milestone-on-referenced-issue.yml
+[milestone img]:https://github.com/checkstyle/checkstyle/actions/workflows/set-milestone-on-referenced-issue.yml/badge.svg

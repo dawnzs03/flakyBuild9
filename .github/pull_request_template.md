@@ -1,8 +1,22 @@
+# PLEASE READ before removing
 
-## Checklist
+Rules:
+1) The issue you are trying to fix/resolve has to have the "approved" label.
+2) Put in the description of Pull Request the reference to an issue if it exists.
+   Example: "Issue: #XXXXXX"
+3) Commit message should adhere to the following rules:
+   a) MUST match one of the following patterns:
+      ^Issue #\\d+: .*$
+      ^Pull #\\d+: .*$
+      ^(minor|config|infra|doc|spelling|dependency): .*$
+   b) MUST contain only one line of text
+   c) MUST NOT end with a period, space, or tab
+   d) MUST be less than or equal to 200 characters
 
-- [ ] The PR conforms to DataHub's [Contributing Guideline](https://github.com/datahub-project/datahub/blob/master/docs/CONTRIBUTING.md) (particularly [Commit Message Format](https://github.com/datahub-project/datahub/blob/master/docs/CONTRIBUTING.md#commit-message-format))
-- [ ] Links to related issues (if applicable)
-- [ ] Tests for the changes have been added/updated (if applicable)
-- [ ] Docs related to the changes have been added/updated (if applicable). If a new feature has been added a Usage Guide has been added for the same.
-- [ ] For any breaking change/potential downtime/deprecation/big changes an entry has been made in [Updating DataHub](https://github.com/datahub-project/datahub/blob/master/docs/how/updating-datahub.md)
+To avoid multiple iterations of fixes and CIs failures, please read
+https://checkstyle.org/contributing.html
+
+ATTENTION: We are not merging Pull Requests that are not passing our CIs,
+but we will help to resolve issues.
+
+Thanks for reading, remove whole this message and type what you need.
