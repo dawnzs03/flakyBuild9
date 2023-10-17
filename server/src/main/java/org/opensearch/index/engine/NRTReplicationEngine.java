@@ -24,7 +24,6 @@ import org.opensearch.index.seqno.LocalCheckpointTracker;
 import org.opensearch.index.seqno.SeqNoStats;
 import org.opensearch.index.seqno.SequenceNumbers;
 import org.opensearch.index.translog.Translog;
-import org.opensearch.index.translog.TranslogCorruptedException;
 import org.opensearch.index.translog.TranslogDeletionPolicy;
 import org.opensearch.index.translog.TranslogException;
 import org.opensearch.index.translog.TranslogManager;
@@ -72,7 +71,6 @@ public class NRTReplicationEngine extends Engine {
         store.incRef();
         NRTReplicationReaderManager readerManager = null;
         WriteOnlyTranslogManager translogManagerRef = null;
-        boolean success = false;
         try {
             this.replicaFileTracker = new ReplicaFileTracker(store::deleteQuiet);
             this.lastCommittedSegmentInfos = store.readLastCommittedSegmentsInfo();
@@ -126,17 +124,9 @@ public class NRTReplicationEngine extends Engine {
                 engineConfig.getPrimaryModeSupplier()
             );
             this.translogManager = translogManagerRef;
-            success = true;
-        } catch (IOException | TranslogCorruptedException e) {
+        } catch (IOException e) {
+            IOUtils.closeWhileHandlingException(store::decRef, readerManager, translogManagerRef);
             throw new EngineCreationFailureException(shardId, "failed to create engine", e);
-        } finally {
-            if (success == false) {
-                IOUtils.closeWhileHandlingException(readerManager, translogManagerRef);
-                if (isClosed.get() == false) {
-                    // failure, we need to dec the store reference
-                    store.decRef();
-                }
-            }
         }
     }
 

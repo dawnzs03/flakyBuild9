@@ -55,6 +55,7 @@ import org.opensearch.common.inject.Inject;
 import org.opensearch.common.lifecycle.AbstractLifecycleComponent;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.util.FeatureFlags;
 import org.opensearch.common.util.concurrent.AbstractRunnable;
 import org.opensearch.common.util.concurrent.ConcurrentCollections;
 import org.opensearch.core.action.ActionListener;
@@ -222,7 +223,10 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
         );
         indexEventListeners.add(segmentReplicationTargetService);
         indexEventListeners.add(segmentReplicationSourceService);
-        indexEventListeners.add(remoteStoreStatsTrackerFactory);
+        // if remote store feature is not enabled, do not wire the remote upload pressure service as an IndexEventListener.
+        if (FeatureFlags.isEnabled(FeatureFlags.REMOTE_STORE)) {
+            indexEventListeners.add(remoteStoreStatsTrackerFactory);
+        }
         this.segmentReplicationTargetService = segmentReplicationTargetService;
         this.builtInIndexListener = Collections.unmodifiableList(indexEventListeners);
         this.indicesService = indicesService;

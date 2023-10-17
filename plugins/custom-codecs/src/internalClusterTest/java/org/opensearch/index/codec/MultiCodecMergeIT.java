@@ -49,7 +49,6 @@ public class MultiCodecMergeIT extends OpenSearchIntegTestCase {
         return Collections.singletonList(CustomCodecPlugin.class);
     }
 
-    @AwaitsFix(bugUrl = "https://github.com/opensearch-project/OpenSearch/issues/9872")
     public void testForceMergeMultipleCodecs() throws ExecutionException, InterruptedException {
 
         Map<String, String> codecMap = Map.of(

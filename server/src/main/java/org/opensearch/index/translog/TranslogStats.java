@@ -71,7 +71,9 @@ public class TranslogStats implements Writeable, ToXContentFragment {
         uncommittedOperations = in.readVInt();
         uncommittedSizeInBytes = in.readVLong();
         earliestLastModifiedAge = in.readVLong();
-        remoteTranslogStats = in.getVersion().onOrAfter(Version.V_2_10_0)
+        // TODO: remoteTranslogStats = in.getVersion().onOrAfter(Version.V_2_10_0) ? in.readOptionalWriteable(RemoteTranslogStats::new) :
+        // new RemoteTranslogStats();
+        remoteTranslogStats = in.getVersion().onOrAfter(Version.CURRENT)
             ? in.readOptionalWriteable(RemoteTranslogStats::new)
             : new RemoteTranslogStats();
     }
@@ -182,7 +184,8 @@ public class TranslogStats implements Writeable, ToXContentFragment {
         out.writeVInt(uncommittedOperations);
         out.writeVLong(uncommittedSizeInBytes);
         out.writeVLong(earliestLastModifiedAge);
-        if (out.getVersion().onOrAfter(Version.V_2_10_0)) {
+        // TODO: if (out.getVersion().onOrAfter(Version.V_2_10_0)) {
+        if (out.getVersion().onOrAfter(Version.CURRENT)) {
             out.writeOptionalWriteable(remoteTranslogStats);
         }
     }

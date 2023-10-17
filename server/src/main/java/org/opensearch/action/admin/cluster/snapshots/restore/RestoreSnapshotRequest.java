@@ -39,6 +39,7 @@ import org.opensearch.action.support.clustermanager.ClusterManagerNodeRequest;
 import org.opensearch.common.Nullable;
 import org.opensearch.common.logging.DeprecationLogger;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.common.util.FeatureFlags;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.common.io.stream.StreamInput;
@@ -151,7 +152,7 @@ public class RestoreSnapshotRequest extends ClusterManagerNodeRequest<RestoreSna
         if (in.getVersion().onOrAfter(Version.V_2_7_0)) {
             storageType = in.readEnum(StorageType.class);
         }
-        if (in.getVersion().onOrAfter(Version.V_3_0_0)) {
+        if (FeatureFlags.isEnabled(FeatureFlags.REMOTE_STORE) && in.getVersion().onOrAfter(Version.V_2_9_0)) {
             sourceRemoteStoreRepository = in.readOptionalString();
         }
     }
@@ -175,7 +176,7 @@ public class RestoreSnapshotRequest extends ClusterManagerNodeRequest<RestoreSna
         if (out.getVersion().onOrAfter(Version.V_2_7_0)) {
             out.writeEnum(storageType);
         }
-        if (out.getVersion().onOrAfter(Version.V_3_0_0)) {
+        if (FeatureFlags.isEnabled(FeatureFlags.REMOTE_STORE) && out.getVersion().onOrAfter(Version.V_2_9_0)) {
             out.writeOptionalString(sourceRemoteStoreRepository);
         }
     }
@@ -615,6 +616,11 @@ public class RestoreSnapshotRequest extends ClusterManagerNodeRequest<RestoreSna
                 }
 
             } else if (name.equals("source_remote_store_repository")) {
+                if (!FeatureFlags.isEnabled(FeatureFlags.REMOTE_STORE)) {
+                    throw new IllegalArgumentException(
+                        "Unsupported parameter " + name + ". Please enable remote store feature flag for this experimental feature"
+                    );
+                }
                 if (entry.getValue() instanceof String) {
                     setSourceRemoteStoreRepository((String) entry.getValue());
                 } else {
@@ -665,7 +671,7 @@ public class RestoreSnapshotRequest extends ClusterManagerNodeRequest<RestoreSna
         if (storageType != null) {
             storageType.toXContent(builder);
         }
-        if (sourceRemoteStoreRepository != null) {
+        if (FeatureFlags.isEnabled(FeatureFlags.REMOTE_STORE) && sourceRemoteStoreRepository != null) {
             builder.field("source_remote_store_repository", sourceRemoteStoreRepository);
         }
         builder.endObject();
@@ -695,29 +701,48 @@ public class RestoreSnapshotRequest extends ClusterManagerNodeRequest<RestoreSna
             && Objects.equals(indexSettings, that.indexSettings)
             && Arrays.equals(ignoreIndexSettings, that.ignoreIndexSettings)
             && Objects.equals(snapshotUuid, that.snapshotUuid)
-            && Objects.equals(storageType, that.storageType)
-            && Objects.equals(sourceRemoteStoreRepository, that.sourceRemoteStoreRepository);
+            && Objects.equals(storageType, that.storageType);
+        if (FeatureFlags.isEnabled(FeatureFlags.REMOTE_STORE)) {
+            equals = Objects.equals(sourceRemoteStoreRepository, that.sourceRemoteStoreRepository);
+        }
         return equals;
     }
 
     @Override
     public int hashCode() {
         int result;
-        result = Objects.hash(
-            snapshot,
-            repository,
-            indicesOptions,
-            renamePattern,
-            renameReplacement,
-            waitForCompletion,
-            includeGlobalState,
-            partial,
-            includeAliases,
-            indexSettings,
-            snapshotUuid,
-            storageType,
-            sourceRemoteStoreRepository
-        );
+        if (FeatureFlags.isEnabled(FeatureFlags.REMOTE_STORE)) {
+            result = Objects.hash(
+                snapshot,
+                repository,
+                indicesOptions,
+                renamePattern,
+                renameReplacement,
+                waitForCompletion,
+                includeGlobalState,
+                partial,
+                includeAliases,
+                indexSettings,
+                snapshotUuid,
+                storageType,
+                sourceRemoteStoreRepository
+            );
+        } else {
+            result = Objects.hash(
+                snapshot,
+                repository,
+                indicesOptions,
+                renamePattern,
+                renameReplacement,
+                waitForCompletion,
+                includeGlobalState,
+                partial,
+                includeAliases,
+                indexSettings,
+                snapshotUuid,
+                storageType
+            );
+        }
         result = 31 * result + Arrays.hashCode(indices);
         result = 31 * result + Arrays.hashCode(ignoreIndexSettings);
         return result;

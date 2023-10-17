@@ -38,7 +38,6 @@ import org.opensearch.repositories.FilterRepository;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.repositories.RepositoryMissingException;
 import org.opensearch.repositories.blobstore.BlobStoreRepository;
-import org.opensearch.repositories.fs.FsRepository;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.VersionUtils;
 import org.junit.Assert;
@@ -52,18 +51,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
 
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatchers;
 
-import static org.opensearch.node.remotestore.RemoteStoreNodeAttribute.REMOTE_STORE_CLUSTER_STATE_REPOSITORY_NAME_ATTRIBUTE_KEY;
-import static org.opensearch.node.remotestore.RemoteStoreNodeAttribute.REMOTE_STORE_REPOSITORY_SETTINGS_ATTRIBUTE_KEY_PREFIX;
-import static org.opensearch.node.remotestore.RemoteStoreNodeAttribute.REMOTE_STORE_REPOSITORY_TYPE_ATTRIBUTE_KEY_FORMAT;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -87,25 +79,10 @@ public class RemoteClusterStateServiceTests extends OpenSearchTestCase {
         repositoriesServiceSupplier = mock(Supplier.class);
         repositoriesService = mock(RepositoriesService.class);
         when(repositoriesServiceSupplier.get()).thenReturn(repositoriesService);
-
-        String stateRepoTypeAttributeKey = String.format(
-            Locale.getDefault(),
-            "node.attr." + REMOTE_STORE_REPOSITORY_TYPE_ATTRIBUTE_KEY_FORMAT,
-            "remote_store_repository"
-        );
-        String stateRepoSettingsAttributeKeyPrefix = String.format(
-            Locale.getDefault(),
-            "node.attr." + REMOTE_STORE_REPOSITORY_SETTINGS_ATTRIBUTE_KEY_PREFIX,
-            "remote_store_repository"
-        );
-
-        Settings settings = Settings.builder()
-            .put("node.attr." + REMOTE_STORE_CLUSTER_STATE_REPOSITORY_NAME_ATTRIBUTE_KEY, "remote_store_repository")
-            .put(stateRepoTypeAttributeKey, FsRepository.TYPE)
-            .put(stateRepoSettingsAttributeKeyPrefix + "location", "randomRepoPath")
+        final Settings settings = Settings.builder()
             .put(RemoteClusterStateService.REMOTE_CLUSTER_STATE_ENABLED_SETTING.getKey(), true)
+            .put(RemoteClusterStateService.REMOTE_CLUSTER_STATE_REPOSITORY_SETTING.getKey(), "remote_store_repository")
             .build();
-
         blobStoreRepository = mock(BlobStoreRepository.class);
         blobStore = mock(BlobStore.class);
         when(blobStoreRepository.blobStore()).thenReturn(blobStore);
@@ -166,7 +143,6 @@ public class RemoteClusterStateServiceTests extends OpenSearchTestCase {
             .stateVersion(1L)
             .stateUUID("state-uuid")
             .clusterUUID("cluster-uuid")
-            .previousClusterUUID("prev-cluster-uuid")
             .build();
 
         assertThat(manifest.getIndices().size(), is(1));
@@ -294,7 +270,6 @@ public class RemoteClusterStateServiceTests extends OpenSearchTestCase {
             .stateVersion(1L)
             .stateUUID("state-uuid")
             .clusterUUID("cluster-uuid")
-            .previousClusterUUID("prev-cluster-uuid")
             .build();
 
         assertThat(manifest.getIndices().size(), is(1));
@@ -388,7 +363,6 @@ public class RemoteClusterStateServiceTests extends OpenSearchTestCase {
             .clusterUUID("cluster-uuid")
             .nodeId("nodeA")
             .opensearchVersion(VersionUtils.randomOpenSearchVersion(random()))
-            .previousClusterUUID("prev-cluster-uuid")
             .build();
 
         BlobContainer blobContainer = mockBlobStoreObjects();
@@ -414,7 +388,6 @@ public class RemoteClusterStateServiceTests extends OpenSearchTestCase {
             .clusterUUID("cluster-uuid")
             .nodeId("nodeA")
             .opensearchVersion(VersionUtils.randomOpenSearchVersion(random()))
-            .previousClusterUUID("prev-cluster-uuid")
             .build();
 
         BlobContainer blobContainer = mockBlobStoreObjects();
@@ -445,7 +418,6 @@ public class RemoteClusterStateServiceTests extends OpenSearchTestCase {
             .clusterUUID("cluster-uuid")
             .nodeId("nodeA")
             .opensearchVersion(VersionUtils.randomOpenSearchVersion(random()))
-            .previousClusterUUID("prev-cluster-uuid")
             .build();
 
         mockBlobContainer(mockBlobStoreObjects(), expectedManifest, new HashMap<>());
@@ -490,7 +462,6 @@ public class RemoteClusterStateServiceTests extends OpenSearchTestCase {
             .clusterUUID("cluster-uuid")
             .nodeId("nodeA")
             .opensearchVersion(VersionUtils.randomOpenSearchVersion(random()))
-            .previousClusterUUID("prev-cluster-uuid")
             .build();
 
         mockBlobContainer(mockBlobStoreObjects(), expectedManifest, Map.of(index.getUUID(), indexMetadata));
@@ -523,7 +494,6 @@ public class RemoteClusterStateServiceTests extends OpenSearchTestCase {
             .stateUUID("state-uuid")
             .clusterUUID("cluster-uuid")
             .nodeId("nodeA")
-            .previousClusterUUID("prev-cluster-uuid")
             .build();
 
         assertThat(manifest.getIndices().size(), is(1));
@@ -534,98 +504,6 @@ public class RemoteClusterStateServiceTests extends OpenSearchTestCase {
         assertThat(manifest.getStateVersion(), is(expectedManifest.getStateVersion()));
         assertThat(manifest.getClusterUUID(), is(expectedManifest.getClusterUUID()));
         assertThat(manifest.getStateUUID(), is(expectedManifest.getStateUUID()));
-    }
-
-    public void testGetValidPreviousClusterUUID() throws IOException {
-        Map<String, String> clusterUUIDsPointers = Map.of(
-            "cluster-uuid1",
-            ClusterState.UNKNOWN_UUID,
-            "cluster-uuid2",
-            "cluster-uuid1",
-            "cluster-uuid3",
-            "cluster-uuid2"
-        );
-        mockObjectsForGettingPreviousClusterUUID(clusterUUIDsPointers);
-
-        remoteClusterStateService.ensureRepositorySet();
-        String previousClusterUUID = remoteClusterStateService.getLatestClusterUUID("test-cluster");
-        assertThat(previousClusterUUID, equalTo("cluster-uuid3"));
-    }
-
-    public void testGetValidPreviousClusterUUIDForInvalidChain() throws IOException {
-        Map<String, String> clusterUUIDsPointers = Map.of(
-            "cluster-uuid1",
-            ClusterState.UNKNOWN_UUID,
-            "cluster-uuid2",
-            ClusterState.UNKNOWN_UUID,
-            "cluster-uuid3",
-            "cluster-uuid2"
-        );
-        mockObjectsForGettingPreviousClusterUUID(clusterUUIDsPointers);
-
-        remoteClusterStateService.ensureRepositorySet();
-        assertThrows(IllegalStateException.class, () -> remoteClusterStateService.getLatestClusterUUID("test-cluster"));
-    }
-
-    private void mockObjectsForGettingPreviousClusterUUID(Map<String, String> clusterUUIDsPointers) throws IOException {
-        final BlobPath blobPath = mock(BlobPath.class);
-        when((blobStoreRepository.basePath())).thenReturn(blobPath);
-        when(blobPath.add(anyString())).thenReturn(blobPath);
-        when(blobPath.buildAsString()).thenReturn("/blob/path/");
-        BlobContainer blobContainer1 = mock(BlobContainer.class);
-        BlobContainer blobContainer2 = mock(BlobContainer.class);
-        BlobContainer blobContainer3 = mock(BlobContainer.class);
-        BlobContainer uuidBlobContainer = mock(BlobContainer.class);
-        when(blobContainer1.path()).thenReturn(blobPath);
-        when(blobContainer2.path()).thenReturn(blobPath);
-        when(blobContainer3.path()).thenReturn(blobPath);
-
-        mockBlobContainerForClusterUUIDs(uuidBlobContainer, clusterUUIDsPointers.keySet());
-        final ClusterMetadataManifest clusterManifest1 = generateClusterMetadataManifest(
-            "cluster-uuid1",
-            clusterUUIDsPointers.get("cluster-uuid1"),
-            randomAlphaOfLength(10)
-        );
-        mockBlobContainer(blobContainer1, clusterManifest1, Map.of());
-
-        final ClusterMetadataManifest clusterManifest2 = generateClusterMetadataManifest(
-            "cluster-uuid2",
-            clusterUUIDsPointers.get("cluster-uuid2"),
-            randomAlphaOfLength(10)
-        );
-        mockBlobContainer(blobContainer2, clusterManifest2, Map.of());
-
-        final ClusterMetadataManifest clusterManifest3 = generateClusterMetadataManifest(
-            "cluster-uuid3",
-            clusterUUIDsPointers.get("cluster-uuid3"),
-            randomAlphaOfLength(10)
-        );
-        mockBlobContainer(blobContainer3, clusterManifest3, Map.of());
-
-        when(blobStore.blobContainer(ArgumentMatchers.any())).thenReturn(
-            uuidBlobContainer,
-            blobContainer1,
-            blobContainer1,
-            blobContainer2,
-            blobContainer2,
-            blobContainer3,
-            blobContainer3
-        );
-        when(blobStoreRepository.getCompressor()).thenReturn(new DeflateCompressor());
-    }
-
-    private ClusterMetadataManifest generateClusterMetadataManifest(String clusterUUID, String previousClusterUUID, String stateUUID) {
-        return ClusterMetadataManifest.builder()
-            .indices(List.of())
-            .clusterTerm(1L)
-            .stateVersion(1L)
-            .stateUUID(stateUUID)
-            .clusterUUID(clusterUUID)
-            .nodeId("nodeA")
-            .opensearchVersion(VersionUtils.randomOpenSearchVersion(random()))
-            .previousClusterUUID(previousClusterUUID)
-            .committed(true)
-            .build();
     }
 
     private BlobContainer mockBlobStoreObjects() {
@@ -642,14 +520,6 @@ public class RemoteClusterStateServiceTests extends OpenSearchTestCase {
         when(blobStore.blobContainer(any())).thenReturn(blobContainer);
         when(blobStoreRepository.getCompressor()).thenReturn(new DeflateCompressor());
         return blobContainer;
-    }
-
-    private void mockBlobContainerForClusterUUIDs(BlobContainer blobContainer, Set<String> clusterUUIDs) throws IOException {
-        Map<String, BlobContainer> blobContainerMap = new HashMap<>();
-        for (String clusterUUID : clusterUUIDs) {
-            blobContainerMap.put(clusterUUID, mockBlobStoreObjects());
-        }
-        when(blobContainer.children()).thenReturn(blobContainerMap);
     }
 
     private void mockBlobContainer(

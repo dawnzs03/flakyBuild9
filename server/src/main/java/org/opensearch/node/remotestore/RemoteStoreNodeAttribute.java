@@ -13,7 +13,6 @@ import org.opensearch.cluster.metadata.RepositoriesMetadata;
 import org.opensearch.cluster.metadata.RepositoryMetadata;
 import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.gateway.remote.RemoteClusterStateService;
 import org.opensearch.node.Node;
 import org.opensearch.repositories.blobstore.BlobStoreRepository;
 
@@ -37,7 +36,6 @@ public class RemoteStoreNodeAttribute {
     public static final String REMOTE_STORE_NODE_ATTRIBUTE_KEY_PREFIX = "remote_store";
     public static final String REMOTE_STORE_SEGMENT_REPOSITORY_NAME_ATTRIBUTE_KEY = "remote_store.segment.repository";
     public static final String REMOTE_STORE_TRANSLOG_REPOSITORY_NAME_ATTRIBUTE_KEY = "remote_store.translog.repository";
-    public static final String REMOTE_STORE_CLUSTER_STATE_REPOSITORY_NAME_ATTRIBUTE_KEY = "remote_store.state.repository";
     public static final String REMOTE_STORE_REPOSITORY_TYPE_ATTRIBUTE_KEY_FORMAT = "remote_store.repository.%s.type";
     public static final String REMOTE_STORE_REPOSITORY_CRYPTO_ATTRIBUTE_KEY_FORMAT = "remote_store.repository.%s."
         + CryptoMetadata.CRYPTO_METADATA_KEY;
@@ -136,7 +134,6 @@ public class RemoteStoreNodeAttribute {
 
         repositoryNames.add(validateAttributeNonNull(node, REMOTE_STORE_SEGMENT_REPOSITORY_NAME_ATTRIBUTE_KEY));
         repositoryNames.add(validateAttributeNonNull(node, REMOTE_STORE_TRANSLOG_REPOSITORY_NAME_ATTRIBUTE_KEY));
-        repositoryNames.add(validateAttributeNonNull(node, REMOTE_STORE_CLUSTER_STATE_REPOSITORY_NAME_ATTRIBUTE_KEY));
 
         for (String repositoryName : repositoryNames) {
             repositoryMetadataList.add(buildRepositoryMetadata(node, repositoryName));
@@ -147,10 +144,6 @@ public class RemoteStoreNodeAttribute {
 
     public static boolean isRemoteStoreAttributePresent(Settings settings) {
         return settings.getByPrefix(Node.NODE_ATTRIBUTES.getKey() + REMOTE_STORE_NODE_ATTRIBUTE_KEY_PREFIX).isEmpty() == false;
-    }
-
-    public static boolean isRemoteStoreClusterStateEnabled(Settings settings) {
-        return RemoteClusterStateService.REMOTE_CLUSTER_STATE_ENABLED_SETTING.get(settings) && isRemoteStoreAttributePresent(settings);
     }
 
     public RepositoriesMetadata getRepositoriesMetadata() {

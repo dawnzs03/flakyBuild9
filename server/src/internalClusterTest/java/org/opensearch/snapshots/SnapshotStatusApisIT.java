@@ -47,6 +47,7 @@ import org.opensearch.cluster.SnapshotsInProgress;
 import org.opensearch.common.action.ActionFuture;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.util.FeatureFlags;
 import org.opensearch.common.util.io.IOUtils;
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.common.unit.ByteSizeUnit;
@@ -76,6 +77,7 @@ public class SnapshotStatusApisIT extends AbstractSnapshotIntegTestCase {
         return Settings.builder()
             .put(super.nodeSettings(nodeOrdinal))
             .put(ThreadPool.ESTIMATED_TIME_INTERVAL_SETTING.getKey(), 0) // We have tests that check by-timestamp order
+            .put(FeatureFlags.REMOTE_STORE, "true")
             .build();
     }
 

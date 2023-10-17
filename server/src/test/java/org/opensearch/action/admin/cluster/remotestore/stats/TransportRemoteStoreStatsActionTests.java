@@ -23,6 +23,7 @@ import org.opensearch.cluster.routing.ShardsIterator;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.common.util.FeatureFlags;
 import org.opensearch.core.index.Index;
 import org.opensearch.index.IndexService;
 import org.opensearch.index.IndexSettings;
@@ -31,6 +32,7 @@ import org.opensearch.index.remote.RemoteStoreStatsTrackerFactory;
 import org.opensearch.index.shard.IndexShardTestCase;
 import org.opensearch.indices.IndicesService;
 import org.opensearch.indices.replication.common.ReplicationType;
+import org.opensearch.test.FeatureFlagSetter;
 import org.opensearch.test.transport.MockTransport;
 import org.opensearch.transport.TransportService;
 
@@ -111,6 +113,7 @@ public class TransportRemoteStoreStatsActionTests extends IndexShardTestCase {
     }
 
     public void testAllShardCopies() throws Exception {
+        FeatureFlagSetter.set(FeatureFlags.REMOTE_STORE);
         RoutingTable routingTable = RoutingTable.builder().addAsNew(remoteStoreIndexMetadata).build();
         Metadata metadata = Metadata.builder().put(remoteStoreIndexMetadata, false).build();
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT).metadata(metadata).routingTable(routingTable).build();
@@ -130,6 +133,7 @@ public class TransportRemoteStoreStatsActionTests extends IndexShardTestCase {
     }
 
     public void testOnlyLocalShards() throws Exception {
+        FeatureFlagSetter.set(FeatureFlags.REMOTE_STORE);
         String[] concreteIndices = new String[] { INDEX.getName() };
         RoutingTable routingTable = spy(RoutingTable.builder().addAsNew(remoteStoreIndexMetadata).build());
         doReturn(new PlainShardsIterator(routingTable.allShards(INDEX.getName()).stream().map(Mockito::spy).collect(Collectors.toList())))
@@ -157,6 +161,7 @@ public class TransportRemoteStoreStatsActionTests extends IndexShardTestCase {
     }
 
     public void testOnlyRemoteStoreEnabledShardCopies() throws Exception {
+        FeatureFlagSetter.set(FeatureFlags.REMOTE_STORE);
         Index NEW_INDEX = new Index("newIndex", "newUUID");
         IndexMetadata indexMetadataWithoutRemoteStore = IndexMetadata.builder(NEW_INDEX.getName())
             .settings(

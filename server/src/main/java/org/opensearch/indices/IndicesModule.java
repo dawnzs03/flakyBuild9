@@ -38,6 +38,7 @@ import org.opensearch.action.admin.indices.rollover.MaxDocsCondition;
 import org.opensearch.action.admin.indices.rollover.MaxSizeCondition;
 import org.opensearch.action.resync.TransportResyncReplicationAction;
 import org.opensearch.common.inject.AbstractModule;
+import org.opensearch.common.util.FeatureFlags;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.common.io.stream.NamedWriteableRegistry.Entry;
@@ -287,7 +288,9 @@ public class IndicesModule extends AbstractModule {
         bind(RetentionLeaseSyncer.class).asEagerSingleton();
         bind(SegmentReplicationCheckpointPublisher.class).asEagerSingleton();
         bind(SegmentReplicationPressureService.class).asEagerSingleton();
-        bind(RemoteStorePressureService.class).asEagerSingleton();
+        if (FeatureFlags.isEnabled(FeatureFlags.REMOTE_STORE)) {
+            bind(RemoteStorePressureService.class).asEagerSingleton();
+        }
     }
 
     /**

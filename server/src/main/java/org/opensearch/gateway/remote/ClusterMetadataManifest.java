@@ -41,7 +41,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
     private static final ParseField NODE_ID_FIELD = new ParseField("node_id");
     private static final ParseField COMMITTED_FIELD = new ParseField("committed");
     private static final ParseField INDICES_FIELD = new ParseField("indices");
-    private static final ParseField PREVIOUS_CLUSTER_UUID = new ParseField("previous_cluster_uuid");
 
     private static long term(Object[] fields) {
         return (long) fields[0];
@@ -75,10 +74,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
         return (List<UploadedIndexMetadata>) fields[7];
     }
 
-    private static String previousClusterUUID(Object[] fields) {
-        return (String) fields[8];
-    }
-
     private static final ConstructingObjectParser<ClusterMetadataManifest, Void> PARSER = new ConstructingObjectParser<>(
         "cluster_metadata_manifest",
         fields -> new ClusterMetadataManifest(
@@ -89,8 +84,7 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
             opensearchVersion(fields),
             nodeId(fields),
             committed(fields),
-            indices(fields),
-            previousClusterUUID(fields)
+            indices(fields)
         )
     );
 
@@ -107,7 +101,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
             (p, c) -> UploadedIndexMetadata.fromXContent(p),
             INDICES_FIELD
         );
-        PARSER.declareString(ConstructingObjectParser.constructorArg(), PREVIOUS_CLUSTER_UUID);
     }
 
     private final List<UploadedIndexMetadata> indices;
@@ -118,7 +111,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
     private final Version opensearchVersion;
     private final String nodeId;
     private final boolean committed;
-    private final String previousClusterUUID;
 
     public List<UploadedIndexMetadata> getIndices() {
         return indices;
@@ -152,10 +144,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
         return committed;
     }
 
-    public String getPreviousClusterUUID() {
-        return previousClusterUUID;
-    }
-
     public ClusterMetadataManifest(
         long clusterTerm,
         long version,
@@ -164,8 +152,7 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
         Version opensearchVersion,
         String nodeId,
         boolean committed,
-        List<UploadedIndexMetadata> indices,
-        String previousClusterUUID
+        List<UploadedIndexMetadata> indices
     ) {
         this.clusterTerm = clusterTerm;
         this.stateVersion = version;
@@ -175,7 +162,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
         this.nodeId = nodeId;
         this.committed = committed;
         this.indices = Collections.unmodifiableList(indices);
-        this.previousClusterUUID = previousClusterUUID;
     }
 
     public ClusterMetadataManifest(StreamInput in) throws IOException {
@@ -187,7 +173,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
         this.nodeId = in.readString();
         this.committed = in.readBoolean();
         this.indices = Collections.unmodifiableList(in.readList(UploadedIndexMetadata::new));
-        this.previousClusterUUID = in.readString();
     }
 
     public static Builder builder() {
@@ -214,7 +199,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
             }
         }
         builder.endArray();
-        builder.field(PREVIOUS_CLUSTER_UUID.getPreferredName(), getPreviousClusterUUID());
         return builder;
     }
 
@@ -228,7 +212,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
         out.writeString(nodeId);
         out.writeBoolean(committed);
         out.writeCollection(indices);
-        out.writeString(previousClusterUUID);
     }
 
     @Override
@@ -247,23 +230,12 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
             && Objects.equals(stateUUID, that.stateUUID)
             && Objects.equals(opensearchVersion, that.opensearchVersion)
             && Objects.equals(nodeId, that.nodeId)
-            && Objects.equals(committed, that.committed)
-            && Objects.equals(previousClusterUUID, that.previousClusterUUID);
+            && Objects.equals(committed, that.committed);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(
-            indices,
-            clusterTerm,
-            stateVersion,
-            clusterUUID,
-            stateUUID,
-            opensearchVersion,
-            nodeId,
-            committed,
-            previousClusterUUID
-        );
+        return Objects.hash(indices, clusterTerm, stateVersion, clusterUUID, stateUUID, opensearchVersion, nodeId, committed);
     }
 
     @Override
@@ -289,7 +261,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
         private String stateUUID;
         private Version opensearchVersion;
         private String nodeId;
-        private String previousClusterUUID;
         private boolean committed;
 
         public Builder indices(List<UploadedIndexMetadata> indices) {
@@ -336,11 +307,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
             return indices;
         }
 
-        public Builder previousClusterUUID(String previousClusterUUID) {
-            this.previousClusterUUID = previousClusterUUID;
-            return this;
-        }
-
         public Builder() {
             indices = new ArrayList<>();
         }
@@ -354,7 +320,6 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
             this.nodeId = manifest.nodeId;
             this.committed = manifest.committed;
             this.indices = new ArrayList<>(manifest.indices);
-            this.previousClusterUUID = manifest.previousClusterUUID;
         }
 
         public ClusterMetadataManifest build() {
@@ -366,8 +331,7 @@ public class ClusterMetadataManifest implements Writeable, ToXContentFragment {
                 opensearchVersion,
                 nodeId,
                 committed,
-                indices,
-                previousClusterUUID
+                indices
             );
         }
 
