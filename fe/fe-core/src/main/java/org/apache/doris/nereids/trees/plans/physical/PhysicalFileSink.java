@@ -53,7 +53,10 @@ public class PhysicalFileSink<CHILD_TYPE extends Plan> extends PhysicalSink<CHIL
     public PhysicalFileSink(String filePath, String format, Map<String, String> properties,
             Optional<GroupExpression> groupExpression, LogicalProperties logicalProperties,
             CHILD_TYPE child) {
-        this(filePath, format, properties, groupExpression, logicalProperties, PhysicalProperties.GATHER, null, child);
+        super(PlanType.PHYSICAL_FILE_SINK, groupExpression, logicalProperties, child);
+        this.filePath = filePath;
+        this.format = format;
+        this.properties = properties;
     }
 
     public PhysicalFileSink(String filePath, String format, Map<String, String> properties,

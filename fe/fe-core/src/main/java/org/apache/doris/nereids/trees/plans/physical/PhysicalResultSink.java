@@ -45,9 +45,16 @@ public class PhysicalResultSink<CHILD_TYPE extends Plan> extends PhysicalSink<CH
 
     private final List<NamedExpression> outputExprs;
 
+    public PhysicalResultSink(List<NamedExpression> outputExprs, LogicalProperties logicalProperties,
+            CHILD_TYPE child) {
+        super(PlanType.PHYSICAL_RESULT_SINK, logicalProperties, child);
+        this.outputExprs = outputExprs;
+    }
+
     public PhysicalResultSink(List<NamedExpression> outputExprs, Optional<GroupExpression> groupExpression,
             LogicalProperties logicalProperties, CHILD_TYPE child) {
-        this(outputExprs, groupExpression, logicalProperties, PhysicalProperties.GATHER, null, child);
+        super(PlanType.PHYSICAL_RESULT_SINK, groupExpression, logicalProperties, child);
+        this.outputExprs = outputExprs;
     }
 
     public PhysicalResultSink(List<NamedExpression> outputExprs, Optional<GroupExpression> groupExpression,
@@ -57,16 +64,11 @@ public class PhysicalResultSink<CHILD_TYPE extends Plan> extends PhysicalSink<CH
         this.outputExprs = outputExprs;
     }
 
-    public List<NamedExpression> getOutputExprs() {
-        return outputExprs;
-    }
-
     @Override
     public PhysicalResultSink<Plan> withChildren(List<Plan> children) {
         Preconditions.checkArgument(children.size() == 1,
                 "PhysicalResultSink's children size must be 1, but real is %s", children.size());
-        return new PhysicalResultSink<>(outputExprs, groupExpression, getLogicalProperties(),
-                physicalProperties, statistics, children.get(0));
+        return new PhysicalResultSink<>(outputExprs, groupExpression, getLogicalProperties(), children.get(0));
     }
 
     @Override
@@ -81,17 +83,13 @@ public class PhysicalResultSink<CHILD_TYPE extends Plan> extends PhysicalSink<CH
 
     @Override
     public PhysicalResultSink<Plan> withGroupExpression(Optional<GroupExpression> groupExpression) {
-        return new PhysicalResultSink<>(outputExprs, groupExpression, getLogicalProperties(),
-                physicalProperties, statistics, child());
+        return new PhysicalResultSink<>(outputExprs, groupExpression, getLogicalProperties(), child());
     }
 
     @Override
     public PhysicalResultSink<Plan> withGroupExprLogicalPropChildren(Optional<GroupExpression> groupExpression,
             Optional<LogicalProperties> logicalProperties, List<Plan> children) {
-        Preconditions.checkArgument(children.size() == 1,
-                "PhysicalResultSink's children size must be 1, but real is %s", children.size());
-        return new PhysicalResultSink<>(outputExprs, groupExpression, logicalProperties.get(),
-                physicalProperties, statistics, children.get(0));
+        return new PhysicalResultSink<>(outputExprs, groupExpression, logicalProperties.get(), child());
     }
 
     @Override

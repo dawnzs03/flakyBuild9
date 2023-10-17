@@ -666,12 +666,4 @@ public class StatisticsUtil {
                 || type instanceof MapType
                 || type instanceof VariantType;
     }
-
-    public static void sleep(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException ignore) {
-            // IGNORE
-        }
-    }
 }

@@ -28,20 +28,9 @@ import org.apache.doris.mysql.privilege.PrivPredicate;
 import org.apache.doris.qe.ConnectContext;
 import org.apache.doris.qe.ShowResultSetMetaData;
 
-import com.google.common.collect.ImmutableList;
-
 public class ShowFrontendsStmt extends ShowStmt {
-    private String detail;
 
     public ShowFrontendsStmt() {
-    }
-
-    public ShowFrontendsStmt(String detail) {
-        this.detail = detail;
-    }
-
-    public String getDetailType() {
-        return detail;
     }
 
     @Override
@@ -51,25 +40,12 @@ public class ShowFrontendsStmt extends ShowStmt {
                                                                           PrivPredicate.OPERATOR)) {
             ErrorReport.reportAnalysisException(ErrorCode.ERR_SPECIFIC_ACCESS_DENIED_ERROR, "ADMIN/OPERATOR");
         }
-
-        if (detail != null) {
-            if (!detail.equals("disks")) {
-                throw new AnalysisException("Show frontends with extra info only support show frontends disks");
-            }
-        }
     }
 
     @Override
     public ShowResultSetMetaData getMetaData() {
         ShowResultSetMetaData.Builder builder = ShowResultSetMetaData.builder();
-
-        ImmutableList<String> titles = FrontendsProcNode.TITLE_NAMES;
-        if (detail != null) {
-            if (detail.equals("disks")) {
-                titles = FrontendsProcNode.DISK_TITLE_NAMES;
-            }
-        }
-        for (String title : titles) {
+        for (String title : FrontendsProcNode.TITLE_NAMES) {
             builder.addColumn(new Column(title, ScalarType.createVarchar(30)));
         }
         return builder.build();

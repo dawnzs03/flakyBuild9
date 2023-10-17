@@ -20,12 +20,10 @@ package org.apache.doris.nereids.trees.plans.visitor;
 import org.apache.doris.nereids.analyzer.UnboundOlapTableSink;
 import org.apache.doris.nereids.analyzer.UnboundResultSink;
 import org.apache.doris.nereids.trees.plans.Plan;
-import org.apache.doris.nereids.trees.plans.logical.LogicalDeferMaterializeResultSink;
 import org.apache.doris.nereids.trees.plans.logical.LogicalFileSink;
 import org.apache.doris.nereids.trees.plans.logical.LogicalOlapTableSink;
 import org.apache.doris.nereids.trees.plans.logical.LogicalResultSink;
 import org.apache.doris.nereids.trees.plans.logical.LogicalSink;
-import org.apache.doris.nereids.trees.plans.physical.PhysicalDeferMaterializeResultSink;
 import org.apache.doris.nereids.trees.plans.physical.PhysicalFileSink;
 import org.apache.doris.nereids.trees.plans.physical.PhysicalOlapTableSink;
 import org.apache.doris.nereids.trees.plans.physical.PhysicalResultSink;
@@ -72,11 +70,6 @@ public interface SinkVisitor<R, C> {
         return visitLogicalSink(logicalResultSink, context);
     }
 
-    default R visitLogicalDeferMaterializeResultSink(
-            LogicalDeferMaterializeResultSink<? extends Plan> logicalDeferMaterializeResultSink, C context) {
-        return visitLogicalSink(logicalDeferMaterializeResultSink, context);
-    }
-
     // *******************************
     // physical
     // *******************************
@@ -91,10 +84,5 @@ public interface SinkVisitor<R, C> {
 
     default R visitPhysicalResultSink(PhysicalResultSink<? extends Plan> physicalResultSink, C context) {
         return visitPhysicalSink(physicalResultSink, context);
-    }
-
-    default R visitPhysicalDeferMaterializeResultSink(
-            PhysicalDeferMaterializeResultSink<? extends Plan> sink, C context) {
-        return visitPhysicalSink(sink, context);
     }
 }

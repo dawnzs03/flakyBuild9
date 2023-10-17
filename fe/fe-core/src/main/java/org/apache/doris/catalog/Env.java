@@ -215,7 +215,6 @@ import org.apache.doris.scheduler.AsyncJobRegister;
 import org.apache.doris.scheduler.manager.AsyncJobManager;
 import org.apache.doris.scheduler.manager.JobTaskManager;
 import org.apache.doris.scheduler.registry.PersistentJobRegister;
-import org.apache.doris.service.ExecuteEnv;
 import org.apache.doris.service.FrontendOptions;
 import org.apache.doris.statistics.AnalysisManager;
 import org.apache.doris.statistics.StatisticsAutoAnalyzer;
@@ -340,7 +339,6 @@ public class Env {
     private JobTaskManager jobTaskManager;
     private MasterDaemon labelCleaner; // To clean old LabelInfo, ExportJobInfos
     private MasterDaemon txnCleaner; // To clean aborted or timeout txns
-    private Daemon feDiskUpdater;  // Update fe disk info
     private Daemon replayer;
     private Daemon timePrinter;
     private Daemon listener;
@@ -925,9 +923,6 @@ public class Env {
         // 6. start state listener thread
         createStateListener();
         listener.start();
-
-        // 7. create fe disk updater
-        createFeDiskUpdater();
 
         if (!Config.edit_log_type.equalsIgnoreCase("bdb")) {
             // If not using bdb, we need to notify the FE type transfer manually.
@@ -1529,8 +1524,6 @@ public class Env {
         getInternalCatalog().getEsRepository().start();
         // domain resolver
         domainResolver.start();
-        // fe disk updater
-        feDiskUpdater.start();
     }
 
     private void transferToNonMaster(FrontendNodeType newType) {
@@ -2352,15 +2345,6 @@ public class Env {
             @Override
             protected void runAfterCatalogReady() {
                 globalTransactionMgr.removeExpiredAndTimeoutTxns();
-            }
-        };
-    }
-
-    public void createFeDiskUpdater() {
-        feDiskUpdater = new Daemon("feDiskUpdater", FeConstants.heartbeat_interval_second * 1000L) {
-            @Override
-            protected void runOneCycle() {
-                ExecuteEnv.getInstance().refreshAndGetDiskInfo(true);
             }
         };
     }

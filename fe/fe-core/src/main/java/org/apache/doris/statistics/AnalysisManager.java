@@ -174,7 +174,8 @@ public class AnalysisManager extends Daemon implements Writable {
         }
     }
 
-    public List<AnalysisInfo> buildAnalysisInfosForDB(DatabaseIf<TableIf> db, AnalyzeProperties analyzeProperties) {
+    public List<AnalysisInfo> buildAnalysisInfosForDB(DatabaseIf<TableIf> db, AnalyzeProperties analyzeProperties)
+            throws DdlException {
         List<TableIf> tbls = db.getTables();
         List<AnalysisInfo> analysisInfos = new ArrayList<>();
         db.readLock();
@@ -194,18 +195,12 @@ public class AnalysisManager extends Daemon implements Writable {
                 try {
                     analyzeTblStmt.check();
                 } catch (AnalysisException analysisException) {
-                    LOG.warn("Failed to build analyze job: {}",
-                            analysisException.getMessage(), analysisException);
+                    throw new DdlException(analysisException.getMessage(), analysisException);
                 }
                 analyzeStmts.add(analyzeTblStmt);
             }
             for (AnalyzeTblStmt analyzeTblStmt : analyzeStmts) {
-                try {
-                    analysisInfos.add(buildAndAssignJob(analyzeTblStmt));
-                } catch (DdlException e) {
-                    LOG.warn("Failed to build analyze job: {}",
-                            e.getMessage(), e);
-                }
+                analysisInfos.add(buildAndAssignJob(analyzeTblStmt));
             }
         } finally {
             db.readUnlock();
@@ -756,8 +751,7 @@ public class AnalysisManager extends Daemon implements Writable {
 
     private ThreadPoolExecutor createThreadPoolForSyncAnalyze() {
         String poolName = "SYNC ANALYZE THREAD POOL";
-        return new ThreadPoolExecutor(0,
-                ConnectContext.get().getSessionVariable().parallelSyncAnalyzeTaskNum,
+        return new ThreadPoolExecutor(0, 64,
                 0, TimeUnit.SECONDS,
                 new SynchronousQueue(),
                 new ThreadFactoryBuilder().setDaemon(true).setNameFormat("SYNC ANALYZE" + "-%d")
@@ -873,9 +867,6 @@ public class AnalysisManager extends Daemon implements Writable {
                 executor.submit(() -> {
                     try {
                         if (cancelled) {
-                            errorMessages.add("Cancelled since query timeout,"
-                                    + "you could set could query_timeout or parallel_sync_analyze_task_num "
-                                    + "to a bigger value and try again");
                             return;
                         }
                         try {

@@ -244,7 +244,7 @@ public class ShowAnalyzeStmt extends ShowStmt {
 
         if (!valid) {
             throw new AnalysisException("Where clause should looks like: "
-                    + "STATE = \"PENDING|RUNNING|FINISHED|FAILED");
+                    + "STATE = \"PENDING|SCHEDULING|RUNNING|FINISHED|FAILED|CANCELLED\"");
         }
     }
 

@@ -39,6 +39,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -89,15 +91,15 @@ public class ShowColumnStatsStmt extends ShowStmt {
         }
         CatalogIf<DatabaseIf> catalog = Env.getCurrentEnv().getCatalogMgr().getCatalog(tableName.getCtl());
         if (catalog == null) {
-            ErrorReport.reportAnalysisException("Catalog: %s not exists", tableName.getCtl());
+            ErrorReport.reportAnalysisException("Catalog: {} not exists", tableName.getCtl());
         }
         DatabaseIf<TableIf> db = catalog.getDb(tableName.getDb()).orElse(null);
         if (db == null) {
-            ErrorReport.reportAnalysisException("DB: %s not exists", tableName.getDb());
+            ErrorReport.reportAnalysisException("DB: {} not exists", tableName.getDb());
         }
         table = db.getTable(tableName.getTbl()).orElse(null);
         if (table == null) {
-            ErrorReport.reportAnalysisException("Table: %s not exists", tableName.getTbl());
+            ErrorReport.reportAnalysisException("Table: {} not exists", tableName.getTbl());
         }
 
         if (!Env.getCurrentEnv().getAccessManager()
@@ -108,10 +110,12 @@ public class ShowColumnStatsStmt extends ShowStmt {
         }
 
         if (columnNames != null) {
-            for (String name : columnNames) {
-                if (table.getColumn(name) == null) {
-                    ErrorReport.reportAnalysisException("Column: %s not exists", name);
-                }
+            Optional<Column> nullColumn = columnNames.stream()
+                    .map(table::getColumn)
+                    .filter(Objects::isNull)
+                    .findFirst();
+            if (nullColumn.isPresent()) {
+                ErrorReport.reportAnalysisException("Column: {} not exists", nullColumn.get());
             }
         }
     }

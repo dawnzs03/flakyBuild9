@@ -67,6 +67,7 @@ public class StatisticsCache {
     private final AsyncLoadingCache<StatisticsCacheKey, Optional<ColumnStatistic>> columnStatisticsCache =
             Caffeine.newBuilder()
                     .maximumSize(Config.stats_cache_size)
+                    .expireAfterAccess(Duration.ofHours(StatisticConstants.STATISTICS_CACHE_VALID_DURATION_IN_HOURS))
                     .refreshAfterWrite(Duration.ofHours(StatisticConstants.STATISTICS_CACHE_REFRESH_INTERVAL))
                     .executor(threadPool)
                     .buildAsync(columnStatisticsCacheLoader);
@@ -74,6 +75,7 @@ public class StatisticsCache {
     private final AsyncLoadingCache<StatisticsCacheKey, Optional<Histogram>> histogramCache =
             Caffeine.newBuilder()
                     .maximumSize(Config.stats_cache_size)
+                    .expireAfterAccess(Duration.ofHours(StatisticConstants.STATISTICS_CACHE_VALID_DURATION_IN_HOURS))
                     .refreshAfterWrite(Duration.ofHours(StatisticConstants.STATISTICS_CACHE_REFRESH_INTERVAL))
                     .executor(threadPool)
                     .buildAsync(histogramCacheLoader);
@@ -81,7 +83,7 @@ public class StatisticsCache {
     private final AsyncLoadingCache<StatisticsCacheKey, Optional<TableStatistic>> tableStatisticsCache =
             Caffeine.newBuilder()
                     .maximumSize(Config.stats_cache_size)
-                    .refreshAfterWrite(Duration.ofHours(StatisticConstants.STATISTICS_CACHE_REFRESH_INTERVAL))
+                    .expireAfterWrite(Duration.ofHours(StatisticConstants.ROW_COUNT_CACHE_VALID_DURATION_IN_HOURS))
                     .executor(threadPool)
                     .buildAsync(tableStatisticsCacheLoader);
 
