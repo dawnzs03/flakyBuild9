@@ -36,9 +36,9 @@ public class MockSpan extends AbstractSpan {
 
     /**
      * Base Constructor.
-     * @param spanName  Span Name
-     * @param parentSpan  Parent Span
-     * @param spanProcessor  Span Processor
+     * @param spanName span name
+     * @param parentSpan parent span
+     * @param spanProcessor span processor
      * @param attributes attributes
      */
     public MockSpan(String spanName, Span parentSpan, SpanProcessor spanProcessor, Attributes attributes) {

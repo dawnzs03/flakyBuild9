@@ -8,9 +8,8 @@
 
 package org.opensearch.telemetry.tracing.runnable;
 
-import org.opensearch.telemetry.tracing.ScopedSpan;
 import org.opensearch.telemetry.tracing.SpanContext;
-import org.opensearch.telemetry.tracing.SpanCreationContext;
+import org.opensearch.telemetry.tracing.SpanScope;
 import org.opensearch.telemetry.tracing.Tracer;
 import org.opensearch.telemetry.tracing.attributes.Attributes;
 
@@ -42,7 +41,7 @@ public class TraceableRunnable implements Runnable {
 
     @Override
     public void run() {
-        try (ScopedSpan spanScope = tracer.startScopedSpan(new SpanCreationContext(spanName, attributes), parent)) {
+        try (SpanScope spanScope = tracer.startSpan(spanName, parent, attributes)) {
             runnable.run();
         }
     }

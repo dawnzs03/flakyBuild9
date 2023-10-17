@@ -10,16 +10,13 @@ package org.opensearch.index.store.remote.metadata;
 
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
-import org.apache.lucene.util.Version;
 import org.opensearch.core.index.Index;
 import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.index.store.RemoteSegmentStoreDirectory;
-import org.opensearch.index.store.StoreFileMetadata;
 import org.opensearch.indices.replication.checkpoint.ReplicationCheckpoint;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -113,13 +110,11 @@ public class RemoteSegmentMetadata {
 
     public static RemoteSegmentMetadata read(IndexInput indexInput) throws IOException {
         Map<String, String> metadata = indexInput.readMapOfStrings();
-        final Map<String, RemoteSegmentStoreDirectory.UploadedSegmentMetadata> uploadedSegmentMetadataMap = RemoteSegmentMetadata
-            .fromMapOfStrings(metadata);
-        ReplicationCheckpoint replicationCheckpoint = readCheckpointFromIndexInput(indexInput, uploadedSegmentMetadataMap);
+        ReplicationCheckpoint replicationCheckpoint = readCheckpointFromIndexInput(indexInput);
         int byteArraySize = (int) indexInput.readLong();
         byte[] segmentInfosBytes = new byte[byteArraySize];
         indexInput.readBytes(segmentInfosBytes, 0, byteArraySize);
-        return new RemoteSegmentMetadata(uploadedSegmentMetadataMap, segmentInfosBytes, replicationCheckpoint);
+        return new RemoteSegmentMetadata(RemoteSegmentMetadata.fromMapOfStrings(metadata), segmentInfosBytes, replicationCheckpoint);
     }
 
     public static void writeCheckpointToIndexOutput(ReplicationCheckpoint replicationCheckpoint, IndexOutput out) throws IOException {
@@ -136,30 +131,14 @@ public class RemoteSegmentMetadata {
         out.writeString(replicationCheckpoint.getCodec());
     }
 
-    private static ReplicationCheckpoint readCheckpointFromIndexInput(
-        IndexInput in,
-        Map<String, RemoteSegmentStoreDirectory.UploadedSegmentMetadata> uploadedSegmentMetadataMap
-    ) throws IOException {
+    private static ReplicationCheckpoint readCheckpointFromIndexInput(IndexInput in) throws IOException {
         return new ReplicationCheckpoint(
             new ShardId(new Index(in.readString(), in.readString()), in.readVInt()),
             in.readLong(),
             in.readLong(),
             in.readLong(),
             in.readLong(),
-            in.readString(),
-            toStoreFileMetadata(uploadedSegmentMetadataMap)
+            in.readString()
         );
-    }
-
-    private static Map<String, StoreFileMetadata> toStoreFileMetadata(
-        Map<String, RemoteSegmentStoreDirectory.UploadedSegmentMetadata> metadata
-    ) {
-        return metadata.entrySet()
-            .stream()
-            // TODO: Version here should be read from UploadedSegmentMetadata.
-            .map(
-                entry -> new StoreFileMetadata(entry.getKey(), entry.getValue().getLength(), entry.getValue().getChecksum(), Version.LATEST)
-            )
-            .collect(Collectors.toMap(StoreFileMetadata::name, Function.identity()));
     }
 }
