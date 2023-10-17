@@ -1,152 +1,78 @@
-# Jedis
+# Apache Dolphinscheduler
 
-[![Release](https://img.shields.io/github/release/redis/jedis.svg?sort=semver)](https://github.com/redis/jedis/releases/latest)
-[![Maven Central](https://img.shields.io/maven-central/v/redis.clients/jedis.svg)](https://search.maven.org/artifact/redis.clients/jedis)
-[![Javadocs](https://www.javadoc.io/badge/redis.clients/jedis.svg)](https://www.javadoc.io/doc/redis.clients/jedis)
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.txt)
-[![Integration](https://github.com/redis/jedis/actions/workflows/integration.yml/badge.svg?branch=master)](https://github.com/redis/jedis/actions/workflows/integration.yml)
-[![codecov](https://codecov.io/gh/redis/jedis/branch/master/graph/badge.svg?token=pAstxAAjYo)](https://codecov.io/gh/redis/jedis)
-[![Discord](https://img.shields.io/discord/697882427875393627?style=flat-square)](https://discord.gg/qRhBuY8Z)
+[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+![codecov](https://codecov.io/gh/apache/dolphinscheduler/branch/dev/graph/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache-dolphinscheduler&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache-dolphinscheduler)
+[![Twitter Follow](https://img.shields.io/twitter/follow/dolphinschedule.svg?style=social&label=Follow)](https://twitter.com/dolphinschedule)
+[![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://s.apache.org/dolphinscheduler-slack)
+[![CN doc](https://img.shields.io/badge/文档-中文版-blue.svg)](README_zh_CN.md)
 
-## What is Jedis?
+## About
 
-Jedis is a Java client for [Redis](https://github.com/redis/redis "Redis") designed for performance and ease of use.
+Apache DolphinScheduler is the modern data orchestration platform. Agile to create high performance workflow with low-code. It is also provided powerful user interface,
+dedicated to solving complex task dependencies in the data pipeline and providing various types of jobs available **out of the box**
 
-Are you looking for a high-level library to handle object mapping? See [redis-om-spring](https://github.com/redis/redis-om-spring)!
+The key features for DolphinScheduler are as follows:
+
+- Easy to deploy, provide four ways to deploy which including Standalone, Cluster, Docker and Kubernetes.
+- Easy to use, workflow can be created and managed by four ways, which including Web UI, [Python SDK](https://dolphinscheduler.apache.org/python/main/index.html), Yaml file and Open API
+- Highly reliable and high availability, decentralized architecture with multi-master and multi-worker, native supports horizontal scaling.
+- High performance, its performance is N times faster than other orchestration platform and it can support tens of millions of tasks per day
+- Cloud Native, DolphinScheduler supports orchestrating multi-cloud/data center workflow, and supports custom task type
+- Versioning both workflow and workflow instance(including tasks)
+- Various state control of workflow and task, support pause/stop/recover them in any time
+- Multi-tenancy support
+- Others like backfill support(Web UI native), permission control including project, resource and data source
+
+## QuickStart
+
+- For quick experience
+  - Want to [start with standalone](https://dolphinscheduler.apache.org/en-us/docs/3.1.5/guide/installation/standalone)
+  - Want to [start with Docker](https://dolphinscheduler.apache.org/en-us/docs/3.1.5/guide/start/docker)
+- For Kubernetes
+  - [Start with Kubernetes](https://dolphinscheduler.apache.org/en-us/docs/3.1.5/guide/installation/kubernetes)
+
+## User Interface Screenshots
+
+* **Homepage:** Project and workflow overview, including the latest workflow instance and task instance status statistics.
+![home](images/home.png)
+
+* **Workflow Definition:** Create and manage workflow by drag and drop, easy to build and maintain complex workflow, support [bulk of tasks](https://dolphinscheduler.apache.org/en-us/docs/3.1.5/introduction-to-functions_menu/task_menu) out of box.
+![workflow-definition](images/workflow-definition.png)
+
+* **Workflow Tree View:** Abstract tree structure could clearer understanding of the relationship between tasks
+![workflow-tree](images/workflow-tree.png)
+
+* **Data source:** Manage support multiple external data sources, provide unified data access capabilities for such as MySQL, PostgreSQL, Hive, Trino, etc.
+![data-source](images/data-source.png)
+
+* **Monitor:** View the status of the master, worker and database in real time, including server resource usage and load, do quick health check without logging in to the server.
+![monitor](images/monitor.png)
+
+## Suggestions & Bug Reports
+
+Follow [this guide](https://github.com/apache/dolphinscheduler/issues/new/choose) to report your suggestions or bugs.
 
 ## Contributing
 
-We'd love your contributions!
+The community welcomes everyone to contribute, please refer to this page to find out more: [How to contribute](docs/docs/en/contribute/join/contribute.md),
+find the good first issue in [here](https://github.com/apache/dolphinscheduler/contribute) if you are new to DolphinScheduler.
 
-**Bug reports** are always welcome! [You can open a bug report on GitHub](https://github.com/redis/jedis/issues/new).
+## Community
 
-You can also **contribute documentation** -- or anything to improve Jedis. Please see
-[contribution guideline](https://github.com/redis/jedis/blob/master/.github/CONTRIBUTING.md) for more details.
+Welcome to join the Apache DolphinScheduler community by:
 
-## Supported Redis versions
+- Join the [DolphinScheduler Slack](https://s.apache.org/dolphinscheduler-slack) to keep in touch with the community
+- Follow the [DolphinScheduler Twitter](https://twitter.com/dolphinschedule) and get the latest news
+- Subscribe DolphinScheduler mail list, users@dolphinscheduler.apache.org for user and dev@dolphinscheduler.apache.org for developer
 
-The most recent version of this library supports redis version [5.0](https://github.com/redis/redis/blob/5.0/00-RELEASENOTES), [6.0](https://github.com/redis/redis/blob/6.0/00-RELEASENOTES), [6.2](https://github.com/redis/redis/blob/6.2/00-RELEASENOTES), and [7.0](https://github.com/redis/redis/blob/7.0/00-RELEASENOTES).
+# Landscapes
 
-The table below highlights version compatibility of the most-recent library versions and Redis versions. Compatibility means communication features, and Redis command capabilities.
+<p align="center">
+<br/><br/>
+<img src="https://landscape.cncf.io/images/left-logo.svg" width="150"/>&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200"/>
+<br/><br/>
+DolphinScheduler enriches the <a href="https://landscape.cncf.io/?landscape=observability-and-analysis&license=apache-license-2-0">CNCF CLOUD NATIVE Landscape.</a >
 
+</p >
 
-| Library version | Supported redis versions       | JDK Compatibility |
-|-----------------|--------------------------------|-------------------|
-| 3.9+            | 5.0 and 6.2 Family of releases | 8, 11             |
-| >= 4.0          | Version 5.0 to current         | 8, 11, 17         |
-
-## Getting started
-
-To get started with Jedis, first add it as a dependency in your Java project. If you're using Maven, that looks like this:
-
-```xml
-<dependency>
-    <groupId>redis.clients</groupId>
-    <artifactId>jedis</artifactId>
-    <version>4.4.3</version>
-</dependency>
-```
-
-To use the cutting-edge Jedis, check [here](/docs/jedis-maven.md).
-
-Next, you'll need to connect to Redis. Consider installing a redis-stack docker:
-
-```bash
-docker run -p 6379:6379 -it redis/redis-stack:latest
-```
-
-For many applications, it's best to use a connection pool. You can instantiate a Jedis connection pool like so:
-
-```java
-JedisPool pool = new JedisPool("localhost", 6379);
-```
-
-With a `JedisPool` instance, you can use a
-[try-with-resources](https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html)
-block to get a connection and run Redis commands.
-
-Here's how to run a single [SET](https://redis.io/commands/set) command within a *try-with-resources* block:
-
-```java
-try (Jedis jedis = pool.getResource()) {
-  jedis.set("clientName", "Jedis");
-}
-```
-
-`Jedis` instances implement most Redis commands. See the
-[Jedis Javadocs](https://www.javadoc.io/doc/redis.clients/jedis/latest/redis/clients/jedis/Jedis.html)
-for the complete list of supported commands.
-
-### Easier way of using connection pool
-
-Using a *try-with-resources* block for each command may be cumbersome, so you may consider using JedisPooled.
-
-```java
-JedisPooled jedis = new JedisPooled("localhost", 6379);
-```
-
-Now you can send commands like sending from Jedis.
-
-```java
-jedis.sadd("planets", "Venus");
-```
-
-## Connecting to a Redis cluster
-
-Jedis lets you connect to Redis Clusters, supporting the [Redis Cluster Specification](https://redis.io/topics/cluster-spec).
-To do this, you'll need to connect using `JedisCluster`. See the example below:
-
-```java
-Set<HostAndPort> jedisClusterNodes = new HashSet<HostAndPort>();
-jedisClusterNodes.add(new HostAndPort("127.0.0.1", 7379));
-jedisClusterNodes.add(new HostAndPort("127.0.0.1", 7380));
-JedisCluster jedis = new JedisCluster(jedisClusterNodes);
-```
-
-Now you can use the `JedisCluster` instance and send commands like you would with a standard pooled connection:
-
-```java
-jedis.sadd("planets", "Mars");
-```
-
-## Failover
-
-Jedis supports retry and failover for your Redis deployments. This is useful when:
-
-1. You have more than one Redis deployment. This might include two independent Redis servers or two or more Redis databases replicated across multiple [active-active Redis Enterprise](https://docs.redis.com/latest/rs/databases/active-active/) clusters.
-2. You want your application to connect to one deployment at a time and to fail over to the next available deployment if the first deployment becomes unavailable.
-
-For the complete failover configuration options and examples, see the [Jedis failover docs](docs/failover.md).
-
-## Documentation
-
-The [Jedis wiki](http://github.com/redis/jedis/wiki) contains several useful articles for using Jedis.
-
-You can also check the [latest Jedis Javadocs](https://www.javadoc.io/doc/redis.clients/jedis/latest/index.html).
-
-Some specific use-case examples can be found in [`redis.clients.jedis.examples`
-package](src/test/java/redis/clients/jedis/examples/) of the test source codes.
-
-## Using Redis modules
-
-Jedis includes support for [Redis modules](https://redis.io/docs/modules/) such as
-[RedisJSON](https://oss.redis.com/redisjson/) and [RediSearch](https://oss.redis.com/redisearch/).
-
-See the [RedisJSON Jedis](docs/redisjson.md) or [RediSearch Jedis](docs/redisearch.md) for details.
-
-## Troubleshooting
-
-If you run into trouble or have any questions, we're here to help!
-
-Hit us up on the [Redis Discord Server](http://discord.gg/redis) or [open an issue on GitHub](https://github.com/redis/jedis).
-
-You can also find help on the [Jedis mailing list](http://groups.google.com/group/jedis_redis) or the
-[GitHub Discussions](https://github.com/redis/jedis/discussions).
-
-## License
-
-Jedis is licensed under the [MIT license](https://github.com/redis/jedis/blob/master/LICENSE.txt).
-
-## Sponsorship
-
-[![Redis Logo](redis-logo-full-color-rgb.png)](https://redis.com/)
