@@ -52,7 +52,6 @@ public class TestConflictInlineCommands {
         analyzer.shouldNotContain("force inline by CompileCommand");
 
         pb = ProcessTools.createJavaProcessBuilder(
-                "-Xbatch",
                 "-XX:CompileCommand=dontinline,*TestConflictInlineCommands::*caller",
                 "-XX:CompileCommand=inline,*TestConflictInlineCommands::caller",
                 "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly,*Launcher::main",
@@ -78,9 +77,6 @@ public class TestConflictInlineCommands {
                     sum += caller(i, 0);
                 }
             }
-            System.out.println("sum is:" + sum);
-            System.out.flush();
-            System.err.flush();
         }
     }
 }
