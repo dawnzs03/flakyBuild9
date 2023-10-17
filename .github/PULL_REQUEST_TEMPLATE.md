@@ -1,34 +1,10 @@
-<!--Thanks very much for contributing to Apache DolphinScheduler, we are happy that you want to help us improve DolphinScheduler! -->
+## Proposed changes
 
-## Purpose of the pull request
+Issue Number: close #xxx
 
-<!--(For example: This pull request adds checkstyle plugin).-->
+<!--Describe your changes.-->
 
-## Brief change log
+## Further comments
 
-<!--*(for example:)*
-- *Add maven-checkstyle-plugin to root pom.xml*
--->
+If this is a relatively large or complex change, kick off the discussion at [dev@doris.apache.org](mailto:dev@doris.apache.org) by explaining why you chose the solution you did and what alternatives you considered, etc...
 
-## Verify this pull request
-
-<!--*(Please pick either of the following options)*-->
-
-This pull request is code cleanup without any test coverage.
-
-*(or)*
-
-This pull request is already covered by existing tests, such as *(please describe tests)*.
-
-(or)
-
-This change added tests and can be verified as follows:
-
-<!--*(example:)*
-- *Added dolphinscheduler-dao tests for end-to-end.*
-- *Added CronUtilsTest to verify the change.*
-- *Manually verified the change by testing locally.* -->
-
-(or)
-
-If your pull request contain incompatible change, you should also add it to `docs/docs/en/guide/upgrede/incompatible.md`
