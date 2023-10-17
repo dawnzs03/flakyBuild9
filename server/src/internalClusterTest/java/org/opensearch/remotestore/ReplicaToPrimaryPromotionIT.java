@@ -122,6 +122,7 @@ public class ReplicaToPrimaryPromotionIT extends RemoteStoreBaseIntegTestCase {
         assertHitCount(client().prepareSearch(indexName).setSize(0).get(), numOfDocs);
     }
 
+    @AwaitsFix(bugUrl = "https://github.com/opensearch-project/OpenSearch/issues/9130")
     public void testFailoverWhileIndexing() throws Exception {
         internalCluster().startNode();
         internalCluster().startNode();
@@ -142,7 +143,7 @@ public class ReplicaToPrimaryPromotionIT extends RemoteStoreBaseIntegTestCase {
                     .setSource("field", numAutoGenDocs.get())
                     .get();
 
-                if (indexResponse.status() == RestStatus.CREATED || indexResponse.status() == RestStatus.OK) {
+                if (indexResponse.status() == RestStatus.CREATED || indexResponse.status() == RestStatus.ACCEPTED) {
                     numAutoGenDocs.incrementAndGet();
                     if (numAutoGenDocs.get() == docCount / 2) {
                         if (random().nextInt(3) == 0) {
