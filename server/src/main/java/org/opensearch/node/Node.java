@@ -688,8 +688,7 @@ public class Node implements Closeable {
                     repositoriesServiceReference::get,
                     settings,
                     clusterService.getClusterSettings(),
-                    threadPool::preciseRelativeTimeInNanos,
-                    threadPool
+                    threadPool::preciseRelativeTimeInNanos
                 );
             } else {
                 remoteClusterStateService = null;
@@ -1336,10 +1335,6 @@ public class Node implements Closeable {
         injector.getInstance(PeerRecoverySourceService.class).start();
         injector.getInstance(SegmentReplicationSourceService.class).start();
 
-        final RemoteClusterStateService remoteClusterStateService = injector.getInstance(RemoteClusterStateService.class);
-        if (remoteClusterStateService != null) {
-            remoteClusterStateService.start();
-        }
         // Load (and maybe upgrade) the metadata stored on disk
         final GatewayMetaState gatewayMetaState = injector.getInstance(GatewayMetaState.class);
         gatewayMetaState.start(
@@ -1351,8 +1346,7 @@ public class Node implements Closeable {
             injector.getInstance(MetadataUpgrader.class),
             injector.getInstance(PersistedClusterStateService.class),
             injector.getInstance(RemoteClusterStateService.class),
-            injector.getInstance(PersistedStateRegistry.class),
-            injector.getInstance(RemoteStoreRestoreService.class)
+            injector.getInstance(PersistedStateRegistry.class)
         );
         if (Assertions.ENABLED) {
             try {

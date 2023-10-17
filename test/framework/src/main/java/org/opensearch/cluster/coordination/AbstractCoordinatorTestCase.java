@@ -844,16 +844,14 @@ public class AbstractCoordinatorTestCase extends OpenSearchTestCase {
             private final CoordinationState.PersistedState delegate;
             private final NodeEnvironment nodeEnvironment;
 
-            private MockGatewayMetaState mockGatewayMetaState;
-
             MockPersistedState(DiscoveryNode localNode) {
                 try {
                     if (rarely()) {
                         nodeEnvironment = newNodeEnvironment();
                         nodeEnvironments.add(nodeEnvironment);
-                        mockGatewayMetaState = new MockGatewayMetaState(localNode, bigArrays);
-                        mockGatewayMetaState.start(Settings.EMPTY, nodeEnvironment, xContentRegistry(), persistedStateRegistry());
-                        delegate = mockGatewayMetaState.getPersistedState();
+                        final MockGatewayMetaState gatewayMetaState = new MockGatewayMetaState(localNode, bigArrays);
+                        gatewayMetaState.start(Settings.EMPTY, nodeEnvironment, xContentRegistry(), persistedStateRegistry());
+                        delegate = gatewayMetaState.getPersistedState();
                     } else {
                         nodeEnvironment = null;
                         delegate = new InMemoryPersistedState(

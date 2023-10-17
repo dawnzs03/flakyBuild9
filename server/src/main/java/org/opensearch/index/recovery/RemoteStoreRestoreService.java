@@ -36,6 +36,7 @@ import org.opensearch.repositories.IndexId;
 import org.opensearch.snapshots.RestoreInfo;
 import org.opensearch.snapshots.RestoreService;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -146,7 +147,7 @@ public class RemoteStoreRestoreService {
                     .forEach(indexMetadata -> {
                         indexMetadataMap.put(indexMetadata.getIndex().getName(), new Tuple<>(true, indexMetadata));
                     });
-            } catch (Exception e) {
+            } catch (IOException e) {
                 throw new IllegalStateException("Unable to restore remote index metadata", e);
             }
         } else {
