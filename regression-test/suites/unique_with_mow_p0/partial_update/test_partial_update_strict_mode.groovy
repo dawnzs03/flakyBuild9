@@ -114,7 +114,6 @@ suite("test_partial_update_strict_mode", "p0") {
             assertEquals(2, json.NumberFilteredRows)
         }
     }
-    sql "sync"
     qt_sql """select * from ${tableName2} order by id;"""
 
     def tableName3 = "test_partial_update_strict_mode3";
@@ -163,7 +162,6 @@ suite("test_partial_update_strict_mode", "p0") {
             assertEquals(2, json.NumberFilteredRows)
         }
     }
-    sql "sync"
     qt_sql """select * from ${tableName3} order by id;"""
 
     // all columns valid, partial columns do not exist in file
@@ -209,6 +207,5 @@ suite("test_partial_update_strict_mode", "p0") {
         }
     }
 
-    sql "sync"
     qt_sql """select * from ${tableName4} order by id;"""
 }
