@@ -37,6 +37,7 @@ import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.Diff;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.ParsingException;
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
@@ -124,7 +125,7 @@ public class StoredScriptSource extends AbstractDiffable<StoredScriptSource> imp
                 if (parser.currentToken() == Token.START_OBJECT) {
                     // this is really for search templates, that need to be converted to json format
                     XContentBuilder builder = XContentFactory.jsonBuilder();
-                    source = builder.copyCurrentStructure(parser).toString();
+                    source = Strings.toString(builder.copyCurrentStructure(parser));
                     options.put(Script.CONTENT_TYPE_OPTION, XContentType.JSON.mediaType());
                 } else {
                     source = parser.text();

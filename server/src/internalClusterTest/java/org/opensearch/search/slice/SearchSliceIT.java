@@ -42,6 +42,7 @@ import org.opensearch.action.search.CreatePitResponse;
 import org.opensearch.action.search.SearchPhaseExecutionException;
 import org.opensearch.action.search.SearchRequestBuilder;
 import org.opensearch.action.search.SearchResponse;
+import org.opensearch.common.Strings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.xcontent.XContentBuilder;
@@ -67,24 +68,25 @@ import static org.hamcrest.Matchers.startsWith;
 
 public class SearchSliceIT extends OpenSearchIntegTestCase {
     private void setupIndex(int numDocs, int numberOfShards) throws IOException, ExecutionException, InterruptedException {
-        String mapping = XContentFactory.jsonBuilder()
-            .startObject()
-            .startObject("properties")
-            .startObject("invalid_random_kw")
-            .field("type", "keyword")
-            .field("doc_values", "false")
-            .endObject()
-            .startObject("random_int")
-            .field("type", "integer")
-            .field("doc_values", "true")
-            .endObject()
-            .startObject("invalid_random_int")
-            .field("type", "integer")
-            .field("doc_values", "false")
-            .endObject()
-            .endObject()
-            .endObject()
-            .toString();
+        String mapping = Strings.toString(
+            XContentFactory.jsonBuilder()
+                .startObject()
+                .startObject("properties")
+                .startObject("invalid_random_kw")
+                .field("type", "keyword")
+                .field("doc_values", "false")
+                .endObject()
+                .startObject("random_int")
+                .field("type", "integer")
+                .field("doc_values", "true")
+                .endObject()
+                .startObject("invalid_random_int")
+                .field("type", "integer")
+                .field("doc_values", "false")
+                .endObject()
+                .endObject()
+                .endObject()
+        );
         assertAcked(
             client().admin()
                 .indices()

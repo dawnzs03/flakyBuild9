@@ -32,6 +32,7 @@
 
 package org.opensearch.index.rankeval;
 
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
@@ -102,7 +103,7 @@ public class RankEvalSpecTests extends OpenSearchTestCase {
                 builder.startObject();
                 builder.field("field", randomAlphaOfLengthBetween(1, 5));
                 builder.endObject();
-                script = builder.toString();
+                script = Strings.toString(builder);
             } catch (IOException e) {
                 // this shouldn't happen in tests, re-throw just not to swallow it
                 throw new RuntimeException(e);

@@ -32,6 +32,7 @@
 
 package org.opensearch.action.search;
 
+import org.opensearch.common.Strings;
 import org.opensearch.common.UUIDs;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.io.stream.BytesStreamOutput;
@@ -119,7 +120,7 @@ public class SearchScrollRequestTests extends OpenSearchTestCase {
         searchScrollRequest.scroll("1m");
         try (XContentBuilder builder = JsonXContent.contentBuilder()) {
             searchScrollRequest.toXContent(builder, ToXContent.EMPTY_PARAMS);
-            assertEquals("{\"scroll_id\":\"SCROLL_ID\",\"scroll\":\"1m\"}", builder.toString());
+            assertEquals("{\"scroll_id\":\"SCROLL_ID\",\"scroll\":\"1m\"}", Strings.toString(builder));
         }
     }
 

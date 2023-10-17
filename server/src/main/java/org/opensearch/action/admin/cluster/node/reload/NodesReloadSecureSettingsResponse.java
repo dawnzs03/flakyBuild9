@@ -38,6 +38,7 @@ import org.opensearch.action.support.nodes.BaseNodeResponse;
 import org.opensearch.action.support.nodes.BaseNodesResponse;
 import org.opensearch.cluster.ClusterName;
 import org.opensearch.cluster.node.DiscoveryNode;
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.xcontent.ToXContentFragment;
@@ -98,7 +99,7 @@ public class NodesReloadSecureSettingsResponse extends BaseNodesResponse<NodesRe
             builder.startObject();
             toXContent(builder, EMPTY_PARAMS);
             builder.endObject();
-            return builder.toString();
+            return Strings.toString(builder);
         } catch (final IOException e) {
             return "{ \"error\" : \"" + e.getMessage() + "\"}";
         }

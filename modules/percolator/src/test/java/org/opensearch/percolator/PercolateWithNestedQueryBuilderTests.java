@@ -33,6 +33,7 @@
 package org.opensearch.percolator;
 
 import org.opensearch.action.admin.indices.mapping.put.PutMappingRequest;
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesArray;
 import org.opensearch.common.compress.CompressedXContent;
 import org.opensearch.common.xcontent.XContentType;
@@ -49,7 +50,7 @@ public class PercolateWithNestedQueryBuilderTests extends PercolateQueryBuilderT
         super.initializeAdditionalMappings(mapperService);
         mapperService.merge(
             "_doc",
-            new CompressedXContent(PutMappingRequest.simpleMapping("some_nested_object", "type=nested").toString()),
+            new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping("some_nested_object", "type=nested"))),
             MapperService.MergeReason.MAPPING_UPDATE
         );
     }

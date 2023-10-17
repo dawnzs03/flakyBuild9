@@ -37,17 +37,7 @@ class DefaultTracer implements Tracer {
 
     @Override
     public SpanScope startSpan(String spanName) {
-        return startSpan(spanName, null);
-    }
-
-    @Override
-    public SpanScope startSpan(String spanName, SpanContext parentSpan) {
-        Span span = null;
-        if (parentSpan != null) {
-            span = createSpan(spanName, parentSpan.getSpan());
-        } else {
-            span = createSpan(spanName, getCurrentSpanInternal());
-        }
+        Span span = createSpan(spanName, getCurrentSpan());
         setCurrentSpanInContext(span);
         addDefaultAttributes(span);
         return new DefaultSpanScope(span, (scopeSpan) -> endSpan(scopeSpan));
@@ -58,13 +48,9 @@ class DefaultTracer implements Tracer {
         ((Closeable) tracingTelemetry).close();
     }
 
-    private Span getCurrentSpanInternal() {
+    // Visible for testing
+    Span getCurrentSpan() {
         return tracerContextStorage.get(TracerContextStorage.CURRENT_SPAN);
-    }
-
-    public SpanContext getCurrentSpan() {
-        final Span currentSpan = tracerContextStorage.get(TracerContextStorage.CURRENT_SPAN);
-        return (currentSpan == null) ? null : new SpanContext(currentSpan);
     }
 
     private void endSpan(Span span) {

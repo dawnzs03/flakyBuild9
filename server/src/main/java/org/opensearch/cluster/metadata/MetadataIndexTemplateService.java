@@ -302,11 +302,9 @@ public class MetadataIndexTemplateService {
         if (stringMappings != null) {
             Map<String, Object> parsedMappings = MapperService.parseMapping(xContentRegistry, stringMappings);
             if (parsedMappings.size() > 0) {
-                stringMappings = XContentFactory.jsonBuilder()
-                    .startObject()
-                    .field(MapperService.SINGLE_MAPPING_NAME, parsedMappings)
-                    .endObject()
-                    .toString();
+                stringMappings = org.opensearch.common.Strings.toString(
+                    XContentFactory.jsonBuilder().startObject().field(MapperService.SINGLE_MAPPING_NAME, parsedMappings).endObject()
+                );
             }
         }
 
@@ -593,11 +591,9 @@ public class MetadataIndexTemplateService {
             if (stringMappings != null) {
                 Map<String, Object> parsedMappings = MapperService.parseMapping(xContentRegistry, stringMappings);
                 if (parsedMappings.size() > 0) {
-                    stringMappings = XContentFactory.jsonBuilder()
-                        .startObject()
-                        .field(MapperService.SINGLE_MAPPING_NAME, parsedMappings)
-                        .endObject()
-                        .toString();
+                    stringMappings = org.opensearch.common.Strings.toString(
+                        XContentFactory.jsonBuilder().startObject().field(MapperService.SINGLE_MAPPING_NAME, parsedMappings).endObject()
+                    );
                 }
             }
             final Template finalTemplate = new Template(

@@ -36,6 +36,7 @@ import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.opensearch.Version;
+import org.opensearch.common.Strings;
 import org.opensearch.common.compress.CompressedXContent;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.core.xcontent.ToXContent;
@@ -259,6 +260,6 @@ public abstract class FieldMapperTestCase<T extends FieldMapper.Builder<?>> exte
         x.startObject().startObject("properties");
         builder.toXContent(x, params);
         x.endObject().endObject();
-        return x.toString();
+        return Strings.toString(x);
     }
 }

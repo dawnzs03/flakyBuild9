@@ -8,6 +8,7 @@
 package org.opensearch.index.mapper;
 
 import org.apache.lucene.index.LeafReaderContext;
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.compress.CompressedXContent;
 import org.opensearch.common.xcontent.XContentFactory;
@@ -27,17 +28,18 @@ public class FlatObjectFieldDataTests extends AbstractFieldDataTestCase {
     }
 
     public void testDocValue() throws Exception {
-        String mapping = XContentFactory.jsonBuilder()
-            .startObject()
-            .startObject("test")
-            .startObject("properties")
-            .startObject("field")
-            .field("type", FIELD_TYPE)
-            .endObject()
-            .endObject()
-            .endObject()
-            .endObject()
-            .toString();
+        String mapping = Strings.toString(
+            XContentFactory.jsonBuilder()
+                .startObject()
+                .startObject("test")
+                .startObject("properties")
+                .startObject("field")
+                .field("type", FIELD_TYPE)
+                .endObject()
+                .endObject()
+                .endObject()
+                .endObject()
+        );
         final DocumentMapper mapper = mapperService.documentMapperParser().parse("test", new CompressedXContent(mapping));
 
         XContentBuilder json = XContentFactory.jsonBuilder().startObject().startObject("field").field("foo", "bar").endObject().endObject();

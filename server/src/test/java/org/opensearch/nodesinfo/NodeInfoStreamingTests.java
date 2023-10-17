@@ -36,6 +36,7 @@ import org.opensearch.Build;
 import org.opensearch.action.admin.cluster.node.info.NodeInfo;
 import org.opensearch.action.admin.cluster.node.info.PluginsAndModules;
 import org.opensearch.cluster.node.DiscoveryNode;
+import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.common.settings.Settings;
@@ -118,7 +119,7 @@ public class NodeInfoStreamingTests extends OpenSearchTestCase {
         param2Builder.startObject();
         param2.toXContent(param2Builder, params);
         param2Builder.endObject();
-        assertThat(param1Builder.toString(), equalTo(param2Builder.toString()));
+        assertThat(Strings.toString(param1Builder), equalTo(Strings.toString(param2Builder)));
     }
 
     private static NodeInfo createNodeInfo() {

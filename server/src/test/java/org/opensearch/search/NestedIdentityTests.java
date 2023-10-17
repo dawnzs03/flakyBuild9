@@ -32,6 +32,7 @@
 
 package org.opensearch.search;
 
+import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.xcontent.MediaTypeRegistry;
@@ -86,7 +87,7 @@ public class NestedIdentityTests extends OpenSearchTestCase {
         builder.endObject();
         assertEquals(
             "{\n" + "  \"_nested\" : {\n" + "    \"field\" : \"foo\",\n" + "    \"offset\" : 5\n" + "  }\n" + "}",
-            builder.toString()
+            Strings.toString(builder)
         );
 
         nestedIdentity = new NestedIdentity("foo", 5, new NestedIdentity("bar", 3, null));
@@ -106,7 +107,7 @@ public class NestedIdentityTests extends OpenSearchTestCase {
                 + "    }\n"
                 + "  }\n"
                 + "}",
-            builder.toString()
+            Strings.toString(builder)
         );
     }
 

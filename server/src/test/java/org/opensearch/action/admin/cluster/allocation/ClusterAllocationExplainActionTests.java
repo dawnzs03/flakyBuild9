@@ -44,6 +44,7 @@ import org.opensearch.cluster.routing.allocation.RoutingAllocation;
 import org.opensearch.cluster.routing.allocation.ShardAllocationDecision;
 import org.opensearch.cluster.routing.allocation.allocator.ShardsAllocator;
 import org.opensearch.cluster.routing.allocation.decider.AllocationDeciders;
+import org.opensearch.common.Strings;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentFactory;
@@ -137,7 +138,7 @@ public class ClusterAllocationExplainActionTests extends OpenSearchTestCase {
                 + "\"},\"explanation\":\""
                 + explanation
                 + "\"}",
-            builder.toString()
+            Strings.toString(builder)
         );
     }
 

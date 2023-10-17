@@ -32,6 +32,7 @@
 
 package org.opensearch.search.fetch.subphase.highlight;
 
+import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.text.Text;
@@ -108,7 +109,7 @@ public class HighlightFieldTests extends OpenSearchTestCase {
         builder.startObject();
         field.toXContent(builder, ToXContent.EMPTY_PARAMS);
         builder.endObject();
-        assertEquals("{\n" + "  \"foo\" : [\n" + "    \"bar\",\n" + "    \"baz\"\n" + "  ]\n" + "}", builder.toString());
+        assertEquals("{\n" + "  \"foo\" : [\n" + "    \"bar\",\n" + "    \"baz\"\n" + "  ]\n" + "}", Strings.toString(builder));
 
         field = new HighlightField("foo", null);
         builder = JsonXContent.contentBuilder();
@@ -116,7 +117,7 @@ public class HighlightFieldTests extends OpenSearchTestCase {
         builder.startObject();
         field.toXContent(builder, ToXContent.EMPTY_PARAMS);
         builder.endObject();
-        assertEquals("{\n" + "  \"foo\" : null\n" + "}", builder.toString());
+        assertEquals("{\n" + "  \"foo\" : null\n" + "}", Strings.toString(builder));
     }
 
     /**

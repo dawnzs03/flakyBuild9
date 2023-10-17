@@ -32,6 +32,7 @@
 
 package org.opensearch.index.mapper;
 
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.compress.CompressedXContent;
 import org.opensearch.common.xcontent.XContentFactory;
@@ -54,7 +55,7 @@ public class IndexFieldMapperTests extends OpenSearchSingleNodeTestCase {
     }
 
     public void testDefaultDisabledIndexMapper() throws Exception {
-        String mapping = XContentFactory.jsonBuilder().startObject().startObject("type").endObject().endObject().toString();
+        String mapping = Strings.toString(XContentFactory.jsonBuilder().startObject().startObject("type").endObject().endObject());
         DocumentMapper docMapper = createIndex("test").mapperService()
             .documentMapperParser()
             .parse("type", new CompressedXContent(mapping));
@@ -73,14 +74,9 @@ public class IndexFieldMapperTests extends OpenSearchSingleNodeTestCase {
     }
 
     public void testIndexNotConfigurable() throws IOException {
-        String mapping = XContentFactory.jsonBuilder()
-            .startObject()
-            .startObject("type")
-            .startObject("_index")
-            .endObject()
-            .endObject()
-            .endObject()
-            .toString();
+        String mapping = Strings.toString(
+            XContentFactory.jsonBuilder().startObject().startObject("type").startObject("_index").endObject().endObject().endObject()
+        );
         DocumentMapperParser parser = createIndex("test").mapperService().documentMapperParser();
         MapperParsingException e = expectThrows(MapperParsingException.class, () -> parser.parse("type", new CompressedXContent(mapping)));
         assertEquals("_index is not configurable", e.getMessage());

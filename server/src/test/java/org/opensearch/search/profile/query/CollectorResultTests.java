@@ -32,6 +32,7 @@
 
 package org.opensearch.search.profile.query;
 
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
@@ -143,7 +144,7 @@ public class CollectorResultTests extends OpenSearchTestCase {
                 + "    }\n"
                 + "  ]\n"
                 + "}",
-            builder.toString()
+            Strings.toString(builder)
         );
 
         builder = XContentFactory.jsonBuilder().prettyPrint().humanReadable(true);
@@ -169,7 +170,7 @@ public class CollectorResultTests extends OpenSearchTestCase {
                 + "    }\n"
                 + "  ]\n"
                 + "}",
-            builder.toString()
+            Strings.toString(builder)
         );
 
         result = new CollectorResult("collectorName", "some reason", 12345678L, Collections.emptyList());
@@ -182,7 +183,7 @@ public class CollectorResultTests extends OpenSearchTestCase {
                 + "  \"time\" : \"12.3ms\",\n"
                 + "  \"time_in_nanos\" : 12345678\n"
                 + "}",
-            builder.toString()
+            Strings.toString(builder)
         );
 
         result = new CollectorResult("collectorName", "some reason", 1234567890L, Collections.emptyList());
@@ -195,7 +196,7 @@ public class CollectorResultTests extends OpenSearchTestCase {
                 + "  \"time\" : \"1.2s\",\n"
                 + "  \"time_in_nanos\" : 1234567890\n"
                 + "}",
-            builder.toString()
+            Strings.toString(builder)
         );
 
         result = new CollectorResult(
@@ -223,7 +224,7 @@ public class CollectorResultTests extends OpenSearchTestCase {
                 + "  \"avg_slice_time_in_nanos\" : 123456789,\n"
                 + "  \"slice_count\" : 3\n"
                 + "}",
-            builder.toString()
+            Strings.toString(builder)
         );
     }
 }

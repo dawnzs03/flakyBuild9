@@ -73,6 +73,7 @@ import org.opensearch.cluster.routing.TestShardRouting;
 import org.opensearch.cluster.routing.UnassignedInfo;
 import org.opensearch.common.CheckedFunction;
 import org.opensearch.common.Randomness;
+import org.opensearch.common.Strings;
 import org.opensearch.common.UUIDs;
 import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.concurrent.GatedCloseable;
@@ -1705,7 +1706,7 @@ public class IndexShardTests extends IndexShardTestCase {
         builder.startObject();
         stats.toXContent(builder, EMPTY_PARAMS);
         builder.endObject();
-        String xContent = builder.toString();
+        String xContent = Strings.toString(builder);
         StringBuilder expectedSubSequence = new StringBuilder("\"shard_path\":{\"state_path\":\"");
         expectedSubSequence.append(shard.shardPath().getRootStatePath().toString());
         expectedSubSequence.append("\",\"data_path\":\"");
@@ -3633,13 +3634,14 @@ public class IndexShardTests extends IndexShardTestCase {
 
             int numDoc = randomIntBetween(100, 200);
             for (int i = 0; i < numDoc; i++) {
-                String doc = XContentFactory.jsonBuilder()
-                    .startObject()
-                    .field("count", randomInt())
-                    .field("point", randomFloat())
-                    .field("description", randomUnicodeOfCodepointLength(100))
-                    .endObject()
-                    .toString();
+                String doc = Strings.toString(
+                    XContentFactory.jsonBuilder()
+                        .startObject()
+                        .field("count", randomInt())
+                        .field("point", randomFloat())
+                        .field("description", randomUnicodeOfCodepointLength(100))
+                        .endObject()
+                );
                 indexDoc(indexShard, "_doc", Integer.toString(i), doc);
             }
 

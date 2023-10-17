@@ -34,6 +34,7 @@ package org.opensearch.index.mapper;
 
 import org.apache.lucene.analysis.TokenStream;
 import org.opensearch.cluster.metadata.IndexMetadata;
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.compress.CompressedXContent;
 import org.opensearch.common.settings.Settings;
@@ -266,21 +267,22 @@ public class MapperServiceTests extends OpenSearchSingleNodeTestCase {
     }
 
     public void testTotalFieldsLimitWithFieldAlias() throws Throwable {
-        String mapping = XContentFactory.jsonBuilder()
-            .startObject()
-            .startObject("type")
-            .startObject("properties")
-            .startObject("alias")
-            .field("type", "alias")
-            .field("path", "field")
-            .endObject()
-            .startObject("field")
-            .field("type", "text")
-            .endObject()
-            .endObject()
-            .endObject()
-            .endObject()
-            .toString();
+        String mapping = Strings.toString(
+            XContentFactory.jsonBuilder()
+                .startObject()
+                .startObject("type")
+                .startObject("properties")
+                .startObject("alias")
+                .field("type", "alias")
+                .field("path", "field")
+                .endObject()
+                .startObject("field")
+                .field("type", "text")
+                .endObject()
+                .endObject()
+                .endObject()
+                .endObject()
+        );
 
         int numberOfFieldsIncludingAlias = 2;
         createIndex(

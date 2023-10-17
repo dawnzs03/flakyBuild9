@@ -45,6 +45,7 @@ import org.apache.lucene.search.similarities.LMDirichletSimilarity;
 import org.apache.lucene.search.similarities.LMJelinekMercerSimilarity;
 import org.apache.lucene.search.similarities.LambdaTTF;
 import org.apache.lucene.search.similarities.NormalizationH2;
+import org.opensearch.common.Strings;
 import org.opensearch.common.compress.CompressedXContent;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.core.xcontent.XContentBuilder;
@@ -274,16 +275,17 @@ public class SimilarityTests extends OpenSearchSingleNodeTestCase {
     }
 
     public void testResolveSimilaritiesFromMapping_Unknown() throws IOException {
-        String mapping = XContentFactory.jsonBuilder()
-            .startObject()
-            .startObject("properties")
-            .startObject("field1")
-            .field("type", "text")
-            .field("similarity", "unknown_similarity")
-            .endObject()
-            .endObject()
-            .endObject()
-            .toString();
+        String mapping = Strings.toString(
+            XContentFactory.jsonBuilder()
+                .startObject()
+                .startObject("properties")
+                .startObject("field1")
+                .field("type", "text")
+                .field("similarity", "unknown_similarity")
+                .endObject()
+                .endObject()
+                .endObject()
+        );
 
         IndexService indexService = createIndex("foo");
         try {

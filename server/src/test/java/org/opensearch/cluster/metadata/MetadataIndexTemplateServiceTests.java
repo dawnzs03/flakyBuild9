@@ -40,6 +40,7 @@ import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.metadata.MetadataIndexTemplateService.PutRequest;
 import org.opensearch.cluster.routing.allocation.AwarenessReplicaBalance;
 import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.Strings;
 import org.opensearch.common.compress.CompressedXContent;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.IndexScopedSettings;
@@ -190,16 +191,17 @@ public class MetadataIndexTemplateServiceTests extends OpenSearchSingleNodeTestC
         PutRequest request = new PutRequest("api", "validate_template");
         request.patterns(singletonList("te*"));
         request.mappings(
-            XContentFactory.jsonBuilder()
-                .startObject()
-                .startObject("properties")
-                .startObject("field2")
-                .field("type", "text")
-                .field("analyzer", "custom_1")
-                .endObject()
-                .endObject()
-                .endObject()
-                .toString()
+            Strings.toString(
+                XContentFactory.jsonBuilder()
+                    .startObject()
+                    .startObject("properties")
+                    .startObject("field2")
+                    .field("type", "text")
+                    .field("analyzer", "custom_1")
+                    .endObject()
+                    .endObject()
+                    .endObject()
+            )
         );
 
         List<Throwable> errors = putTemplateDetail(request);

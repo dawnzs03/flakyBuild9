@@ -35,17 +35,16 @@ package org.opensearch.action.search;
 import org.apache.lucene.search.TotalHits;
 import org.opensearch.Version;
 import org.opensearch.cluster.metadata.IndexMetadata;
-import org.opensearch.common.settings.Settings;
-import org.opensearch.common.xcontent.XContentHelper;
-import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.core.common.Strings;
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
-import org.opensearch.core.xcontent.MediaTypeRegistry;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.rest.action.search.RestSearchAction;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
@@ -283,7 +282,7 @@ public class SearchResponseTests extends OpenSearchTestCase {
                 }
             }
             expectedString.append("}");
-            assertEquals(expectedString.toString(), Strings.toString(MediaTypeRegistry.JSON, response));
+            assertEquals(expectedString.toString(), Strings.toString(XContentType.JSON, response));
         }
         {
             SearchResponse response = new SearchResponse(
@@ -365,6 +364,6 @@ public class SearchResponseTests extends OpenSearchTestCase {
         SearchResponse deserialized = copyWriteable(searchResponse, namedWriteableRegistry, SearchResponse::new, Version.CURRENT);
         XContentBuilder builder = XContentBuilder.builder(XContentType.JSON.xContent());
         deserialized.getClusters().toXContent(builder, ToXContent.EMPTY_PARAMS);
-        assertEquals(0, builder.toString().length());
+        assertEquals(0, Strings.toString(builder).length());
     }
 }

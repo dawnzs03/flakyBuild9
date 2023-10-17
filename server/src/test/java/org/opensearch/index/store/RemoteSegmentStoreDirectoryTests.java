@@ -13,6 +13,8 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.SegmentInfos;
+import org.apache.lucene.store.ByteBuffersDataOutput;
+import org.apache.lucene.store.ByteBuffersIndexOutput;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
@@ -41,6 +43,7 @@ import org.opensearch.index.shard.IndexShardTestCase;
 import org.opensearch.index.store.lockmanager.RemoteStoreMetadataLockManager;
 import org.opensearch.index.store.remote.metadata.RemoteSegmentMetadata;
 import org.opensearch.index.store.remote.metadata.RemoteSegmentMetadataHandler;
+import org.opensearch.indices.replication.checkpoint.ReplicationCheckpoint;
 import org.opensearch.indices.replication.common.ReplicationType;
 import org.opensearch.threadpool.ThreadPool;
 
@@ -53,22 +56,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.startsWith;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.opensearch.test.RemoteStoreTestUtils.createMetadataFileBytes;
-import static org.opensearch.test.RemoteStoreTestUtils.getDummyMetadata;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.startsWith;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.doReturn;
+import static org.hamcrest.CoreMatchers.is;
 
 public class RemoteSegmentStoreDirectoryTests extends IndexShardTestCase {
     private RemoteDirectory remoteDataDirectory;
@@ -193,6 +194,93 @@ public class RemoteSegmentStoreDirectoryTests extends IndexShardTestCase {
         assertEquals(Set.of(), actualCache.keySet());
     }
 
+    private Map<String, String> getDummyMetadata(String prefix, int commitGeneration) {
+        Map<String, String> metadata = new HashMap<>();
+
+        metadata.put(
+            prefix + ".cfe",
+            prefix
+                + ".cfe::"
+                + prefix
+                + ".cfe__"
+                + UUIDs.base64UUID()
+                + "::"
+                + randomIntBetween(1000, 5000)
+                + "::"
+                + randomIntBetween(512000, 1024000)
+                + "::"
+                + Version.MIN_SUPPORTED_MAJOR
+        );
+        metadata.put(
+            prefix + ".cfs",
+            prefix
+                + ".cfs::"
+                + prefix
+                + ".cfs__"
+                + UUIDs.base64UUID()
+                + "::"
+                + randomIntBetween(1000, 5000)
+                + "::"
+                + randomIntBetween(512000, 1024000)
+                + "::"
+                + Version.MIN_SUPPORTED_MAJOR
+        );
+        metadata.put(
+            prefix + ".si",
+            prefix
+                + ".si::"
+                + prefix
+                + ".si__"
+                + UUIDs.base64UUID()
+                + "::"
+                + randomIntBetween(1000, 5000)
+                + "::"
+                + randomIntBetween(512000, 1024000)
+                + "::"
+                + Version.LATEST.major
+        );
+        metadata.put(
+            "segments_" + commitGeneration,
+            "segments_"
+                + commitGeneration
+                + "::segments_"
+                + commitGeneration
+                + "__"
+                + UUIDs.base64UUID()
+                + "::"
+                + randomIntBetween(1000, 5000)
+                + "::"
+                + randomIntBetween(1024, 5120)
+                + "::"
+                + Version.LATEST.major
+        );
+        return metadata;
+    }
+
+    /**
+     * Prepares metadata file bytes with header and footer
+     * @param segmentFilesMap: actual metadata content
+     * @return ByteArrayIndexInput: metadata file bytes with header and footer
+     * @throws IOException IOException
+     */
+    private ByteArrayIndexInput createMetadataFileBytes(Map<String, String> segmentFilesMap, ReplicationCheckpoint replicationCheckpoint)
+        throws IOException {
+        ByteBuffersDataOutput byteBuffersIndexOutput = new ByteBuffersDataOutput();
+        segmentInfos.write(new ByteBuffersIndexOutput(byteBuffersIndexOutput, "", ""));
+        byte[] byteArray = byteBuffersIndexOutput.toArrayCopy();
+
+        BytesStreamOutput output = new BytesStreamOutput();
+        OutputStreamIndexOutput indexOutput = new OutputStreamIndexOutput("segment metadata", "metadata output stream", output, 4096);
+        CodecUtil.writeHeader(indexOutput, RemoteSegmentMetadata.METADATA_CODEC, RemoteSegmentMetadata.CURRENT_VERSION);
+        indexOutput.writeMapOfStrings(segmentFilesMap);
+        RemoteSegmentMetadata.writeCheckpointToIndexOutput(replicationCheckpoint, indexOutput);
+        indexOutput.writeLong(byteArray.length);
+        indexOutput.writeBytes(byteArray, byteArray.length);
+        CodecUtil.writeFooter(indexOutput);
+        indexOutput.close();
+        return new ByteArrayIndexInput("segment metadata", BytesReference.toBytes(output.bytes()));
+    }
+
     private Map<String, Map<String, String>> populateMetadata() throws IOException {
         List<String> metadataFiles = new ArrayList<>();
 
@@ -223,25 +311,13 @@ public class RemoteSegmentStoreDirectoryTests extends IndexShardTestCase {
         );
 
         when(remoteMetadataDirectory.openInput(metadataFilename, IOContext.DEFAULT)).thenAnswer(
-            I -> createMetadataFileBytes(
-                metadataFilenameContentMapping.get(metadataFilename),
-                indexShard.getLatestReplicationCheckpoint(),
-                segmentInfos
-            )
+            I -> createMetadataFileBytes(metadataFilenameContentMapping.get(metadataFilename), indexShard.getLatestReplicationCheckpoint())
         );
         when(remoteMetadataDirectory.openInput(metadataFilename2, IOContext.DEFAULT)).thenAnswer(
-            I -> createMetadataFileBytes(
-                metadataFilenameContentMapping.get(metadataFilename2),
-                indexShard.getLatestReplicationCheckpoint(),
-                segmentInfos
-            )
+            I -> createMetadataFileBytes(metadataFilenameContentMapping.get(metadataFilename2), indexShard.getLatestReplicationCheckpoint())
         );
         when(remoteMetadataDirectory.openInput(metadataFilename3, IOContext.DEFAULT)).thenAnswer(
-            I -> createMetadataFileBytes(
-                metadataFilenameContentMapping.get(metadataFilename3),
-                indexShard.getLatestReplicationCheckpoint(),
-                segmentInfos
-            )
+            I -> createMetadataFileBytes(metadataFilenameContentMapping.get(metadataFilename3), indexShard.getLatestReplicationCheckpoint())
         );
 
         return metadataFilenameContentMapping;
@@ -578,7 +654,7 @@ public class RemoteSegmentStoreDirectoryTests extends IndexShardTestCase {
         metadata.put("_0.cfs", "_0.cfs::_0.cfs__" + UUIDs.base64UUID() + "::2345::1024::" + Version.LATEST.major);
 
         when(remoteMetadataDirectory.openInput(metadataFilename, IOContext.DEFAULT)).thenReturn(
-            createMetadataFileBytes(metadata, indexShard.getLatestReplicationCheckpoint(), segmentInfos)
+            createMetadataFileBytes(metadata, indexShard.getLatestReplicationCheckpoint())
         );
 
         remoteSegmentStoreDirectory.init();
@@ -641,11 +717,7 @@ public class RemoteSegmentStoreDirectoryTests extends IndexShardTestCase {
             getDummyMetadata("_0", (int) generation)
         );
         when(remoteMetadataDirectory.openInput(latestMetadataFileName, IOContext.DEFAULT)).thenReturn(
-            createMetadataFileBytes(
-                metadataFilenameContentMapping.get(latestMetadataFileName),
-                indexShard.getLatestReplicationCheckpoint(),
-                segmentInfos
-            )
+            createMetadataFileBytes(metadataFilenameContentMapping.get(latestMetadataFileName), indexShard.getLatestReplicationCheckpoint())
         );
 
         remoteSegmentStoreDirectory.init();

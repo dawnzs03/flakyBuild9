@@ -33,6 +33,7 @@ package org.opensearch.common.xcontent;
 
 import org.opensearch.common.CheckedFunction;
 import org.opensearch.core.ParseField;
+import org.opensearch.common.Strings;
 import org.opensearch.core.xcontent.XContentParserUtils;
 import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.core.xcontent.ObjectParser.NamedObjectParser;
@@ -448,7 +449,7 @@ public class ObjectParserTests extends OpenSearchTestCase {
         }
         builder.field("string_or_null", nullValue ? null : "5");
         builder.endObject();
-        XContentParser parser = createParser(JsonXContent.jsonXContent, builder.toString());
+        XContentParser parser = createParser(JsonXContent.jsonXContent, Strings.toString(builder));
         class TestStruct {
             int int_field;
             int nullableIntField;

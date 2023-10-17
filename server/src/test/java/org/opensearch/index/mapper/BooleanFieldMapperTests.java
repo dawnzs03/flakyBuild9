@@ -40,6 +40,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.BytesRef;
+import org.opensearch.common.Strings;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentFactory;
@@ -104,7 +105,7 @@ public class BooleanFieldMapperTests extends MapperTestCase {
         XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
         mapper.toXContent(builder, ToXContent.EMPTY_PARAMS);
         builder.endObject();
-        assertEquals("{\"field\":{\"type\":\"boolean\"}}", builder.toString());
+        assertEquals("{\"field\":{\"type\":\"boolean\"}}", Strings.toString(builder));
 
         // now change some parameters
         defaultMapper = createDocumentMapper(fieldMapping(b -> {
@@ -116,7 +117,7 @@ public class BooleanFieldMapperTests extends MapperTestCase {
         builder = XContentFactory.jsonBuilder().startObject();
         mapper.toXContent(builder, ToXContent.EMPTY_PARAMS);
         builder.endObject();
-        assertEquals("{\"field\":{\"type\":\"boolean\",\"doc_values\":false,\"null_value\":true}}", builder.toString());
+        assertEquals("{\"field\":{\"type\":\"boolean\",\"doc_values\":false,\"null_value\":true}}", Strings.toString(builder));
     }
 
     public void testParsesBooleansStrict() throws IOException {

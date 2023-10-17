@@ -35,6 +35,7 @@ package org.opensearch.script;
 import org.opensearch.OpenSearchParseException;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.ParseField;
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesArray;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
@@ -180,7 +181,7 @@ public final class Script implements ToXContentObject, Writeable {
                 if (parser.currentToken() == Token.START_OBJECT) {
                     // this is really for search templates, that need to be converted to json format
                     XContentBuilder builder = XContentFactory.jsonBuilder();
-                    idOrCode = builder.copyCurrentStructure(parser).toString();
+                    idOrCode = Strings.toString(builder.copyCurrentStructure(parser));
                     options.put(CONTENT_TYPE_OPTION, XContentType.JSON.mediaType());
                 } else {
                     idOrCode = parser.text();

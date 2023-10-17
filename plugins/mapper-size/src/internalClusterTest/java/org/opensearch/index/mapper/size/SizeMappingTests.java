@@ -34,6 +34,7 @@ package org.opensearch.index.mapper.size;
 
 import java.util.Collection;
 
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.compress.CompressedXContent;
 import org.opensearch.common.settings.Settings;
@@ -102,15 +103,16 @@ public class SizeMappingTests extends OpenSearchSingleNodeTestCase {
         DocumentMapper docMapper = service.mapperService().documentMapper();
         assertThat(docMapper.metadataMapper(SizeFieldMapper.class).enabled(), is(true));
 
-        String disabledMapping = XContentFactory.jsonBuilder()
-            .startObject()
-            .startObject("type")
-            .startObject("_size")
-            .field("enabled", false)
-            .endObject()
-            .endObject()
-            .endObject()
-            .toString();
+        String disabledMapping = Strings.toString(
+            XContentFactory.jsonBuilder()
+                .startObject()
+                .startObject("type")
+                .startObject("_size")
+                .field("enabled", false)
+                .endObject()
+                .endObject()
+                .endObject()
+        );
         docMapper = service.mapperService()
             .merge("type", new CompressedXContent(disabledMapping), MapperService.MergeReason.MAPPING_UPDATE);
 

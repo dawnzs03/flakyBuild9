@@ -61,6 +61,7 @@ import org.opensearch.cluster.ClusterName;
 import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.cluster.node.DiscoveryNodes;
+import org.opensearch.common.Strings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.json.JsonXContent;
@@ -340,7 +341,7 @@ public class CrossClusterSearchUnavailableClusterIT extends OpenSearchRestTestCa
                 builder.endObject();
             }
             builder.endObject();
-            requestBody = builder.toString();
+            requestBody = Strings.toString(builder);
         }
         return new StringEntity(requestBody, ContentType.APPLICATION_JSON);
     }

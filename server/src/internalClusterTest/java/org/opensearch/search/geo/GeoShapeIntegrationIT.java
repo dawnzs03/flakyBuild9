@@ -36,6 +36,7 @@ import org.opensearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.routing.IndexShardRoutingTable;
+import org.opensearch.common.Strings;
 import org.opensearch.common.geo.builders.PointBuilder;
 import org.opensearch.common.geo.builders.ShapeBuilder;
 import org.opensearch.common.settings.Settings;
@@ -72,30 +73,32 @@ public class GeoShapeIntegrationIT extends OpenSearchIntegTestCase {
      */
     public void testOrientationPersistence() throws Exception {
         String idxName = "orientation";
-        String mapping = XContentFactory.jsonBuilder()
-            .startObject()
-            .startObject("properties")
-            .startObject("location")
-            .field("type", "geo_shape")
-            .field("orientation", "left")
-            .endObject()
-            .endObject()
-            .endObject()
-            .toString();
+        String mapping = Strings.toString(
+            XContentFactory.jsonBuilder()
+                .startObject()
+                .startObject("properties")
+                .startObject("location")
+                .field("type", "geo_shape")
+                .field("orientation", "left")
+                .endObject()
+                .endObject()
+                .endObject()
+        );
 
         // create index
         assertAcked(prepareCreate(idxName).setMapping(mapping));
 
-        mapping = XContentFactory.jsonBuilder()
-            .startObject()
-            .startObject("properties")
-            .startObject("location")
-            .field("type", "geo_shape")
-            .field("orientation", "right")
-            .endObject()
-            .endObject()
-            .endObject()
-            .toString();
+        mapping = Strings.toString(
+            XContentFactory.jsonBuilder()
+                .startObject()
+                .startObject("properties")
+                .startObject("location")
+                .field("type", "geo_shape")
+                .field("orientation", "right")
+                .endObject()
+                .endObject()
+                .endObject()
+        );
 
         assertAcked(prepareCreate(idxName + "2").setMapping(mapping));
         ensureGreen(idxName, idxName + "2");
@@ -137,43 +140,44 @@ public class GeoShapeIntegrationIT extends OpenSearchIntegTestCase {
         ensureGreen();
 
         // test self crossing ccw poly not crossing dateline
-        String polygonGeoJson = XContentFactory.jsonBuilder()
-            .startObject()
-            .field("type", "Polygon")
-            .startArray("coordinates")
-            .startArray()
-            .startArray()
-            .value(176.0)
-            .value(15.0)
-            .endArray()
-            .startArray()
-            .value(-177.0)
-            .value(10.0)
-            .endArray()
-            .startArray()
-            .value(-177.0)
-            .value(-10.0)
-            .endArray()
-            .startArray()
-            .value(176.0)
-            .value(-15.0)
-            .endArray()
-            .startArray()
-            .value(-177.0)
-            .value(15.0)
-            .endArray()
-            .startArray()
-            .value(172.0)
-            .value(0.0)
-            .endArray()
-            .startArray()
-            .value(176.0)
-            .value(15.0)
-            .endArray()
-            .endArray()
-            .endArray()
-            .endObject()
-            .toString();
+        String polygonGeoJson = Strings.toString(
+            XContentFactory.jsonBuilder()
+                .startObject()
+                .field("type", "Polygon")
+                .startArray("coordinates")
+                .startArray()
+                .startArray()
+                .value(176.0)
+                .value(15.0)
+                .endArray()
+                .startArray()
+                .value(-177.0)
+                .value(10.0)
+                .endArray()
+                .startArray()
+                .value(-177.0)
+                .value(-10.0)
+                .endArray()
+                .startArray()
+                .value(176.0)
+                .value(-15.0)
+                .endArray()
+                .startArray()
+                .value(-177.0)
+                .value(15.0)
+                .endArray()
+                .startArray()
+                .value(172.0)
+                .value(0.0)
+                .endArray()
+                .startArray()
+                .value(176.0)
+                .value(15.0)
+                .endArray()
+                .endArray()
+                .endArray()
+                .endObject()
+        );
 
         indexRandom(true, client().prepareIndex("test").setId("0").setSource("shape", polygonGeoJson));
         SearchResponse searchResponse = client().prepareSearch("test").setQuery(matchAllQuery()).get();

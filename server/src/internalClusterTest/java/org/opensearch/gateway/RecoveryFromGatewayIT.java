@@ -46,6 +46,7 @@ import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.cluster.routing.UnassignedInfo;
 import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.Strings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.env.NodeEnvironment;
@@ -109,15 +110,16 @@ public class RecoveryFromGatewayIT extends OpenSearchIntegTestCase {
 
         internalCluster().startNode();
 
-        String mapping = XContentFactory.jsonBuilder()
-            .startObject()
-            .startObject("properties")
-            .startObject("appAccountIds")
-            .field("type", "text")
-            .endObject()
-            .endObject()
-            .endObject()
-            .toString();
+        String mapping = Strings.toString(
+            XContentFactory.jsonBuilder()
+                .startObject()
+                .startObject("properties")
+                .startObject("appAccountIds")
+                .field("type", "text")
+                .endObject()
+                .endObject()
+                .endObject()
+        );
         assertAcked(prepareCreate("test").setMapping(mapping));
 
         client().prepareIndex("test")
@@ -202,18 +204,19 @@ public class RecoveryFromGatewayIT extends OpenSearchIntegTestCase {
     public void testSingleNodeNoFlush() throws Exception {
         internalCluster().startNode();
 
-        String mapping = XContentFactory.jsonBuilder()
-            .startObject()
-            .startObject("properties")
-            .startObject("field")
-            .field("type", "text")
-            .endObject()
-            .startObject("num")
-            .field("type", "integer")
-            .endObject()
-            .endObject()
-            .endObject()
-            .toString();
+        String mapping = Strings.toString(
+            XContentFactory.jsonBuilder()
+                .startObject()
+                .startObject("properties")
+                .startObject("field")
+                .field("type", "text")
+                .endObject()
+                .startObject("num")
+                .field("type", "integer")
+                .endObject()
+                .endObject()
+                .endObject()
+        );
         // note: default replica settings are tied to #data nodes-1 which is 0 here. We can do with 1 in this test.
         int numberOfShards = numberOfShards();
         assertAcked(

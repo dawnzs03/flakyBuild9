@@ -32,6 +32,7 @@ x * Licensed to Elasticsearch under one or more contributor
 
 package org.opensearch.search.sort;
 
+import org.opensearch.common.Strings;
 import org.opensearch.common.geo.GeoPoint;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
@@ -194,7 +195,7 @@ public class SortBuilderTests extends OpenSearchTestCase {
                 xContentBuilder.endArray();
             }
             xContentBuilder.endObject();
-            List<SortBuilder<?>> parsedSort = parseSort(xContentBuilder.toString());
+            List<SortBuilder<?>> parsedSort = parseSort(Strings.toString(xContentBuilder));
             assertEquals(testBuilders.size(), parsedSort.size());
             Iterator<SortBuilder<?>> iterator = testBuilders.iterator();
             for (SortBuilder<?> parsedBuilder : parsedSort) {

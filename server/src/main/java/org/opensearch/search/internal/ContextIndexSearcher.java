@@ -32,8 +32,6 @@
 
 package org.opensearch.search.internal;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
@@ -95,13 +93,11 @@ import java.util.concurrent.Executor;
  * @opensearch.internal
  */
 public class ContextIndexSearcher extends IndexSearcher implements Releasable {
-
-    private static final Logger logger = LogManager.getLogger(ContextIndexSearcher.class);
     /**
      * The interval at which we check for search cancellation when we cannot use
      * a {@link CancellableBulkScorer}. See {@link #intersectScorerAndBitSet}.
      */
-    private static final int CHECK_CANCELLED_SCORER_INTERVAL = 1 << 11;
+    private static int CHECK_CANCELLED_SCORER_INTERVAL = 1 << 11;
 
     private AggregatedDfs aggregatedDfs;
     private QueryProfiler profiler;
@@ -447,16 +443,6 @@ public class ContextIndexSearcher extends IndexSearcher implements Releasable {
         return collectionStatistics;
     }
 
-    /**
-     * Compute the leaf slices that will be used by concurrent segment search to spread work across threads
-     * @param leaves all the segments
-     * @return leafSlice group to be executed by different threads
-     */
-    @Override
-    protected LeafSlice[] slices(List<LeafReaderContext> leaves) {
-        return slicesInternal(leaves, searchContext.getTargetMaxSliceCount());
-    }
-
     public DirectoryReader getDirectoryReader() {
         final IndexReader reader = getIndexReader();
         assert reader instanceof DirectoryReader : "expected an instance of DirectoryReader, got " + reader.getClass();
@@ -535,20 +521,5 @@ public class ContextIndexSearcher extends IndexSearcher implements Releasable {
             }
         }
         return false;
-    }
-
-    // package-private for testing
-    LeafSlice[] slicesInternal(List<LeafReaderContext> leaves, int targetMaxSlice) {
-        LeafSlice[] leafSlices;
-        if (targetMaxSlice == 0) {
-            // use the default lucene slice calculation
-            leafSlices = super.slices(leaves);
-            logger.debug("Slice count using lucene default [{}]", leafSlices.length);
-        } else {
-            // use the custom slice calculation based on targetMaxSlice
-            leafSlices = MaxTargetSliceSupplier.getSlices(leaves, targetMaxSlice);
-            logger.debug("Slice count using max target slice supplier [{}]", leafSlices.length);
-        }
-        return leafSlices;
     }
 }

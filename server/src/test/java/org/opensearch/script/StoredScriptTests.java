@@ -34,6 +34,7 @@ package org.opensearch.script;
 
 import org.opensearch.ResourceNotFoundException;
 import org.opensearch.core.common.ParsingException;
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.common.io.stream.Writeable;
 import org.opensearch.core.xcontent.MediaTypeRegistry;
@@ -94,7 +95,7 @@ public class StoredScriptTests extends AbstractSerializingTestCase<StoredScriptS
             String code;
 
             try (XContentBuilder cb = MediaTypeRegistry.contentBuilder(builder.contentType())) {
-                code = cb.startObject().field("query", "code").endObject().toString();
+                code = Strings.toString(cb.startObject().field("query", "code").endObject());
             }
 
             StoredScriptSource parsed = StoredScriptSource.parse(BytesReference.bytes(builder), XContentType.JSON);
@@ -149,22 +150,23 @@ public class StoredScriptTests extends AbstractSerializingTestCase<StoredScriptS
 
         // complex script with embedded template
         try (XContentBuilder builder = MediaTypeRegistry.contentBuilder(XContentType.JSON)) {
-            builder.startObject()
-                .field("script")
-                .startObject()
-                .field("lang", "lang")
-                .startObject("source")
-                .field("query", "code")
-                .endObject()
-                .startObject("options")
-                .endObject()
-                .endObject()
-                .endObject()
-                .toString();
+            Strings.toString(
+                builder.startObject()
+                    .field("script")
+                    .startObject()
+                    .field("lang", "lang")
+                    .startObject("source")
+                    .field("query", "code")
+                    .endObject()
+                    .startObject("options")
+                    .endObject()
+                    .endObject()
+                    .endObject()
+            );
             String code;
 
             try (XContentBuilder cb = MediaTypeRegistry.contentBuilder(builder.contentType())) {
-                code = cb.startObject().field("query", "code").endObject().toString();
+                code = Strings.toString(cb.startObject().field("query", "code").endObject());
             }
 
             StoredScriptSource parsed = StoredScriptSource.parse(BytesReference.bytes(builder), XContentType.JSON);

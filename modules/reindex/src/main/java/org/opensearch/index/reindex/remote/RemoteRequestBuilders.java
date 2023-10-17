@@ -38,6 +38,7 @@ import org.opensearch.OpenSearchException;
 import org.opensearch.Version;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.client.Request;
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.logging.DeprecationLogger;
 import org.opensearch.common.unit.TimeValue;
@@ -180,7 +181,7 @@ final class RemoteRequestBuilders {
             }
 
             entity.endObject();
-            request.setJsonEntity(entity.toString());
+            request.setJsonEntity(Strings.toString(entity));
         } catch (IOException e) {
             throw new OpenSearchException("unexpected error building entity", e);
         }
@@ -245,7 +246,7 @@ final class RemoteRequestBuilders {
 
         try (XContentBuilder entity = JsonXContent.contentBuilder()) {
             entity.startObject().field("scroll_id", scroll).endObject();
-            request.setJsonEntity(entity.toString());
+            request.setJsonEntity(Strings.toString(entity));
         } catch (IOException e) {
             throw new OpenSearchException("failed to build scroll entity", e);
         }
@@ -262,7 +263,7 @@ final class RemoteRequestBuilders {
         }
         try (XContentBuilder entity = JsonXContent.contentBuilder()) {
             entity.startObject().array("scroll_id", scroll).endObject();
-            request.setJsonEntity(entity.toString());
+            request.setJsonEntity(Strings.toString(entity));
         } catch (IOException e) {
             throw new OpenSearchException("failed to build clear scroll entity", e);
         }

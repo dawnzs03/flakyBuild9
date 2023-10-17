@@ -42,6 +42,7 @@ import org.apache.lucene.search.spell.SuggestMode;
 import org.apache.lucene.util.automaton.LevenshteinAutomata;
 import org.opensearch.ExceptionsHelper;
 import org.opensearch.core.ParseField;
+import org.opensearch.common.Strings;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.xcontent.ConstructingObjectParser;
@@ -507,7 +508,7 @@ public final class DirectCandidateGeneratorBuilder implements CandidateGenerator
             XContentBuilder builder = XContentFactory.jsonBuilder();
             builder.prettyPrint();
             toXContent(builder, EMPTY_PARAMS);
-            return builder.toString();
+            return Strings.toString(builder);
         } catch (Exception e) {
             return "{ \"error\" : \"" + ExceptionsHelper.detailedMessage(e) + "\"}";
         }

@@ -400,13 +400,13 @@ public class DiskThresholdSettings {
 
     String describeLowThreshold() {
         return freeBytesThresholdLow.equals(ByteSizeValue.ZERO)
-            ? Strings.format1Decimals(100.0 - freeDiskThresholdLow, "%")
+            ? org.opensearch.core.common.Strings.format1Decimals(100.0 - freeDiskThresholdLow, "%")
             : freeBytesThresholdLow.toString();
     }
 
     String describeHighThreshold() {
         return freeBytesThresholdHigh.equals(ByteSizeValue.ZERO)
-            ? Strings.format1Decimals(100.0 - freeDiskThresholdHigh, "%")
+            ? org.opensearch.core.common.Strings.format1Decimals(100.0 - freeDiskThresholdHigh, "%")
             : freeBytesThresholdHigh.toString();
     }
 

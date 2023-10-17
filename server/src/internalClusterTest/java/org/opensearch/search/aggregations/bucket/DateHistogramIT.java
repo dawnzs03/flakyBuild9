@@ -35,6 +35,7 @@ import org.opensearch.OpenSearchException;
 import org.opensearch.action.index.IndexRequestBuilder;
 import org.opensearch.action.search.SearchPhaseExecutionException;
 import org.opensearch.action.search.SearchResponse;
+import org.opensearch.common.Strings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.time.DateFormatter;
 import org.opensearch.common.time.DateFormatters;
@@ -1308,15 +1309,16 @@ public class DateHistogramIT extends OpenSearchIntegTestCase {
     }
 
     public void testSingleValueWithMultipleDateFormatsFromMapping() throws Exception {
-        String mappingJson = jsonBuilder().startObject()
-            .startObject("properties")
-            .startObject("date")
-            .field("type", "date")
-            .field("format", "strict_date_optional_time||dd-MM-yyyy")
-            .endObject()
-            .endObject()
-            .endObject()
-            .toString();
+        String mappingJson = Strings.toString(
+            jsonBuilder().startObject()
+                .startObject("properties")
+                .startObject("date")
+                .field("type", "date")
+                .field("format", "strict_date_optional_time||dd-MM-yyyy")
+                .endObject()
+                .endObject()
+                .endObject()
+        );
         prepareCreate("idx2").setMapping(mappingJson).get();
         IndexRequestBuilder[] reqs = new IndexRequestBuilder[5];
         for (int i = 0; i < reqs.length; i++) {

@@ -8,10 +8,6 @@
 
 package org.opensearch.index.remote;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.opensearch.common.CheckedFunction;
-import org.opensearch.common.logging.Loggers;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.common.io.stream.Writeable;
@@ -22,8 +18,7 @@ import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.index.store.DirectoryFileTransferTracker;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -31,16 +26,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static org.opensearch.index.shard.RemoteStoreRefreshListener.EXCLUDE_FILES;
-
 /**
  * Keeps track of remote refresh which happens in {@link org.opensearch.index.shard.RemoteStoreRefreshListener}. This consist of multiple critical metrics.
  *
  * @opensearch.internal
  */
 public class RemoteSegmentTransferTracker {
-
-    private final Logger logger;
 
     /**
      * ShardId for which this instance tracks the remote segment upload metadata.
@@ -133,15 +124,14 @@ public class RemoteSegmentTransferTracker {
     private final Map<String, AtomicLong> rejectionCountMap = ConcurrentCollections.newConcurrentMap();
 
     /**
-     * Keeps track of segment files and their size in bytes which are part of the most recent refresh.
+     * Map of name to size of the segment files created as part of the most recent refresh.
      */
-    private final Map<String, Long> latestLocalFileNameLengthMap = ConcurrentCollections.newConcurrentMap();
+    private volatile Map<String, Long> latestLocalFileNameLengthMap;
 
     /**
-     * This contains the files from the last successful remote refresh and ongoing uploads. This gets reset to just the
-     * last successful remote refresh state on successful remote refresh.
+     * Set of names of segment files that were uploaded as part of the most recent remote refresh.
      */
-    private final Set<String> latestUploadedFiles = ConcurrentCollections.newConcurrentSet();
+    private final Set<String> latestUploadedFiles = new HashSet<>();
 
     /**
      * Keeps the bytes lag computed so that we do not compute it for every request.
@@ -192,7 +182,6 @@ public class RemoteSegmentTransferTracker {
         int uploadBytesPerSecMovingAverageWindowSize,
         int uploadTimeMsMovingAverageWindowSize
     ) {
-        logger = Loggers.getLogger(getClass(), shardId);
         this.shardId = shardId;
         // Both the local refresh time and remote refresh time are set with current time to give consistent view of time lag when it arises.
         long currentClockTimeMs = System.currentTimeMillis();
@@ -204,6 +193,8 @@ public class RemoteSegmentTransferTracker {
         uploadBytesMovingAverageReference = new AtomicReference<>(new MovingAverage(uploadBytesMovingAverageWindowSize));
         uploadBytesPerSecMovingAverageReference = new AtomicReference<>(new MovingAverage(uploadBytesPerSecMovingAverageWindowSize));
         uploadTimeMsMovingAverageReference = new AtomicReference<>(new MovingAverage(uploadTimeMsMovingAverageWindowSize));
+
+        latestLocalFileNameLengthMap = new HashMap<>();
         this.directoryFileTransferTracker = directoryFileTransferTracker;
     }
 
@@ -215,8 +206,7 @@ public class RemoteSegmentTransferTracker {
         return localRefreshSeqNo;
     }
 
-    // Visible for testing
-    void updateLocalRefreshSeqNo(long localRefreshSeqNo) {
+    public void updateLocalRefreshSeqNo(long localRefreshSeqNo) {
         assert localRefreshSeqNo >= this.localRefreshSeqNo : "newLocalRefreshSeqNo="
             + localRefreshSeqNo
             + " < "
@@ -234,17 +224,7 @@ public class RemoteSegmentTransferTracker {
         return localRefreshClockTimeMs;
     }
 
-    /**
-     * Updates the last refresh time and refresh seq no which is seen by local store.
-     */
-    public void updateLocalRefreshTimeAndSeqNo() {
-        updateLocalRefreshClockTimeMs(System.currentTimeMillis());
-        updateLocalRefreshTimeMs(System.nanoTime() / 1_000_000L);
-        updateLocalRefreshSeqNo(getLocalRefreshSeqNo() + 1);
-    }
-
-    // Visible for testing
-    void updateLocalRefreshTimeMs(long localRefreshTimeMs) {
+    public void updateLocalRefreshTimeMs(long localRefreshTimeMs) {
         assert localRefreshTimeMs >= this.localRefreshTimeMs : "newLocalRefreshTimeMs="
             + localRefreshTimeMs
             + " < "
@@ -254,7 +234,7 @@ public class RemoteSegmentTransferTracker {
         computeTimeMsLag();
     }
 
-    private void updateLocalRefreshClockTimeMs(long localRefreshClockTimeMs) {
+    public void updateLocalRefreshClockTimeMs(long localRefreshClockTimeMs) {
         this.localRefreshClockTimeMs = localRefreshClockTimeMs;
     }
 
@@ -389,36 +369,12 @@ public class RemoteSegmentTransferTracker {
         return rejectionCountMap.get(rejectionReason).get();
     }
 
-    public Map<String, Long> getLatestLocalFileNameLengthMap() {
-        return Collections.unmodifiableMap(latestLocalFileNameLengthMap);
+    Map<String, Long> getLatestLocalFileNameLengthMap() {
+        return latestLocalFileNameLengthMap;
     }
 
-    /**
-     * Updates the latestLocalFileNameLengthMap by adding file name and it's size to the map. The method is given a function as an argument which is used for determining the file size (length in bytes). This method is also provided the collection of segment files which are the latest refresh local segment files. This method also removes the stale segment files from the map that are not part of the input segment files.
-     *
-     * @param segmentFiles     list of local refreshed segment files
-     * @param fileSizeFunction function is used to determine the file size in bytes
-     */
-    public void updateLatestLocalFileNameLengthMap(
-        Collection<String> segmentFiles,
-        CheckedFunction<String, Long, IOException> fileSizeFunction
-    ) {
-        // Update the map
-        segmentFiles.stream()
-            .filter(file -> EXCLUDE_FILES.contains(file) == false)
-            .filter(file -> latestLocalFileNameLengthMap.containsKey(file) == false || latestLocalFileNameLengthMap.get(file) == 0)
-            .forEach(file -> {
-                long fileSize = 0;
-                try {
-                    fileSize = fileSizeFunction.apply(file);
-                } catch (IOException e) {
-                    logger.warn(new ParameterizedMessage("Exception while reading the fileLength of file={}", file), e);
-                }
-                latestLocalFileNameLengthMap.put(file, fileSize);
-            });
-        Set<String> fileSet = new HashSet<>(segmentFiles);
-        // Remove keys from the fileSizeMap that do not exist in the latest segment files
-        latestLocalFileNameLengthMap.entrySet().removeIf(entry -> fileSet.contains(entry.getKey()) == false);
+    public void setLatestLocalFileNameLengthMap(Map<String, Long> latestLocalFileNameLengthMap) {
+        this.latestLocalFileNameLengthMap = latestLocalFileNameLengthMap;
         computeBytesLag();
     }
 
@@ -434,7 +390,7 @@ public class RemoteSegmentTransferTracker {
     }
 
     private void computeBytesLag() {
-        if (latestLocalFileNameLengthMap.isEmpty()) {
+        if (latestLocalFileNameLengthMap == null || latestLocalFileNameLengthMap.isEmpty()) {
             return;
         }
         Set<String> filesNotYetUploaded = latestLocalFileNameLengthMap.keySet()
