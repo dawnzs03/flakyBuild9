@@ -13,11 +13,6 @@
  */
 package com.facebook.presto.spi.function;
 
-import com.facebook.drift.annotations.ThriftConstructor;
-import com.facebook.drift.annotations.ThriftEnum;
-import com.facebook.drift.annotations.ThriftEnumValue;
-import com.facebook.drift.annotations.ThriftField;
-import com.facebook.drift.annotations.ThriftStruct;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -32,10 +27,8 @@ import static com.facebook.presto.spi.function.RoutineCharacteristics.NullCallCl
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-@ThriftStruct
 public class RoutineCharacteristics
 {
-    @ThriftStruct
     public static class Language
     {
         public static final Language SQL = new Language("SQL");
@@ -43,14 +36,12 @@ public class RoutineCharacteristics
 
         private final String language;
 
-        @ThriftConstructor
         @JsonCreator
         public Language(String language)
         {
             this.language = requireNonNull(language.toUpperCase());
         }
 
-        @ThriftField(1)
         @JsonValue
         public String getLanguage()
         {
@@ -83,42 +74,16 @@ public class RoutineCharacteristics
         }
     }
 
-    @ThriftEnum
     public enum Determinism
     {
-        DETERMINISTIC(1),
-        NOT_DETERMINISTIC(2);
-        private final int value;
-
-        private Determinism(int value)
-        {
-            this.value = value;
-        }
-
-        @ThriftEnumValue
-        public int getValue()
-        {
-            return value;
-        }
+        DETERMINISTIC,
+        NOT_DETERMINISTIC;
     }
 
-    @ThriftEnum
     public enum NullCallClause
     {
-        RETURNS_NULL_ON_NULL_INPUT(1),
-        CALLED_ON_NULL_INPUT(2);
-        private final int value;
-
-        private NullCallClause(int value)
-        {
-            this.value = value;
-        }
-
-        @ThriftEnumValue
-        public int getValue()
-        {
-            return value;
-        }
+        RETURNS_NULL_ON_NULL_INPUT,
+        CALLED_ON_NULL_INPUT;
     }
 
     private final Language language;
@@ -136,30 +101,19 @@ public class RoutineCharacteristics
         this.nullCallClause = nullCallClause.orElse(CALLED_ON_NULL_INPUT);
     }
 
-    @ThriftConstructor
-    public RoutineCharacteristics(Language language, Determinism determinism, NullCallClause nullCallClause)
-    {
-        this.language = language;
-        this.determinism = determinism;
-        this.nullCallClause = nullCallClause;
-    }
-
     @JsonProperty
-    @ThriftField(1)
     public Language getLanguage()
     {
         return language;
     }
 
     @JsonProperty
-    @ThriftField(2)
     public Determinism getDeterminism()
     {
         return determinism;
     }
 
     @JsonProperty
-    @ThriftField(3)
     public NullCallClause getNullCallClause()
     {
         return nullCallClause;

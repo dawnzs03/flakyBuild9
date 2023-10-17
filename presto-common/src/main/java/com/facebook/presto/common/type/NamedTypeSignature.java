@@ -13,9 +13,6 @@
  */
 package com.facebook.presto.common.type;
 
-import com.facebook.drift.annotations.ThriftConstructor;
-import com.facebook.drift.annotations.ThriftField;
-import com.facebook.drift.annotations.ThriftStruct;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -25,13 +22,11 @@ import java.util.Optional;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-@ThriftStruct
 public class NamedTypeSignature
 {
     private final Optional<RowFieldName> fieldName;
     private final TypeSignature typeSignature;
 
-    @ThriftConstructor
     @JsonCreator
     public NamedTypeSignature(
             @JsonProperty("fieldName") Optional<RowFieldName> fieldName,
@@ -41,14 +36,12 @@ public class NamedTypeSignature
         this.typeSignature = requireNonNull(typeSignature, "typeSignature is null");
     }
 
-    @ThriftField(1)
     @JsonProperty
     public Optional<RowFieldName> getFieldName()
     {
         return fieldName;
     }
 
-    @ThriftField(2)
     @JsonProperty
     public TypeSignature getTypeSignature()
     {

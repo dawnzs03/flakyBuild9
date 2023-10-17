@@ -13,9 +13,6 @@
  */
 package com.facebook.presto.spi.function;
 
-import com.facebook.drift.annotations.ThriftConstructor;
-import com.facebook.drift.annotations.ThriftField;
-import com.facebook.drift.annotations.ThriftStruct;
 import com.facebook.presto.common.QualifiedObjectName;
 import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.spi.api.Experimental;
@@ -39,7 +36,6 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 @Experimental
-@ThriftStruct
 public class SqlInvokedFunction
         implements SqlFunction
 {
@@ -58,7 +54,6 @@ public class SqlInvokedFunction
      */
     private final Optional<AggregationFunctionMetadata> aggregationMetadata;
 
-    @ThriftConstructor
     @JsonCreator
     public SqlInvokedFunction(
             @JsonProperty("parameters") List<Parameter> parameters,
@@ -155,7 +150,6 @@ public class SqlInvokedFunction
     }
 
     @Override
-    @ThriftField(1)
     @JsonProperty
     public Signature getSignature()
     {
@@ -181,35 +175,30 @@ public class SqlInvokedFunction
     }
 
     @Override
-    @ThriftField(2)
     @JsonProperty
     public String getDescription()
     {
         return description;
     }
 
-    @ThriftField(3)
     @JsonProperty
     public List<Parameter> getParameters()
     {
         return parameters;
     }
 
-    @ThriftField(4)
     @JsonProperty
     public RoutineCharacteristics getRoutineCharacteristics()
     {
         return routineCharacteristics;
     }
 
-    @ThriftField(5)
     @JsonProperty
     public String getBody()
     {
         return body;
     }
 
-    @ThriftField(6)
     @JsonProperty
     public SqlFunctionId getFunctionId()
     {

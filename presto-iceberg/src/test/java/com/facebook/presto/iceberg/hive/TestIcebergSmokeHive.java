@@ -15,10 +15,8 @@ package com.facebook.presto.iceberg.hive;
 
 import com.facebook.presto.Session;
 import com.facebook.presto.iceberg.IcebergDistributedSmokeTestBase;
-import com.facebook.presto.tests.DistributedQueryRunner;
 import org.testng.annotations.Test;
 
-import java.io.File;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -83,12 +81,5 @@ public class TestIcebergSmokeHive
         finally {
             dropTable(session, "test_concurrent_insert");
         }
-    }
-
-    @Override
-    protected String getLocation(String schema, String table)
-    {
-        File tempLocation = ((DistributedQueryRunner) getQueryRunner()).getCoordinator().getDataDirectory().toFile();
-        return format("%scatalog/%s/%s", tempLocation.toURI(), schema, table);
     }
 }

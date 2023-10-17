@@ -32,21 +32,17 @@ class TaskManager {
  public:
   TaskManager();
 
-  /// Invoked by Presto server shutdown to wait for all the tasks to complete
-  /// and cleanup the completed tasks.
-  void shutdown();
+  void setBaseUri(const std::string& baseUri) {
+    baseUri_ = baseUri;
+  }
 
-  void setBaseUri(const std::string& baseUri);
+  void setNodeId(const std::string& nodeId) {
+    nodeId_ = nodeId;
+  }
 
-  void setNodeId(const std::string& nodeId);
-
-  void setBaseSpillDirectory(const std::string& baseSpillDirectory);
-
-  /// Sets the time (ms) that a task is considered to be old for cleanup since
-  /// its completion.
-  void setOldTaskCleanUpMs(int32_t oldTaskCleanUpMs);
-
-  TaskMap tasks() const;
+  TaskMap tasks() const {
+    return taskMap_.withRLock([](const auto& tasks) { return tasks; });
+  }
 
   void abortResults(const protocol::TaskId& taskId, long bufferId);
 
@@ -92,6 +88,9 @@ class TaskManager {
   /// Old is being defined by the lifetime of the task.
   size_t cleanOldTasks();
 
+  /// Invoked by Presto server shutdown to wait for all the tasks to complete.
+  void waitForTasksToComplete();
+
   folly::Future<std::unique_ptr<protocol::TaskInfo>> getTaskInfo(
       const protocol::TaskId& taskId,
       bool summarize,
@@ -128,7 +127,9 @@ class TaskManager {
   /// threads in tasks that were requested to yield.
   int32_t yieldTasks(int32_t numTargetThreadsToYield, int32_t timeSliceMicros);
 
-  const QueryContextManager* getQueryContextManager() const;
+  const QueryContextManager* getQueryContextManager() const {
+    return &queryContextManager_;
+  }
 
   inline size_t getNumTasks() const {
     return taskMap_.rlock()->size();
@@ -151,13 +152,14 @@ class TaskManager {
       const protocol::TaskId& taskId,
       bool includeNodeInSpillPath);
 
- private:
+ public:
   static constexpr folly::StringPiece kMaxDriversPerTask{
       "max_drivers_per_task"};
   static constexpr folly::StringPiece kConcurrentLifespansPerTask{
       "concurrent_lifespans_per_task"};
   static constexpr folly::StringPiece kSessionTimezone{"session_timezone"};
 
+ private:
   std::unique_ptr<protocol::TaskInfo> createOrUpdateTask(
       const protocol::TaskId& taskId,
       const velox::core::PlanFragment& planFragment,
@@ -170,10 +172,13 @@ class TaskManager {
       const protocol::TaskId& taskId,
       long startProcessCpuTime = 0);
 
+  std::shared_ptr<PrestoTask> findOrCreateTaskLocked(
+      TaskMap& taskMap,
+      const protocol::TaskId& taskId,
+      long startProcessCpuTime = 0);
+
   std::string baseUri_;
   std::string nodeId_;
-  std::string baseSpillDir_;
-  int32_t oldTaskCleanUpMs_;
   std::shared_ptr<velox::exec::PartitionedOutputBufferManager> bufferManager_;
   folly::Synchronized<TaskMap> taskMap_;
   QueryContextManager queryContextManager_;

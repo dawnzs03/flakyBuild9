@@ -26,13 +26,9 @@ namespace facebook::presto {
 /// `location` specifies where the remote function should forward connections
 /// to.
 ///
-/// `prefix`, if not empty, it is added to the names of functions registered
-/// using '.' as a separator, e.g., 'prefix.functionName'.
-///
 /// Returns the number of signatures registered.
-size_t registerRemoteFunctions(
+size_t registerRemoteFuctions(
     const std::string& inputPath,
-    const folly::SocketAddress& location,
-    const std::string& prefix = "");
+    const folly::SocketAddress& location);
 
 } // namespace facebook::presto

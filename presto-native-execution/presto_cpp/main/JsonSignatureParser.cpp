@@ -45,8 +45,7 @@ std::vector<velox::exec::TypeSignature> parseTypeSignatures(
 }
 
 // Parses a single signature.
-JsonSignatureParser::FunctionSignatureItem parseSignature(
-    const folly::dynamic& input) {
+velox::exec::FunctionSignaturePtr parseSignature(const folly::dynamic& input) {
   VELOX_USER_CHECK(
       input.isObject(),
       "Function signature should be an object. Got: {}",
@@ -58,29 +57,25 @@ JsonSignatureParser::FunctionSignatureItem parseSignature(
       (outputType != nullptr) && (paramTypes != nullptr),
       "`outputType` and `paramTypes` are mandatory in a signature.");
 
-  auto* schema = input.get_ptr("schema");
-
   auto paramTypeSignatures = parseTypeSignatures(*paramTypes);
   std::vector<bool> constantArguments(paramTypeSignatures.size(), false);
 
-  return JsonSignatureParser::FunctionSignatureItem{
-      std::make_shared<velox::exec::FunctionSignature>(
-          std::unordered_map<std::string, velox::exec::SignatureVariable>{},
-          parseTypeSignature(*outputType),
-          std::move(paramTypeSignatures),
-          std::move(constantArguments),
-          /*variableArity=*/false),
-      (schema != nullptr) ? schema->asString() : ""};
+  return std::make_shared<velox::exec::FunctionSignature>(
+      std::unordered_map<std::string, velox::exec::SignatureVariable>{},
+      parseTypeSignature(*outputType),
+      std::move(paramTypeSignatures),
+      std::move(constantArguments),
+      /*variableArity=*/false);
 }
 
 // Parses a list of signatures for a function.
-std::vector<JsonSignatureParser::FunctionSignatureItem> parseSignatures(
+std::vector<velox::exec::FunctionSignaturePtr> parseSignatures(
     const folly::dynamic& input) {
   VELOX_USER_CHECK(
       input.isArray(),
       "The value for a function item should be an array of signatures. Got: {}",
       input.typeName());
-  std::vector<JsonSignatureParser::FunctionSignatureItem> signatures;
+  std::vector<velox::exec::FunctionSignaturePtr> signatures;
   signatures.reserve(input.size());
 
   for (const auto& signature : input) {

@@ -140,8 +140,6 @@ public class HistoryBasedPlanStatisticsTracker
                 }
                 double outputPositions = planNodeStats.getPlanNodeOutputPositions();
                 double outputBytes = adjustedOutputBytes(planNode, planNodeStats);
-                double nullJoinBuildKeyCount = planNodeStats.getPlanNodeNullJoinBuildKeyCount();
-                double joinBuildKeyCount = planNodeStats.getPlanNodeJoinBuildKeyCount();
 
                 PlanNode statsEquivalentPlanNode = planNode.getStatsEquivalentPlanNode().get();
                 for (PlanCanonicalizationStrategy strategy : historyBasedPlanCanonicalizationStrategyList()) {
@@ -150,22 +148,15 @@ public class HistoryBasedPlanStatisticsTracker
                     if (planNodeCanonicalInfo.isPresent()) {
                         String hash = planNodeCanonicalInfo.get().getHash();
                         List<PlanStatistics> inputTableStatistics = planNodeCanonicalInfo.get().getInputTableStatistics();
-                        PlanNodeWithHash planNodeWithHash = new PlanNodeWithHash(statsEquivalentPlanNode, Optional.of(hash));
-                        // Plan node added after HistoricalStatisticsEquivalentPlanMarkingOptimizer will have the same hash as its source node. If the source node is join node,
-                        // the newly added node will have the same hash with the join but no join statistics, hence we need to overwrite in this case.
-                        if (!planStatistics.containsKey(planNodeWithHash) || nullJoinBuildKeyCount > 0 || joinBuildKeyCount > 0) {
-                            planStatistics.put(
-                                    planNodeWithHash,
-                                    new PlanStatisticsWithSourceInfo(
-                                            planNode.getId(),
-                                            new PlanStatistics(
-                                                    Estimate.of(outputPositions),
-                                                    Double.isNaN(outputBytes) ? Estimate.unknown() : Estimate.of(outputBytes),
-                                                    1.0,
-                                                    Estimate.of(nullJoinBuildKeyCount),
-                                                    Estimate.of(joinBuildKeyCount)),
-                                            new HistoryBasedSourceInfo(Optional.of(hash), Optional.of(inputTableStatistics))));
-                        }
+                        planStatistics.putIfAbsent(
+                                new PlanNodeWithHash(statsEquivalentPlanNode, Optional.of(hash)),
+                                new PlanStatisticsWithSourceInfo(
+                                        planNode.getId(),
+                                        new PlanStatistics(
+                                                Estimate.of(outputPositions),
+                                                Double.isNaN(outputBytes) ? Estimate.unknown() : Estimate.of(outputBytes),
+                                                1.0),
+                                        new HistoryBasedSourceInfo(Optional.of(hash), Optional.of(inputTableStatistics))));
                     }
                 }
             }
@@ -197,9 +188,6 @@ public class HistoryBasedPlanStatisticsTracker
     public void updateStatistics(QueryInfo queryInfo)
     {
         Session session = queryInfo.getSession().toSession(sessionPropertyManager);
-        if (!trackHistoryBasedPlanStatisticsEnabled(session)) {
-            return;
-        }
         Map<PlanNodeWithHash, PlanStatisticsWithSourceInfo> planStatistics = getQueryStats(queryInfo);
         Map<PlanNodeWithHash, HistoricalPlanStatistics> historicalPlanStatisticsMap =
                 historyBasedPlanStatisticsProvider.get().getStats(planStatistics.keySet().stream().collect(toImmutableList()), getHistoryBasedOptimizerTimeoutLimit(session).toMillis());

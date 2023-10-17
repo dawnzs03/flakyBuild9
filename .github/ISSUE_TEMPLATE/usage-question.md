@@ -1,6 +1,7 @@
 ---
 name: Usage Question
 about: Report an issue faced while using Presto
+title: '[USAGE]'
 labels: usage
 
 ---

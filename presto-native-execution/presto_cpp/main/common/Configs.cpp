@@ -253,15 +253,12 @@ SystemConfig::SystemConfig() {
           STR_PROP(kUseMmapArena, "false"),
           NUM_PROP(kMmapArenaCapacityRatio, 10),
           STR_PROP(kUseMmapAllocator, "true"),
-          STR_PROP(kMemoryArbitratorKind, ""),
           STR_PROP(kEnableVeloxTaskLogging, "false"),
           STR_PROP(kEnableVeloxExprSetLogging, "false"),
           NUM_PROP(kLocalShuffleMaxPartitionBytes, 268435456),
           STR_PROP(kShuffleName, ""),
-          STR_PROP(kRemoteFunctionServerCatalogName, ""),
           STR_PROP(kHttpEnableAccessLog, "false"),
           STR_PROP(kHttpEnableStatsFilter, "false"),
-          STR_PROP(kHttpEnableEndpointLatencyFilter, "false"),
           STR_PROP(kRegisterTestFunctions, "false"),
           NUM_PROP(kHttpMaxAllocateBytes, 65536),
           STR_PROP(kQueryMaxMemoryPerNode, "4GB"),
@@ -276,7 +273,6 @@ SystemConfig::SystemConfig() {
           STR_PROP(kExchangeRequestTimeout, "10s"),
           NUM_PROP(kTaskRunTimeSliceMicros, 50'000),
           BOOL_PROP(kIncludeNodeInSpillPath, false),
-          NUM_PROP(kOldTaskCleanUpMs, 60'000),
       };
 }
 
@@ -332,42 +328,12 @@ folly::Optional<std::string> SystemConfig::discoveryUri() const {
 
 folly::Optional<folly::SocketAddress>
 SystemConfig::remoteFunctionServerLocation() const {
-  // First check if there is a UDS path registered. If there's one, use it.
-  auto remoteServerUdsPath =
-      optionalProperty(kRemoteFunctionServerThriftUdsPath);
-  if (remoteServerUdsPath.hasValue()) {
-    return folly::SocketAddress::makeFromPath(remoteServerUdsPath.value());
-  }
-
-  // Otherwise, check for address and port parameters.
-  auto remoteServerAddress =
-      optionalProperty(kRemoteFunctionServerThriftAddress);
   auto remoteServerPort =
       optionalProperty<uint16_t>(kRemoteFunctionServerThriftPort);
-
   if (remoteServerPort.hasValue()) {
-    // Fallback to localhost if address is not specified.
-    return remoteServerAddress.hasValue()
-        ? folly::
-              SocketAddress{remoteServerAddress.value(), remoteServerPort.value()}
-        : folly::SocketAddress{"::1", remoteServerPort.value()};
-  } else if (remoteServerAddress.hasValue()) {
-    VELOX_FAIL(
-        "Remote function server port not provided using '{}'.",
-        kRemoteFunctionServerThriftPort);
+    return folly::SocketAddress{"::1", remoteServerPort.value()};
   }
-
-  // No remote function server configured.
   return folly::none;
-}
-
-folly::Optional<std::string>
-SystemConfig::remoteFunctionServerSignatureFilesDirectoryPath() const {
-  return optionalProperty(kRemoteFunctionServerSignatureFilesDirectoryPath);
-}
-
-std::string SystemConfig::remoteFunctionServerCatalogName() const {
-  return optionalProperty(kRemoteFunctionServerCatalogName).value();
 }
 
 int32_t SystemConfig::maxDriversPerTask() const {
@@ -462,8 +428,8 @@ bool SystemConfig::useMmapAllocator() const {
   return optionalProperty<bool>(kUseMmapAllocator).value();
 }
 
-std::string SystemConfig::memoryArbitratorKind() const {
-  return optionalProperty<std::string>(kMemoryArbitratorKind).value_or("");
+bool SystemConfig::enableMemoryArbitration() const {
+  return optionalProperty<bool>(kEnableMemoryArbitration).value_or(false);
 }
 
 uint64_t SystemConfig::memoryPoolInitCapacity() const {
@@ -490,10 +456,6 @@ bool SystemConfig::enableHttpAccessLog() const {
 
 bool SystemConfig::enableHttpStatsFilter() const {
   return optionalProperty<bool>(kHttpEnableStatsFilter).value();
-}
-
-bool SystemConfig::enableHttpEndpointLatencyFilter() const {
-  return optionalProperty<bool>(kHttpEnableEndpointLatencyFilter).value();
 }
 
 bool SystemConfig::registerTestFunctions() const {
@@ -547,10 +509,6 @@ int32_t SystemConfig::taskRunTimeSliceMicros() const {
 
 bool SystemConfig::includeNodeInSpillPath() const {
   return optionalProperty<bool>(kIncludeNodeInSpillPath).value();
-}
-
-int32_t SystemConfig::oldTaskCleanUpMs() const {
-  return optionalProperty<int32_t>(kOldTaskCleanUpMs).value();
 }
 
 NodeConfig::NodeConfig() {

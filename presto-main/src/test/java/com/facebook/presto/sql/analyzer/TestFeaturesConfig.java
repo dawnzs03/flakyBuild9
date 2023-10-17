@@ -227,7 +227,6 @@ public class TestFeaturesConfig
                 .setInPredicatesAsInnerJoinsEnabled(false)
                 .setPushAggregationBelowJoinByteReductionThreshold(1)
                 .setPrefilterForGroupbyLimit(false)
-                .setFieldNamesInJsonCastEnabled(false)
                 .setOptimizeJoinProbeForEmptyBuildRuntimeEnabled(false)
                 .setUseDefaultsForCorrelatedAggregationPushdownThroughOuterJoins(true)
                 .setMergeDuplicateAggregationsEnabled(true)
@@ -239,8 +238,7 @@ public class TestFeaturesConfig
                 .setRewriteCrossJoinWithArrayContainsFilterToInnerJoin(true)
                 .setLeftJoinNullFilterToSemiJoin(true)
                 .setBroadcastJoinWithSmallBuildUnknownProbe(false)
-                .setAddPartialNodeForRowNumberWithLimitEnabled(true)
-                .setPullUpExpressionFromLambdaEnabled(true));
+                .setAddPartialNodeForRowNumberWithLimitEnabled(true));
     }
 
     @Test
@@ -415,7 +413,6 @@ public class TestFeaturesConfig
                 .put("optimizer.in-predicates-as-inner-joins-enabled", "true")
                 .put("optimizer.push-aggregation-below-join-byte-reduction-threshold", "0.9")
                 .put("optimizer.prefilter-for-groupby-limit", "true")
-                .put("field-names-in-json-cast-enabled", "true")
                 .put("optimizer.optimize-probe-for-empty-build-runtime", "true")
                 .put("optimizer.use-defaults-for-correlated-aggregation-pushdown-through-outer-joins", "false")
                 .put("optimizer.merge-duplicate-aggregations", "false")
@@ -428,7 +425,6 @@ public class TestFeaturesConfig
                 .put("optimizer.rewrite-left-join-with-null-filter-to-semi-join", "false")
                 .put("experimental.optimizer.broadcast-join-with-small-build-unknown-probe", "true")
                 .put("optimizer.add-partial-node-for-row-number-with-limit", "false")
-                .put("optimizer.pull-up-expression-from-lambda", "false")
                 .build();
 
         FeaturesConfig expected = new FeaturesConfig()
@@ -602,7 +598,6 @@ public class TestFeaturesConfig
                 .setPushAggregationBelowJoinByteReductionThreshold(0.9)
                 .setPrefilterForGroupbyLimit(true)
                 .setOptimizeJoinProbeForEmptyBuildRuntimeEnabled(true)
-                .setFieldNamesInJsonCastEnabled(true)
                 .setUseDefaultsForCorrelatedAggregationPushdownThroughOuterJoins(false)
                 .setMergeDuplicateAggregationsEnabled(false)
                 .setMergeAggregationsWithAndWithoutFilter(true)
@@ -613,8 +608,7 @@ public class TestFeaturesConfig
                 .setRewriteCrossJoinWithArrayContainsFilterToInnerJoin(false)
                 .setLeftJoinNullFilterToSemiJoin(false)
                 .setBroadcastJoinWithSmallBuildUnknownProbe(true)
-                .setAddPartialNodeForRowNumberWithLimitEnabled(false)
-                .setPullUpExpressionFromLambdaEnabled(false);
+                .setAddPartialNodeForRowNumberWithLimitEnabled(false);
         assertFullMapping(properties, expected);
     }
 

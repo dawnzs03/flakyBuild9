@@ -14,13 +14,9 @@
 package com.facebook.presto.iceberg.hadoop;
 
 import com.facebook.presto.iceberg.IcebergDistributedSmokeTestBase;
-import com.facebook.presto.tests.DistributedQueryRunner;
 import org.testng.annotations.Test;
 
-import java.io.File;
-
 import static com.facebook.presto.iceberg.CatalogType.HADOOP;
-import static java.lang.String.format;
 
 @Test
 public class TestIcebergSmokeHadoop
@@ -29,12 +25,5 @@ public class TestIcebergSmokeHadoop
     public TestIcebergSmokeHadoop()
     {
         super(HADOOP);
-    }
-
-    @Override
-    protected String getLocation(String schema, String table)
-    {
-        File tempLocation = ((DistributedQueryRunner) getQueryRunner()).getCoordinator().getDataDirectory().toFile();
-        return format("%s%s/%s", tempLocation.toURI(), schema, table);
     }
 }

@@ -756,12 +756,6 @@ public final class PlanMatchPattern
         return this;
     }
 
-    public PlanMatchPattern withJoinBuildKeyStatistics(double expectedJoinBuildKeyCount, double expectedNullJoinBuildKeyCount)
-    {
-        matchers.add(new StatsJoinBuildKeyCountMatcher(expectedJoinBuildKeyCount, expectedNullJoinBuildKeyCount));
-        return this;
-    }
-
     public static RvalueMatcher columnReference(String tableName, String columnName)
     {
         return new ColumnReference(tableName, columnName);

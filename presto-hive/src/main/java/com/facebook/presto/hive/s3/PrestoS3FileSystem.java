@@ -28,7 +28,6 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.event.ProgressEvent;
 import com.amazonaws.event.ProgressEventType;
 import com.amazonaws.event.ProgressListener;
-import com.amazonaws.metrics.RequestMetricCollector;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
@@ -164,15 +163,14 @@ public class PrestoS3FileSystem
 {
     private static final Logger log = Logger.get(PrestoS3FileSystem.class);
     private static final PrestoS3FileSystemStats STATS = new PrestoS3FileSystemStats();
-    private static RequestMetricCollector metricCollector = new PrestoS3FileSystemMetricCollector(STATS);
+    private static final PrestoS3FileSystemMetricCollector METRIC_COLLECTOR = new PrestoS3FileSystemMetricCollector(STATS);
     private static final String DIRECTORY_SUFFIX = "_$folder$";
     private static final DataSize BLOCK_SIZE = new DataSize(32, MEGABYTE);
     private static final DataSize MAX_SKIP_SIZE = new DataSize(1, MEGABYTE);
     private static final String PATH_SEPARATOR = "/";
     private static final Duration BACKOFF_MIN_SLEEP = new Duration(1, SECONDS);
     private static final int HTTP_RANGE_NOT_SATISFIABLE = 416;
-    private static final MediaType X_DIRECTORY_MEDIA_TYPE = MediaType.create("application", "x-directory");
-    private static final MediaType OCTET_STREAM_MEDIA_TYPE = MediaType.create("application", "octet-stream");
+    private static final MediaType DIRECTORY_MEDIA_TYPE = MediaType.create("application", "x-directory");
     private static final Set<String> GLACIER_STORAGE_CLASSES = ImmutableSet.of(Glacier.toString(), DeepArchive.toString());
 
     private URI uri;
@@ -356,15 +354,15 @@ public class PrestoS3FileSystem
     {
         if (path.getName().isEmpty()) {
             // the bucket root requires special handling
-            if (getS3ObjectMetadata(path).getObjectMetadata() != null) {
+            if (getS3ObjectMetadata(path) != null) {
                 return new FileStatus(0, true, 1, 0, 0, qualifiedPath(path));
             }
             throw new FileNotFoundException("File does not exist: " + path);
         }
 
-        PrestoS3ObjectMetadata metadata = getS3ObjectMetadata(path);
+        ObjectMetadata metadata = getS3ObjectMetadata(path);
 
-        if (metadata.getObjectMetadata() == null) {
+        if (metadata == null) {
             // check if this path is a directory
             Iterator<LocatedFileStatus> iterator = listPrefix(path, OptionalInt.of(1), ListingMode.SHALLOW_ALL);
             if (iterator.hasNext()) {
@@ -374,31 +372,13 @@ public class PrestoS3FileSystem
         }
 
         return new FileStatus(
-                getObjectSize(path, metadata.getObjectMetadata()),
+                getObjectSize(path, metadata),
                 // Some directories (e.g. uploaded through S3 GUI) return a charset in the Content-Type header
-                isDirectory(metadata),
+                MediaType.parse(metadata.getContentType()).is(DIRECTORY_MEDIA_TYPE),
                 1,
                 BLOCK_SIZE.toBytes(),
-                lastModifiedTime(metadata.getObjectMetadata()),
+                lastModifiedTime(metadata),
                 qualifiedPath(path));
-    }
-
-    private static boolean isDirectory(PrestoS3ObjectMetadata metadata)
-    {
-        ObjectMetadata objectMetadata = metadata.getObjectMetadata();
-        MediaType mediaType;
-        try {
-            mediaType = MediaType.parse(objectMetadata.getContentType());
-        }
-        catch (IllegalArgumentException e) {
-            log.debug(e, "Failed to parse contentType [%s], assuming not a directory", objectMetadata.getContentType());
-            return false;
-        }
-
-        return mediaType.is(X_DIRECTORY_MEDIA_TYPE) ||
-                (mediaType.is(OCTET_STREAM_MEDIA_TYPE)
-                        && metadata.isKeyNeedsPathSeparator()
-                        && objectMetadata.getContentLength() == 0);
     }
 
     private static long getObjectSize(Path path, ObjectMetadata metadata)
@@ -670,16 +650,16 @@ public class PrestoS3FileSystem
     }
 
     @VisibleForTesting
-    PrestoS3ObjectMetadata getS3ObjectMetadata(Path path)
+    ObjectMetadata getS3ObjectMetadata(Path path)
             throws IOException
     {
         String bucketName = getBucketName(uri);
         String key = keyFromPath(path);
         ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(path, bucketName, key);
         if (s3ObjectMetadata == null && !key.isEmpty()) {
-            return new PrestoS3ObjectMetadata(getS3ObjectMetadata(path, bucketName, key + PATH_SEPARATOR), true);
+            return getS3ObjectMetadata(path, bucketName, key + PATH_SEPARATOR);
         }
-        return new PrestoS3ObjectMetadata(s3ObjectMetadata, false);
+        return s3ObjectMetadata;
     }
 
     private ObjectMetadata getS3ObjectMetadata(Path path, String bucketName, String key)
@@ -777,13 +757,13 @@ public class PrestoS3FileSystem
                     .withCredentials(credentialsProvider)
                     .withEncryptionMaterials(encryptionMaterialsProvider.get())
                     .withClientConfiguration(clientConfig)
-                    .withMetricsCollector(metricCollector);
+                    .withMetricsCollector(METRIC_COLLECTOR);
         }
         else {
             clientBuilder = AmazonS3Client.builder()
                     .withCredentials(credentialsProvider)
                     .withClientConfiguration(clientConfig)
-                    .withMetricsCollector(metricCollector);
+                    .withMetricsCollector(METRIC_COLLECTOR);
         }
 
         boolean regionOrEndpointSet = false;
@@ -901,33 +881,6 @@ public class PrestoS3FileSystem
             return Optional.empty();
         }
         return Optional.of(new BasicAWSCredentials(accessKey, secretKey));
-    }
-
-    public static class PrestoS3ObjectMetadata
-    {
-        private final ObjectMetadata objectMetadata;
-        /**
-         * Certain filesystems treat empty directories as zero byte objects and their name ends with a path separator, i.e. '/'.
-         * To fetch ObjectMetadata for such keys, the path separator needs to be appended to the key otherwise null is returned.
-         * This field denotes whether a path separator was appended to the key while fetching the metadata for given path.
-         */
-        private final boolean keyNeedsPathSeparator;
-
-        public PrestoS3ObjectMetadata(ObjectMetadata objectMetadata, boolean keyNeedsPathSeparator)
-        {
-            this.objectMetadata = objectMetadata;
-            this.keyNeedsPathSeparator = keyNeedsPathSeparator;
-        }
-
-        public ObjectMetadata getObjectMetadata()
-        {
-            return objectMetadata;
-        }
-
-        public boolean isKeyNeedsPathSeparator()
-        {
-            return keyNeedsPathSeparator;
-        }
     }
 
     private static class PrestoS3InputStream
@@ -1412,15 +1365,5 @@ public class PrestoS3FileSystem
     public static PrestoS3FileSystemStats getFileSystemStats()
     {
         return STATS;
-    }
-
-    public static RequestMetricCollector getMetricsCollector()
-    {
-        return metricCollector;
-    }
-
-    public static void setMetricsCollector(RequestMetricCollector customMetricCollector)
-    {
-        metricCollector = customMetricCollector;
     }
 }

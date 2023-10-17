@@ -56,9 +56,6 @@ public class PlanNodeStatsEstimate
 
     private final SourceInfo sourceInfo;
 
-    private final double nullJoinBuildKeyCount;
-    private final double joinBuildKeyCount;
-
     public static PlanNodeStatsEstimate unknown()
     {
         return UNKNOWN;
@@ -81,19 +78,11 @@ public class PlanNodeStatsEstimate
 
     public PlanNodeStatsEstimate(double outputRowCount, double totalSize, PMap<VariableReferenceExpression, VariableStatsEstimate> variableStatistics, SourceInfo sourceInfo)
     {
-        this(outputRowCount, totalSize, variableStatistics, sourceInfo, NaN, NaN);
-    }
-
-    public PlanNodeStatsEstimate(double outputRowCount, double totalSize, PMap<VariableReferenceExpression, VariableStatsEstimate> variableStatistics, SourceInfo sourceInfo,
-            double nullJoinBuildKeyCount, double joinBuildKeyCount)
-    {
         checkArgument(isNaN(outputRowCount) || outputRowCount >= 0, "outputRowCount cannot be negative");
         this.outputRowCount = outputRowCount;
         this.totalSize = totalSize;
         this.variableStatistics = variableStatistics;
         this.sourceInfo = requireNonNull(sourceInfo, "SourceInfo is null");
-        this.nullJoinBuildKeyCount = nullJoinBuildKeyCount;
-        this.joinBuildKeyCount = joinBuildKeyCount;
     }
 
     /**
@@ -116,16 +105,6 @@ public class PlanNodeStatsEstimate
     public boolean isConfident()
     {
         return sourceInfo.isConfident();
-    }
-
-    public double getNullJoinBuildKeyCount()
-    {
-        return nullJoinBuildKeyCount;
-    }
-
-    public double getJoinBuildKeyCount()
-    {
-        return joinBuildKeyCount;
     }
 
     public SourceInfo getSourceInfo()
@@ -246,9 +225,7 @@ public class PlanNodeStatsEstimate
                     planStatistics.getRowCount().getValue(),
                     planStatistics.getOutputSize().getValue(),
                     variableStatistics,
-                    statsSourceInfo,
-                    planStatistics.getNullJoinBuildKeyCount().getValue(),
-                    planStatistics.getJoinBuildKeyCount().getValue());
+                    statsSourceInfo);
         }
         return this;
     }
@@ -291,11 +268,9 @@ public class PlanNodeStatsEstimate
         return new PlanStatisticsWithSourceInfo(
                 id,
                 new PlanStatistics(
-                        Estimate.estimateFromDouble(outputRowCount),
-                        Estimate.estimateFromDouble(totalSize),
-                        sourceInfo.isConfident() ? 1 : 0,
-                        Estimate.estimateFromDouble(nullJoinBuildKeyCount),
-                        Estimate.estimateFromDouble(joinBuildKeyCount)),
+                        Double.isNaN(outputRowCount) ? Estimate.unknown() : Estimate.of(outputRowCount),
+                        Double.isNaN(totalSize) ? Estimate.unknown() : Estimate.of(totalSize),
+                        sourceInfo.isConfident() ? 1 : 0),
                 sourceInfo);
     }
 

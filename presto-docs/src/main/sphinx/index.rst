@@ -12,7 +12,6 @@ Presto Documentation
     cache
     optimizer
     connector
-    plugin
     functions
     language
     sql

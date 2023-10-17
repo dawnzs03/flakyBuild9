@@ -133,34 +133,20 @@ void registerPrestoCppCounters() {
   REPORT_ADD_STAT_EXPORT_TYPE(
       kCounterMemoryCacheNumCumulativeHit, facebook::velox::StatType::AVG);
   REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterMemoryCacheNumHit, facebook::velox::StatType::AVG);
-  REPORT_ADD_STAT_EXPORT_TYPE(
       kCounterMemoryCacheCumulativeHitBytes, facebook::velox::StatType::AVG);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterMemoryCacheHitBytes, facebook::velox::StatType::AVG);
   REPORT_ADD_STAT_EXPORT_TYPE(
       kCounterMemoryCacheNumCumulativeNew, facebook::velox::StatType::AVG);
   REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterMemoryCacheNumNew, facebook::velox::StatType::AVG);
-  REPORT_ADD_STAT_EXPORT_TYPE(
       kCounterMemoryCacheNumCumulativeEvict, facebook::velox::StatType::AVG);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterMemoryCacheNumEvict, facebook::velox::StatType::AVG);
   REPORT_ADD_STAT_EXPORT_TYPE(
       kCounterMemoryCacheNumCumulativeEvictChecks,
       facebook::velox::StatType::AVG);
   REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterMemoryCacheNumEvictChecks, facebook::velox::StatType::AVG);
-  REPORT_ADD_STAT_EXPORT_TYPE(
       kCounterMemoryCacheNumCumulativeWaitExclusive,
       facebook::velox::StatType::AVG);
   REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterMemoryCacheNumWaitExclusive, facebook::velox::StatType::AVG);
-  REPORT_ADD_STAT_EXPORT_TYPE(
       kCounterMemoryCacheNumCumulativeAllocClocks,
       facebook::velox::StatType::AVG);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterMemoryCacheNumAllocClocks, facebook::velox::StatType::AVG);
   REPORT_ADD_STAT_EXPORT_TYPE(
       kCounterSsdCacheCumulativeReadEntries, facebook::velox::StatType::AVG);
   REPORT_ADD_STAT_EXPORT_TYPE(
@@ -195,28 +181,6 @@ void registerPrestoCppCounters() {
   REPORT_ADD_STAT_EXPORT_TYPE(
       kCounterSsdCacheCumulativeReadCheckpointErrors,
       facebook::velox::StatType::AVG);
-  // Disk spilling stats.
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterSpillRuns, facebook::velox::StatType::SUM);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterSpilledFiles, facebook::velox::StatType::SUM);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterSpilledRows, facebook::velox::StatType::SUM);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterSpilledBytes, facebook::velox::StatType::SUM);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterSpillFillTimeUs, facebook::velox::StatType::SUM);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterSpillSortTimeUs, facebook::velox::StatType::SUM);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterSpillSerializationTimeUs, facebook::velox::StatType::SUM);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterSpillDiskWrites, facebook::velox::StatType::SUM);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterSpillFlushTimeUs, facebook::velox::StatType::SUM);
-  REPORT_ADD_STAT_EXPORT_TYPE(
-      kCounterSpillWriteTimeUs, facebook::velox::StatType::SUM);
-
   // NOTE: Metrics type exporting for file handle cache counters are in
   // PeriodicTaskManager because they have dynamic names. The following counters
   // have their type exported there:

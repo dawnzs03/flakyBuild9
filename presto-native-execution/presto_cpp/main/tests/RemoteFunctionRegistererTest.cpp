@@ -43,13 +43,15 @@ TEST_F(RemoteFunctionRegistererTest, singleFile) {
           "outputType": "varchar",
           "paramTypes": [
             "varchar"
-          ]
+          ],
+          "schema": "mock_schema"
         }
       ],
       "mock2": [
         {
           "outputType": "boolean",
-          "paramTypes": []
+          "paramTypes": [],
+          "schema": "mock_schema"
         }
       ]
     }
@@ -64,61 +66,16 @@ TEST_F(RemoteFunctionRegistererTest, singleFile) {
   EXPECT_TRUE(exec::getVectorFunctionSignatures("mock2") == std::nullopt);
 
   // Read and register functions in that file.
-  EXPECT_EQ(registerRemoteFunctions(path->path, {}), 2);
+  EXPECT_EQ(registerRemoteFuctions(path->path, {}), 2);
   EXPECT_TRUE(exec::getVectorFunctionSignatures("mock1") != std::nullopt);
   EXPECT_TRUE(exec::getVectorFunctionSignatures("mock2") != std::nullopt);
-}
-
-TEST_F(RemoteFunctionRegistererTest, prefixes) {
-  std::string_view json = R"(
-  {
-    "udfSignatureMap": {
-      "mock3": [
-        {
-          "outputType": "varchar",
-          "paramTypes": [
-            "varchar"
-          ],
-          "schema": "mock_schema"
-        }
-      ]
-    }
-  })";
-
-  // Write to a single output file.
-  auto path = exec::test::TempFilePath::create();
-  writeToFile(path->path, json);
-
-  EXPECT_TRUE(exec::getVectorFunctionSignatures("mock3") == std::nullopt);
-  EXPECT_TRUE(
-      exec::getVectorFunctionSignatures("mock_schema.mock3") == std::nullopt);
-  EXPECT_TRUE(
-      exec::getVectorFunctionSignatures("json.mock_schema.mock3") ==
-      std::nullopt);
-
-  EXPECT_EQ(registerRemoteFunctions(path->path, {}), 1);
-
-  EXPECT_TRUE(exec::getVectorFunctionSignatures("mock3") == std::nullopt);
-  EXPECT_TRUE(
-      exec::getVectorFunctionSignatures("mock_schema.mock3") != std::nullopt);
-  EXPECT_TRUE(
-      exec::getVectorFunctionSignatures("json.mock_schema.mock3") ==
-      std::nullopt);
-
-  EXPECT_EQ(registerRemoteFunctions(path->path, {}, "json"), 1);
-
-  EXPECT_TRUE(exec::getVectorFunctionSignatures("mock3") == std::nullopt);
-  EXPECT_TRUE(
-      exec::getVectorFunctionSignatures("mock_schema.mock3") != std::nullopt);
-  EXPECT_TRUE(
-      exec::getVectorFunctionSignatures("json.mock_schema.mock3") !=
-      std::nullopt);
 }
 
 std::string getJson(const std::string& functionName) {
   return fmt::format(
       "{{ \"udfSignatureMap\": {{ \"{}\": [ "
-      "  {{ \"outputType\": \"boolean\",\"paramTypes\": []}}"
+      "  {{ \"outputType\": \"boolean\",\"paramTypes\": [],"
+      "     \"schema\": \"mock_schema\" }}"
       " ] }} }}",
       functionName);
 }
@@ -140,7 +97,7 @@ TEST_F(RemoteFunctionRegistererTest, directory) {
   fs::create_directory(tempSubdir);
   writeToFile(tempSubdir + "/remote3.json", getJson("mock3"));
 
-  EXPECT_EQ(registerRemoteFunctions(tempDir->path, {}), 3);
+  EXPECT_EQ(registerRemoteFuctions(tempDir->path, {}), 3);
 }
 
 } // namespace

@@ -248,9 +248,7 @@ public class TaskResourceUtils
                 operatorStats.getSpilledDataSize(),
                 operatorStats.getBlockedReason(),
                 operatorStats.getRuntimeStats(),
-                convertToOperatorInfoUnion(operatorStats.getInfo()),
-                operatorStats.getNullJoinBuildKeyCount(),
-                operatorStats.getJoinBuildKeyCount());
+                convertToOperatorInfoUnion(operatorStats.getInfo()));
     }
 
     private static MetadataUpdates convertToThriftMetadataUpdates(
@@ -480,9 +478,7 @@ public class TaskResourceUtils
                 thriftOperatorStats.getSpilledDataSize(),
                 thriftOperatorStats.getBlockedReason(),
                 convertToOperatorInfo(thriftOperatorStats.getInfoUnion()),
-                thriftOperatorStats.getRuntimeStats(),
-                thriftOperatorStats.getNullJoinBuildKeyCount(),
-                thriftOperatorStats.getJoinBuildKeyCount());
+                thriftOperatorStats.getRuntimeStats());
     }
 
     private static MetadataUpdates convertFromThriftMetadataUpdates(

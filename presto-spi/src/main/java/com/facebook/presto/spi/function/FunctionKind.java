@@ -13,26 +13,9 @@
  */
 package com.facebook.presto.spi.function;
 
-import com.facebook.drift.annotations.ThriftEnum;
-import com.facebook.drift.annotations.ThriftEnumValue;
-
-@ThriftEnum
 public enum FunctionKind
 {
-    SCALAR(1),
-    AGGREGATE(2),
-    WINDOW(3);
-
-    private final int value;
-
-    FunctionKind(int value)
-    {
-        this.value = value;
-    }
-
-    @ThriftEnumValue
-    public int getValue()
-    {
-        return value;
-    }
+    SCALAR,
+    AGGREGATE,
+    WINDOW
 }

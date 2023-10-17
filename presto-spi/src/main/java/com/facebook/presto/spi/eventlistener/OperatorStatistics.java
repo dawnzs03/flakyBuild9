@@ -75,9 +75,6 @@ public class OperatorStatistics
 
     private final RuntimeStats runtimeStats;
 
-    private final double estimateOutputDataSize;
-    private final double estimateOutputPositions;
-
     public OperatorStatistics(
             int stageId,
             int stageExecutionId,
@@ -124,9 +121,7 @@ public class OperatorStatistics
             DataSize spilledDataSize,
 
             Optional<String> info,
-            RuntimeStats runtimeStats,
-            double estimateOutputDataSize,
-            double estimateOutputPositions)
+            RuntimeStats runtimeStats)
     {
         this.stageId = stageId;
         this.stageExecutionId = stageExecutionId;
@@ -176,9 +171,6 @@ public class OperatorStatistics
 
         this.info = requireNonNull(info, "info is null");
         this.runtimeStats = runtimeStats;
-
-        this.estimateOutputDataSize = estimateOutputDataSize;
-        this.estimateOutputPositions = estimateOutputPositions;
     }
 
     public int getStageId()
@@ -364,15 +356,5 @@ public class OperatorStatistics
     public RuntimeStats getRuntimeStats()
     {
         return runtimeStats;
-    }
-
-    public double getEstimateOutputDataSize()
-    {
-        return estimateOutputDataSize;
-    }
-
-    public double getEstimateOutputPositions()
-    {
-        return estimateOutputPositions;
     }
 }

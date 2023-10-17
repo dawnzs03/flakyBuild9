@@ -135,40 +135,6 @@ constexpr folly::StringPiece kCounterMmapRawAllocBytesSmall{
 constexpr folly::StringPiece kCounterExchangeSourcePeakQueuedBytes{
     "presto_cpp.exchange_source_peak_queued_bytes"};
 
-/// ================== Disk Spilling Counters =================
-
-/// The number of times that spilling runs on a velox operator.
-constexpr folly::StringPiece kCounterSpillRuns{"presto_cpp.spill_run_count"};
-/// The number of bytes spilled to disks.
-///
-/// NOTE: if compression is enabled, this counts the compressed bytes.
-constexpr folly::StringPiece kCounterSpilledFiles{
-    "presto_cpp.spilled_file_count"};
-/// The number of spilled rows.
-constexpr folly::StringPiece kCounterSpilledRows{
-    "presto_cpp.spilled_row_count"};
-/// The number of spilled files.
-constexpr folly::StringPiece kCounterSpilledBytes{"presto_cpp.spilled_bytes"};
-/// The time spent on filling rows for spilling.
-constexpr folly::StringPiece kCounterSpillFillTimeUs{
-    "presto_cpp.spill_fill_time_us"};
-/// The time spent on sorting rows for spilling.
-constexpr folly::StringPiece kCounterSpillSortTimeUs{
-    "presto_cpp.spill_sort_time_us"};
-/// The time spent on serializing rows for spilling.
-constexpr folly::StringPiece kCounterSpillSerializationTimeUs{
-    "presto_cpp.spill_serialization_time_us"};
-/// The number of disk writes to spill rows.
-constexpr folly::StringPiece kCounterSpillDiskWrites{
-    "presto_cpp.spill_disk_write_count"};
-/// The time spent on copy out serialized rows for disk write. If compression
-/// is enabled, this includes the compression time.
-constexpr folly::StringPiece kCounterSpillFlushTimeUs{
-    "presto_cpp.spill_flush_time_us"};
-/// The time spent on writing spilled rows to disk.
-constexpr folly::StringPiece kCounterSpillWriteTimeUs{
-    "presto_cpp.spill_write_time_us"};
-
 /// ================== Cache Counters ==================
 
 /// Total number of cache entries.
@@ -212,53 +178,27 @@ constexpr folly::StringPiece kCounterMemoryCacheSumEvictScore{
 /// does not count.
 constexpr folly::StringPiece kCounterMemoryCacheNumCumulativeHit{
     "presto_cpp.memory_cache_num_cumulative_hit"};
-/// Number of hits (saved IO) since last counter retrieval. The first hit to a
-/// prefetched entry does not count.
-constexpr folly::StringPiece kCounterMemoryCacheNumHit{
-    "presto_cpp.memory_cache_num_hit"};
 /// Cumulated amount of hit bytes (saved IO). The first hit to a prefetched
 /// entry does not count.
 constexpr folly::StringPiece kCounterMemoryCacheCumulativeHitBytes{
     "presto_cpp.memory_cache_cumulative_hit_bytes"};
-/// Amount of hit bytes (saved IO) since last counter retrieval. The first hit
-/// to a prefetched entry does not count.
-constexpr folly::StringPiece kCounterMemoryCacheHitBytes{
-    "presto_cpp.memory_cache_hit_bytes"};
 /// Cumulated number of new entries created.
 constexpr folly::StringPiece kCounterMemoryCacheNumCumulativeNew{
     "presto_cpp.memory_cache_num_cumulative_new"};
-/// Number of new entries created since last counter retrieval.
-constexpr folly::StringPiece kCounterMemoryCacheNumNew{
-    "presto_cpp.memory_cache_num_new"};
 /// Cumulated number of times a valid entry was removed in order to make space.
 constexpr folly::StringPiece kCounterMemoryCacheNumCumulativeEvict{
     "presto_cpp.memory_cache_num_cumulative_evict"};
-/// Number of times a valid entry was removed in order to make space, since last
-/// counter retrieval.
-constexpr folly::StringPiece kCounterMemoryCacheNumEvict{
-    "presto_cpp.memory_cache_num_evict"};
 /// Cumulated number of entries considered for evicting.
 constexpr folly::StringPiece kCounterMemoryCacheNumCumulativeEvictChecks{
     "presto_cpp.memory_cache_num_cumulative_evict_checks"};
-/// Number of entries considered for evicting, since last counter retrieval.
-constexpr folly::StringPiece kCounterMemoryCacheNumEvictChecks{
-    "presto_cpp.memory_cache_num_evict_checks"};
 /// Cumulated number of times a user waited for an entry to transit from
 /// exclusive to shared mode.
 constexpr folly::StringPiece kCounterMemoryCacheNumCumulativeWaitExclusive{
     "presto_cpp.memory_cache_num_cumulative_wait_exclusive"};
-/// Number of times a user waited for an entry to transit from exclusive to
-/// shared mode, since last counter retrieval.
-constexpr folly::StringPiece kCounterMemoryCacheNumWaitExclusive{
-    "presto_cpp.memory_cache_num_wait_exclusive"};
 /// Cumulative clocks spent in allocating or freeing memory for backing cache
 /// entries.
 constexpr folly::StringPiece kCounterMemoryCacheNumCumulativeAllocClocks{
     "presto_cpp.memory_cache_num_cumulative_alloc_clocks"};
-/// Clocks spent in allocating or freeing memory for backing cache entries,
-/// since last counter retrieval
-constexpr folly::StringPiece kCounterMemoryCacheNumAllocClocks{
-    "presto_cpp.memory_cache_num_alloc_clocks"};
 constexpr folly::StringPiece kCounterSsdCacheCumulativeReadEntries{
     "presto_cpp.ssd_cache_cumulative_read_entries"};
 constexpr folly::StringPiece kCounterSsdCacheCumulativeReadBytes{

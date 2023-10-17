@@ -50,7 +50,6 @@ public final class PagesHash
     private final byte[] positionToHashes;
     private final long hashCollisions;
     private final double expectedHashCollisions;
-    private final long positionIsNullCount;
 
     public PagesHash(
             AdaptiveLongBigArray addresses,
@@ -76,7 +75,6 @@ public final class PagesHash
         int positionsInStep = Math.min(positionCount + 1, (int) CACHE_SIZE.toBytes() / Integer.SIZE);
         long[] positionToFullHashes = new long[positionsInStep];
         long hashCollisionsLocal = 0;
-        long positionIsNullCountLocal = 0;
 
         for (int step = 0; step * positionsInStep <= positionCount; step++) {
             int stepBeginPosition = step * positionsInStep;
@@ -97,7 +95,6 @@ public final class PagesHash
             for (int position = 0; position < stepSize; position++) {
                 int realPosition = position + stepBeginPosition;
                 if (isPositionNull(realPosition)) {
-                    ++positionIsNullCountLocal;
                     continue;
                 }
 
@@ -128,7 +125,6 @@ public final class PagesHash
                 sizeOf(key) + sizeOf(positionToHashes);
         hashCollisions = hashCollisionsLocal;
         expectedHashCollisions = estimateNumberOfHashCollisions(positionCount, hashSize);
-        positionIsNullCount = positionIsNullCountLocal;
     }
 
     public final int getChannelCount()
@@ -154,11 +150,6 @@ public final class PagesHash
     public double getExpectedHashCollisions()
     {
         return expectedHashCollisions;
-    }
-
-    public long getPositionIsNullCount()
-    {
-        return positionIsNullCount;
     }
 
     public int getAddressIndex(int position, Page hashChannelsPage)

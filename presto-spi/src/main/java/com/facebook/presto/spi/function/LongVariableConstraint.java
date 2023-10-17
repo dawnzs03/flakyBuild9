@@ -13,21 +13,16 @@
  */
 package com.facebook.presto.spi.function;
 
-import com.facebook.drift.annotations.ThriftConstructor;
-import com.facebook.drift.annotations.ThriftField;
-import com.facebook.drift.annotations.ThriftStruct;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
-@ThriftStruct
 public class LongVariableConstraint
 {
     private final String name;
     private final String expression;
 
-    @ThriftConstructor
     @JsonCreator
     public LongVariableConstraint(
             @JsonProperty("name") String name,
@@ -37,14 +32,12 @@ public class LongVariableConstraint
         this.expression = expression;
     }
 
-    @ThriftField(1)
     @JsonProperty
     public String getName()
     {
         return name;
     }
 
-    @ThriftField(2)
     @JsonProperty
     public String getExpression()
     {

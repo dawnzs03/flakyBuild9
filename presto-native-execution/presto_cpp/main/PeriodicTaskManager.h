@@ -15,7 +15,6 @@
 
 #include <folly/experimental/FunctionScheduler.h>
 #include "velox/common/memory/Memory.h"
-#include "velox/exec/Spill.h"
 
 namespace folly {
 class CPUThreadPoolExecutor;
@@ -95,13 +94,6 @@ class PeriodicTaskManager {
   void addOperatingSystemStatsUpdateTask();
   void updateOperatingSystemStats();
 
-  void addSpillStatsUpdateTask();
-  void updateSpillStatsTask();
-
-  // Adds task that periodically prints http endpoint latency metrics.
-  void addHttpEndpointLatencyStatsTask();
-  void printHttpEndpointLatencyStats();
-
   folly::FunctionScheduler scheduler_;
   folly::CPUThreadPoolExecutor* const driverCPUExecutor_;
   folly::IOThreadPoolExecutor* const httpExecutor_;
@@ -112,15 +104,6 @@ class PeriodicTaskManager {
       std::string,
       std::shared_ptr<velox::connector::Connector>>& connectors_;
 
-  // Cache related stats
-  int64_t lastMemoryCacheHits_{0};
-  int64_t lastMemoryCacheHitsBytes_{0};
-  int64_t lastMemoryCacheInserts_{0};
-  int64_t lastMemoryCacheEvictions_{0};
-  int64_t lastMemoryCacheEvictionChecks_{0};
-  int64_t lastMemoryCacheStalls_{0};
-  int64_t lastMemoryCacheAllocClocks_{0};
-
   // Operating system related stats.
   int64_t lastUserCpuTimeUs_{0};
   int64_t lastSystemCpuTimeUs_{0};
@@ -128,7 +111,6 @@ class PeriodicTaskManager {
   int64_t lastHardPageFaults_{0};
   int64_t lastVoluntaryContextSwitches_{0};
   int64_t lastForcedContextSwitches_{0};
-  velox::exec::SpillStats lastSpillStats_;
 };
 
 } // namespace facebook::presto

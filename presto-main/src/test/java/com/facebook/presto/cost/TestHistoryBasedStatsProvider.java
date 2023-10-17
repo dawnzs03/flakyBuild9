@@ -35,7 +35,6 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.Map;
 
-import static com.facebook.presto.SystemSessionProperties.RESTRICT_HISTORY_BASED_OPTIMIZATION_TO_COMPLEX_QUERY;
 import static com.facebook.presto.SystemSessionProperties.USE_HISTORY_BASED_PLAN_STATISTICS;
 import static com.facebook.presto.sql.planner.assertions.PlanMatchPattern.anyTree;
 import static com.facebook.presto.sql.planner.assertions.PlanMatchPattern.node;
@@ -50,7 +49,6 @@ public class TestHistoryBasedStatsProvider
     {
         this.queryRunner = new LocalQueryRunner(testSessionBuilder()
                 .setSystemProperty(USE_HISTORY_BASED_PLAN_STATISTICS, "true")
-                .setSystemProperty(RESTRICT_HISTORY_BASED_OPTIMIZATION_TO_COMPLEX_QUERY, "false")
                 .setCatalog("local")
                 .setSchema("tiny")
                 .setSystemProperty("task_concurrency", "1") // these tests don't handle exchanges from local parallel
@@ -69,6 +67,9 @@ public class TestHistoryBasedStatsProvider
                 return ImmutableList.of(new TestHistoryBasedPlanStatisticsProvider());
             }
         });
+        if (queryRunner.getStatsCalculator() instanceof HistoryBasedPlanStatisticsCalculator) {
+            ((HistoryBasedPlanStatisticsCalculator) queryRunner.getStatsCalculator()).setPrefetchForAllPlanNodes(true);
+        }
     }
 
     @Test
@@ -122,8 +123,8 @@ public class TestHistoryBasedStatsProvider
                             TableScanNode node = (TableScanNode) PlanNodeWithHash.getPlanNode();
                             if (node.getTable().toString().contains("orders")) {
                                 return new HistoricalPlanStatistics(ImmutableList.of(new HistoricalPlanStatisticsEntry(
-                                        new PlanStatistics(Estimate.of(100), Estimate.of(1000), 1, Estimate.unknown(), Estimate.unknown()),
-                                        ImmutableList.of(new PlanStatistics(Estimate.of(15000), Estimate.unknown(), 1, Estimate.unknown(), Estimate.unknown())))));
+                                        new PlanStatistics(Estimate.of(100), Estimate.of(1000), 1),
+                                        ImmutableList.of(new PlanStatistics(Estimate.of(15000), Estimate.unknown(), 1)))));
                             }
                         }
                         return HistoricalPlanStatistics.empty();

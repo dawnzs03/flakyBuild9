@@ -262,7 +262,6 @@ public class FeaturesConfig
     private boolean isOptimizeJoinProbeWithEmptyBuildRuntime;
     private boolean useDefaultsForCorrelatedAggregationPushdownThroughOuterJoins = true;
     private boolean mergeDuplicateAggregationsEnabled = true;
-    private boolean fieldNamesInJsonCastEnabled;
     private boolean mergeAggregationsWithAndWithoutFilter;
     private boolean simplifyPlanWithEmptyInput = true;
     private PushDownFilterThroughCrossJoinStrategy pushDownFilterExpressionEvaluationThroughCrossJoin = PushDownFilterThroughCrossJoinStrategy.REWRITTEN_TO_INNER_JOIN;
@@ -272,7 +271,6 @@ public class FeaturesConfig
     private boolean leftJoinNullFilterToSemiJoin = true;
     private boolean broadcastJoinWithSmallBuildUnknownProbe;
     private boolean addPartialNodeForRowNumberWithLimit = true;
-    private boolean pullUpExpressionFromLambda = true;
 
     private boolean preProcessMetadataCalls;
 
@@ -543,18 +541,6 @@ public class FeaturesConfig
     public boolean isLegacyMapSubscript()
     {
         return legacyMapSubscript;
-    }
-
-    public boolean isFieldNamesInJsonCastEnabled()
-    {
-        return fieldNamesInJsonCastEnabled;
-    }
-
-    @Config("field-names-in-json-cast-enabled")
-    public FeaturesConfig setFieldNamesInJsonCastEnabled(boolean fieldNamesInJsonCastEnabled)
-    {
-        this.fieldNamesInJsonCastEnabled = fieldNamesInJsonCastEnabled;
-        return this;
     }
 
     @Config("reduce-agg-for-complex-types-enabled")
@@ -2694,19 +2680,6 @@ public class FeaturesConfig
     public FeaturesConfig setAddPartialNodeForRowNumberWithLimitEnabled(boolean addPartialNodeForRowNumberWithLimit)
     {
         this.addPartialNodeForRowNumberWithLimit = addPartialNodeForRowNumberWithLimit;
-        return this;
-    }
-
-    public boolean isPullUpExpressionFromLambdaEnabled()
-    {
-        return this.pullUpExpressionFromLambda;
-    }
-
-    @Config("optimizer.pull-up-expression-from-lambda")
-    @ConfigDescription("Pull up expression from lambda which does not refer to arguments of the lambda function")
-    public FeaturesConfig setPullUpExpressionFromLambdaEnabled(boolean pullUpExpressionFromLambda)
-    {
-        this.pullUpExpressionFromLambda = pullUpExpressionFromLambda;
         return this;
     }
 }

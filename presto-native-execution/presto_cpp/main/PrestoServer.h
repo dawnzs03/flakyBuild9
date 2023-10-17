@@ -118,8 +118,6 @@ class PrestoServer {
 
   virtual void registerFileSystems();
 
-  virtual void registerMemoryArbitrators();
-
   virtual void registerStatsCounters();
 
   /// Invoked after creating global (singleton) config objects (SystemConfig and
@@ -133,9 +131,6 @@ class PrestoServer {
   /// In such cases, getLocalIp can be overriden to pass process specific
   /// ip address.
   virtual std::string getLocalIp() const;
-
-  /// Invoked to get the spill directory.
-  virtual std::string getBaseSpillDirectory() const;
 
   /// Invoked to get the list of filters passed to the http server.
   std::vector<std::unique_ptr<proxygen::RequestHandlerFactory>>

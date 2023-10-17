@@ -22,71 +22,43 @@
 namespace facebook::presto {
 namespace {
 
-std::string genFunctionName(
-    const std::string& baseFunctionName,
-    const std::string& schemaName,
-    const std::string& prefix) {
-  auto name = schemaName.empty()
-      ? baseFunctionName
-      : fmt::format("{}.{}", schemaName, baseFunctionName);
-
-  return prefix.empty() ? name : fmt::format("{}.{}", prefix, name);
-}
-
 // Reads file at `filePath`, decodes the json signatures and registers them as
 // remote functions pointing to `location`. Returns the number of signatures
 // registered.
 size_t processFile(
     const fs::path& filePath,
-    const folly::SocketAddress& location,
-    const std::string& prefix) {
+    const folly::SocketAddress& location) {
   std::ifstream stream{filePath};
   std::stringstream buffer;
   buffer << stream.rdbuf();
 
   velox::functions::RemoteVectorFunctionMetadata metadata;
   metadata.location = location;
-
-  // First group possible functions with the same name but different
-  // schemas.
-  std::
-      unordered_map<std::string, std::vector<velox::exec::FunctionSignaturePtr>>
-          functionMap;
-
-  for (const auto& it : JsonSignatureParser(buffer.str())) {
-    for (const auto& item : it.second) {
-      functionMap[genFunctionName(it.first, item.schema, prefix)].emplace_back(
-          item.signature);
-    }
-  }
-
   size_t signaturesCount = 0;
 
-  // Register signatures in Velox.
-  for (const auto& it : functionMap) {
+  for (const auto& it : JsonSignatureParser(buffer.str())) {
     velox::functions::registerRemoteFunction(it.first, it.second, metadata);
-    signaturesCount += it.second.size();
+    ++signaturesCount;
   }
   return signaturesCount;
 }
 
 } // namespace
 
-size_t registerRemoteFunctions(
+size_t registerRemoteFuctions(
     const std::string& inputPath,
-    const folly::SocketAddress& location,
-    const std::string& prefix) {
+    const folly::SocketAddress& location) {
   size_t signaturesCount = 0;
   const fs::path path{inputPath};
 
   if (fs::is_directory(path)) {
     for (auto& entryPath : fs::recursive_directory_iterator(path)) {
       if (entryPath.is_regular_file()) {
-        signaturesCount += processFile(entryPath, location, prefix);
+        signaturesCount += processFile(entryPath, location);
       }
     }
   } else if (fs::is_regular_file(path)) {
-    signaturesCount += processFile(path, location, prefix);
+    signaturesCount += processFile(path, location);
   }
   return signaturesCount;
 }

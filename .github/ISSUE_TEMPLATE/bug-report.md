@@ -1,6 +1,7 @@
 ---
 name: Open a Bug
 about: Create a bug report
+title: '[BUG]'
 labels: bug
 assignees: ''
 

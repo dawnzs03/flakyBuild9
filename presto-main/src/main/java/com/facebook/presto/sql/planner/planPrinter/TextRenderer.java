@@ -230,20 +230,13 @@ public class TextRenderer
         for (int i = 0; i < estimateCount; i++) {
             PlanNodeStatsEstimate stats = node.getEstimatedStats().get(i);
             PlanCostEstimate cost = node.getEstimatedCost().get(i);
-            String formatStr = "{source: %s, rows: %s (%s), cpu: %s, memory: %s, network: %s%s%s}";
-            boolean hasHashtableStats = stats.getJoinBuildKeyCount() > 0 || stats.getNullJoinBuildKeyCount() > 0;
-            if (hasHashtableStats) {
-                formatStr = "{source: %s, rows: %s (%s), cpu: %s, memory: %s, network: %s, hashtable size: %s, hashtable null: %s}";
-            }
-            output.append(format(formatStr,
+            output.append(format("{source: %s, rows: %s (%s), cpu: %s, memory: %s, network: %s}",
                     stats.getSourceInfo().getClass().getSimpleName(),
                     formatAsLong(stats.getOutputRowCount()),
                     formatEstimateAsDataSize(stats.getOutputSizeInBytes(plan.getPlanNodeRoot())),
                     formatDouble(cost.getCpuCost()),
                     formatDouble(cost.getMaxMemory()),
-                    formatDouble(cost.getNetworkCost()),
-                    hasHashtableStats ? formatDouble(stats.getJoinBuildKeyCount()) : "",
-                    hasHashtableStats ? formatDouble(stats.getNullJoinBuildKeyCount()) : ""));
+                    formatDouble(cost.getNetworkCost())));
 
             if (i < estimateCount - 1) {
                 output.append("/");

@@ -82,18 +82,6 @@ public class JoinHashSupplier
     }
 
     @Override
-    public long getPositionIsNullCount()
-    {
-        return pagesHash.getPositionIsNullCount();
-    }
-
-    @Override
-    public long getPositionCount()
-    {
-        return pagesHash.getPositionCount();
-    }
-
-    @Override
     public double getExpectedHashCollisions()
     {
         return pagesHash.getExpectedHashCollisions();

@@ -238,7 +238,6 @@ public final class SystemSessionProperties
     public static final String EXCEEDED_MEMORY_LIMIT_HEAP_DUMP_FILE_DIRECTORY = "exceeded_memory_limit_heap_dump_file_directory";
     public static final String DISTRIBUTED_TRACING_MODE = "distributed_tracing_mode";
     public static final String VERBOSE_RUNTIME_STATS_ENABLED = "verbose_runtime_stats_enabled";
-    public static final String OPTIMIZERS_TO_ENABLE_VERBOSE_RUNTIME_STATS = "optimizers_to_enable_verbose_runtime_stats";
     public static final String VERBOSE_OPTIMIZER_INFO_ENABLED = "verbose_optimizer_info_enabled";
     public static final String VERBOSE_OPTIMIZER_RESULTS = "verbose_optimizer_results";
     public static final String STREAMING_FOR_PARTIAL_AGGREGATION_ENABLED = "streaming_for_partial_aggregation_enabled";
@@ -251,7 +250,6 @@ public final class SystemSessionProperties
     public static final String USE_PERFECTLY_CONSISTENT_HISTORIES = "use_perfectly_consistent_histories";
     public static final String HISTORY_CANONICAL_PLAN_NODE_LIMIT = "history_canonical_plan_node_limit";
     public static final String HISTORY_BASED_OPTIMIZER_TIMEOUT_LIMIT = "history_based_optimizer_timeout_limit";
-    public static final String RESTRICT_HISTORY_BASED_OPTIMIZATION_TO_COMPLEX_QUERY = "restrict_history_based_optimization_to_complex_query";
     public static final String MAX_LEAF_NODES_IN_PLAN = "max_leaf_nodes_in_plan";
     public static final String LEAF_NODE_LIMIT_ENABLED = "leaf_node_limit_enabled";
     public static final String PUSH_REMOTE_EXCHANGE_THROUGH_GROUP_ID = "push_remote_exchange_through_group_id";
@@ -282,8 +280,6 @@ public final class SystemSessionProperties
     public static final String USE_BROADCAST_WHEN_BUILDSIZE_SMALL_PROBESIDE_UNKNOWN = "use_broadcast_when_buildsize_small_probeside_unknown";
     public static final String ADD_PARTIAL_NODE_FOR_ROW_NUMBER_WITH_LIMIT = "add_partial_node_for_row_number_with_limit";
     public static final String REWRITE_CASE_TO_MAP_ENABLED = "rewrite_case_to_map_enabled";
-    public static final String FIELD_NAMES_IN_JSON_CAST_ENABLED = "field_names_in_json_cast_enabled";
-    public static final String PULL_EXPRESSION_FROM_LAMBDA_ENABLED = "pull_expression_from_lambda_enabled";
 
     // TODO: Native execution related session properties that are temporarily put here. They will be relocated in the future.
     public static final String NATIVE_SIMPLIFIED_EXPRESSION_EVALUATION_ENABLED = "simplified_expression_evaluation_enabled";
@@ -1303,11 +1299,6 @@ public final class SystemSessionProperties
                         "Enable logging all runtime stats",
                         featuresConfig.isVerboseRuntimeStatsEnabled(),
                         false),
-                stringProperty(
-                        OPTIMIZERS_TO_ENABLE_VERBOSE_RUNTIME_STATS,
-                        "Optimizers to enable verbose runtime stats",
-                        "",
-                        false),
                 booleanProperty(
                         VERBOSE_OPTIMIZER_INFO_ENABLED,
                         "Enable logging of verbose information about applied optimizations",
@@ -1442,11 +1433,6 @@ public final class SystemSessionProperties
                         false,
                         value -> Duration.valueOf((String) value),
                         Duration::toString),
-                booleanProperty(
-                        RESTRICT_HISTORY_BASED_OPTIMIZATION_TO_COMPLEX_QUERY,
-                        "Enable history based optimization only for complex queries, i.e. queries with join and aggregation",
-                        true,
-                        false),
                 new PropertyMetadata<>(
                         MAX_LEAF_NODES_IN_PLAN,
                         "Maximum number of leaf nodes in the logical plan of SQL statement",
@@ -1568,11 +1554,6 @@ public final class SystemSessionProperties
                         10000,
                         false),
                 booleanProperty(
-                        FIELD_NAMES_IN_JSON_CAST_ENABLED,
-                        "Include field names in json output when casting rows",
-                        featuresConfig.isFieldNamesInJsonCastEnabled(),
-                        false),
-                booleanProperty(
                         OPTIMIZE_JOIN_PROBE_FOR_EMPTY_BUILD_RUNTIME,
                         "Optimize join probe at runtime if build side is empty",
                         featuresConfig.isOptimizeJoinProbeForEmptyBuildRuntimeEnabled(),
@@ -1650,11 +1631,6 @@ public final class SystemSessionProperties
                         REWRITE_CASE_TO_MAP_ENABLED,
                         "Rewrite case with constant WHEN/THEN/ELSE clauses to use map literals",
                         TRUE,
-                        false),
-                booleanProperty(
-                        PULL_EXPRESSION_FROM_LAMBDA_ENABLED,
-                        "Rewrite case with constant WHEN/THEN/ELSE clauses to use map literals",
-                        featuresConfig.isPullUpExpressionFromLambdaEnabled(),
                         false));
     }
 
@@ -2139,11 +2115,6 @@ public final class SystemSessionProperties
         return session.getSystemProperty(PARSE_DECIMAL_LITERALS_AS_DOUBLE, Boolean.class);
     }
 
-    public static boolean isFieldNameInJsonCastEnabled(Session session)
-    {
-        return session.getSystemProperty(FIELD_NAMES_IN_JSON_CAST_ENABLED, Boolean.class);
-    }
-
     public static boolean isForceSingleNodeOutput(Session session)
     {
         return session.getSystemProperty(FORCE_SINGLE_NODE_OUTPUT, Boolean.class);
@@ -2535,11 +2506,6 @@ public final class SystemSessionProperties
         return session.getSystemProperty(VERBOSE_RUNTIME_STATS_ENABLED, Boolean.class);
     }
 
-    public static String getOptimizersToEnableVerboseRuntimeStats(Session session)
-    {
-        return session.getSystemProperty(OPTIMIZERS_TO_ENABLE_VERBOSE_RUNTIME_STATS, String.class);
-    }
-
     public static boolean isVerboseOptimizerResults(Session session)
     {
         return session.getSystemProperty(VERBOSE_OPTIMIZER_RESULTS, VerboseOptimizerResultsProperty.class).isEnabled();
@@ -2653,11 +2619,6 @@ public final class SystemSessionProperties
     public static Duration getHistoryBasedOptimizerTimeoutLimit(Session session)
     {
         return session.getSystemProperty(HISTORY_BASED_OPTIMIZER_TIMEOUT_LIMIT, Duration.class);
-    }
-
-    public static boolean restrictHistoryBasedOptimizationToComplexQuery(Session session)
-    {
-        return session.getSystemProperty(RESTRICT_HISTORY_BASED_OPTIMIZATION_TO_COMPLEX_QUERY, Boolean.class);
     }
 
     public static boolean shouldPushRemoteExchangeThroughGroupId(Session session)
@@ -2782,10 +2743,5 @@ public final class SystemSessionProperties
     public static boolean isRewriteCaseToMapEnabled(Session session)
     {
         return session.getSystemProperty(REWRITE_CASE_TO_MAP_ENABLED, Boolean.class);
-    }
-
-    public static boolean isPullExpressionFromLambdaEnabled(Session session)
-    {
-        return session.getSystemProperty(PULL_EXPRESSION_FROM_LAMBDA_ENABLED, Boolean.class);
     }
 }

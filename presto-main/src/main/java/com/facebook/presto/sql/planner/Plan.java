@@ -15,11 +15,6 @@ package com.facebook.presto.sql.planner;
 
 import com.facebook.presto.cost.StatsAndCosts;
 import com.facebook.presto.spi.plan.PlanNode;
-import com.facebook.presto.spi.plan.PlanNodeId;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.graph.Traverser;
-
-import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 
@@ -49,16 +44,5 @@ public class Plan
     public StatsAndCosts getStatsAndCosts()
     {
         return statsAndCosts;
-    }
-
-    public Map<PlanNodeId, PlanNode> getPlanIdNodeMap()
-    {
-        Iterable<PlanNode> planIterator = Traverser.forTree(PlanNode::getSources)
-                .depthFirstPreOrder(root);
-        ImmutableMap.Builder<PlanNodeId, PlanNode> planNodeMap = ImmutableMap.builder();
-        for (PlanNode node : planIterator) {
-            planNodeMap.put(node.getId(), node);
-        }
-        return planNodeMap.build();
     }
 }

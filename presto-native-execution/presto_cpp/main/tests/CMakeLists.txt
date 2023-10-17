@@ -14,7 +14,6 @@ add_executable(
   AnnouncerTest.cpp
   CoordinatorDiscovererTest.cpp
   HttpServerWrapper.cpp
-  MutableConfigs.cpp
   PrestoExchangeSourceTest.cpp
   PrestoTaskTest.cpp
   QueryContextCacheTest.cpp

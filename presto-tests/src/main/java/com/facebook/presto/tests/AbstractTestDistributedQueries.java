@@ -37,7 +37,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.facebook.presto.SystemSessionProperties.OPTIMIZE_PAYLOAD_JOINS;
-import static com.facebook.presto.SystemSessionProperties.PULL_EXPRESSION_FROM_LAMBDA_ENABLED;
 import static com.facebook.presto.SystemSessionProperties.QUERY_MAX_MEMORY;
 import static com.facebook.presto.common.type.VarcharType.VARCHAR;
 import static com.facebook.presto.connector.informationSchema.InformationSchemaMetadata.INFORMATION_SCHEMA;
@@ -1016,11 +1015,7 @@ public abstract class AbstractTestDistributedQueries
     @Test
     public void testExtraLargeQuerySuccess()
     {
-        // Will have stack overflow if enabled
-        Session pullLambdaExpressionDisabled = Session.builder(getSession())
-                .setSystemProperty(PULL_EXPRESSION_FROM_LAMBDA_ENABLED, "false")
-                .build();
-        assertQuery(pullLambdaExpressionDisabled, "SELECT " + Joiner.on(" AND ").join(nCopies(1000, "1 = 1")), "SELECT true");
+        assertQuery("SELECT " + Joiner.on(" AND ").join(nCopies(1000, "1 = 1")), "SELECT true");
     }
 
     @Test

@@ -203,11 +203,8 @@ class SystemConfig : public ConfigBase {
       "mmap-arena-capacity-ratio"};
   static constexpr std::string_view kUseMmapAllocator{"use-mmap-allocator"};
 
-  /// Specifies the memory arbitrator kind. If it is empty, then there is no
-  /// memory arbitration.
-  static constexpr std::string_view kMemoryArbitratorKind{
-      "memory-arbitrator-kind"};
-
+  static constexpr std::string_view kEnableMemoryArbitration{
+      "enable-memory-arbitration"};
   /// The initial memory pool capacity in bytes allocated on creation.
   ///
   /// NOTE: this config only applies if the memory arbitration has been enabled.
@@ -237,8 +234,6 @@ class SystemConfig : public ConfigBase {
       "http-server.enable-access-log"};
   static constexpr std::string_view kHttpEnableStatsFilter{
       "http-server.enable-stats-filter"};
-  static constexpr std::string_view kHttpEnableEndpointLatencyFilter{
-      "http-server.enable-endpoint-latency-filter"};
   static constexpr std::string_view kRegisterTestFunctions{
       "register-test-functions"};
 
@@ -254,6 +249,10 @@ class SystemConfig : public ConfigBase {
   static constexpr std::string_view kEnableMemoryLeakCheck{
       "enable-memory-leak-check"};
 
+  /// Port used by the remote function thrift server.
+  static constexpr std::string_view kRemoteFunctionServerThriftPort{
+      "remote-function-server.thrift.port"};
+
   /// Do not include runtime stats in the returned task info if the task is
   /// in running state.
   static constexpr std::string_view kSkipRuntimeStatsInRunningTaskInfo{
@@ -261,10 +260,6 @@ class SystemConfig : public ConfigBase {
 
   static constexpr std::string_view kLogZombieTaskInfo{"log-zombie-task-info"};
   static constexpr std::string_view kLogNumZombieTasks{"log-num-zombie-tasks"};
-
-  /// Time (ms) since the task execution ended, when task is considered old for
-  /// cleanup.
-  static constexpr std::string_view kOldTaskCleanUpMs{"old-task-cleanup-ms"};
 
   static constexpr std::string_view kAnnouncementMinFrequencyMs{
       "announcement-min-frequency-ms"};
@@ -284,32 +279,6 @@ class SystemConfig : public ConfigBase {
 
   static constexpr std::string_view kIncludeNodeInSpillPath{
       "include-node-in-spill-path"};
-
-  /// Remote function server configs.
-
-  /// Port used by the remote function thrift server.
-  static constexpr std::string_view kRemoteFunctionServerThriftPort{
-      "remote-function-server.thrift.port"};
-
-  /// Address (ip or hostname) used by the remote function thrift server
-  /// (fallback to localhost if not specified).
-  static constexpr std::string_view kRemoteFunctionServerThriftAddress{
-      "remote-function-server.thrift.address"};
-
-  /// UDS (unix domain socket) path used by the remote function thrift server.
-  static constexpr std::string_view kRemoteFunctionServerThriftUdsPath{
-      "remote-function-server.thrift.uds-path"};
-
-  /// Path where json files containing signatures for remote functions can be
-  /// found.
-  static constexpr std::string_view
-      kRemoteFunctionServerSignatureFilesDirectoryPath{
-          "remote-function-server.signature.files.directory.path"};
-
-  /// Optional catalog name to be added as a prefix to the function names
-  /// registered. The patter registered is `catalog.schema.function_name`.
-  static constexpr std::string_view kRemoteFunctionServerCatalogName{
-      "remote-function-server.catalog-name"};
 
   SystemConfig();
 
@@ -353,11 +322,6 @@ class SystemConfig : public ConfigBase {
   folly::Optional<std::string> discoveryUri() const;
 
   folly::Optional<folly::SocketAddress> remoteFunctionServerLocation() const;
-
-  folly::Optional<std::string> remoteFunctionServerSignatureFilesDirectoryPath()
-      const;
-
-  std::string remoteFunctionServerCatalogName() const;
 
   int32_t maxDriversPerTask() const;
 
@@ -407,7 +371,7 @@ class SystemConfig : public ConfigBase {
 
   bool useMmapAllocator() const;
 
-  std::string memoryArbitratorKind() const;
+  bool enableMemoryArbitration() const;
 
   uint64_t memoryPoolInitCapacity() const;
 
@@ -418,8 +382,6 @@ class SystemConfig : public ConfigBase {
   bool enableHttpAccessLog() const;
 
   bool enableHttpStatsFilter() const;
-
-  bool enableHttpEndpointLatencyFilter() const;
 
   bool registerTestFunctions() const;
 
@@ -446,8 +408,6 @@ class SystemConfig : public ConfigBase {
   int32_t taskRunTimeSliceMicros() const;
 
   bool includeNodeInSpillPath() const;
-
-  int32_t oldTaskCleanUpMs() const;
 };
 
 /// Provides access to node properties defined in node.properties file.

@@ -33,7 +33,6 @@ import com.facebook.presto.spi.classloader.ThreadContextClassLoader;
 import com.facebook.presto.spi.connector.ConnectorFactory;
 import com.facebook.presto.spi.eventlistener.EventListenerFactory;
 import com.facebook.presto.spi.function.FunctionNamespaceManagerFactory;
-import com.facebook.presto.spi.nodestatus.NodeStatusNotificationProviderFactory;
 import com.facebook.presto.spi.prerequisites.QueryPrerequisitesFactory;
 import com.facebook.presto.spi.resourceGroups.ResourceGroupConfigurationManagerFactory;
 import com.facebook.presto.spi.security.PasswordAuthenticatorFactory;
@@ -124,7 +123,6 @@ public class PluginManager
     private final HistoryBasedPlanStatisticsManager historyBasedPlanStatisticsManager;
     private final TracerProviderManager tracerProviderManager;
     private final AnalyzerProviderManager analyzerProviderManager;
-    private final NodeStatusNotificationManager nodeStatusNotificationManager;
 
     @Inject
     public PluginManager(
@@ -144,8 +142,7 @@ public class PluginManager
             NodeTtlFetcherManager nodeTtlFetcherManager,
             ClusterTtlProviderManager clusterTtlProviderManager,
             HistoryBasedPlanStatisticsManager historyBasedPlanStatisticsManager,
-            TracerProviderManager tracerProviderManager,
-            NodeStatusNotificationManager nodeStatusNotificationManager)
+            TracerProviderManager tracerProviderManager)
     {
         requireNonNull(nodeInfo, "nodeInfo is null");
         requireNonNull(config, "config is null");
@@ -175,7 +172,6 @@ public class PluginManager
         this.historyBasedPlanStatisticsManager = requireNonNull(historyBasedPlanStatisticsManager, "historyBasedPlanStatisticsManager is null");
         this.tracerProviderManager = requireNonNull(tracerProviderManager, "tracerProviderManager is null");
         this.analyzerProviderManager = requireNonNull(analyzerProviderManager, "analyzerProviderManager is null");
-        this.nodeStatusNotificationManager = requireNonNull(nodeStatusNotificationManager, "nodeStatusNotificationManager is null");
     }
 
     public void loadPlugins()
@@ -320,11 +316,6 @@ public class PluginManager
         for (AnalyzerProvider analyzerProvider : plugin.getAnalyzerProviders()) {
             log.info("Registering analyzer provider %s", analyzerProvider.getType());
             analyzerProviderManager.addAnalyzerProvider(analyzerProvider);
-        }
-
-        for (NodeStatusNotificationProviderFactory nodeStatusNotificationProviderFactory : plugin.getNodeStatusNotificationProviderFactory()) {
-            log.info("Registering node status notification provider %s", nodeStatusNotificationProviderFactory.getName());
-            nodeStatusNotificationManager.addNodeStatusNotificationProviderFactory(nodeStatusNotificationProviderFactory);
         }
     }
 

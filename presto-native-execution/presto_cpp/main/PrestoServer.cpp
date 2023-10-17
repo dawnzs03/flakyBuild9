@@ -29,7 +29,6 @@
 #include "presto_cpp/main/common/Utils.h"
 #include "presto_cpp/main/http/HttpServer.h"
 #include "presto_cpp/main/http/filters/AccessLogFilter.h"
-#include "presto_cpp/main/http/filters/HttpEndpointLatencyFilter.h"
 #include "presto_cpp/main/http/filters/StatsFilter.h"
 #include "presto_cpp/main/operators/BroadcastExchangeSource.h"
 #include "presto_cpp/main/operators/BroadcastWrite.h"
@@ -54,10 +53,6 @@
 #include "velox/functions/prestosql/registration/RegistrationFunctions.h"
 #include "velox/functions/prestosql/window/WindowFunctionsRegistration.h"
 #include "velox/serializers/PrestoSerializer.h"
-
-#ifdef PRESTO_ENABLE_REMOTE_FUNCTIONS
-#include "presto_cpp/main/RemoteFunctionRegisterer.h"
-#endif
 
 namespace facebook::presto {
 using namespace facebook::velox;
@@ -174,7 +169,6 @@ void PrestoServer::run() {
   registerStatsCounters();
   registerFileSinks();
   registerFileSystems();
-  registerMemoryArbitrators();
   registerShuffleInterfaceFactories();
   registerCustomOperators();
   protocol::registerHiveConnectors();
@@ -314,15 +308,6 @@ void PrestoServer::run() {
 
   taskManager_->setBaseUri(taskUri);
   taskManager_->setNodeId(nodeId_);
-  taskManager_->setOldTaskCleanUpMs(systemConfig->oldTaskCleanUpMs());
-
-  auto baseSpillDirectory = getBaseSpillDirectory();
-  if (!baseSpillDirectory.empty()) {
-    taskManager_->setBaseSpillDirectory(baseSpillDirectory);
-    PRESTO_STARTUP_LOG(INFO)
-        << "Spilling root directory: " << baseSpillDirectory;
-  }
-
   taskResource_ = std::make_unique<TaskResource>(*taskManager_, pool_.get());
   taskResource_->registerUris(*httpServer_);
   if (systemConfig->enableSerializedPageChecksum()) {
@@ -453,7 +438,7 @@ void PrestoServer::run() {
 
   if (cache_ != nullptr) {
     PRESTO_SHUTDOWN_LOG(INFO) << "Shutdown AsyncDataCache";
-    cache_->shutdown();
+    cache_->prepareShutdown();
   }
 }
 
@@ -530,21 +515,27 @@ void PrestoServer::initializeVeloxMemory() {
   memory::MemoryManagerOptions options;
   options.capacity = memoryBytes;
   options.checkUsageLeak = systemConfig->enableMemoryLeakCheck();
-  if (!systemConfig->memoryArbitratorKind().empty()) {
-    options.arbitratorKind = systemConfig->memoryArbitratorKind();
+  if (systemConfig->enableMemoryArbitration()) {
+    options.arbitratorKind = memory::MemoryArbitrator::Kind::kShared;
+    options.capacity =
+        memoryBytes * 100 / systemConfig->reservedMemoryPoolCapacityPct();
     options.memoryPoolInitCapacity = systemConfig->memoryPoolInitCapacity();
     options.memoryPoolTransferCapacity =
         systemConfig->memoryPoolTransferCapacity();
   }
-  const auto& manager = memory::MemoryManager::getInstance(options);
+  const auto& manager = memory::MemoryManager::getInstance(options, true);
   PRESTO_STARTUP_LOG(INFO) << "Memory manager has been setup: "
                            << manager.toString();
+  if (systemConfig->spillerSpillPath().has_value()) {
+    PRESTO_STARTUP_LOG(INFO) << "Spilling root directory: "
+                             << systemConfig->spillerSpillPath().value();
+  }
 }
 
 void PrestoServer::stop() {
   // Make sure we only go here once.
   auto shutdownOnsetSec = SystemConfig::instance()->shutdownOnsetSec();
-  if (!shuttingDown_.exchange(true)) {
+  if (not shuttingDown_.exchange(true)) {
     PRESTO_SHUTDOWN_LOG(INFO) << "Initiating shutdown. Will wait for "
                               << shutdownOnsetSec << " seconds.";
     this->setNodeState(NodeState::SHUTTING_DOWN);
@@ -553,7 +544,7 @@ void PrestoServer::stop() {
     // any tasks.
     std::this_thread::sleep_for(std::chrono::seconds(shutdownOnsetSec));
 
-    taskManager_->shutdown();
+    taskManager_->waitForTasksToComplete();
 
     // Give coordinator some time to request tasks stats for completed or failed
     // tasks.
@@ -600,23 +591,17 @@ PrestoServer::getExprSetListener() {
 std::vector<std::unique_ptr<proxygen::RequestHandlerFactory>>
 PrestoServer::getHttpServerFilters() {
   std::vector<std::unique_ptr<proxygen::RequestHandlerFactory>> filters;
-  const auto* systemConfig = SystemConfig::instance();
-  if (systemConfig->enableHttpAccessLog()) {
+
+  if (SystemConfig::instance()->enableHttpAccessLog()) {
     filters.push_back(
         std::make_unique<http::filters::AccessLogFilterFactory>());
   }
 
-  if (systemConfig->enableHttpStatsFilter()) {
+  if (SystemConfig::instance()->enableHttpStatsFilter()) {
     auto additionalFilters = getAdditionalHttpServerFilters();
     for (auto& filter : additionalFilters) {
       filters.push_back(std::move(filter));
     }
-  }
-
-  if (systemConfig->enableHttpEndpointLatencyFilter()) {
-    filters.push_back(
-        std::make_unique<http::filters::HttpEndpointLatencyFilterFactory>(
-            httpServer_.get()));
   }
 
   return filters;
@@ -723,31 +708,7 @@ void PrestoServer::registerFunctions() {
   }
 }
 
-void PrestoServer::registerRemoteFunctions() {
-#ifdef PRESTO_ENABLE_REMOTE_FUNCTIONS
-  auto* systemConfig = SystemConfig::instance();
-  if (auto dirPath =
-          systemConfig->remoteFunctionServerSignatureFilesDirectoryPath()) {
-    PRESTO_STARTUP_LOG(INFO)
-        << "Registering remote functions from path: " << *dirPath;
-    if (auto remoteLocation = systemConfig->remoteFunctionServerLocation()) {
-      auto catalogName = systemConfig->remoteFunctionServerCatalogName();
-      size_t registeredCount = presto::registerRemoteFunctions(
-          *dirPath, *remoteLocation, catalogName);
-      PRESTO_STARTUP_LOG(INFO)
-          << registeredCount << " remote functions registered in the '"
-          << catalogName << "' catalog.";
-    } else {
-      VELOX_FAIL(
-          "To register remote functions using a json file path you need to "
-          "specify the remote server location using '{}', '{}' or '{}'.",
-          SystemConfig::kRemoteFunctionServerThriftAddress,
-          SystemConfig::kRemoteFunctionServerThriftPort,
-          SystemConfig::kRemoteFunctionServerThriftUdsPath);
-    }
-  }
-#endif
-}
+void PrestoServer::registerRemoteFunctions() {}
 
 void PrestoServer::registerVectorSerdes() {
   if (!velox::isRegisteredVectorSerde()) {
@@ -757,10 +718,6 @@ void PrestoServer::registerVectorSerdes() {
 
 void PrestoServer::registerFileSystems() {
   velox::filesystems::registerLocalFileSystem();
-}
-
-void PrestoServer::registerMemoryArbitrators() {
-  velox::memory::MemoryArbitrator::registerAllFactories();
 }
 
 void PrestoServer::registerStatsCounters() {
@@ -783,10 +740,6 @@ std::string PrestoServer::getLocalIp() const {
   }
   VELOX_FAIL(
       "Could not infer Node IP. Please specify node.ip in the node.properties file.");
-}
-
-std::string PrestoServer::getBaseSpillDirectory() const {
-  return SystemConfig::instance()->spillerSpillPath().value_or("");
 }
 
 void PrestoServer::populateMemAndCPUInfo() {

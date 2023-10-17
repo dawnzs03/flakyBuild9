@@ -40,12 +40,10 @@ import com.facebook.presto.sql.planner.optimizations.StatsRecordingPlanOptimizer
 import com.facebook.presto.sql.planner.plan.JoinNode;
 import com.facebook.presto.sql.planner.plan.SemiJoinNode;
 import com.facebook.presto.sql.planner.sanity.PlanChecker;
-import com.google.common.base.Splitter;
 
 import java.util.List;
 import java.util.Optional;
 
-import static com.facebook.presto.SystemSessionProperties.getOptimizersToEnableVerboseRuntimeStats;
 import static com.facebook.presto.SystemSessionProperties.getQueryAnalyzerTimeout;
 import static com.facebook.presto.SystemSessionProperties.isPrintStatsForNonJoinQuery;
 import static com.facebook.presto.SystemSessionProperties.isVerboseOptimizerInfoEnabled;
@@ -115,7 +113,7 @@ public class Optimizer
                 long start = System.nanoTime();
                 PlanNode newRoot = optimizer.optimize(root, session, TypeProvider.viewOf(variableAllocator.getVariables()), variableAllocator, idAllocator, warningCollector);
                 requireNonNull(newRoot, format("%s returned a null plan", optimizer.getClass().getName()));
-                if (enableVerboseRuntimeStats || trackOptimizerRuntime(session, optimizer)) {
+                if (enableVerboseRuntimeStats) {
                     String optimizerName = optimizer.getClass().getSimpleName();
                     if (optimizer instanceof StatsRecordingPlanOptimizer) {
                         optimizerName = format("%s:%s", optimizerName, ((StatsRecordingPlanOptimizer) optimizer).getDelegate().getClass().getSimpleName());
@@ -136,20 +134,6 @@ public class Optimizer
 
         TypeProvider types = TypeProvider.viewOf(variableAllocator.getVariables());
         return new Plan(root, types, computeStats(root, types));
-    }
-
-    private boolean trackOptimizerRuntime(Session session, PlanOptimizer optimizer)
-    {
-        String optimizerString = getOptimizersToEnableVerboseRuntimeStats(session);
-        if (optimizerString.isEmpty()) {
-            return false;
-        }
-        List<String> optimizers = Splitter.on(",").trimResults().splitToList(optimizerString);
-        String optimizerName = optimizer.getClass().getSimpleName();
-        if (optimizer instanceof StatsRecordingPlanOptimizer) {
-            optimizerName = ((StatsRecordingPlanOptimizer) optimizer).getDelegate().getClass().getSimpleName();
-        }
-        return optimizers.contains(optimizerName);
     }
 
     private StatsAndCosts computeStats(PlanNode root, TypeProvider types)

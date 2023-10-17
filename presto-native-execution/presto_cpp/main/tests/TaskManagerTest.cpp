@@ -18,7 +18,6 @@
 #include "presto_cpp/main/PrestoExchangeSource.h"
 #include "presto_cpp/main/TaskResource.h"
 #include "presto_cpp/main/tests/HttpServerWrapper.h"
-#include "presto_cpp/main/tests/MultableConfigs.h"
 #include "velox/common/base/Fs.h"
 #include "velox/common/base/tests/GTestUtils.h"
 #include "velox/common/file/FileSystems.h"
@@ -40,9 +39,9 @@
 DECLARE_int32(old_task_ms);
 DECLARE_bool(velox_memory_leak_check_enabled);
 
+using namespace ::testing;
 using namespace facebook::velox;
-
-namespace facebook::presto {
+using namespace facebook::presto;
 
 namespace {
 int64_t sumOpSpillBytes(
@@ -60,6 +59,7 @@ int64_t sumOpSpillBytes(
   }
   return sum;
 }
+} // namespace
 
 class Cursor {
  public:
@@ -541,6 +541,18 @@ class TaskManagerTest : public testing::Test {
     return spillDirectory;
   }
 
+  static void setupMutableSystemConfig() {
+    auto dir = exec::test::TempDirectoryPath::create();
+    auto sysConfigFilePath = fmt::format("{}/config.properties", dir->path);
+    auto fileSystem = filesystems::getFileSystem(sysConfigFilePath, nullptr);
+    auto sysConfigFile = fileSystem->openFileForWrite(sysConfigFilePath);
+    sysConfigFile->append(fmt::format("{}=true\n", ConfigBase::kMutableConfig));
+    sysConfigFile->append(
+        fmt::format("{}=4GB\n", SystemConfig::kQueryMaxMemoryPerNode));
+    sysConfigFile->close();
+    SystemConfig::instance()->initialize(sysConfigFilePath);
+  }
+
   std::shared_ptr<exec::Task> createDummyExecTask(
       const std::string& taskId,
       const core::PlanFragment& planFragment) {
@@ -603,8 +615,7 @@ TEST_F(TaskManagerTest, tableScanAllSplitsAtOnce) {
 
 TEST_F(TaskManagerTest, taskCleanupWithPendingResultData) {
   // Trigger old task cleanup immediately.
-  taskManager_->setOldTaskCleanUpMs(0);
-
+  FLAGS_old_task_ms = 0;
   auto filePaths = makeFilePaths(5);
   auto vectors = makeVectors(filePaths.size(), 1'000);
   for (int i = 0; i < filePaths.size(); i++) {
@@ -778,7 +789,7 @@ TEST_F(TaskManagerTest, countAggregation) {
 }
 
 TEST_F(TaskManagerTest, outOfQueryUserMemory) {
-  test::setupMutableSystemConfig();
+  setupMutableSystemConfig();
   auto filePaths = makeFilePaths(5);
   auto vectors = makeVectors(filePaths.size(), 1'000);
   for (auto i = 0; i < filePaths.size(); i++) {
@@ -916,15 +927,12 @@ TEST_F(TaskManagerTest, aggregationSpill) {
     SCOPED_TRACE(fmt::format("doSpill: {}", doSpill));
     std::shared_ptr<exec::test::TempDirectoryPath> spillDirectory;
     std::map<std::string, std::string> queryConfigs;
-
     if (doSpill) {
       spillDirectory = TaskManagerTest::setupSpillPath();
-      taskManager_->setBaseSpillDirectory(spillDirectory->path);
       queryConfigs.emplace(core::QueryConfig::kTestingSpillPct, "100");
       queryConfigs.emplace(core::QueryConfig::kSpillEnabled, "true");
       queryConfigs.emplace(core::QueryConfig::kAggregationSpillEnabled, "true");
     }
-
     testCountAggregation(
         fmt::format("aggregationSpill:{}", queryId++),
         filePaths,
@@ -1125,5 +1133,3 @@ TEST_F(TaskManagerTest, checkBatchSplits) {
 }
 
 // TODO: add disk spilling test for order by and hash join later.
-} // namespace
-} // namespace facebook::presto

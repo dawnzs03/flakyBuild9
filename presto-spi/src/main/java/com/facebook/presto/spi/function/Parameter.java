@@ -1,4 +1,3 @@
-
 /*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +13,6 @@
  */
 package com.facebook.presto.spi.function;
 
-import com.facebook.drift.annotations.ThriftConstructor;
-import com.facebook.drift.annotations.ThriftField;
-import com.facebook.drift.annotations.ThriftStruct;
 import com.facebook.presto.common.type.TypeSignature;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,13 +21,11 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
-@ThriftStruct
 public class Parameter
 {
     private final String name;
     private final TypeSignature type;
 
-    @ThriftConstructor
     @JsonCreator
     public Parameter(
             @JsonProperty("name") String name,
@@ -41,14 +35,12 @@ public class Parameter
         this.type = requireNonNull(type, "type is null");
     }
 
-    @ThriftField(1)
     @JsonProperty
     public String getName()
     {
         return name;
     }
 
-    @ThriftField(2)
     @JsonProperty
     public TypeSignature getType()
     {

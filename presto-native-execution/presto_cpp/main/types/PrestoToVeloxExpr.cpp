@@ -539,7 +539,6 @@ TypedExprPtr convertBindExpr(const std::vector<TypedExprPtr>& args) {
 
 template <TypeKind KIND>
 velox::ArrayVectorPtr toArrayVector(
-    const velox::TypePtr& elementType,
     std::vector<TypedExprPtr>::const_iterator begin,
     std::vector<TypedExprPtr>::const_iterator end,
     velox::memory::MemoryPool* pool) {
@@ -547,7 +546,7 @@ velox::ArrayVectorPtr toArrayVector(
 
   const auto size = end - begin;
   auto elements = std::dynamic_pointer_cast<velox::FlatVector<T>>(
-      velox::BaseVector::create(elementType, size, pool));
+      velox::BaseVector::create(velox::CppToType<T>::create(), size, pool));
 
   for (auto i = 0; i < size; ++i) {
     auto constant =
@@ -574,7 +573,13 @@ velox::ArrayVectorPtr toArrayVector(
   rawSizes[0] = size;
 
   return std::make_shared<velox::ArrayVector>(
-      pool, ARRAY(elementType), nullptr, 1, offsets, sizes, elements);
+      pool,
+      ARRAY(velox::Type::create<KIND>()),
+      nullptr,
+      1,
+      offsets,
+      sizes,
+      elements);
 }
 
 TypedExprPtr convertInExpr(
@@ -586,7 +591,6 @@ TypedExprPtr convertInExpr(
   auto arrayVector = VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(
       toArrayVector,
       args[0]->type()->kind(),
-      args[0]->type(),
       args.begin() + 1,
       args.end(),
       pool);

@@ -90,7 +90,7 @@ final class ExplainRewrite
                 throws SemanticException
         {
             if (isTypeValidate(node)) {
-                return process(node.getStatement());
+                return node.getStatement();
             }
 
             if (node.isAnalyze()) {
