@@ -74,7 +74,6 @@ class JavaDateFormatter implements DateFormatter {
     private final List<DateTimeFormatter> parsers;
     private final JavaDateFormatter roundupParser;
     private final Boolean canCacheLastParsedFormatter;
-    private volatile DateTimeFormatter lastParsedformatter = null;
 
     /**
      * A round up formatter
@@ -151,7 +150,7 @@ class JavaDateFormatter implements DateFormatter {
         if (parsers.length == 0) {
             this.parsers = Collections.singletonList(printer);
         } else {
-            this.parsers = Arrays.asList(parsers);
+            this.parsers = new CopyOnWriteArrayList<>(parsers);
         }
         List<DateTimeFormatter> roundUp = createRoundUpParser(format, roundupParserConsumer);
         this.roundupParser = new RoundUpFormatter(format, roundUp);
@@ -236,7 +235,7 @@ class JavaDateFormatter implements DateFormatter {
         this.printFormat = printFormat;
         this.printer = printer;
         this.roundupParser = roundUpParsers != null ? new RoundUpFormatter(format, roundUpParsers) : null;
-        this.parsers = parsers;
+        this.parsers = new CopyOnWriteArrayList<>(parsers);
         this.canCacheLastParsedFormatter = canCacheLastParsedFormatter;
     }
 
@@ -287,22 +286,24 @@ class JavaDateFormatter implements DateFormatter {
     private TemporalAccessor doParse(String input) {
         if (parsers.size() > 1) {
             Object object = null;
-            if (canCacheLastParsedFormatter && lastParsedformatter != null) {
-                ParsePosition pos = new ParsePosition(0);
-                object = lastParsedformatter.toFormat().parseObject(input, pos);
-                if (parsingSucceeded(object, input, pos)) {
-                    return (TemporalAccessor) object;
-                }
-            }
+            DateTimeFormatter lastParsedformatter = null;
             for (DateTimeFormatter formatter : parsers) {
                 ParsePosition pos = new ParsePosition(0);
                 object = formatter.toFormat().parseObject(input, pos);
                 if (parsingSucceeded(object, input, pos)) {
                     lastParsedformatter = formatter;
-                    return (TemporalAccessor) object;
+                    break;
                 }
             }
-
+            if (lastParsedformatter != null) {
+                if (canCacheLastParsedFormatter && lastParsedformatter != parsers.get(0)) {
+                    synchronized (parsers) {
+                        parsers.remove(lastParsedformatter);
+                        parsers.add(0, lastParsedformatter);
+                    }
+                }
+                return (TemporalAccessor) object;
+            }
             throw new DateTimeParseException("Failed to parse with all enclosed parsers", input, 0);
         }
         return this.parsers.get(0).parse(input);

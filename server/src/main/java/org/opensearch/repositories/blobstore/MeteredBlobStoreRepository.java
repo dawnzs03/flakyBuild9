@@ -53,12 +53,13 @@ public abstract class MeteredBlobStoreRepository extends BlobStoreRepository {
 
     public MeteredBlobStoreRepository(
         RepositoryMetadata metadata,
+        boolean compress,
         NamedXContentRegistry namedXContentRegistry,
         ClusterService clusterService,
         RecoverySettings recoverySettings,
         Map<String, String> location
     ) {
-        super(metadata, namedXContentRegistry, clusterService, recoverySettings);
+        super(metadata, compress, namedXContentRegistry, clusterService, recoverySettings);
         ThreadPool threadPool = clusterService.getClusterApplierService().threadPool();
         this.repositoryInfo = new RepositoryInfo(
             UUIDs.randomBase64UUID(),
@@ -67,14 +68,6 @@ public abstract class MeteredBlobStoreRepository extends BlobStoreRepository {
             location,
             threadPool.absoluteTimeInMillis()
         );
-    }
-
-    @Override
-    public void reload(RepositoryMetadata repositoryMetadata) {
-        super.reload(repositoryMetadata);
-
-        // Not adding any additional reload logic here is intentional as the constructor only
-        // initializes the repositoryInfo from the repo metadata, which cannot be changed.
     }
 
     public RepositoryStatsSnapshot statsSnapshot() {

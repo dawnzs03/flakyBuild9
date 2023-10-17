@@ -297,21 +297,21 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         Setting.Property.NodeScope
     );
 
-    protected volatile boolean supportURLRepo;
+    protected final boolean supportURLRepo;
 
-    private volatile int maxShardBlobDeleteBatch;
+    private final int maxShardBlobDeleteBatch;
 
-    private volatile Compressor compressor;
+    private final Compressor compressor;
 
-    private volatile boolean cacheRepositoryData;
+    private final boolean cacheRepositoryData;
 
-    private volatile RateLimiter snapshotRateLimiter;
+    private final RateLimiter snapshotRateLimiter;
 
-    private volatile RateLimiter restoreRateLimiter;
+    private final RateLimiter restoreRateLimiter;
 
-    private volatile RateLimiter remoteUploadRateLimiter;
+    private final RateLimiter remoteUploadRateLimiter;
 
-    private volatile RateLimiter remoteDownloadRateLimiter;
+    private final RateLimiter remoteDownloadRateLimiter;
 
     private final CounterMetric snapshotRateLimitingTimeInNanos = new CounterMetric();
 
@@ -356,7 +356,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         BlobStoreIndexShardSnapshots::fromXContent
     );
 
-    private volatile boolean readOnly;
+    private final boolean readOnly;
 
     private final boolean isSystemRepository;
 
@@ -366,7 +366,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final SetOnce<BlobStore> blobStore = new SetOnce<>();
 
-    protected final ClusterService clusterService;
+    private final ClusterService clusterService;
 
     private final RecoverySettings recoverySettings;
 
@@ -400,54 +400,36 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     /**
      * IO buffer size hint for reading and writing to the underlying blob store.
      */
-    protected volatile int bufferSize;
+    protected final int bufferSize;
 
     /**
      * Constructs new BlobStoreRepository
-     * @param repositoryMetadata   The metadata for this repository including name and settings
+     * @param metadata   The metadata for this repository including name and settings
      * @param clusterService ClusterService
      */
     protected BlobStoreRepository(
-        final RepositoryMetadata repositoryMetadata,
+        final RepositoryMetadata metadata,
+        final boolean compress,
         final NamedXContentRegistry namedXContentRegistry,
         final ClusterService clusterService,
         final RecoverySettings recoverySettings
     ) {
-        // Read RepositoryMetadata as the first step
-        readRepositoryMetadata(repositoryMetadata);
-
-        isSystemRepository = SYSTEM_REPOSITORY_SETTING.get(metadata.settings());
+        this.metadata = metadata;
         this.namedXContentRegistry = namedXContentRegistry;
         this.threadPool = clusterService.getClusterApplierService().threadPool();
         this.clusterService = clusterService;
         this.recoverySettings = recoverySettings;
-    }
-
-    @Override
-    public void reload(RepositoryMetadata repositoryMetadata) {
-        readRepositoryMetadata(repositoryMetadata);
-    }
-
-    /**
-     * Reloads the values derived from the Repository Metadata
-     *
-     * @param repositoryMetadata RepositoryMetadata instance to derive the values from
-     */
-    private void readRepositoryMetadata(RepositoryMetadata repositoryMetadata) {
-        this.metadata = repositoryMetadata;
-
-        supportURLRepo = SUPPORT_URL_REPO.get(metadata.settings());
+        this.supportURLRepo = SUPPORT_URL_REPO.get(metadata.settings());
         snapshotRateLimiter = getRateLimiter(metadata.settings(), "max_snapshot_bytes_per_sec", new ByteSizeValue(40, ByteSizeUnit.MB));
         restoreRateLimiter = getRateLimiter(metadata.settings(), "max_restore_bytes_per_sec", ByteSizeValue.ZERO);
         remoteUploadRateLimiter = getRateLimiter(metadata.settings(), "max_remote_upload_bytes_per_sec", ByteSizeValue.ZERO);
         remoteDownloadRateLimiter = getRateLimiter(metadata.settings(), "max_remote_download_bytes_per_sec", ByteSizeValue.ZERO);
         readOnly = READONLY_SETTING.get(metadata.settings());
+        isSystemRepository = SYSTEM_REPOSITORY_SETTING.get(metadata.settings());
         cacheRepositoryData = CACHE_REPOSITORY_DATA.get(metadata.settings());
         bufferSize = Math.toIntExact(BUFFER_SIZE_SETTING.get(metadata.settings()).getBytes());
         maxShardBlobDeleteBatch = MAX_SNAPSHOT_SHARD_BLOB_DELETE_BATCH_SIZE.get(metadata.settings());
-        compressor = COMPRESS_SETTING.get(metadata.settings())
-            ? COMPRESSION_TYPE_SETTING.get(metadata.settings())
-            : CompressorRegistry.none();
+        this.compressor = compress ? COMPRESSION_TYPE_SETTING.get(metadata.settings()) : CompressorRegistry.none();
     }
 
     @Override

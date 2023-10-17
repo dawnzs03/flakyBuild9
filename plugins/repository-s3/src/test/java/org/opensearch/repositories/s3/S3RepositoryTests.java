@@ -125,8 +125,7 @@ public class S3RepositoryTests extends OpenSearchTestCase implements ConfigPathS
     }
 
     public void testDefaultBufferSize() {
-        Settings settings = Settings.builder().build();
-        final RepositoryMetadata metadata = new RepositoryMetadata("dummy-repo", "mock", settings);
+        final RepositoryMetadata metadata = new RepositoryMetadata("dummy-repo", "mock", Settings.EMPTY);
         try (S3Repository s3repo = createS3Repo(metadata)) {
             assertThat(s3repo.getBlobStore(), is(nullValue()));
             s3repo.start();
@@ -134,13 +133,6 @@ public class S3RepositoryTests extends OpenSearchTestCase implements ConfigPathS
             assertThat(s3repo.getBlobStore(), not(nullValue()));
             assertThat(defaultBufferSize, Matchers.lessThanOrEqualTo(100L * 1024 * 1024));
             assertThat(defaultBufferSize, Matchers.greaterThanOrEqualTo(5L * 1024 * 1024));
-        }
-    }
-
-    public void testIsReloadable() {
-        final RepositoryMetadata metadata = new RepositoryMetadata("dummy-repo", "mock", Settings.EMPTY);
-        try (S3Repository s3repo = createS3Repo(metadata)) {
-            assertTrue(s3repo.isReloadable());
         }
     }
 

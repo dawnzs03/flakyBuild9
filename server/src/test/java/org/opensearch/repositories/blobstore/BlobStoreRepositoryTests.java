@@ -252,7 +252,7 @@ public class BlobStoreRepositoryTests extends BlobStoreRepositoryHelperTests {
         );
     }
 
-    public void testFsRepositoryCompressDeprecatedIgnored() {
+    public void testFsRepositoryCompressDeprecated() {
         final Path location = OpenSearchIntegTestCase.randomRepoPath(node().settings());
         final Settings settings = Settings.builder().put(node().settings()).put("location", location).build();
         final RepositoryMetadata metadata = new RepositoryMetadata("test-repo", REPO_TYPE, settings);
@@ -265,7 +265,10 @@ public class BlobStoreRepositoryTests extends BlobStoreRepositoryHelperTests {
 
         new FsRepository(metadata, useCompressEnvironment, null, BlobStoreTestUtil.mockClusterService(), null);
 
-        assertNoDeprecationWarnings();
+        assertWarnings(
+            "[repositories.fs.compress] setting was deprecated in OpenSearch and will be removed in a future release!"
+                + " See the breaking changes documentation for the next major version."
+        );
     }
 
     private static void writeIndexGen(BlobStoreRepository repository, RepositoryData repositoryData, long generation) throws Exception {

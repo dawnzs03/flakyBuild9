@@ -10,7 +10,6 @@ package org.opensearch.test.telemetry;
 
 import org.opensearch.telemetry.Telemetry;
 import org.opensearch.telemetry.TelemetrySettings;
-import org.opensearch.telemetry.metrics.Counter;
 import org.opensearch.telemetry.metrics.MetricsTelemetry;
 import org.opensearch.telemetry.tracing.TracingTelemetry;
 import org.opensearch.test.telemetry.tracing.MockTracingTelemetry;
@@ -35,20 +34,6 @@ public class MockTelemetry implements Telemetry {
     @Override
     public MetricsTelemetry getMetricsTelemetry() {
         return new MetricsTelemetry() {
-            @Override
-            public Counter createCounter(String name, String description, String unit) {
-                return null;
-            }
-
-            @Override
-            public Counter createUpDownCounter(String name, String description, String unit) {
-                return null;
-            }
-
-            @Override
-            public void close() {
-
-            }
         };
     }
 }

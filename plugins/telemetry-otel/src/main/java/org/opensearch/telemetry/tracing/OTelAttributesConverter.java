@@ -6,9 +6,7 @@
  * compatible open source license.
  */
 
-package org.opensearch.telemetry;
-
-import org.opensearch.telemetry.metrics.tags.Tags;
+package org.opensearch.telemetry.tracing;
 
 import java.util.Locale;
 
@@ -18,7 +16,7 @@ import io.opentelemetry.api.common.AttributesBuilder;
 /**
  * Converts {@link org.opensearch.telemetry.tracing.attributes.Attributes} to OTel {@link Attributes}
  */
-public final class OTelAttributesConverter {
+final class OTelAttributesConverter {
 
     /**
      * Constructor.
@@ -30,7 +28,7 @@ public final class OTelAttributesConverter {
      * @param attributes attributes
      * @return otel attributes.
      */
-    public static Attributes convert(org.opensearch.telemetry.tracing.attributes.Attributes attributes) {
+    static Attributes convert(org.opensearch.telemetry.tracing.attributes.Attributes attributes) {
         AttributesBuilder attributesBuilder = Attributes.builder();
         if (attributes != null) {
             attributes.getAttributesMap().forEach((x, y) -> addSpanAttribute(x, y, attributesBuilder));
@@ -50,18 +48,5 @@ public final class OTelAttributesConverter {
         } else {
             throw new IllegalArgumentException(String.format(Locale.ROOT, "Span attribute value %s type not supported", value));
         }
-    }
-
-    /**
-     * Attribute converter.
-     * @param tags attributes
-     * @return otel attributes.
-     */
-    public static Attributes convert(Tags tags) {
-        AttributesBuilder attributesBuilder = Attributes.builder();
-        if (tags != null) {
-            tags.getTagsMap().forEach((x, y) -> addSpanAttribute(x, y, attributesBuilder));
-        }
-        return attributesBuilder.build();
     }
 }
