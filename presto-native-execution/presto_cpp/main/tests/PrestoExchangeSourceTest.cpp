@@ -532,7 +532,7 @@ TEST_P(PrestoExchangeSourceTestSuite, retries) {
   numTries = -1000000;
   EXPECT_THAT(
       [&]() { waitForNextPage(queue); },
-      ThrowsMessage<std::exception>(HasSubstr("Connection reset by peer")));
+      ThrowsMessage<std::runtime_error>(HasSubstr("Connection reset by peer")));
 }
 
 TEST_P(PrestoExchangeSourceTestSuite, earlyTerminatingConsumer) {
@@ -714,7 +714,7 @@ TEST_P(PrestoExchangeSourceTestSuite, failedProducer) {
   // Stop server to simulate failed connection.
   serverWrapper.stop();
 
-  EXPECT_THROW(waitForNextPage(queue), std::exception);
+  EXPECT_THROW(waitForNextPage(queue), std::runtime_error);
 }
 
 TEST_P(PrestoExchangeSourceTestSuite, exceedingMemoryCapacityForHttpResponse) {
