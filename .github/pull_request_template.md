@@ -1,22 +1,8 @@
-<!-- Thank you for submitting a pull request! Find more information in our development guide at https://github.com/trinodb/trino/blob/master/.github/DEVELOPMENT.md and contact us on #dev in Slack. -->
-<!-- Provide an overview of the PR for maintainers and reviewers. -->
-## Description
 
+## Checklist
 
-
-<!-- Provide details that would help an engineer who is unfamiliar with this part of the code. -->
-## Additional context and related issues
-
-
-
-<!-- Mark the appropriate option with an (x). Propose a release note if you can. -->
-## Release notes
-
-( ) This is not user-visible or docs only and no release notes are required.
-( ) Release notes are required, please propose a release note for me.
-( ) Release notes are required, with the following suggested text:
-
-```markdown
-# Section
-* Fix some things. ({issue}`issuenumber`)
-```
+- [ ] The PR conforms to DataHub's [Contributing Guideline](https://github.com/datahub-project/datahub/blob/master/docs/CONTRIBUTING.md) (particularly [Commit Message Format](https://github.com/datahub-project/datahub/blob/master/docs/CONTRIBUTING.md#commit-message-format))
+- [ ] Links to related issues (if applicable)
+- [ ] Tests for the changes have been added/updated (if applicable)
+- [ ] Docs related to the changes have been added/updated (if applicable). If a new feature has been added a Usage Guide has been added for the same.
+- [ ] For any breaking change/potential downtime/deprecation/big changes an entry has been made in [Updating DataHub](https://github.com/datahub-project/datahub/blob/master/docs/how/updating-datahub.md)
