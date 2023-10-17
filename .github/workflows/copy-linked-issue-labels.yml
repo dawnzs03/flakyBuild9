@@ -1,0 +1,23 @@
+name: Copy labels from linked issues
+on:
+  push:
+    branches: [ opensearch ]
+
+
+
+jobs:
+  copy-issue-labels:
+    if: github.repository == 'opensearch-project/OpenSearch'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+      contents: read
+      pull-requests: write
+    steps:
+      - name: copy-issue-labels
+        uses: michalvankodev/copy-issue-labels@v1.3.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          labels-to-exclude: |
+            untriaged
+            triaged

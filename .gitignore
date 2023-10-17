@@ -1,45 +1,67 @@
-# Eclipse project files
-.settings
-.externalToolBuilders
-.classpath
+
+# intellij files
+.idea/
+*.iml
+*.ipr
+*.iws
+build-idea/
+out/
+
+# include shared intellij config
+!.idea/inspectionProfiles/Project_Default.xml
+!.idea/runConfigurations/Debug_OpenSearch.xml
+!.idea/vcs.xml
+!.idea/icon.svg
+
+# These files are generated in the main tree by annotation processors
+benchmarks/src/main/generated/*
+benchmarks/bin/*
+benchmarks/build-eclipse-default/*
+server/bin/*
+server/build-eclipse-default/*
+test/framework/build-eclipse-default/*
+
+# eclipse files
 .project
+.classpath
+.settings
+build-eclipse/
 
-# m2e-code-quality Eclipse IDE plugin temporary configuration files for Eclipse CS Checkstyle / PMD / SpotBugs Plug-Ins
-.checkstyle
-.pmd
-.pmdruleset.xml
-.fbExcludeFilterFile
-
-# NetBeans project files
-nbactions.xml
+# netbeans files
 nb-configuration.xml
+nbactions.xml
 
-# Maven build folder
-target
-bin
+# gradle stuff
+.gradle/
+build/
 
-# IDEA project files
-checkstyle.iml
-checkstyle.ipr
-checkstyle.iws
-.idea
+# vscode stuff
+.vscode/
 
-# Temp files
-*~
+# testing stuff
+**/.local*
+.vagrant/
+/logs/
 
-# Java Virtual machine crash logs
-hs_err_pid*
-replay_pid*
-
-# Apple MAC OSX hidden file
+# osx stuff
 .DS_Store
 
-# NonDex files
-.nondex
+# default folders in which the create_bwc_index.py expects to find old es versions in
+/backwards
+/dev-tools/backwards
 
-# temp folder for files/folders of ci validations
-.ci-temp
+# needed in case docs build is run...maybe we can configure doc build to generate files under build?
+html_docs
 
-# antlr4 grammar generates these
-**/gen
-**/JavaLanguageLexer.tokens
+# random old stuff that we should look at the necessity of...
+/tmp/
+eclipse-build
+
+# projects using testfixtures
+testfixtures_shared/
+
+# These are generated from .ci/jobs.t
+.ci/jobs/
+
+# build files generated
+doc-tools/missing-doclet/bin/

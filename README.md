@@ -1,198 +1,62 @@
-# ![](https://raw.githubusercontent.com/checkstyle/resources/master/img/checkstyle-logos/checkstyle-logo-260x99.png)
+<img src="https://opensearch.org/assets/img/opensearch-logo-themed.svg" height="64px">
 
-Checkstyle is a tool for checking Java source code for adherence to a Code Standard
-or set of validation rules (best practices).
+[![Chat](https://img.shields.io/badge/chat-on%20forums-blue)](https://forum.opensearch.org/c/opensearch/)
+[![Documentation](https://img.shields.io/badge/documentation-reference-blue)](https://opensearch.org/docs/latest/opensearch/index/)
+[![Code Coverage](https://codecov.io/gh/opensearch-project/OpenSearch/branch/main/graph/badge.svg)](https://codecov.io/gh/opensearch-project/OpenSearch)
+[![Untriaged Issues](https://img.shields.io/github/issues/opensearch-project/OpenSearch/untriaged?labelColor=red)](https://github.com/opensearch-project/OpenSearch/issues?q=is%3Aissue+is%3Aopen+label%3A"untriaged")
+[![Security Vulnerabilities](https://img.shields.io/github/issues/opensearch-project/OpenSearch/security%20vulnerability?labelColor=red)](https://github.com/opensearch-project/OpenSearch/issues?q=is%3Aissue+is%3Aopen+label%3A"security%20vulnerability")
+[![Open Issues](https://img.shields.io/github/issues/opensearch-project/OpenSearch)](https://github.com/opensearch-project/OpenSearch/issues)
+[![Open Pull Requests](https://img.shields.io/github/issues-pr/opensearch-project/OpenSearch)](https://github.com/opensearch-project/OpenSearch/pulls)
+[![2.10 Open Issues](https://img.shields.io/github/issues/opensearch-project/OpenSearch/v2.10.0)](https://github.com/opensearch-project/OpenSearch/issues?q=is%3Aissue+is%3Aopen+label%3A"v2.10.0")
+[![3.0 Open Issues](https://img.shields.io/github/issues/opensearch-project/OpenSearch/v3.0.0)](https://github.com/opensearch-project/OpenSearch/issues?q=is%3Aissue+is%3Aopen+label%3A"v3.0.0")
+[![GHA gradle check](https://github.com/opensearch-project/OpenSearch/actions/workflows/gradle-check.yml/badge.svg)](https://github.com/opensearch-project/OpenSearch/actions/workflows/gradle-check.yml)
+[![GHA validate pull request](https://github.com/opensearch-project/OpenSearch/actions/workflows/wrapper.yml/badge.svg)](https://github.com/opensearch-project/OpenSearch/actions/workflows/wrapper.yml)
+[![GHA precommit](https://github.com/opensearch-project/OpenSearch/actions/workflows/precommit.yml/badge.svg)](https://github.com/opensearch-project/OpenSearch/actions/workflows/precommit.yml)
+[![Jenkins gradle check job](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fbuild.ci.opensearch.org%2Fjob%2Fgradle-check%2F&label=Jenkins%20Gradle%20Check)](https://build.ci.opensearch.org/job/gradle-check/)
 
-[![][travis img]][travis]
-[![][appveyor img]][appveyor]
-[![][circleci img]][circleci]
-[![][cirrusci img]][cirrusci]
-[![][coverage img]][coverage]
-[![][snyk img]][snyk]
-[![][semaphoreci img]][semaphoreci]
-[![][azure img]][azure]
-[![][error prone img]][error prone]
-[![][pitest img]][pitest]
-[![][checker framework img]][checker framework]
+- [Welcome!](#welcome)
+- [Project Resources](#project-resources)
+- [Code of Conduct](#code-of-conduct)
+- [Security](#security)
+- [License](#license)
+- [Copyright](#copyright)
+- [Trademark](#trademark)
 
-[![][dependabot img]][dependabot]
+## Welcome!
 
-[![][mavenbadge img]][mavenbadge]
-[![][sonar img]][sonar]
+**OpenSearch** is [a community-driven, open source fork](https://aws.amazon.com/blogs/opensource/introducing-opensearch/) of [Elasticsearch](https://en.wikipedia.org/wiki/Elasticsearch) and [Kibana](https://en.wikipedia.org/wiki/Kibana) following the [license change](https://blog.opensource.org/the-sspl-is-not-an-open-source-license/) in early 2021. We're looking to sustain (and evolve!) a search and analytics suite for the multitude of businesses who are dependent on the rights granted by the original, [Apache v2.0 License](LICENSE.txt).
 
-[![][release notes/version img]][release notes/version]
+## Project Resources
 
-[![][closed issues img]][closed issues]
-[![][link check img]][link check]
+* [Project Website](https://opensearch.org/)
+* [Downloads](https://opensearch.org/downloads.html)
+* [Documentation](https://opensearch.org/docs/)
+* Need help? Try [Forums](https://discuss.opendistrocommunity.dev/)
+* [Project Principles](https://opensearch.org/#principles)
+* [Contributing to OpenSearch](CONTRIBUTING.md)
+* [Maintainer Responsibilities](MAINTAINERS.md)
+* [Release Management](RELEASING.md)
+* [Admin Responsibilities](ADMINS.md)
+* [Testing](TESTING.md)
+* [Security](SECURITY.md)
 
-[![][milestone img]][milestone]
+## Code of Conduct
 
-Members chat: [![][gitter_mem img]][gitter_mem]
-Contributors chat: [![][gitter_con img]][gitter_con]
+This project has adopted the [Amazon Open Source Code of Conduct](CODE_OF_CONDUCT.md). For more information see the [Code of Conduct FAQ](https://aws.github.io/code-of-conduct-faq), or contact [opensource-codeofconduct@amazon.com](mailto:opensource-codeofconduct@amazon.com) with any additional questions or comments.
 
-The latest release version can be found at
-[GitHub releases](https://github.com/checkstyle/checkstyle/releases/)
-or at [Maven repo](https://repo1.maven.org/maven2/com/puppycrawl/tools/checkstyle/).
+## Security
+If you discover a potential security issue in this project we ask that you notify AWS/Amazon Security via our [vulnerability reporting page](http://aws.amazon.com/security/vulnerability-reporting/) or directly via email to aws-security@amazon.com. Please do **not** create a public GitHub issue.
 
-Each-commit builds of maven artifacts can be found at
-[Maven Snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/com/puppycrawl/tools/checkstyle/).
+## License
 
-Documentation is available in HTML format, see https://checkstyle.org/checks.html.
+This project is licensed under the [Apache v2.0 License](LICENSE.txt).
 
-## Build instructions and Contribution
+## Copyright
 
-[Build instructions](https://checkstyle.org/contributing.html#Build)
+Copyright OpenSearch Contributors. See [NOTICE](NOTICE.txt) for details.
 
-[Setup IDE for development](https://checkstyle.org/beginning_development.html)
+## Trademark
 
-[Explanation on how to create your own module](https://checkstyle.org/extending.html)
+OpenSearch is a registered trademark of Amazon Web Services.
 
-[Verification of code quality](https://checkstyle.org/contributing.html#Quality_matters)
-
-[Sending Pull Request](https://checkstyle.org/contributing.html#Submitting_your_contribution)
-
-[Report Issue](https://checkstyle.org/contributing.html#Report_an_issue)
-
-## Continuous integration and Quality reports
-
-See our CIs statuses.
-
-Quality reports: https://checkstyle.org/project-reports.html
-
-JavaScript, CSS and Java source file analysis on Codacy: [![][codacy img]][codacy]
-
-## Feedback/Support
-
-Please send any feedback to https://groups.google.com/forum/?hl=en#!forum/checkstyle
-
-Questions and Answers from community: [![][stackoverflow img]][stackoverflow]
-
-Bugs and Feature requests (not the questions): https://github.com/checkstyle/checkstyle/issues
-
-## Support/Sponsor checkstyle
-
-If you want to speed up fixing of issue and want to encourage somebody in
-internet to resolve any issue:
-[![][bountysource img]][bountysource]
-[![][salt.bountysource img]][salt.bountysource]
-[![][flattr img]][flattr]
-[![][liberapay img]][liberapay]
-[![][backers.opencollective img]][backers.opencollective]
-[![][sponsors.opencollective img]][sponsors.opencollective]
-
-## Licensing
-
-[![][license img]][license]
-
-This software is licensed under the terms in the file named "LICENSE" in this
-directory.
-
-The software uses the ANTLR package (https://www.antlr.org/). Its license terms
-are in the file named "RIGHTS.antlr" in this directory.
-
-This product includes software developed by
-The Apache Software Foundation (https://www.apache.org/).
-
-The software uses the Logging and Beanutils packages from the
-Apache Commons project (https://commons.apache.org/). The license terms
-of these packages are in the file named "LICENSE.apache20" in this
-directory.
-
-The software uses the Google Guava Libraries
-(https://github.com/google/guava/). The license terms of
-these packages are in the file named "LICENSE.apache20" in this
-directory.
-
-The software uses the Picocli Library
-(https://github.com/remkop/picocli/). Its license terms
-are in the file named "LICENSE.apache20" in this directory.
-
-[travis]:https://travis-ci.com/github/checkstyle/checkstyle/builds
-[travis img]:https://api.travis-ci.com/checkstyle/checkstyle.svg
-
-[appveyor]:https://ci.appveyor.com/project/checkstyle/checkstyle/history
-[appveyor img]:https://ci.appveyor.com/api/projects/status/rw6bw3dl9kph6ucc?svg=true
-
-[sonar]:https://sonarcloud.io/dashboard?id=org.checkstyle%3Acheckstyle
-[sonar img]:https://sonarcloud.io/api/project_badges/measure?project=org.checkstyle%3Acheckstyle&metric=sqale_index
-
-[codacy]:https://www.codacy.com/app/checkstyle/checkstyle
-[codacy img]:https://api.codacy.com/project/badge/3adf12d434314ba8b38277ea46d3c44b
-
-[coverage]:https://codecov.io/github/checkstyle/checkstyle?branch=master
-[coverage img]:https://codecov.io/github/checkstyle/checkstyle/coverage.svg?branch=master
-
-[license]:LICENSE
-[license img]:https://img.shields.io/badge/license-GNU%20LGPL%20v2.1-blue.svg
-
-[mavenbadge]:https://search.maven.org/search?q=g:%22com.puppycrawl.tools%22%20AND%20a:%22checkstyle%22
-[mavenbadge img]:https://img.shields.io/maven-central/v/com.puppycrawl.tools/checkstyle.svg?label=Maven%20Central
-
-[gitter_mem]:https://gitter.im/checkstyle
-[gitter_mem img]:https://img.shields.io/badge/gitter-JOIN%20CHAT-blue.svg
-
-[gitter_con]:https://gitter.im/checkstyle/checkstyle
-[gitter_con img]:https://badges.gitter.im/Join%20Chat.svg
-
-[stackoverflow]:https://stackoverflow.com/questions/tagged/checkstyle
-[stackoverflow img]:https://img.shields.io/badge/stackoverflow-CHECKSTYLE-blue.svg
-
-[teamcity]:https://teamcity.jetbrains.com/viewType.html?buildTypeId=Checkstyle_IdeaInspectionsMaster
-[teamcity img]:https://teamcity.jetbrains.com/app/rest/builds/buildType:(id:Checkstyle_IdeaInspectionsMaster)/statusIcon
-
-[circleci]: https://circleci.com/gh/checkstyle/checkstyle/tree/master
-[circleci img]: https://circleci.com/gh/checkstyle/checkstyle/tree/master.svg?style=svg
-
-[cirrusci]: https://cirrus-ci.com/github/checkstyle/checkstyle
-[cirrusci img]: https://api.cirrus-ci.com/github/checkstyle/checkstyle.svg?branch=master
-
-[snyk]: https://snyk.io/test/github/checkstyle/checkstyle?targetFile=pom.xml
-[snyk img]: https://snyk.io/test/github/checkstyle/checkstyle/badge.svg
-
-[semaphoreci]: https://checkstyle.semaphoreci.com/projects/checkstyle
-[semaphoreci img]: https://checkstyle.semaphoreci.com/badges/checkstyle/branches/master.svg?style=shields
-
-[flattr]:https://flattr.com/submit/auto?fid=g39d10&amp;url=https%3A%2F%2Fcheckstyle.org
-[flattr img]:https://button.flattr.com/flattr-badge-large.png
-
-[azure]:https://dev.azure.com/romanivanovjr/romanivanovjr/_build/latest?definitionId=1&branchName=master
-[azure img]:https://dev.azure.com/romanivanovjr/romanivanovjr/_apis/build/status/checkstyle.checkstyle?branchName=master
-
-[liberapay]:https://liberapay.com/checkstyle/
-[liberapay img]:https://liberapay.com/assets/widgets/donate.svg
-
-[bountysource]:https://www.bountysource.com/teams/checkstyle/issues
-[bountysource img]:https://api.bountysource.com/badge/team?team_id=3568&style=bounties_posted
-
-[salt.bountysource]:https://salt.bountysource.com/teams/checkstyle
-[salt.bountysource img]:https://img.shields.io/bountysource/team/checkstyle/activity.svg?label=salt.bountysource
-
-[backers.opencollective]:https://opencollective.com/checkstyle/
-[backers.opencollective img]:https://opencollective.com/checkstyle/backers/badge.svg
-
-[sponsors.opencollective]:https://opencollective.com/checkstyle/
-[sponsors.opencollective img]:https://opencollective.com/checkstyle/sponsors/badge.svg
-
-[dependabot]:https://dependabot.com
-[dependabot img]:https://api.dependabot.com/badges/status?host=github&repo=checkstyle/checkstyle
-
-[closed issues]:https://github.com/checkstyle/checkstyle/actions/workflows/no-old-refs.yml
-[closed issues img]:https://github.com/checkstyle/checkstyle/actions/workflows/no-old-refs.yml/badge.svg
-
-[release notes/version]:https://github.com/checkstyle/checkstyle/actions/workflows/releasenotes-gen.yml
-[release notes/version img]:https://github.com/checkstyle/checkstyle/actions/workflows/releasenotes-gen.yml/badge.svg
-
-[link check]:https://github.com/checkstyle/checkstyle/actions/workflows/run-link-check.yml
-[link check img]:https://github.com/checkstyle/checkstyle/actions/workflows/run-link-check.yml/badge.svg
-
-[error prone]:https://github.com/checkstyle/checkstyle/actions/workflows/error-prone.yml
-[error prone img]:https://github.com/checkstyle/checkstyle/actions/workflows/error-prone.yml/badge.svg
-
-[pitest]:https://github.com/checkstyle/checkstyle/actions/workflows/pitest.yml
-[pitest img]:https://github.com/checkstyle/checkstyle/actions/workflows/pitest.yml/badge.svg
-
-[checker framework]:https://github.com/checkstyle/checkstyle/actions/workflows/checker-framework.yml
-[checker framework img]:https://github.com/checkstyle/checkstyle/actions/workflows/checker-framework.yml/badge.svg
-
-[milestone]:https://github.com/checkstyle/checkstyle/actions/workflows/set-milestone-on-referenced-issue.yml
-[milestone img]:https://github.com/checkstyle/checkstyle/actions/workflows/set-milestone-on-referenced-issue.yml/badge.svg
+OpenSearch includes certain Apache-licensed Elasticsearch code from Elasticsearch B.V. and other source code. Elasticsearch B.V. is not the source of that other source code. ELASTICSEARCH is a registered trademark of Elasticsearch B.V.

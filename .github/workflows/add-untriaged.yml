@@ -1,0 +1,22 @@
+name: Apply 'untriaged' label during issue lifecycle
+
+on:
+  push:
+    branches: [ opensearch ]
+
+
+
+jobs:
+  apply-label:
+    if: github.repository == 'opensearch-project/OpenSearch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['untriaged']
+            })
