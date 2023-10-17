@@ -16,7 +16,6 @@ import org.opensearch.cluster.metadata.Metadata;
 import org.opensearch.cluster.routing.RoutingNode;
 import org.opensearch.cluster.routing.RoutingNodes;
 import org.opensearch.cluster.routing.RoutingPool;
-import org.opensearch.cluster.routing.ShardMovementStrategy;
 import org.opensearch.cluster.routing.ShardRouting;
 import org.opensearch.cluster.routing.ShardRoutingState;
 import org.opensearch.cluster.routing.UnassignedInfo;
@@ -59,7 +58,6 @@ public class LocalShardsBalancer extends ShardsBalancer {
     private final RoutingAllocation allocation;
     private final RoutingNodes routingNodes;
     private final boolean movePrimaryFirst;
-    private final ShardMovementStrategy shardMovementStrategy;
 
     private final boolean preferPrimaryBalance;
     private final BalancedShardsAllocator.WeightFunction weight;
@@ -76,7 +74,6 @@ public class LocalShardsBalancer extends ShardsBalancer {
         Logger logger,
         RoutingAllocation allocation,
         boolean movePrimaryFirst,
-        ShardMovementStrategy shardMovementStrategy,
         BalancedShardsAllocator.WeightFunction weight,
         float threshold,
         boolean preferPrimaryBalance
@@ -96,7 +93,6 @@ public class LocalShardsBalancer extends ShardsBalancer {
         sorter = newNodeSorter();
         inEligibleTargetNode = new HashSet<>();
         this.preferPrimaryBalance = preferPrimaryBalance;
-        this.shardMovementStrategy = shardMovementStrategy;
     }
 
     /**
@@ -532,22 +528,6 @@ public class LocalShardsBalancer extends ShardsBalancer {
     }
 
     /**
-     * Returns the correct Shard movement strategy to use.
-     * If users are still using deprecated setting "move_primary_first", we want behavior to remain unchanged.
-     * In the event of changing ShardMovementStrategy setting from default setting NO_PREFERENCE to either PRIMARY_FIRST or REPLICA_FIRST, we want that
-     * to have priority over values set in move_primary_first setting.
-     */
-    private ShardMovementStrategy getShardMovementStrategy() {
-        if (shardMovementStrategy != ShardMovementStrategy.NO_PREFERENCE) {
-            return shardMovementStrategy;
-        }
-        if (movePrimaryFirst) {
-            return ShardMovementStrategy.PRIMARY_FIRST;
-        }
-        return ShardMovementStrategy.NO_PREFERENCE;
-    }
-
-    /**
      * Move started shards that can not be allocated to a node anymore
      *
      * For each shard to be moved this function executes a move operation
@@ -569,8 +549,7 @@ public class LocalShardsBalancer extends ShardsBalancer {
             checkAndAddInEligibleTargetNode(currentNode.getRoutingNode());
         }
         boolean primariesThrottled = false;
-        for (Iterator<ShardRouting> it = allocation.routingNodes().nodeInterleavedShardIterator(getShardMovementStrategy()); it
-            .hasNext();) {
+        for (Iterator<ShardRouting> it = allocation.routingNodes().nodeInterleavedShardIterator(movePrimaryFirst); it.hasNext();) {
             // Verify if the cluster concurrent recoveries have been reached.
             if (allocation.deciders().canMoveAnyShard(allocation).type() != Decision.Type.YES) {
                 logger.info(
@@ -594,8 +573,8 @@ public class LocalShardsBalancer extends ShardsBalancer {
                 continue;
             }
 
-            // Ensure that replicas don't relocate if primaries are being throttled and primary first shard movement strategy is enabled
-            if ((shardMovementStrategy == ShardMovementStrategy.PRIMARY_FIRST) && primariesThrottled && !shardRouting.primary()) {
+            // Ensure that replicas don't relocate if primaries are being throttled and primary first is enabled
+            if (movePrimaryFirst && primariesThrottled && !shardRouting.primary()) {
                 logger.info(
                     "Cannot move any replica shard in the cluster as movePrimaryFirst is enabled and primary shards"
                         + "are being throttled. Skipping shard iteration"

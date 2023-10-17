@@ -202,7 +202,7 @@ import java.util.stream.Collectors;
 import static org.opensearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
 import static org.opensearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_SHARDS;
 import static org.opensearch.common.unit.TimeValue.timeValueMillis;
-import static org.opensearch.core.common.util.CollectionUtils.eagerPartition;
+import static org.opensearch.common.util.CollectionUtils.eagerPartition;
 import static org.opensearch.discovery.DiscoveryModule.DISCOVERY_SEED_PROVIDERS_SETTING;
 import static org.opensearch.discovery.SettingsBasedSeedHostsProvider.DISCOVERY_SEED_HOSTS_SETTING;
 import static org.opensearch.index.IndexSettings.INDEX_SOFT_DELETES_RETENTION_LEASE_PERIOD_SETTING;
@@ -590,34 +590,44 @@ public abstract class OpenSearchIntegTestCase extends OpenSearchTestCase {
     }
 
     private void afterInternal(boolean afterClass) throws Exception {
-        final Scope currentClusterScope = getCurrentClusterScope();
-        if (isInternalCluster()) {
-            internalCluster().clearDisruptionScheme();
-        }
+        boolean success = false;
         try {
-            if (cluster() != null) {
-                if (currentClusterScope != Scope.TEST) {
-                    Metadata metadata = client().admin().cluster().prepareState().execute().actionGet().getState().getMetadata();
-
-                    final Set<String> persistentKeys = new HashSet<>(metadata.persistentSettings().keySet());
-                    assertThat("test leaves persistent cluster metadata behind", persistentKeys, empty());
-
-                    final Set<String> transientKeys = new HashSet<>(metadata.transientSettings().keySet());
-                    assertThat("test leaves transient cluster metadata behind", transientKeys, empty());
-                }
-                ensureClusterSizeConsistency();
-                ensureClusterStateConsistency();
-                ensureClusterStateCanBeReadByNodeTool();
-                beforeIndexDeletion();
-                cluster().wipe(excludeTemplates()); // wipe after to make sure we fail in the test that didn't ack the delete
-                if (afterClass || currentClusterScope == Scope.TEST) {
-                    cluster().close();
-                }
-                cluster().assertAfterTest();
+            final Scope currentClusterScope = getCurrentClusterScope();
+            if (isInternalCluster()) {
+                internalCluster().clearDisruptionScheme();
             }
+            try {
+                if (cluster() != null) {
+                    if (currentClusterScope != Scope.TEST) {
+                        Metadata metadata = client().admin().cluster().prepareState().execute().actionGet().getState().getMetadata();
+
+                        final Set<String> persistentKeys = new HashSet<>(metadata.persistentSettings().keySet());
+                        assertThat("test leaves persistent cluster metadata behind", persistentKeys, empty());
+
+                        final Set<String> transientKeys = new HashSet<>(metadata.transientSettings().keySet());
+                        assertThat("test leaves transient cluster metadata behind", transientKeys, empty());
+                    }
+                    ensureClusterSizeConsistency();
+                    ensureClusterStateConsistency();
+                    ensureClusterStateCanBeReadByNodeTool();
+                    beforeIndexDeletion();
+                    cluster().wipe(excludeTemplates()); // wipe after to make sure we fail in the test that didn't ack the delete
+                    if (afterClass || currentClusterScope == Scope.TEST) {
+                        cluster().close();
+                    }
+                    cluster().assertAfterTest();
+                }
+            } finally {
+                if (currentClusterScope == Scope.TEST) {
+                    clearClusters(); // it is ok to leave persistent / transient cluster state behind if scope is TEST
+                }
+            }
+            success = true;
         } finally {
-            if (currentClusterScope == Scope.TEST) {
-                clearClusters(); // it is ok to leave persistent / transient cluster state behind if scope is TEST
+            if (!success) {
+                // if we failed here that means that something broke horribly so we should clear all clusters
+                // TODO: just let the exception happen, WTF is all this horseshit
+                // afterTestRule.forceFailure();
             }
         }
     }

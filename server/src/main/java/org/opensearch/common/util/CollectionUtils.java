@@ -30,7 +30,7 @@
  * GitHub history for details.
  */
 
-package org.opensearch.core.common.util;
+package org.opensearch.common.util;
 
 import org.opensearch.common.collect.Iterators;
 import org.opensearch.core.common.Strings;
@@ -217,7 +217,6 @@ public class CollectionUtils {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static <E> ArrayList<E> iterableAsArrayList(Iterable<? extends E> elements) {
         if (elements == null) {
             throw new NullPointerException("elements");
@@ -233,7 +232,6 @@ public class CollectionUtils {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static <E> ArrayList<E> arrayAsArrayList(E... elements) {
         if (elements == null) {
             throw new NullPointerException("elements");
@@ -241,7 +239,6 @@ public class CollectionUtils {
         return new ArrayList<>(Arrays.asList(elements));
     }
 
-    @SuppressWarnings("unchecked")
     public static <E> ArrayList<E> asArrayList(E first, E... other) {
         if (other == null) {
             throw new NullPointerException("other");
@@ -252,7 +249,6 @@ public class CollectionUtils {
         return list;
     }
 
-    @SuppressWarnings("unchecked")
     public static <E> ArrayList<E> asArrayList(E first, E second, E... other) {
         if (other == null) {
             throw new NullPointerException("other");
