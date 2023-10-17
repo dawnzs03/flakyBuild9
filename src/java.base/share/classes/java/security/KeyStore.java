@@ -205,7 +205,7 @@ public class KeyStore {
      * the default keystore type.
      * In the Security properties file, the default keystore type is given as:
      * <pre>
-     * keystore.type=pkcs12
+     * keystore.type=jks
      * </pre>
      */
     private static final String KEYSTORE_TYPE = "keystore.type";
@@ -971,7 +971,8 @@ public class KeyStore {
     /**
      * Returns the default keystore type as specified by the
      * {@code keystore.type} security property, or the string
-     * {@literal "pkcs12"} if no such property exists.
+     * {@literal "jks"} (acronym for {@literal "Java keystore"})
+     * if no such property exists.
      *
      * <p>The default keystore type can be used by applications that do not
      * want to use a hard-coded keystore type when calling one of the
@@ -982,7 +983,7 @@ public class KeyStore {
      * {@code keystore.type} security property to the desired keystore type.
      *
      * @return the default keystore type as specified by the
-     * {@code keystore.type} security property, or the string {@literal "pkcs12"}
+     * {@code keystore.type} security property, or the string {@literal "jks"}
      * if no such property exists.
      * @see java.security.Security security properties
      */
@@ -991,7 +992,7 @@ public class KeyStore {
         String kstype = AccessController.doPrivileged((PrivilegedAction<String>) () ->
             Security.getProperty(KEYSTORE_TYPE));
         if (kstype == null) {
-            kstype = "pkcs12";
+            kstype = "jks";
         }
         return kstype;
     }

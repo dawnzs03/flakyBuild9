@@ -36,7 +36,7 @@ import sun.security.action.GetPropertyAction;
  * @since 1.6
  */
 
-public final class LocalGregorianCalendar extends BaseCalendar {
+public class LocalGregorianCalendar extends BaseCalendar {
     private static final Era[] JAPANESE_ERAS = {
         new Era("Meiji",  "M", -3218832000000L, true),
         new Era("Taisho", "T", -1812153600000L, true),
@@ -63,14 +63,13 @@ public final class LocalGregorianCalendar extends BaseCalendar {
     private String name;
     private Era[] eras;
 
-    // Used within java.time and java.util
-    public static final class Date extends BaseCalendar.Date {
+    public static class Date extends BaseCalendar.Date {
 
-        Date() {
+        protected Date() {
             super();
         }
 
-        Date(TimeZone zone) {
+        protected Date(TimeZone zone) {
             super(zone);
         }
 

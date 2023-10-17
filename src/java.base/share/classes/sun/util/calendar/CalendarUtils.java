@@ -25,10 +25,7 @@
 
 package sun.util.calendar;
 
-public final class CalendarUtils {
-
-    // Utility class should not be instantiated
-    private CalendarUtils() {}
+public class CalendarUtils {
 
     /**
      * Returns whether the specified year is a leap year in the Gregorian
@@ -39,9 +36,9 @@ public final class CalendarUtils {
      * calendar system.
      * @see CalendarDate#isLeapYear
      */
-    public static boolean isGregorianLeapYear(int gregorianYear) {
-        return (((gregorianYear % 4) == 0) && (((gregorianYear % 100) != 0)
-                || ((gregorianYear % 400) == 0)));
+    public static final boolean isGregorianLeapYear(int gregorianYear) {
+        return (((gregorianYear % 4) == 0)
+                && (((gregorianYear % 100) != 0) || ((gregorianYear % 400) == 0)));
     }
 
     /**
@@ -54,7 +51,7 @@ public final class CalendarUtils {
      * calendar system.
      * @see CalendarDate#isLeapYear
      */
-    public static boolean isJulianLeapYear(int normalizedJulianYear) {
+    public static final boolean isJulianLeapYear(int normalizedJulianYear) {
         return (normalizedJulianYear % 4) == 0;
     }
 
@@ -67,7 +64,7 @@ public final class CalendarUtils {
      * @param d a divisor that must be greater than 0
      * @return the floor of the quotient
      */
-    public static long floorDivide(long n, long d) {
+    public static final long floorDivide(long n, long d) {
         return ((n >= 0) ?
                 (n / d) : (((n + 1L) / d) - 1L));
     }
@@ -81,7 +78,7 @@ public final class CalendarUtils {
      * @param d a divisor that must be greater than 0
      * @return the floor of the quotient
      */
-    public static int floorDivide(int n, int d) {
+    public static final int floorDivide(int n, int d) {
         return ((n >= 0) ?
                 (n / d) : (((n + 1) / d) - 1));
     }
@@ -99,7 +96,7 @@ public final class CalendarUtils {
      * <code>mod(n, d)</code> is returned.
      * @return the floor of the quotient.
      */
-    public static int floorDivide(int n, int d, int[] r) {
+    public static final int floorDivide(int n, int d, int[] r) {
         if (n >= 0) {
             r[0] = n % d;
             return n / d;
@@ -109,20 +106,20 @@ public final class CalendarUtils {
         return q;
     }
 
-    public static long mod(long x, long y) {
+    public static final long mod(long x, long y) {
         return (x - y * floorDivide(x, y));
     }
 
-    public static int mod(int x, int y) {
+    public static final int mod(int x, int y) {
         return (x - y * floorDivide(x, y));
     }
 
-    public static int amod(int x, int y) {
+    public static final int amod(int x, int y) {
         int z = mod(x, y);
         return (z == 0) ? y : z;
     }
 
-    public static long amod(long x, long y) {
+    public static final long amod(long x, long y) {
         long z = mod(x, y);
         return (z == 0) ? y : z;
     }
@@ -130,7 +127,7 @@ public final class CalendarUtils {
     /**
      * Mimics sprintf(buf, "%0*d", decaimal, width).
      */
-    public static StringBuilder sprintf0d(StringBuilder sb, int value, int width) {
+    public static final StringBuilder sprintf0d(StringBuilder sb, int value, int width) {
         long d = value;
         if (d < 0) {
             sb.append('-');
@@ -149,7 +146,7 @@ public final class CalendarUtils {
         return sb;
     }
 
-    public static StringBuffer sprintf0d(StringBuffer sb, int value, int width) {
+    public static final StringBuffer sprintf0d(StringBuffer sb, int value, int width) {
         long d = value;
         if (d < 0) {
             sb.append('-');

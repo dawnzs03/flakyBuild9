@@ -44,6 +44,7 @@ class EventEmitter : public CHeapObj<mtTracing> {
   const JfrTicks& _end_time;
   Thread* _thread;
   JfrThreadLocal* _jfr_thread_local;
+  traceid _thread_id;
 
   EventEmitter(const JfrTicks& start_time, const JfrTicks& end_time);
   ~EventEmitter();

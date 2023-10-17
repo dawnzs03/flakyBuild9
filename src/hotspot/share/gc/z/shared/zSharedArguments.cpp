@@ -38,16 +38,6 @@ void ZSharedArguments::initialize_alignments() {
   }
 }
 
-void ZSharedArguments::initialize_heap_flags_and_sizes() {
-  GCArguments::initialize_heap_flags_and_sizes();
-
-  if (ZGenerational) {
-    ZArguments::initialize_heap_flags_and_sizes();
-  } else {
-    XArguments::initialize_heap_flags_and_sizes();
-  }
-}
-
 void ZSharedArguments::initialize() {
   GCArguments::initialize();
 

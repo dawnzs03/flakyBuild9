@@ -255,11 +255,11 @@ JVM_ExpandStackFrameInfo(JNIEnv *env, jobject obj);
 JNIEXPORT jobject JNICALL
 JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jint mode,
                   jint skip_frames, jobject contScope, jobject cont,
-                  jint buffer_size, jint start_index, jobjectArray frames);
+                  jint frame_count, jint start_index, jobjectArray frames);
 
 JNIEXPORT jint JNICALL
 JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jint mode, jlong anchor,
-                  jint last_batch_count, jint buffer_size, jint start_index,
+                  jint frame_count, jint start_index,
                   jobjectArray frames);
 
 JNIEXPORT void JNICALL

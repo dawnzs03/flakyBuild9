@@ -56,10 +56,10 @@ JNIEXPORT jboolean JNICALL Java_java_lang_StackStreamFactory_checkStackWalkModes
  */
 JNIEXPORT jobject JNICALL Java_java_lang_StackStreamFactory_00024AbstractStackWalker_callStackWalk
   (JNIEnv *env, jobject stackstream, jint mode, jint skipFrames, jobject contScope, jobject cont,
-   jint bufferSize, jint startIndex, jobjectArray frames)
+   jint batchSize, jint startIndex, jobjectArray frames)
 {
     return JVM_CallStackWalk(env, stackstream, mode, skipFrames, contScope, cont,
-                             bufferSize, startIndex, frames);
+                             batchSize, startIndex, frames);
 }
 
 /*
@@ -69,10 +69,10 @@ JNIEXPORT jobject JNICALL Java_java_lang_StackStreamFactory_00024AbstractStackWa
  */
 JNIEXPORT jint JNICALL Java_java_lang_StackStreamFactory_00024AbstractStackWalker_fetchStackFrames
   (JNIEnv *env, jobject stackstream, jint mode, jlong anchor,
-   int lastBatchFrameCount, jint bufferSize, jint startIndex,
+   jint batchSize, jint startIndex,
    jobjectArray frames)
 {
-    return JVM_MoreStackWalk(env, stackstream, mode, anchor, lastBatchFrameCount, bufferSize,
+    return JVM_MoreStackWalk(env, stackstream, mode, anchor, batchSize,
                              startIndex, frames);
 }
 

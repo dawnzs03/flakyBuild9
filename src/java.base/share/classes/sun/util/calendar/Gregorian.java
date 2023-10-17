@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,23 +34,21 @@ import java.util.TimeZone;
  * @since 1.5
  */
 
-public final class Gregorian extends BaseCalendar {
+public class Gregorian extends BaseCalendar {
 
-    static final class Date extends BaseCalendar.Date {
-        Date() {
+    static class Date extends BaseCalendar.Date {
+        protected Date() {
             super();
         }
 
-        Date(TimeZone zone) {
+        protected Date(TimeZone zone) {
             super(zone);
         }
 
-        @Override
         public int getNormalizedYear() {
             return getYear();
         }
 
-        @Override
         public void setNormalizedYear(int normalizedYear) {
             setYear(normalizedYear);
         }
@@ -59,37 +57,30 @@ public final class Gregorian extends BaseCalendar {
     Gregorian() {
     }
 
-    @Override
     public String getName() {
         return "gregorian";
     }
 
-    @Override
     public Date getCalendarDate() {
         return getCalendarDate(System.currentTimeMillis(), newCalendarDate());
     }
 
-    @Override
     public Date getCalendarDate(long millis) {
         return getCalendarDate(millis, newCalendarDate());
     }
 
-    @Override
     public Date getCalendarDate(long millis, CalendarDate date) {
         return (Date) super.getCalendarDate(millis, date);
     }
 
-    @Override
     public Date getCalendarDate(long millis, TimeZone zone) {
         return getCalendarDate(millis, newCalendarDate(zone));
     }
 
-    @Override
     public Date newCalendarDate() {
         return new Date();
     }
 
-    @Override
     public Date newCalendarDate(TimeZone zone) {
         return new Date(zone);
     }

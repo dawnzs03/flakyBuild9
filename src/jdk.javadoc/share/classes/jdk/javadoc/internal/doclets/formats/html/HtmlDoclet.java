@@ -59,6 +59,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.ResourceIOException;
@@ -272,14 +273,16 @@ public class HtmlDoclet extends AbstractDoclet {
             }
             writerFactory.newSystemPropertiesWriter().buildPage();
 
-            configuration.indexBuilder.addElements();
+            configuration.mainIndex.addElements();
+            IndexBuilder allClassesIndex = new IndexBuilder(configuration, nodeprecated, true);
+            allClassesIndex.addElements();
 
-            writerFactory.newAllClassesIndexWriter().buildPage();
+            writerFactory.newAllClassesIndexWriter(allClassesIndex).buildPage();
             if (!configuration.packages.isEmpty()) {
                 writerFactory.newAllPackagesIndexWriter().buildPage();
             }
 
-            configuration.indexBuilder.createSearchIndexFiles();
+            configuration.mainIndex.createSearchIndexFiles();
             IndexWriter.generate(configuration);
             writerFactory.newSearchWriter().buildPage();
         }

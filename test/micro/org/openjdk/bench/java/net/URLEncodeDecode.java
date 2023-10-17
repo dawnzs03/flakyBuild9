@@ -190,18 +190,4 @@ public class URLEncodeDecode {
     }
 
 
-    @Benchmark
-    public void testEncodeLatin1(Blackhole bh) throws UnsupportedEncodingException {
-        for (String s : testStringsEncode) {
-            bh.consume(java.net.URLEncoder.encode(s, StandardCharsets.ISO_8859_1));
-        }
-    }
-
-    @Benchmark
-    public void testDecodeLatin1(Blackhole bh) throws UnsupportedEncodingException {
-        for (String s : testStringsDecode) {
-            bh.consume(URLDecoder.decode(s, StandardCharsets.ISO_8859_1));
-        }
-    }
-
 }

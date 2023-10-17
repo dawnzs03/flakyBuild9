@@ -6067,43 +6067,51 @@ void MacroAssembler::leave() {
 // For more details on PAC see pauth_aarch64.hpp.
 
 // Sign the LR. Use during construction of a stack frame, before storing the LR to memory.
-// Uses value zero as the modifier.
+// Uses the FP as the modifier.
 //
 void MacroAssembler::protect_return_address() {
   if (VM_Version::use_rop_protection()) {
     check_return_address();
-    paciaz();
+    // The standard convention for C code is to use paciasp, which uses SP as the modifier. This
+    // works because in C code, FP and SP match on function entry. In the JDK, SP and FP may not
+    // match, so instead explicitly use the FP.
+    pacia(lr, rfp);
   }
 }
 
 // Sign the return value in the given register. Use before updating the LR in the existing stack
 // frame for the current function.
-// Uses value zero as the modifier.
+// Uses the FP from the start of the function as the modifier - which is stored at the address of
+// the current FP.
 //
-void MacroAssembler::protect_return_address(Register return_reg) {
+void MacroAssembler::protect_return_address(Register return_reg, Register temp_reg) {
   if (VM_Version::use_rop_protection()) {
+    assert(PreserveFramePointer, "PreserveFramePointer must be set for ROP protection");
     check_return_address(return_reg);
-    paciza(return_reg);
+    ldr(temp_reg, Address(rfp));
+    pacia(return_reg, temp_reg);
   }
 }
 
 // Authenticate the LR. Use before function return, after restoring FP and loading LR from memory.
-// Uses value zero as the modifier.
 //
-void MacroAssembler::authenticate_return_address() {
+void MacroAssembler::authenticate_return_address(Register return_reg) {
   if (VM_Version::use_rop_protection()) {
-    autiaz();
-    check_return_address();
+    autia(return_reg, rfp);
+    check_return_address(return_reg);
   }
 }
 
 // Authenticate the return value in the given register. Use before updating the LR in the existing
 // stack frame for the current function.
-// Uses value zero as the modifier.
+// Uses the FP from the start of the function as the modifier - which is stored at the address of
+// the current FP.
 //
-void MacroAssembler::authenticate_return_address(Register return_reg) {
+void MacroAssembler::authenticate_return_address(Register return_reg, Register temp_reg) {
   if (VM_Version::use_rop_protection()) {
-    autiza(return_reg);
+    assert(PreserveFramePointer, "PreserveFramePointer must be set for ROP protection");
+    ldr(temp_reg, Address(rfp));
+    autia(return_reg, temp_reg);
     check_return_address(return_reg);
   }
 }

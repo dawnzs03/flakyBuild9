@@ -289,6 +289,10 @@ public class JFormattedTextField extends JTextField {
      */
     private DocumentListener documentListener;
     /**
+     * Masked used to set the AbstractFormatterFactory.
+     */
+    private Object mask;
+    /**
      * ActionMap that the TextFormatter Actions are added to.
      */
     private ActionMap textFormatterActionMap;

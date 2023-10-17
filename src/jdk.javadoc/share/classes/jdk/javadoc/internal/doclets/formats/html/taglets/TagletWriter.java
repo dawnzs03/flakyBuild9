@@ -379,7 +379,7 @@ public class TagletWriter {
                 String holder = getHolderName(element);
                 IndexItem item = IndexItem.of(element, tree, tagText, holder, desc,
                         new DocLink(htmlWriter.path, id.name()));
-                configuration.indexBuilder.add(item);
+                configuration.mainIndex.add(item);
             }
         }
         return result;

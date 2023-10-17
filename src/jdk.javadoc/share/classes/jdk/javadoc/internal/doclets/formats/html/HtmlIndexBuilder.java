@@ -42,6 +42,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * Extensions to {@code IndexBuilder} to fill in remaining fields
@@ -50,8 +51,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
  * JavaScript files.
  */
 public class HtmlIndexBuilder extends IndexBuilder {
+    private final HtmlConfiguration configuration;
 
     private final Resources resources;
+    private final Utils utils;
     private final HtmlIds htmlIds;
 
     /**
@@ -60,9 +63,11 @@ public class HtmlIndexBuilder extends IndexBuilder {
      * @param configuration the current configuration of the doclet
      */
     HtmlIndexBuilder(HtmlConfiguration configuration) {
-        super(configuration);
-        this.resources = configuration.docResources;
-        this.htmlIds = configuration.htmlIds;
+        super(configuration, configuration.getOptions().noDeprecated());
+        this.configuration = configuration;
+        resources = configuration.docResources;
+        utils = configuration.utils;
+        htmlIds = configuration.htmlIds;
     }
 
     /**
@@ -74,12 +79,15 @@ public class HtmlIndexBuilder extends IndexBuilder {
     @Override
     public void addElements() {
         super.addElements();
+        if (classesOnly) {
+            return;
+        }
 
         Map<String,Integer> duplicateLabelCheck = new HashMap<>();
         for (Character ch : getFirstCharacters()) {
             for (IndexItem item : getItems(ch)) {
                 duplicateLabelCheck.compute(item.getFullyQualifiedLabel(utils),
-                        (k, v) -> v == null ? 1 : v + 1);
+                                            (k, v) -> v == null ? 1 : v + 1);
             }
         }
 

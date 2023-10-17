@@ -871,9 +871,6 @@ ImmutableOopMapSet* ImmutableOopMapSet::build_from(const OopMapSet* oopmap_set) 
   return builder.build();
 }
 
-void ImmutableOopMapSet::operator delete(void* p) {
-  FREE_C_HEAP_ARRAY(unsigned char, p);
-}
 
 //------------------------------DerivedPointerTable---------------------------
 

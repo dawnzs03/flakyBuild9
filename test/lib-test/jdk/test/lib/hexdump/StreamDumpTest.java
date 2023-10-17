@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 
 package jdk.test.lib.hexdump;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.Arguments;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -51,23 +50,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.testng.Assert.assertEquals;
 
 /*
  * @test
  * @summary Test StreamDump utility
  * @library /test/lib
  * @build jdk.test.lib.hexdump.StreamDump
- * @run junit jdk.test.lib.hexdump.StreamDumpTest
+ * @run testng jdk.test.lib.hexdump.StreamDumpTest
  */
 
 /**
  * Test of the formatter is fairly coarse, formatting several
  * sample classes and spot checking the result string for key strings.
  */
-class StreamDumpTest {
+@Test
+public class StreamDumpTest {
 
     private final static Path workDir = Path.of(".");
 
@@ -100,23 +99,24 @@ class StreamDumpTest {
      * Arg list and the expected exit status, stdout line count, and stderr line count.
      * @return array of argument list arrays.
      */
-    static Stream<Arguments> serializables() {
-        return Stream.of(
-                Arguments.of(new String[]{testSRC + "/openssl.p12.pem"},
-                        0, 126, 0),
-                Arguments.of(new String[]{"--formatter", "jdk.test.lib.hexdump.ASN1Formatter", testSRC + "/openssl.p12.pem"},
-                        0, 126, 0),
-                Arguments.of(new String[]{serializedListPath},
-                        0, 19, 0),
-                Arguments.of(new String[]{"--formatter", "jdk.test.lib.hexdump.ObjectStreamPrinter", serializedListPath},
-                        0, 19, 0),
-                Arguments.of(new String[]{},
-                        1, 2, 0),    // no file arguments
-                Arguments.of(new String[]{"--formatter"},
-                        1, 2, 0),       // --formatter option requires a class name
-                Arguments.of(new String[]{"-formatter", "jdk.test.lib.hexdump.ObjectStreamPrinter"},
-                        1, 2, 0)       // options start with double "--"
-        );
+    @DataProvider(name = "serializables")
+    Object[][] serializables() {
+        return new Object[][] {
+                {new String[]{testSRC + "/openssl.p12.pem"},
+                        0, 126, 0},
+                {new String[]{"--formatter", "jdk.test.lib.hexdump.ASN1Formatter", testSRC + "/openssl.p12.pem"},
+                        0, 126, 0},
+                {new String[]{serializedListPath},
+                        0, 19, 0},
+                {new String[]{"--formatter", "jdk.test.lib.hexdump.ObjectStreamPrinter", serializedListPath},
+                        0, 19, 0},
+                {new String[]{},
+                        1, 2, 0},    // no file arguments
+                {new String[]{"--formatter"},
+                        1, 2, 0},       // --formatter option requires a class name
+                {new String[]{"-formatter", "jdk.test.lib.hexdump.ObjectStreamPrinter"},
+                        1, 2, 0},       // options start with double "--"
+        };
     }
 
 
@@ -126,9 +126,8 @@ class StreamDumpTest {
      * Each file should be formatted to stdout with no exceptions
      * @throws IOException if an I/O exception occurs
      */
-    @ParameterizedTest
-    @MethodSource("serializables")
-    void testStreamDump(String[] args, int expectedStatus, int expectedStdout, int expectedStderr) throws IOException {
+    @Test(dataProvider="serializables")
+    static void testStreamDump(String[] args, int expectedStatus, int expectedStdout, int expectedStderr) throws IOException {
         List<String> argList = new ArrayList<>();
         argList.add(testJDK + "/bin/" + "java");
         argList.add("-classpath");
@@ -149,7 +148,7 @@ class StreamDumpTest {
             int actualStatus = p.waitFor();
             fileCheck(stdoutPath, expectedStdout);
             fileCheck(stderrPath, expectedStderr);
-            assertEquals(expectedStatus, actualStatus, "Unexpected exit status");
+            assertEquals(actualStatus, expectedStatus, "Unexpected exit status");
         } catch (InterruptedException ie) {
             ie.printStackTrace();
         }
@@ -169,7 +168,7 @@ class StreamDumpTest {
             Files.newBufferedReader(path).lines().forEach(s -> System.out.println(s));
             System.out.println("----End----");
         }
-        assertEquals(expectedLines, actualLines, "Unexpected line count");
+        assertEquals(actualLines, expectedLines, "Unexpected line count");
     }
 
     /**
@@ -191,14 +190,14 @@ class StreamDumpTest {
         return bytes;
     }
 
-    static List<String> genList() {
+    public static List<String> genList() {
         List<String> l = new ArrayList<>();
         l.add("abc");
         l.add("def");
         return l;
     }
 
-    static Map<String, String> genMap() {
+    public static Map<String, String> genMap() {
         Map<String, String> map = new HashMap<>();
         map.put("1", "One");
         map.put("2", "Two");

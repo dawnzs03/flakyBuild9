@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,22 @@
 
 package jdk.test.lib.format;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertEquals;
 
 /*
  * @test
  * @summary Check ArrayDiff formatting
  * @library /test/lib
- * @run junit jdk.test.lib.format.ArrayDiffTest
+ * @run testng jdk.test.lib.format.ArrayDiffTest
  */
-class ArrayDiffTest {
+public class ArrayDiffTest {
 
     @Test
-    void testEqualArrays() {
+    public void testEqualArrays() {
         char[] first = new char[]  {'a', 'b', 'c', 'd', 'e', 'f', 'g'};
         char[] second = new char[] {'a', 'b', 'c', 'd', 'e', 'f', 'g'};
 
@@ -44,7 +46,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testOutputFitsWidth() {
+    public void testOutputFitsWidth() {
         new AssertBuilder()
             .withDefaultParams()
             .withArrays(
@@ -60,7 +62,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testIntegers() {
+    public void testIntegers() {
         new AssertBuilder()
             .withDefaultParams()
             .withArrays(
@@ -76,7 +78,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testLongs() {
+    public void testLongs() {
         new AssertBuilder()
             .withDefaultParams()
             .withArrays(
@@ -92,7 +94,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testFirstElementIsWrong() {
+    public void testFirstElementIsWrong() {
         new AssertBuilder()
             .withDefaultParams()
             .withArrays(
@@ -108,7 +110,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testOneElementIsEmpty() {
+    public void testOneElementIsEmpty() {
         new AssertBuilder()
             .withDefaultParams()
             .withArrays(
@@ -124,7 +126,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testOutputDoesntFitWidth() {
+    public void testOutputDoesntFitWidth() {
         new AssertBuilder()
             .withParams(20, Integer.MAX_VALUE)
             .withArrays(
@@ -140,7 +142,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testVariableElementWidthOutputDoesntFitWidth() {
+    public void testVariableElementWidthOutputDoesntFitWidth() {
         new AssertBuilder()
             .withParams(20, Integer.MAX_VALUE)
             .withArrays(
@@ -156,7 +158,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testContextBefore() {
+    public void testContextBefore() {
         new AssertBuilder()
             .withParams(20, 2)
             .withArrays(
@@ -172,7 +174,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testBoundedBytesWithDifferentWidth() {
+    public void testBoundedBytesWithDifferentWidth() {
         new AssertBuilder()
             .withParams(24, 2)
             .withArrays(
@@ -188,7 +190,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testBoundedFirstElementIsWrong() {
+    public void testBoundedFirstElementIsWrong() {
         new AssertBuilder()
             .withParams(25, 2)
             .withArrays(
@@ -204,7 +206,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testBoundedOneArchiveIsEmpty() {
+    public void testBoundedOneArchiveIsEmpty() {
         new AssertBuilder()
             .withParams(10, 2)
             .withArrays(
@@ -220,7 +222,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testUnboundedOneArchiveIsEmpty() {
+    public void testUnboundedOneArchiveIsEmpty() {
         new AssertBuilder()
             .withDefaultParams()
             .withArrays(
@@ -236,7 +238,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testUnprintableCharFormatting() {
+    public void testUnprintableCharFormatting() {
         new AssertBuilder()
             .withDefaultParams()
             .withArrays(
@@ -252,7 +254,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testStringElements() {
+    public void testStringElements() {
         new AssertBuilder()
             .withDefaultParams()
             .withArrays(
@@ -268,7 +270,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testToStringableObjects() {
+    public void testToStringableObjects() {
         class StrObj {
             private final String value;
             public boolean equals(Object another) { return ((StrObj)another).value.equals(value); }
@@ -292,7 +294,7 @@ class ArrayDiffTest {
     }
 
     @Test
-    void testNullElements() {
+    public void testNullElements() {
         new AssertBuilder()
             .withDefaultParams()
             .withArrays(
@@ -307,14 +309,14 @@ class ArrayDiffTest {
             .assertTwoWay();
     }
 
-    @Test
-    void testFirstArrayIsNull() {
-        assertThrows(NullPointerException.class, () -> ArrayDiff.of(null, new String[] {"a", "b"}));
+    @Test (expectedExceptions = NullPointerException.class)
+    public void testFirstArrayIsNull() {
+        var diff = ArrayDiff.of(null, new String[] {"a", "b"});
     }
 
-    @Test
-    void testSecondArrayIsNull() {
-        assertThrows(NullPointerException.class, () -> ArrayDiff.of(new String[] {"a", "b"}, null));
+    @Test (expectedExceptions = NullPointerException.class)
+    public void testSecondArrayIsNull() {
+        var diff = ArrayDiff.of(null, new String[] {"a", "b"});
     }
 
     class AssertBuilder {
@@ -329,30 +331,30 @@ class ArrayDiffTest {
         private String secondFormattedArray;
         private String failureMark;
 
-        AssertBuilder withDefaultParams() {
+        public AssertBuilder withDefaultParams() {
             defaultParameters = true;
             return this;
         }
 
-        AssertBuilder withParams(int width, int contextBefore) {
+        public AssertBuilder withParams(int width, int contextBefore) {
             defaultParameters = false;
             this.width = width;
             this.contextBefore = contextBefore;
             return this;
         }
 
-        AssertBuilder withArrays(Object first, Object second) {
+        public AssertBuilder withArrays(Object first, Object second) {
             firstArray = first;
             secondArray = second;
             return this;
         }
 
-        AssertBuilder thatResultIs(boolean result) {
+        public AssertBuilder thatResultIs(boolean result) {
             expectedResult = result;
             return this;
         }
 
-        AssertBuilder thatFormattedValuesAre(
+        public AssertBuilder thatFormattedValuesAre(
                 int idx, String first, String second, String mark) {
             expectedIndex = idx;
             firstFormattedArray = first;
@@ -361,7 +363,7 @@ class ArrayDiffTest {
             return this;
         }
 
-        void assertTwoWay() {
+        public void assertTwoWay() {
             ArrayDiff<?> diff;
 
             // Direct
@@ -380,7 +382,7 @@ class ArrayDiffTest {
                     expectedIndex, firstFormattedArray, secondFormattedArray, failureMark);
 
                 assertFalse(diff.areEqual());
-                assertEquals(expected, diff.format());
+                assertEquals(diff.format(), expected);
             }
 
             // Reversed
@@ -399,7 +401,7 @@ class ArrayDiffTest {
                     expectedIndex, secondFormattedArray, firstFormattedArray, failureMark);
 
                 assertFalse(diff.areEqual());
-                assertEquals(expected, diff.format());
+                assertEquals(diff.format(), expected);
             }
         }
 

@@ -900,7 +900,6 @@ private:
 
   // Misc. operations
   const char* name() const;
-  const char* name_raw() const;
   const char* type_name() const { return "JavaThread"; }
   static const char* name_for(oop thread_obj);
 

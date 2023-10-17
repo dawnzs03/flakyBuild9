@@ -612,8 +612,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         for (int i = 0; i < newZoneStrings.length; ++i) {
             int len = newZoneStrings[i].length;
             if (len < 5) {
-                throw new IllegalArgumentException(String.format(
-                        "Row %s of the input array does not have a length of at least 5", i));
+                throw new IllegalArgumentException();
             }
             aCopy[i] = Arrays.copyOf(newZoneStrings[i], len);
         }

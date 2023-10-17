@@ -22,6 +22,7 @@
  *
  */
 
+
 #include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
@@ -389,9 +390,11 @@ void Symbol::print() const { print_on(tty); }
 // The print_value functions are present in all builds, to support the
 // disassembler and error reporting.
 void Symbol::print_value_on(outputStream* st) const {
-  st->print_raw("'", 1);
-  st->print_raw((const char*)base(), utf8_length());
-  st->print_raw("'", 1);
+  st->print("'");
+  for (int i = 0; i < utf8_length(); i++) {
+    st->print("%c", char_at(i));
+  }
+  st->print("'");
 }
 
 void Symbol::print_value() const { print_value_on(tty); }

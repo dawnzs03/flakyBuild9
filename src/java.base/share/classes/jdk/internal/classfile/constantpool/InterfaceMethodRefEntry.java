@@ -25,9 +25,6 @@
 package jdk.internal.classfile.constantpool;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.classfile.impl.Util;
-
-import java.lang.constant.MethodTypeDesc;
 
 /**
  * Models a {@code CONSTANT_InterfaceMethodRef_info} constant in the constant pool of a
@@ -38,10 +35,4 @@ public sealed interface InterfaceMethodRefEntry
         extends MemberRefEntry
         permits AbstractPoolEntry.InterfaceMethodRefEntryImpl {
 
-    /**
-     * {@return a symbolic descriptor for the interface method's type}
-     */
-    default MethodTypeDesc typeSymbol() {
-        return Util.methodTypeSymbol(nameAndType());
-    }
 }
