@@ -137,8 +137,7 @@ public class SSLSocketCloseHang {
         System.out.println("server ready");
 
         Socket baseSocket = new Socket("localhost", serverPort);
-        float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-        baseSocket.setSoTimeout((int)(1000 * timeoutFactor));
+        baseSocket.setSoTimeout(1000);
 
         SSLSocketFactory sslsf =
             (SSLSocketFactory) SSLSocketFactory.getDefault();
