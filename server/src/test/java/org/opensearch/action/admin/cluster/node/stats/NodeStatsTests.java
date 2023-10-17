@@ -460,8 +460,6 @@ public class NodeStatsTests extends OpenSearchTestCase {
                     assertEquals(remoteSegmentStats.getMaxRefreshTimeLag(), deserializedRemoteSegmentStats.getMaxRefreshTimeLag());
                     assertEquals(remoteSegmentStats.getMaxRefreshBytesLag(), deserializedRemoteSegmentStats.getMaxRefreshBytesLag());
                     assertEquals(remoteSegmentStats.getTotalRefreshBytesLag(), deserializedRemoteSegmentStats.getTotalRefreshBytesLag());
-                    assertEquals(remoteSegmentStats.getTotalUploadTime(), deserializedRemoteSegmentStats.getTotalUploadTime());
-                    assertEquals(remoteSegmentStats.getTotalDownloadTime(), deserializedRemoteSegmentStats.getTotalDownloadTime());
                 }
             }
         }
@@ -795,8 +793,6 @@ public class NodeStatsTests extends OpenSearchTestCase {
             remoteSegmentStats.addTotalRefreshBytesLag(5L);
             remoteSegmentStats.addMaxRefreshBytesLag(2L);
             remoteSegmentStats.setMaxRefreshTimeLag(2L);
-            remoteSegmentStats.addTotalUploadTime(20L);
-            remoteSegmentStats.addTotalDownloadTime(20L);
         }
         return indicesStats;
     }

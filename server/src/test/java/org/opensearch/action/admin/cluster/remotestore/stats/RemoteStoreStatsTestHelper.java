@@ -46,7 +46,6 @@ public class RemoteStoreStatsTestHelper {
             0,
             0,
             0,
-            10,
             createZeroDirectoryFileTransferStats()
         );
     }
@@ -54,7 +53,6 @@ public class RemoteStoreStatsTestHelper {
     static RemoteSegmentTransferTracker.Stats createStatsForNewReplica(ShardId shardId) {
         return new RemoteSegmentTransferTracker.Stats(
             shardId,
-            0,
             0,
             0,
             0,
@@ -98,17 +96,16 @@ public class RemoteStoreStatsTestHelper {
             0,
             0,
             100,
-            10,
             createSampleDirectoryFileTransferStats()
         );
     }
 
     static DirectoryFileTransferTracker.Stats createSampleDirectoryFileTransferStats() {
-        return new DirectoryFileTransferTracker.Stats(10, 0, 10, 12345, 5, 5, 5, 10);
+        return new DirectoryFileTransferTracker.Stats(10, 0, 10, 12345, 5, 5, 5);
     }
 
     static DirectoryFileTransferTracker.Stats createZeroDirectoryFileTransferStats() {
-        return new DirectoryFileTransferTracker.Stats(0, 0, 0, 0, 0, 0, 0, 0);
+        return new DirectoryFileTransferTracker.Stats(0, 0, 0, 0, 0, 0, 0);
     }
 
     static ShardRouting createShardRouting(ShardId shardId, boolean isPrimary) {

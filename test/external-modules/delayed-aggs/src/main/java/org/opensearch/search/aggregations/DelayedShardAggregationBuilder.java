@@ -137,11 +137,6 @@ public class DelayedShardAggregationBuilder extends AbstractAggregationBuilder<D
                 } while (searchContext.getRelativeTimeInMillis() - start < delay.getMillis());
                 return factory.create(searchContext, parent, cardinality);
             }
-
-            @Override
-            protected boolean supportsConcurrentSegmentSearch() {
-                return true;
-            }
         };
     }
 

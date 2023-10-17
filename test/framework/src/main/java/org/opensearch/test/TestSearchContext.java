@@ -632,7 +632,7 @@ public class TestSearchContext extends SearchContext {
      * Returns concurrent segment search status for the search context
      */
     @Override
-    public boolean shouldUseConcurrentSearch() {
+    public boolean isConcurrentSegmentSearchEnabled() {
         return concurrentSegmentSearchEnabled;
     }
 

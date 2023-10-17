@@ -1059,11 +1059,6 @@ public abstract class AggregatorTestCase extends OpenSearchTestCase {
                         }
                     };
                 }
-
-                @Override
-                protected boolean supportsConcurrentSegmentSearch() {
-                    return true;
-                }
             };
         }
 

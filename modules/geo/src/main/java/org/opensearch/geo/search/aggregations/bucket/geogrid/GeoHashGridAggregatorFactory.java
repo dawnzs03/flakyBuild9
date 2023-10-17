@@ -196,9 +196,4 @@ class GeoHashGridAggregatorFactory extends ValuesSourceAggregatorFactory {
             true
         );
     }
-
-    @Override
-    protected boolean supportsConcurrentSegmentSearch() {
-        return true;
-    }
 }

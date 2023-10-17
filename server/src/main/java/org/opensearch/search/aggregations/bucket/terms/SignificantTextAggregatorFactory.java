@@ -312,9 +312,4 @@ public class SignificantTextAggregatorFactory extends AggregatorFactory {
             Releasables.close(dupSequenceSpotters);
         }
     }
-
-    @Override
-    protected boolean supportsConcurrentSegmentSearch() {
-        return true;
-    }
 }

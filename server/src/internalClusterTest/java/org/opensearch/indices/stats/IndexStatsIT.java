@@ -1457,8 +1457,6 @@ public class IndexStatsIT extends OpenSearchIntegTestCase {
         assertEquals(0, remoteSegmentStats.getTotalRefreshBytesLag());
         assertEquals(0, remoteSegmentStats.getMaxRefreshBytesLag());
         assertEquals(0, remoteSegmentStats.getMaxRefreshTimeLag());
-        assertEquals(0, remoteSegmentStats.getTotalUploadTime());
-        assertEquals(0, remoteSegmentStats.getTotalDownloadTime());
     }
 
     /**

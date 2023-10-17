@@ -237,11 +237,6 @@ public class RareTermsAggregatorFactory extends ValuesSourceAggregatorFactory {
             );
     }
 
-    @Override
-    protected boolean supportsConcurrentSegmentSearch() {
-        return true;
-    }
-
     /**
      * Execution mode for rare terms agg
      *

@@ -558,8 +558,4 @@ public class TermsAggregatorFactory extends ValuesSourceAggregatorFactory {
         }
     }
 
-    @Override
-    protected boolean supportsConcurrentSegmentSearch() {
-        return true;
-    }
 }
