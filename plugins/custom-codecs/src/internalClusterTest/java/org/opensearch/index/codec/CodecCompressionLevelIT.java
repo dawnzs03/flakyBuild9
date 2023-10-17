@@ -97,7 +97,7 @@ public class CodecCompressionLevelIT extends OpenSearchIntegTestCase {
         );
         ensureGreen(index);
 
-        assertAcked(client().admin().indices().prepareClose(index).setWaitForActiveShards(1));
+        assertAcked(client().admin().indices().prepareClose(index));
 
         Throwable executionException = expectThrows(
             ExecutionException.class,
@@ -128,7 +128,7 @@ public class CodecCompressionLevelIT extends OpenSearchIntegTestCase {
                 .get()
         );
 
-        assertAcked(client().admin().indices().prepareOpen(index).setWaitForActiveShards(1));
+        assertAcked(client().admin().indices().prepareOpen(index));
         ensureGreen(index);
     }
 
@@ -148,7 +148,7 @@ public class CodecCompressionLevelIT extends OpenSearchIntegTestCase {
         );
         ensureGreen(index);
 
-        assertAcked(client().admin().indices().prepareClose(index).setWaitForActiveShards(1));
+        assertAcked(client().admin().indices().prepareClose(index));
 
         Throwable executionException = expectThrows(
             ExecutionException.class,
@@ -181,7 +181,7 @@ public class CodecCompressionLevelIT extends OpenSearchIntegTestCase {
                 .get()
         );
 
-        assertAcked(client().admin().indices().prepareOpen(index).setWaitForActiveShards(1));
+        assertAcked(client().admin().indices().prepareOpen(index));
         ensureGreen(index);
     }
 

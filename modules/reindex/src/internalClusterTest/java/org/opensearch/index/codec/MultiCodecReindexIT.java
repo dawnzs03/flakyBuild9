@@ -135,7 +135,7 @@ public class MultiCodecReindexIT extends ReindexTestCase {
     }
 
     private void useCodec(String index, String codec) throws ExecutionException, InterruptedException {
-        assertAcked(client().admin().indices().prepareClose(index).setWaitForActiveShards(1));
+        assertAcked(client().admin().indices().prepareClose(index));
 
         assertAcked(
             client().admin()
@@ -144,7 +144,7 @@ public class MultiCodecReindexIT extends ReindexTestCase {
                 .get()
         );
 
-        assertAcked(client().admin().indices().prepareOpen(index).setWaitForActiveShards(1));
+        assertAcked(client().admin().indices().prepareOpen(index));
     }
 
     private void flushAndRefreshIndex(String index) {

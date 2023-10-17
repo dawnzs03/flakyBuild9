@@ -49,6 +49,7 @@ public class MultiCodecMergeIT extends OpenSearchIntegTestCase {
         return Collections.singletonList(CustomCodecPlugin.class);
     }
 
+    @AwaitsFix(bugUrl = "https://github.com/opensearch-project/OpenSearch/issues/9872")
     public void testForceMergeMultipleCodecs() throws ExecutionException, InterruptedException {
 
         Map<String, String> codecMap = Map.of(
@@ -118,7 +119,7 @@ public class MultiCodecMergeIT extends OpenSearchIntegTestCase {
     }
 
     private void useCodec(String index, String codec) throws ExecutionException, InterruptedException {
-        assertAcked(client().admin().indices().prepareClose(index).setWaitForActiveShards(1));
+        assertAcked(client().admin().indices().prepareClose(index));
 
         assertAcked(
             client().admin()
@@ -127,7 +128,7 @@ public class MultiCodecMergeIT extends OpenSearchIntegTestCase {
                 .get()
         );
 
-        assertAcked(client().admin().indices().prepareOpen(index).setWaitForActiveShards(1));
+        assertAcked(client().admin().indices().prepareOpen(index));
     }
 
     private void ingestDocs(String index) throws InterruptedException {
