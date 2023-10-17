@@ -137,7 +137,6 @@ public class RemoteStoreIT extends RemoteStoreBaseIntegTestCase {
         }, 30, TimeUnit.SECONDS);
     }
 
-    @AwaitsFix(bugUrl = "https://github.com/opensearch-project/OpenSearch/issues/9327")
     public void testRemoteTranslogCleanup() throws Exception {
         verifyRemoteStoreCleanup();
     }
