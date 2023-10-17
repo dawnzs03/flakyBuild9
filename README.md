@@ -1,235 +1,184 @@
-<!--
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
+[![License](http://img.shields.io/:license-apache%202.0-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.debezium/debezium-parent/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.debezium%22)
+[![User chat](https://img.shields.io/badge/chat-users-brightgreen.svg)](https://debezium.zulipchat.com/#narrow/stream/302529-users)
+[![Developer chat](https://img.shields.io/badge/chat-devs-brightgreen.svg)](https://debezium.zulipchat.com/#narrow/stream/302533-dev)
+[![Google Group](https://img.shields.io/:mailing%20list-debezium-brightgreen.svg)](https://groups.google.com/forum/#!forum/debezium)
+[![Stack Overflow](http://img.shields.io/:stack%20overflow-debezium-brightgreen.svg)](http://stackoverflow.com/questions/tagged/debezium)
 
-  http://www.apache.org/licenses/LICENSE-2.0
+Copyright Debezium Authors.
+Licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+The Antlr grammars within the debezium-ddl-parser module are licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
--->
+English | [Chinese](README_ZH.md) | [Japanese](README_JA.md) | [Korean](README_KO.md)
 
-<div align="center">
-    <img src="https://doris.apache.org/assets/images/home-banner-7f193353c932af31634eca0a028f03ed.png" align="right" height="240"/>
-</div>
+# Debezium
 
-# Apache Doris
-[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![GitHub release](https://img.shields.io/github/release/apache/doris.svg)](https://github.com/apache/doris/releases)
-[![Jenkins Vec](https://img.shields.io/jenkins/tests?compact_message&jobUrl=https://ci-builds.apache.org/job/Doris/job/doris_daily_enable_vectorized&label=VectorizedEngine)](https://ci-builds.apache.org/job/Doris/job/doris_daily_enable_vectorized)
-[![Total Lines](https://tokei.rs/b1/github/apache/doris?category=lines)](https://github.com/apache/doris)
-[![Join the Doris Community at Slack](https://img.shields.io/badge/chat-slack-brightgreen)](https://join.slack.com/t/apachedoriscommunity/shared_invite/zt-1x7x8fger-F7NoshFQn~djlvGdnEtxUQ)
-[![Join the chat at https://gitter.im/apache-doris/Lobby](https://badges.gitter.im/apache-doris/Lobby.svg)](https://gitter.im/apache-doris/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![EN doc](https://img.shields.io/badge/Docs-English-blue.svg)](https://doris.apache.org/docs/dev/summary/basic-summary/)
-[![CN doc](https://img.shields.io/badge/文档-中文版-blue.svg)](https://doris.apache.org/zh-CN/docs/dev/summary/basic-summary)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/doris.svg?style=social&label=Follow%20%40doris_apache)](https://twitter.com/doris_apache)
+Debezium is an open source project that provides a low latency data streaming platform for change data capture (CDC). You setup and configure Debezium to monitor your databases, and then your applications consume events for each row-level change made to the database. Only committed changes are visible, so your application doesn't have to worry about transactions or changes that are rolled back. Debezium provides a single model of all change events, so your application does not have to worry about the intricacies of each kind of database management system. Additionally, since Debezium records the history of data changes in durable, replicated logs, your application can be stopped and restarted at any time, and it will be able to consume all of the events it missed while it was not running, ensuring that all events are processed correctly and completely.
 
-Apache Doris is an easy-to-use, high-performance and real-time analytical database based on MPP architecture, known for its extreme speed and ease of use. It only requires a sub-second response time to return query results under massive data and can support not only high-concurrent point query scenarios but also high-throughput complex analysis scenarios.
+Monitoring databases and being notified when data changes has always been complicated. Relational database triggers can be useful, but are specific to each database and often limited to updating state within the same database (not communicating with external processes). Some databases offer APIs or frameworks for monitoring changes, but there is no standard so each database's approach is different and requires a lot of knowledged and specialized code. It still is very challenging to ensure that all changes are seen and processed in the same order while minimally impacting the database.
 
-All this makes Apache Doris an ideal tool for scenarios including report analysis, ad-hoc query, unified data warehouse, and data lake query acceleration. On Apache Doris, users can build various applications, such as user behavior analysis, AB test platform, log retrieval analysis, user portrait analysis, and order analysis.
+Debezium provides modules that do this work for you. Some modules are generic and work with multiple database management systems, but are also a bit more limited in functionality and performance. Other modules are tailored for specific database management systems, so they are often far more capable and they leverage the specific features of the system.
 
-🎉 Version 2.0-beta version released now. The 2.0 beta version already has a better user experience in terms of functional integrity and system stability than 2.0 Alpha. We welcome all users who have requirements for the new features of the 2.0 version to deploy and upgrade. Check out the 🔗[Release Notes](https://doris.apache.org/docs/dev/releasenotes/release-2.0-beta) here. 
+## Basic architecture
 
-🎉 Version 1.2.5 released now! It is fully evolved release and all users are encouraged to upgrade to this release. Check out the 🔗[Release Notes](https://doris.apache.org/docs/dev/releasenotes/release-1.2.5) here. 
+Debezium is a change data capture (CDC) platform that achieves its durability, reliability, and fault tolerance qualities by reusing Kafka and Kafka Connect. Each connector deployed to the Kafka Connect distributed, scalable, fault tolerant service monitors a single upstream database server, capturing all of the changes and recording them in one or more Kafka topics (typically one topic per database table). Kafka ensures that all of these data change events are replicated and totally ordered, and allows many clients to independently consume these same data change events with little impact on the upstream system. Additionally, clients can stop consuming at any time, and when they restart they resume exactly where they left off. Each client can determine whether they want exactly-once or at-least-once delivery of all data change events, and all data change events for each database/table are delivered in the same order they occurred in the upstream database.
 
-🎉 Version 1.1.5 released now. It is a stability improvement and bugfix release based on version 1.1. Check out the 🔗[Release Notes](https://doris.apache.org/docs/dev/releasenotes/release-1.1.5) here. 
+Applications that don't need or want this level of fault tolerance, performance, scalability, and reliability can instead use Debezium's *embedded connector engine* to run a connector directly within the application space. They still want the same data change events, but prefer to have the connectors send them directly to the application rather than persist them inside Kafka.
 
-👀 Have a look at the 🔗[Official Website](https://doris.apache.org/) for a comprehensive list of Apache Doris's core features, blogs and user cases.
+## Common use cases
 
-## 📈 Usage Scenarios
+There are a number of scenarios in which Debezium can be extremely valuable, but here we outline just a few of them that are more common.
 
-As shown in the figure below, after various data integration and processing, the data sources are usually stored in the real-time data warehouse Apache Doris and the offline data lake or data warehouse (in Apache Hive, Apache Iceberg or Apache Hudi).
+### Cache invalidation
 
-<img src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/sekvbs5ih5rb16wz6n9k.png">
+Automatically invalidate entries in a cache as soon as the record(s) for entries change or are removed. If the cache is running in a separate process (e.g., Redis, Memcache, Infinispan, and others), then the simple cache invalidation logic can be placed into a separate process or service, simplifying the main application. In some situations, the logic can be made a little more sophisticated and can use the updated data in the change events to update the affected cache entries.
 
-Apache Doris is widely used in the following scenarios:
+### Simplifying monolithic applications
 
-- Reporting Analysis
+Many applications update a database and then do additional work after the changes are committed: update search indexes, update a cache, send notifications, run business logic, etc. This is often called "dual-writes" since the application is writing to multiple systems outside of a single transaction. Not only is the application logic complex and more difficult to maintain, dual writes also risk losing data or making the various systems inconsistent if the application were to crash after a commit but before some/all of the other updates were performed. Using change data capture, these other activities can be performed in separate threads or separate processes/services when the data is committed in the original database. This approach is more tolerant of failures, does not miss events, scales better, and more easily supports upgrading and operations.
 
-    - Real-time dashboards
-    - Reports for in-house analysts and managers
-    - Highly concurrent user-oriented or customer-oriented report analysis: such as website analysis and ad reporting that usually require thousands of QPS and quick response times measured in milliseconds. A successful user case is that Doris has been used by the Chinese e-commerce giant JD.com in ad reporting, where it receives 10 billion rows of data per day, handles over 10,000 QPS, and delivers a 99 percentile query latency of 150 ms.
+### Sharing databases
 
-- Ad-Hoc Query. Analyst-oriented self-service analytics with irregular query patterns and high throughput requirements. XiaoMi has built a growth analytics platform (Growth Analytics, GA) based on Doris, using user behavior data for business growth analysis, with an average query latency of 10 seconds and a 95th percentile query latency of 30 seconds or less, and tens of thousands of SQL queries per day.
+When multiple applications share a single database, it is often non-trivial for one application to become aware of the changes committed by another application. One approach is to use a message bus, although non-transactional message busses suffer from the "dual-writes" problems mentioned above. However, this becomes very straightforward with Debezium: each application can monitor the database and react to the changes.
 
-- Unified Data Warehouse Construction. Apache Doris allows users to build a unified data warehouse via one single platform and save the trouble of handling complicated software stacks. Chinese hot pot chain Haidilao has built a unified data warehouse with Doris to replace its old complex architecture consisting of Apache Spark, Apache Hive, Apache Kudu, Apache HBase, and Apache Phoenix.
+### Data integration
 
-- Data Lake Query. Apache Doris avoids data copying by federating the data in Apache Hive, Apache Iceberg, and Apache Hudi using external tables, and thus achieves outstanding query performance.
+Data is often stored in multiple places, especially when it is used for different purposes and has slightly different forms. Keeping the multiple systems synchronized can be challenging, but simple ETL-type solutions can be implemented quickly with Debezium and simple event processing logic.
 
-## 🖥️ Core Concepts
+### CQRS
 
-### 📂 Architecture of Apache Doris
+The [Command Query Responsibility Separation (CQRS)](http://martinfowler.com/bliki/CQRS.html) architectural pattern uses a one data model for updating and one or more other data models for reading. As changes are recorded on the update-side, those changes are then processed and used to update the various read representations. As a result CQRS applications are usually more complicated, especially when they need to ensure reliable and totally-ordered processing. Debezium and CDC can make this more approachable: writes are recorded as normal, but Debezium captures those changes in durable, totally ordered streams that are consumed by the services that asynchronously update the read-only views. The write-side tables can represent domain-oriented entities, or when CQRS is paired with [Event Sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) the write-side tables are the append-only event log of commands.
 
-The overall architecture of Apache Doris is shown in the following figure. The Doris architecture is very simple, with only two types of processes.
+## Building Debezium
 
-- Frontend (FE): user request access, query parsing and planning, metadata management, node management, etc.
+The following software is required to work with the Debezium codebase and build it locally:
 
-- Backend (BE): data storage and query plan execution
+* [Git](https://git-scm.com) 2.2.1 or later
+* JDK 17 or later, e.g. [OpenJDK](http://openjdk.java.net/projects/jdk/)
+* [Docker Engine](https://docs.docker.com/engine/install/) or [Docker Desktop](https://docs.docker.com/desktop/) 1.9 or later
+* [Apache Maven](https://maven.apache.org/index.html) 3.8.4 or later  
+  (or invoke the wrapper with `./mvnw` for Maven commands)
 
-Both types of processes are horizontally scalable, and a single cluster can support up to hundreds of machines and tens of petabytes of storage capacity. And these two types of processes guarantee high availability of services and high reliability of data through consistency protocols. This highly integrated architecture design greatly reduces the operation and maintenance cost of a distributed system.
+See the links above for installation instructions on your platform. You can verify the versions are installed and running:
 
-![The overall architecture of Apache Doris](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/mnz20ae3s23vv3e9ltmi.png)
+    $ git --version
+    $ javac -version
+    $ mvn -version
+    $ docker --version
 
-In terms of interfaces, Apache Doris adopts MySQL protocol, supports standard SQL, and is highly compatible with MySQL dialect. Users can access Doris through various client tools and it supports seamless connection with BI tools.
+### Why Docker?
 
-### 💾 Storage Engine
+Many open source software projects use Git, Java, and Maven, but requiring Docker is less common. Debezium is designed to talk to a number of external systems, such as various databases and services, and our integration tests verify Debezium does this correctly. But rather than expect you have all of these software systems installed locally, Debezium's build system uses Docker to automatically download or create the necessary images and start containers for each of the systems. The integration tests can then use these services and verify Debezium behaves as expected, and when the integration tests finish, Debezium's build will automatically stop any containers that it started.
 
-Doris uses a columnar storage engine, which encodes, compresses, and reads data by column. This enables a very high compression ratio and largely reduces irrelavant data scans, thus making more efficient use of IO and CPU resources. Doris supports various index structures to minimize data scans:
+Debezium also has a few modules that are not written in Java, and so they have to be required on the target operating system. Docker lets our build do this using images with the target operating system(s) and all necessary development tools.
 
-- Sorted Compound Key Index: Users can specify three columns at most to form a compound sort key. This can effectively prune data to better support highly concurrent reporting scenarios.
-- Z-order Index: This allows users to efficiently run range queries on any combination of fields in their schema.
-- MIN/MAX Indexing: This enables effective filtering of equivalence and range queries for numeric types.
-- Bloom Filter: very effective in equivalence filtering and pruning of high cardinality columns
-- Invert Index: This enables fast search for any field.
+Using Docker has several advantages:
 
+1. You don't have to install, configure, and run specific versions of each external services on your local machine, or have access to them on your local network. Even if you do, Debezium's build won't use them.
+1. We can test multiple versions of an external service. Each module can start whatever containers it needs, so different modules can easily use different versions of the services.
+1. Everyone can run complete builds locally. You don't have to rely upon a remote continuous integration server running the build in an environment set up with all the required services.
+1. All builds are consistent. When multiple developers each build the same codebase, they should see exactly the same results -- as long as they're using the same or equivalent JDK, Maven, and Docker versions. That's because the containers will be running the same versions of the services on the same operating systems. Plus, all of the tests are designed to connect to the systems running in the containers, so nobody has to fiddle with connection properties or custom configurations specific to their local environments.
+1. No need to clean up the services, even if those services modify and store data locally. Docker *images* are cached, so reusing them to start containers is fast and consistent. However, Docker *containers* are never reused: they always start in their pristine initial state, and are discarded when they are shutdown. Integration tests rely upon containers, and so cleanup is handled automatically.
 
-### 💿 Storage Models
+### Configure your Docker environment
 
-Doris supports a variety of storage models and has optimized them for different scenarios:
+The Docker Maven Plugin will resolve the docker host by checking the following environment variables:
 
-- Aggregate Key Model: able to merge the value columns with the same keys and significantly improve performance
+    export DOCKER_HOST=tcp://10.1.2.2:2376
+    export DOCKER_CERT_PATH=/path/to/cdk/.vagrant/machines/default/virtualbox/.docker
+    export DOCKER_TLS_VERIFY=1
 
-- Unique Key Model: Keys are unique in this model and data with the same key will be overwritten to achieve row-level data updates.
+These can be set automatically if using Docker Machine or something similar.
 
-- Duplicate Key Model: This is a detailed data model capable of detailed storage of fact tables.
+### Building the code
 
-Doris also supports strongly consistent materialized views. Materialized views are automatically selected and updated, which greatly reduces maintenance costs for users.
+First obtain the code by cloning the Git repository:
 
-### 🔍 Query Engine
+    $ git clone https://github.com/debezium/debezium.git
+    $ cd debezium
 
-Doris adopts the MPP model in its query engine to realize parallel execution between and within nodes. It also supports distributed shuffle join for multiple large tables so as to handle complex queries.
+Then build the code using Maven:
 
-![](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/vjlmumwyx728uymsgcw0.png)
+    $ mvn clean verify
 
-The Doris query engine is vectorized, with all memory structures laid out in a columnar format. This can largely reduce virtual function calls, improve cache hit rates, and make efficient use of SIMD instructions. Doris delivers a 5–10 times higher performance in wide table aggregation scenarios than non-vectorized engines.
+The build starts and uses several Docker containers for different DBMSes. Note that if Docker is not running or configured, you'll likely get an arcane error -- if this is the case, always verify that Docker is running, perhaps by using `docker ps` to list the running containers.
 
-![](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ck2m3kbnodn28t28vphp.png)
+### Don't have Docker running locally for builds?
 
-Apache Doris uses Adaptive Query Execution technology to dynamically adjust the execution plan based on runtime statistics. For example, it can generate runtime filter, push it to the probe side, and automatically penetrate it to the Scan node at the bottom, which drastically reduces the amount of data in the probe and increases join performance. The runtime filter in Doris supports In/Min/Max/Bloom filter.
+You can skip the integration tests and docker-builds with the following command:
 
-### 🚅 Query Optimizer
+    $ mvn clean verify -DskipITs
 
-In terms of optimizers, Doris uses a combination of CBO and RBO. RBO supports constant folding, subquery rewriting, predicate pushdown and CBO supports Join Reorder. The Doris CBO is under continuous optimization for more accurate statistical information collection and derivation, and more accurate cost model prediction.
+### Building just the artifacts, without running tests, CheckStyle, etc.
 
+You can skip all non-essential plug-ins (tests, integration tests, CheckStyle, formatter, API compatibility check, etc.) using the "quick" build profile:
 
-**Technical Overview**: 🔗[Introduction to Apache Doris](https://doris.apache.org/docs/dev/summary/basic-summary)
+    $ mvn clean verify -Dquick
 
-## 🎆 Why choose Apache Doris?
+This provides the fastest way for solely producing the output artifacts, without running any of the QA related Maven plug-ins.
+This comes in handy for producing connector JARs and/or archives as quickly as possible, e.g. for manual testing in Kafka Connect.
 
-- 🎯 **Easy to Use:** Two processes, no other dependencies; online cluster scaling, automatic replica recovery; compatible with MySQL protocol, and using standard SQL.
+### Running tests of the Postgres connector using the wal2json or pgoutput logical decoding plug-ins
 
-- 🚀 **High Performance:** Extremely fast performance for low-latency and high-throughput queries with columnar storage engine, modern MPP architecture, vectorized query engine, pre-aggregated materialized view and data index.
+The Postgres connector supports three logical decoding plug-ins for streaming changes from the DB server to the connector: decoderbufs (the default), wal2json, and pgoutput.
+To run the integration tests of the PG connector using wal2json, enable the "wal2json-decoder" build profile:
 
-- 🖥️ **Single Unified:** A single system can support real-time data serving, interactive data analysis and offline data processing scenarios.
+    $ mvn clean install -pl :debezium-connector-postgres -Pwal2json-decoder
+    
+To run the integration tests of the PG connector using pgoutput, enable the "pgoutput-decoder" and "postgres-10" build profiles:
 
-- ⚛️ **Federated Querying:** Supports federated querying of data lakes such as Hive, Iceberg, Hudi, and databases such as MySQL and Elasticsearch.
+    $ mvn clean install -pl :debezium-connector-postgres -Ppgoutput-decoder,postgres-10
 
-- ⏩ **Various Data Import Methods:** Supports batch import from HDFS/S3 and stream import from MySQL Binlog/Kafka; supports micro-batch writing through HTTP interface and real-time writing using Insert in JDBC.
+A few tests currently don't pass when using the wal2json plug-in.
+Look for references to the types defined in `io.debezium.connector.postgresql.DecoderDifferences` to find these tests.
 
-- 🚙 **Rich Ecology:** Spark uses Spark-Doris-Connector to read and write Doris; Flink-Doris-Connector enables Flink CDC to implement exactly-once data writing to Doris; DBT Doris Adapter is provided to transform data in Doris with DBT.
+### Running tests of the Postgres connector with specific Apicurio Version
+To run the tests of PG connector using wal2json or pgoutput logical decoding plug-ins with a specific version of Apicurio, a test property can be passed as:
 
-## 🙌 Contributors
+    $ mvn clean install -pl debezium-connector-postgres -Pwal2json-decoder 
+          -Ddebezium.test.apicurio.version=1.3.1.Final
 
-**Apache Doris has graduated from Apache incubator successfully and become a Top-Level Project in June 2022**. 
+In absence of the property the stable version of Apicurio will be fetched.
 
-Currently, the Apache Doris community has gathered more than 400 contributors from nearly 200 companies in different industries, and the number of active contributors is close to 100 per month.
+### Running tests of the Postgres connector against an external database, e.g. Amazon RDS
+Please note if you want to test against a *non-RDS* cluster, this test requires `<your user>` to be a superuser with not only `replication` but permissions
+to login to `all` databases in `pg_hba.conf`.  It also requires `postgis` packages to be available on the target server for some of the tests to pass.
 
+    $ mvn clean install -pl debezium-connector-postgres -Pwal2json-decoder \
+         -Ddocker.skip.build=true -Ddocker.skip.run=true -Dpostgres.host=<your PG host> \
+         -Dpostgres.user=<your user> -Dpostgres.password=<your password> \
+         -Ddebezium.test.records.waittime=10
 
-[![Monthly Active Contributors](https://contributor-overtime-api.apiseven.com/contributors-svg?chart=contributorMonthlyActivity&repo=apache/doris)](https://www.apiseven.com/en/contributor-graph?chart=contributorMonthlyActivity&repo=apache/doris)
+Adjust the timeout value as needed.
 
-[![Contributor over time](https://contributor-overtime-api.apiseven.com/contributors-svg?chart=contributorOverTime&repo=apache/doris)](https://www.apiseven.com/en/contributor-graph?chart=contributorOverTime&repo=apache/doris)
+See [PostgreSQL on Amazon RDS](debezium-connector-postgres/RDS.md) for details on setting up a database on RDS to test against.
 
-We deeply appreciate 🔗[community contributors](https://github.com/apache/doris/graphs/contributors) for their contribution to Apache Doris.
+### Running tests of the Oracle connector using Oracle XStream
 
-## 👨‍👩‍👧‍👦 Users
+    $ mvn clean install -pl debezium-connector-oracle -Poracle-xstream,oracle-tests -Dinstantclient.dir=<path-to-instantclient>
 
-Apache Doris now has a wide user base in China and around the world, and as of today, **Apache Doris is used in production environments in thousands of companies worldwide.** More than 80% of the top 50 Internet companies in China in terms of market capitalization or valuation have been using Apache Doris for a long time, including Baidu, Meituan, Xiaomi, Jingdong, Bytedance, Tencent, NetEase, Kwai, Sina, 360, Mihoyo, and Ke Holdings. It is also widely used in some traditional industries such as finance, energy, manufacturing, and telecommunications.
+### Running tests of the Oracle connector with a non-CDB database
 
-The users of Apache Doris: 🔗[Users](https://doris.apache.org/users)
+    $ mvn clean install -pl debezium-connector-oracle -Poracle-tests -Dinstantclient.dir=<path-to-instantclient> -Ddatabase.pdb.name=
 
-Add your company logo at Apache Doris Website: 🔗[Add Your Company](https://github.com/apache/doris/issues/10229)
- 
-## 👣 Get Started
+### Running the tests for MongoDB with oplog capturing from an IDE
 
-### 📚 Docs
+When running the test without maven, please make sure you pass the correct parameters to the execution. Look for the correct parameters in `.github/workflows/mongodb-oplog-workflow.yml` and
+append them to the JVM execution parameters, prefixing them with `debezium.test`. As the execution will happen outside of the lifecycle execution, you need to start the MongoDB container manually
+from the MongoDB connector directory
 
-All Documentation   🔗[Docs](https://doris.apache.org/docs/dev/get-starting/)  
+    $ mvn docker:start -B -am -Passembly -Dcheckstyle.skip=true -Dformat.skip=true -Drevapi.skip -Dcapture.mode=oplog -Dversion.mongo.server=3.6 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120 -Dcapture.mode=oplog -Dmongo.server=3.6
 
-### ⬇️ Download 
+The relevant portion of the line will look similar to the following:
 
-All release and binary version 🔗[Download](https://doris.apache.org/download) 
+    java -ea -Ddebezium.test.capture.mode=oplog -Ddebezium.test.version.mongo.server=3.6 -Djava.awt.headless=true -Dconnector.mongodb.members.auto.discover=false -Dconnector.mongodb.name=mongo1 -DskipLongRunningTests=true [...]
 
-### 🗄️ Compile
+## Contributing
 
-See how to compile  🔗[Compilation](https://doris.apache.org/docs/dev/install/source-install/compilation-general)
+The Debezium community welcomes anyone that wants to help out in any way, whether that includes reporting problems, helping with documentation, or contributing code changes to fix bugs, add tests, or implement new features. See [this document](CONTRIBUTE.md) for details.
 
-### 📮 Install
+A big thank you to all the Debezium contributors!
 
-See how to install and deploy 🔗[Installation and deployment](https://doris.apache.org/docs/dev/install/standard-deployment) 
-
-## 🧩 Components
-
-### 📝 Doris Connector
-
-Doris provides support for Spark/Flink to read data stored in Doris through Connector, and also supports to write data to Doris through Connector.
-
-🔗[apache/doris-flink-connector](https://github.com/apache/doris-flink-connector)
-
-🔗[apache/doris-spark-connector](https://github.com/apache/doris-spark-connector)
-
-
-## 🌈 Community and Support
-
-### 📤 Subscribe Mailing Lists
-
-Mail List is the most recognized form of communication in Apache community. See how to 🔗[Subscribe Mailing Lists](https://doris.apache.org/community/subscribe-mail-list)
-
-### 🙋 Report Issues or Submit Pull Request
-
-If you meet any questions, feel free to file a 🔗[GitHub Issue](https://github.com/apache/doris/issues) or post it in 🔗[GitHub Discussion](https://github.com/apache/doris/discussions) and fix it by submitting a 🔗[Pull Request](https://github.com/apache/doris/pulls) 
-
-### 🍻 How to Contribute
-
-We welcome your suggestions, comments (including criticisms), comments and contributions. See 🔗[How to Contribute](https://doris.apache.org/community/how-to-contribute/) and 🔗[Code Submission Guide](https://doris.apache.org/community/how-to-contribute/pull-request/)
-
-### ⌨️ Doris Improvement Proposals (DSIP)
-
-🔗[Doris Improvement Proposal (DSIP)](https://cwiki.apache.org/confluence/display/DORIS/Doris+Improvement+Proposals) can be thought of as **A Collection of Design Documents for all Major Feature Updates or Improvements**.
-
-### 🔑 Backend C++ Coding Specification
-🔗 [Backend C++ Coding Specification](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=240883637) should be strictly followed, which will help us achieve better code quality.
-
-## 💬 Contact Us
-
-Contact us through the following mailing list.
-
-| Name                                                                          | Scope                           |                                                                 |                                                                     |                                                                              |
-|:------------------------------------------------------------------------------|:--------------------------------|:----------------------------------------------------------------|:--------------------------------------------------------------------|:-----------------------------------------------------------------------------|
-| [dev@doris.apache.org](mailto:dev@doris.apache.org)     | Development-related discussions | [Subscribe](mailto:dev-subscribe@doris.apache.org)   | [Unsubscribe](mailto:dev-unsubscribe@doris.apache.org)   | [Archives](http://mail-archives.apache.org/mod_mbox/doris-dev/)   |
-
-## 🧰 Links
-
-* Apache Doris Official Website - [Site](https://doris.apache.org)
-* Developer Mailing list - <dev@doris.apache.org>. Mail to <dev-subscribe@doris.apache.org>, follow the reply to subscribe the mail list.
-* Slack channel - [Join the Slack](https://join.slack.com/t/apachedoriscommunity/shared_invite/zt-1x7x8fger-F7NoshFQn~djlvGdnEtxUQ)
-* Twitter - [Follow @doris_apache](https://twitter.com/doris_apache)
-
-
-## 📜 License
-
-[Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
-
-> **Note**
-> Some licenses of the third-party dependencies are not compatible with Apache 2.0 License. So you need to disable
-some Doris features to be complied with Apache 2.0 License. For details, refer to the `thirdparty/LICENSE.txt`
-
-
-
+<a href="https://github.com/debezium/debezium/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=debezium/debezium" />
+</a>
