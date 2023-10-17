@@ -242,13 +242,12 @@ public class KmsService implements Closeable {
     }
 
     public MasterKeyProvider createMasterKeyProvider(CryptoMetadata cryptoMetadata) {
-        Settings cryptoSettings = Settings.builder().put(cryptoMetadata.settings()).normalizePrefix("kms.").build();
-        String keyArn = KEY_ARN_SETTING.get(cryptoSettings);
+        String keyArn = KEY_ARN_SETTING.get(cryptoMetadata.settings());
         if (!Strings.hasText(keyArn)) {
             throw new IllegalArgumentException("Missing key_arn setting");
         }
 
-        String kmsEncCtx = ENC_CTX_SETTING.get(cryptoSettings);
+        String kmsEncCtx = ENC_CTX_SETTING.get(cryptoMetadata.settings());
         Map<String, String> encCtx;
         if (Strings.hasText(kmsEncCtx)) {
             try {

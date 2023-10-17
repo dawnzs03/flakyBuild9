@@ -11,6 +11,7 @@ package org.opensearch.index.store;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext;
@@ -28,6 +29,7 @@ import org.opensearch.common.blobstore.stream.write.WritePriority;
 import org.opensearch.common.blobstore.transfer.RemoteTransferContainer;
 import org.opensearch.common.blobstore.transfer.stream.OffsetRangeIndexInputStream;
 import org.opensearch.common.blobstore.transfer.stream.OffsetRangeInputStream;
+import org.opensearch.common.util.ByteUtils;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.index.store.exception.ChecksumCombinationException;
 
@@ -45,8 +47,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.zip.CRC32;
 
-import static org.opensearch.common.blobstore.transfer.RemoteTransferContainer.checksumOfChecksum;
+import com.jcraft.jzlib.JZlib;
 
 /**
  * A {@code RemoteDirectory} provides an abstraction layer for storing a list of files to a remote store.
@@ -398,8 +401,11 @@ public class RemoteDirectory extends Directory {
 
     private long calculateChecksumOfChecksum(Directory directory, String file) throws IOException {
         try (IndexInput indexInput = directory.openInput(file, IOContext.DEFAULT)) {
+            long storedChecksum = CodecUtil.retrieveChecksum(indexInput);
+            CRC32 checksumOfChecksum = new CRC32();
+            checksumOfChecksum.update(ByteUtils.toByteArrayBE(storedChecksum));
             try {
-                return checksumOfChecksum(indexInput, SEGMENT_CHECKSUM_BYTES);
+                return JZlib.crc32_combine(storedChecksum, checksumOfChecksum.getValue(), SEGMENT_CHECKSUM_BYTES);
             } catch (Exception e) {
                 throw new ChecksumCombinationException(
                     "Potentially corrupted file: Checksum combination failed while combining stored checksum "

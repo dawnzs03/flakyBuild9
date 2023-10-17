@@ -454,7 +454,7 @@ public class IndexRoutingTable extends AbstractDiffable<IndexRoutingTable> imple
             IndexMetadata indexMetadata,
             RemoteStoreRecoverySource recoverySource,
             Map<ShardId, IndexShardRoutingTable> indexShardRoutingTableMap,
-            boolean forceRecoverAllPrimaries
+            boolean restoreAllShards
         ) {
             final UnassignedInfo unassignedInfo = new UnassignedInfo(
                 UnassignedInfo.Reason.EXISTING_INDEX_RESTORED,
@@ -466,20 +466,21 @@ public class IndexRoutingTable extends AbstractDiffable<IndexRoutingTable> imple
             }
             for (int shardNumber = 0; shardNumber < indexMetadata.getNumberOfShards(); shardNumber++) {
                 ShardId shardId = new ShardId(index, shardNumber);
-                if (forceRecoverAllPrimaries == false && indexShardRoutingTableMap.containsKey(shardId) == false) {
+                if (indexShardRoutingTableMap.containsKey(shardId) == false) {
                     throw new IllegalStateException("IndexShardRoutingTable is not present for shardId: " + shardId);
                 }
                 IndexShardRoutingTable.Builder indexShardRoutingBuilder = new IndexShardRoutingTable.Builder(shardId);
                 IndexShardRoutingTable indexShardRoutingTable = indexShardRoutingTableMap.get(shardId);
-                if (forceRecoverAllPrimaries || indexShardRoutingTable == null || indexShardRoutingTable.primaryShard().unassigned()) {
+                if (restoreAllShards || indexShardRoutingTable.primaryShard().unassigned()) {
                     // Primary shard to be recovered from remote store.
                     indexShardRoutingBuilder.addShard(ShardRouting.newUnassigned(shardId, true, recoverySource, unassignedInfo));
                     // All the replica shards to be recovered from peer recovery.
-                    for (int replicaNumber = 0; replicaNumber < indexMetadata.getNumberOfReplicas(); replicaNumber++) {
-                        indexShardRoutingBuilder.addShard(
-                            ShardRouting.newUnassigned(shardId, false, PeerRecoverySource.INSTANCE, unassignedInfo)
+                    indexShardRoutingTable.replicaShards()
+                        .forEach(
+                            shardRouting -> indexShardRoutingBuilder.addShard(
+                                ShardRouting.newUnassigned(shardId, false, PeerRecoverySource.INSTANCE, unassignedInfo)
+                            )
                         );
-                    }
                 } else {
                     // Primary is either active or initializing. Do not trigger restore.
                     indexShardRoutingBuilder.addShard(indexShardRoutingTable.primaryShard());
