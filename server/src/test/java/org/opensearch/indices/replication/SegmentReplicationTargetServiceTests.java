@@ -9,7 +9,6 @@
 package org.opensearch.indices.replication;
 
 import org.apache.lucene.store.AlreadyClosedException;
-import org.opensearch.ExceptionsHelper;
 import org.opensearch.OpenSearchException;
 import org.opensearch.Version;
 import org.opensearch.cluster.ClusterState;
@@ -554,7 +553,7 @@ public class SegmentReplicationTargetServiceTests extends IndexShardTestCase {
             ).txGet();
         });
         Throwable nestedException = finalizeException.getCause().getCause();
-        assertNotNull(ExceptionsHelper.unwrap(finalizeException, IOException.class));
+        assertTrue(nestedException instanceof IOException);
         assertTrue(nestedException.getMessage().contains("dummy failure"));
     }
 

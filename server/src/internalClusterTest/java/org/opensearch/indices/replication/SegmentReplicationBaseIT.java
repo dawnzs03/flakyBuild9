@@ -197,10 +197,9 @@ public class SegmentReplicationBaseIT extends OpenSearchIntegTestCase {
     protected IndexShard getIndexShard(String node, String indexName) {
         final Index index = resolveIndex(indexName);
         IndicesService indicesService = internalCluster().getInstance(IndicesService.class, node);
-        IndexService indexService = indicesService.indexService(index);
-        assertNotNull(indexService);
+        IndexService indexService = indicesService.indexServiceSafe(index);
         final Optional<Integer> shardId = indexService.shardIds().stream().findFirst();
-        return shardId.map(indexService::getShard).orElse(null);
+        return indexService.getShard(shardId.get());
     }
 
     protected boolean segmentReplicationWithRemoteEnabled() {
